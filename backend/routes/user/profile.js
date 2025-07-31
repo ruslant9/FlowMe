@@ -13,22 +13,12 @@ const authMiddleware = require('../../middleware/auth.middleware');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { createStorage, cloudinary } = require('../../config/cloudinary'); // ИЗМЕНЕНИЕ: Импортируем из конфига
 
-const avatarStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '..', '..', 'uploads', 'avatars');
-        if (!fs.existsSync(dir)){
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${req.user.userId}-${Date.now()}${path.extname(file.originalname)}`);
-    }
-});
+// --- ИЗМЕНЕНИЕ: Используем Cloudinary Storage ---
+const avatarStorage = createStorage('avatars');
 const uploadAvatar = multer({ storage: avatarStorage });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Хелпер для подстановки данных активного акцента ---
 function populateActiveAccent(userObject) {
     if (!userObject || !userObject.premiumCustomization || !userObject.premiumCustomization.activeCardAccent) {
         return userObject;
@@ -37,18 +27,14 @@ function populateActiveAccent(userObject) {
     const customAccents = userObject.premiumCustomization.customCardAccents || [];
     const activeAccentId = userObject.premiumCustomization.activeCardAccent.toString();
 
-    // Сначала ищем среди кастомных акцентов по ID
     const activeCustomAccent = customAccents.find(accent => accent._id.toString() === activeAccentId);
 
     if (activeCustomAccent) {
-        // Если нашли, подставляем полный объект
         userObject.premiumCustomization.activeCardAccent = activeCustomAccent;
     }
     
-    // Если activeCardAccent - это строка (URL), он останется как есть, что тоже правильно
     return userObject;
 }
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 router.get('/profile', authMiddleware, async (req, res) => {
     try {
@@ -91,23 +77,18 @@ router.put('/profile', authMiddleware, async (req, res) => {
             user.status = status.trim() === '' ? null : status.trim();
         }
 
-        // --- НАЧАЛО ИЗМЕНЕНИЯ: Безопасное обновление кастомизации ---
         if (premiumCustomization) {
             if (user.premium && user.premium.isActive) {
-                // Используем Mongoose's .set() для точечного обновления полей.
-                // Это предотвращает перезапись всего sub-документа и потерю customCardAccents.
                 if (premiumCustomization.avatarBorder) {
                     user.set('premiumCustomization.avatarBorder', premiumCustomization.avatarBorder);
                 }
                 if (premiumCustomization.usernameEmoji) {
                     user.set('premiumCustomization.usernameEmoji', premiumCustomization.usernameEmoji);
                 }
-                // activeCardAccent обрабатывается отдельным роутом и здесь не трогается.
             } else {
                 return res.status(403).json({ message: 'Premium-подписка неактивна.' });
             }
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         user.gender = gender || user.gender;
         if (interests !== undefined) {
@@ -126,38 +107,57 @@ router.put('/profile', authMiddleware, async (req, res) => {
     }
 });
 
-
+// --- ИЗМЕНЕНИЕ: Обновленный роут для загрузки аватара ---
 router.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Файл не загружен' });
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
-        if (user.avatar) {
-            const oldPath = path.join(__dirname, '..', '..', user.avatar);
-             if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+
+        // Удаление старого аватара из Cloudinary (опционально, но рекомендуется)
+        if (user.avatar && user.avatar.includes('cloudinary')) {
+            const publicId = user.avatar.split('/').pop().split('.')[0];
+            // Мы указываем, в какой папке искать, чтобы не удалить что-то не то
+            cloudinary.uploader.destroy(`avatars/${publicId}`, (error, result) => {
+                if (error) console.error("Ошибка удаления старого аватара из Cloudinary:", error);
+            });
         }
-        const avatarPath = `uploads/avatars/${req.file.filename}`;
+        
+        const avatarPath = req.file.path; // multer-storage-cloudinary возвращает полный URL
         user.avatar = avatarPath;
         await user.save();
+        
         res.json({ message: 'Аватар успешно обновлен', avatarUrl: avatarPath });
         req.broadcastFullUserStatus(req.user.userId);
-    } catch (e) { res.status(500).json({ message: 'Ошибка при загрузке аватара' }); }
+    } catch (e) { 
+        res.status(500).json({ message: 'Ошибка при загрузке аватара' }); 
+    }
 });
 
+// --- ИЗМЕНЕНИЕ: Обновленный роут для удаления аватара ---
 router.delete('/avatar', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
         if (!user.avatar) return res.status(400).json({ message: 'У пользователя нет аватара для удаления.' });
-        const avatarFilePath = path.join(__dirname, '..', '..', user.avatar);
-        if (fs.existsSync(avatarFilePath)) fs.unlinkSync(avatarFilePath);
+
+        if (user.avatar.includes('cloudinary')) {
+            const publicId = user.avatar.split('/').pop().split('.')[0];
+            cloudinary.uploader.destroy(`avatars/${publicId}`, (error, result) => {
+                if (error) console.error("Ошибка удаления аватара из Cloudinary:", error);
+            });
+        }
+        
         user.avatar = undefined;
         await user.save();
         res.json({ message: 'Аватар успешно удален' });
         req.broadcastFullUserStatus(req.user.userId);
-    } catch (e) { res.status(500).json({ message: 'Ошибка при удалении аватара' }); }
+    } catch (e) { 
+        res.status(500).json({ message: 'Ошибка при удалении аватара' }); 
+    }
 });
 
+// ... (остальные роуты без изменений)
 router.get('/sessions', authMiddleware, async (req, res) => {
     try {
         const sessions = await Session.find({ user: req.user.userId }).sort({ lastActive: -1 });

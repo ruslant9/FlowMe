@@ -12,28 +12,11 @@ const path = require('path');
 const fs = require('fs');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
 const { getPopulatedConversation } = require('../../utils/getPopulatedConversation');
+const { createStorage, cloudinary } = require('../../config/cloudinary');
 
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/webp') {
-        cb(null, true);
-    } else {
-        cb(new Error('Недопустимый тип файла, разрешены только JPEG, PNG, WEBP'), false);
-    }
-};
+const messageImageStorage = createStorage('messages');
+const uploadMessageImage = multer({ storage: messageImageStorage });
 
-const messageImageStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '..', '..', 'uploads', 'messages');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `msg-${req.user.userId}-${Date.now()}${path.extname(file.originalname)}`);
-    }
-});
-const uploadMessageImage = multer({ storage: messageImageStorage, fileFilter: fileFilter });
-
-// Helper to broadcast to specific users (from server.js context)
 const broadcastToUsers = (req, userIds, message) => {
     userIds.forEach(userId => {
         const userSocket = req.clients.get(userId.toString());
@@ -43,7 +26,6 @@ const broadcastToUsers = (req, userIds, message) => {
     });
 };
 
-// 1. Отправить сообщение
 router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req, res) => {
     try {
         const senderId = new mongoose.Types.ObjectId(req.user.userId);
@@ -90,18 +72,17 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             uuid: messageUuid,
             text: text || '',
             replyTo: replyToMessageId || null,
-            imageUrl: req.file ? `uploads/messages/${req.file.filename}` : null,
+            imageUrl: req.file ? req.file.path : null,
             attachedTrack: attachedTrackId || null,
         };
         
         let savedMessage;
 
         if (senderId.equals(recipientObjectId)) {
-            // Case: Sending to "Saved Messages"
             const savedMessagesChat = new Message({
                 ...messageData,
                 owner: senderId,
-                readBy: [senderId], // Instantly marked as read
+                readBy: [senderId],
             });
             savedMessage = await savedMessagesChat.save();
 
@@ -119,7 +100,6 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             });
 
         } else {
-            // Case: Sending to another user
             const senderMessage = new Message({ ...messageData, owner: senderId, readBy: [senderId] });
             const recipientMessage = new Message({ ...messageData, owner: recipientObjectId, readBy: [] });
             
@@ -159,12 +139,14 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
 
         res.status(201).json(savedMessage);
     } catch (error) {
+        if (req.file) {
+            cloudinary.uploader.destroy(req.file.filename);
+        }
         console.error('Error sending message:', error);
         res.status(500).json({ message: 'Ошибка на сервере' });
     }
 });
 
-// 2. Редактирование сообщения
 router.put('/:messageId', authMiddleware, async (req, res) => {
     try {
         const { text } = req.body;
@@ -211,41 +193,33 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Полностью переработанный роут для загрузки контекста ---
 router.get('/:messageId/context', authMiddleware, async (req, res) => {
     try {
         const { messageId } = req.params;
         const userId = new mongoose.Types.ObjectId(req.user.userId);
         const limit = 30;
 
-        // 1. Находим любую копию сообщения, чтобы получить его UUID и время создания
         const anyMessageCopy = await Message.findById(messageId).select('uuid createdAt conversation').lean();
         if (!anyMessageCopy) {
             return res.status(404).json({ message: 'Исходное сообщение не найдено.' });
         }
         
-        // 2. Находим копию сообщения, принадлежащую текущему пользователю, по UUID
         const targetMessage = await Message.findOne({ uuid: anyMessageCopy.uuid, owner: userId });
         
-        // Если у пользователя есть своя копия, используем ее ID для подсветки
-        // Если нет (история была очищена), то ID будет от чужой копии
         const finalMessageIdToHighlight = targetMessage ? targetMessage._id.toString() : messageId;
 
         const conversationId = anyMessageCopy.conversation;
         const createdAt = anyMessageCopy.createdAt;
 
-        // 3. Считаем, сколько сообщений в ИСТОРИИ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ было создано ПОСЛЕ искомого
         const newerMessagesCount = await Message.countDocuments({
             conversation: conversationId,
             owner: userId,
             createdAt: { $gt: createdAt }
         });
 
-        // 4. Вычисляем страницу, на которой должно быть это сообщение
         const page = Math.floor(newerMessagesCount / limit) + 1;
         const skip = (page - 1) * limit;
 
-        // 5. Загружаем нужную страницу сообщений из истории ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ
         const messages = await Message.find({ conversation: conversationId, owner: userId })
             .populate('sender', 'username fullName avatar')
             .populate({
@@ -266,7 +240,6 @@ router.get('/:messageId/context', authMiddleware, async (req, res) => {
             messages: messages.reverse(),
             page,
             hasMore,
-            // 6. Отправляем ID сообщения, которое нужно подсветить
             highlightId: finalMessageIdToHighlight 
         });
 
@@ -275,9 +248,7 @@ router.get('/:messageId/context', authMiddleware, async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера при загрузке контекста сообщения." });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-// Новый эндпоинт для скролла к дате
 router.get('/conversations/:conversationId/messages-by-date', authMiddleware, async (req, res) => {
     try {
         const { conversationId } = req.params;
@@ -335,7 +306,6 @@ router.get('/conversations/:conversationId/messages-by-date', authMiddleware, as
     }
 });
 
-// 3. Получить одно сообщение (например, для закрепления)
 router.get('/:messageId', authMiddleware, async (req, res) => {
     try {
         const { messageId } = req.params;

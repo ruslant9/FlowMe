@@ -2,7 +2,6 @@
 
 import { UserX } from 'lucide-react';
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Обновлена палитра цветов в соответствии с вашим дизайном ---
 const avatarColors = [
     '#F59E0B', // Оранжевый
     '#F472B6', // Розовый
@@ -11,7 +10,6 @@ const avatarColors = [
     '#4ADE80', // Зеленый
     '#F87171', // Коралловый
 ];
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const getHash = (str) => {
     let hash = 0;
@@ -54,6 +52,7 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
             style={borderStyle}
             onClick={onClick}
         >
+            {/* --- ИЗМЕНЕНИЕ: Теперь мы просто используем avatarUrl напрямую --- */}
             {avatarUrl ? (
                 <div
                     className={`${sizeClasses[size]} rounded-full flex-shrink-0 overflow-hidden bg-slate-200 dark:bg-slate-700 ${onClick ? 'cursor-pointer' : ''}`}

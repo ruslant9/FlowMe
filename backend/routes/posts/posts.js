@@ -12,28 +12,14 @@ const path = require('path');
 const fs = require('fs');
 const { getPopulatedPost } = require('../../utils/posts');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
+const { createStorage } = require('../../config/cloudinary'); // ИЗМЕНЕНИЕ: Импортируем из конфига
 
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/webp') {
-        cb(null, true);
-    } else {
-        cb(new Error('Недопустимый тип файла, разрешены только JPEG, PNG, WEBP'), false);
-    }
-};
+// --- ИЗМЕНЕНИЕ: Используем Cloudinary Storage ---
+const postStorage = createStorage('posts'); // 'posts' - папка в Cloudinary
+const uploadPost = multer({ storage: postStorage, limits: { files: 5 } });
 
-const postStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '..', '..', 'uploads', 'posts');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${req.user.userId}-post-${Date.now()}${path.extname(file.originalname)}`);
-    }
-});
-const uploadPost = multer({ storage: postStorage, fileFilter: fileFilter, limits: { files: 5 } });
 
-router.get('/feed', authMiddleware, async (req, res) => {
+router.get('/feed', async (req, res) => {
     try {
         const currentUser = await User.findById(req.user.userId).select('friends blacklist subscribedCommunities');
         const friendIds = currentUser.friends.map(friend => friend._id);
@@ -109,10 +95,12 @@ router.get('/feed', authMiddleware, async (req, res) => {
     }
 });
 
+// --- ИЗМЕНЕНИЕ: Обновленный роут для создания поста ---
 router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res) => {
     try {
         const { text, commentsDisabled, communityId, attachedTrackId, poll: pollJson, scheduledFor } = req.body;
-        const imageUrls = req.files ? req.files.map(file => `uploads/posts/${file.filename}`) : [];
+        // multer-storage-cloudinary возвращает полные URL в req.files
+        const imageUrls = req.files ? req.files.map(file => file.path) : [];
         
         let pollData = null;
         if (pollJson) {
@@ -168,14 +156,22 @@ router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res)
         
         res.status(201).json(await getPopulatedPost(newPost._id, req.user.userId));
     } catch (e) {
-        if (req.files) req.files.forEach(file => fs.unlink(file.path, (err) => { if (err) console.error("Error deleting file:", err); }));
+        // Если произошла ошибка, а файлы уже загружены в Cloudinary, их нужно удалить
+        if (req.files) {
+            req.files.forEach(file => {
+                const publicId = file.filename; // multer-storage-cloudinary сохраняет public_id в filename
+                cloudinary.uploader.destroy(publicId);
+            });
+        }
         res.status(500).json({ message: 'Ошибка создания поста' });
     }
 });
 
+
+// ... (остальные роуты без изменений)
 router.put('/:postId', authMiddleware, uploadPost.array('images', 5), async (req, res) => {
     try {
-        let { text, existingImages, scheduledFor } = req.body; // --- ИЗМЕНЕНИЕ: Получаем scheduledFor
+        let { text, existingImages, scheduledFor } = req.body;
         const post = await Post.findById(req.params.postId);
         if (!post) return res.status(404).json({ message: 'Пост не найден' });
         if (post.user.toString() !== req.user.userId) return res.status(403).json({ message: 'Нет прав на редактирование' });       
@@ -189,25 +185,21 @@ router.put('/:postId', authMiddleware, uploadPost.array('images', 5), async (req
         post.text = text;
         post.imageUrls = [...finalExistingImages, ...newImageUrls];
 
-        // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика обновления отложенного поста ---
-        if (scheduledFor !== undefined) { // Проверяем, было ли поле вообще отправлено
-            if (scheduledFor) { // Если есть дата, значит это все еще отложенный пост
+        if (scheduledFor !== undefined) {
+            if (scheduledFor) {
                 const scheduleDate = new Date(scheduledFor);
-                // Проверяем, что дата в будущем, чтобы случайно не опубликовать
                 if (scheduleDate > new Date()) {
                     post.scheduledFor = scheduleDate;
                     post.status = 'scheduled';
                 } else {
-                    // Если дата в прошлом - публикуем немедленно
                     post.scheduledFor = null;
                     post.status = 'published';
                 }
-            } else { // Если дата пустая (null или ''), значит публикуем сейчас
+            } else {
                 post.scheduledFor = null;
                 post.status = 'published';
             }
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         await post.save();  
         const populatedPost = await getPopulatedPost(post._id, req.user.userId);

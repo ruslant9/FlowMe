@@ -8,33 +8,16 @@ const User = require('../models/User');
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const mongoose = require('mongoose');
-const Notification = require('../models/Notification'); // ИМПОРТ Notification
+const Notification = require('../models/Notification');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { isAllowedByPrivacy } = require('../utils/privacy');
+const { createStorage, cloudinary } = require('../config/cloudinary'); // ИЗМЕНЕНИЕ: Импорт Cloudinary
 
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/webp') {
-        cb(null, true);
-    } else {
-        cb(new Error('Недопустимый тип файла, разрешены только JPEG, PNG, WEBP'), false);
-    }
-};
-
-const communityImageStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '..', 'uploads', 'communities');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        const type = file.fieldname === 'avatar' ? 'avatar' : 'coverImage';
-        const communityId = req.params.communityId || req.user.userId;
-        cb(null, `community-${type}-${communityId}-${Date.now()}${path.extname(file.originalname)}`);
-    }
-});
-const uploadCommunityImages = multer({ storage: communityImageStorage, fileFilter: fileFilter });
+// --- ИЗМЕНЕНИЕ: Используем Cloudinary Storage ---
+const communityImageStorage = createStorage('communities');
+const uploadCommunityImages = multer({ storage: communityImageStorage });
 
 const canManageCommunity = async (req, res, next) => {
     try {
@@ -52,7 +35,6 @@ const canManageCommunity = async (req, res, next) => {
     }
 };
 
-// ... (роуты post, put, delete и другие остаются без изменений) ...
 router.post('/', authMiddleware, uploadCommunityImages.fields([{ name: 'avatar', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), async (req, res) => {
     try {
         const { name, description, topic, visibility, joinPolicy } = req.body;
@@ -71,8 +53,8 @@ router.post('/', authMiddleware, uploadCommunityImages.fields([{ name: 'avatar',
             topic: topic || 'General',
             visibility: visibility || 'public',
             joinPolicy: joinPolicy || 'open',
-            avatar: req.files && req.files.avatar ? `uploads/communities/${req.files.avatar[0].filename}` : null,
-            coverImage: req.files && req.files.coverImage ? `uploads/communities/${req.files.coverImage[0].filename}` : null,
+            avatar: req.files?.avatar?.[0]?.path || null,
+            coverImage: req.files?.coverImage?.[0]?.path || null,
         });
 
         await newCommunity.save();
@@ -85,8 +67,8 @@ router.post('/', authMiddleware, uploadCommunityImages.fields([{ name: 'avatar',
     } catch (error) {
         console.error('Ошибка при создании сообщества:', error);
         if (req.files) {
-            if (req.files.avatar) fs.unlinkSync(req.files.avatar[0].path);
-            if (req.files.coverImage) fs.unlinkSync(req.files.coverImage[0].path);
+            if (req.files.avatar) cloudinary.uploader.destroy(req.files.avatar[0].filename);
+            if (req.files.coverImage) cloudinary.uploader.destroy(req.files.coverImage[0].filename);
         }
         res.status(500).json({ message: 'Ошибка на сервере при создании сообщества.' });
     }
@@ -473,16 +455,14 @@ router.post('/:communityId/members/:memberId/unban', authMiddleware, canManageCo
     } catch (error) { res.status(500).json({ message: 'Ошибка сервера.' }); }
 });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ ---
 router.get('/:communityId', authMiddleware, async (req, res) => {
     try {
         const { communityId } = req.params;
         const requesterId = req.user.userId;
         
-        // Теперь подгружаем `members` всегда, т.к. этот эндпоинт используется и для управления
         const community = await Community.findById(communityId)
             .populate('owner', 'username fullName avatar')
-            .populate('members', 'username fullName avatar') // <<<--- ЭТА СТРОКА ИСПРАВЛЕНА
+            .populate('members', 'username fullName avatar') 
             .populate('pendingJoinRequests', 'username fullName avatar')
             .populate('bannedUsers', 'username fullName avatar')
             .lean();
@@ -504,7 +484,6 @@ router.get('/:communityId', authMiddleware, async (req, res) => {
         community.isPending = isPending;
         community.isBanned = isBanned;
 
-        // Теперь логика скрытия работает правильно
         if (!isOwner) {
             if ((community.memberListVisibility === 'members_only' && !isMember) || community.memberListVisibility === 'none') {
                 delete community.members;
@@ -521,7 +500,6 @@ router.get('/:communityId', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка на сервере.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 router.get('/:communityId/members', authMiddleware, async (req, res) => {
     try {
@@ -597,7 +575,6 @@ router.get('/:communityId/posts', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Обновленный роут для отправки приглашения ---
 router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (req, res) => {
     try {
         const { targetUserId } = req.body;
@@ -607,17 +584,14 @@ router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (r
         const targetUser = await User.findById(targetUserId).select('privacySettings friends');
         if (!targetUser) return res.status(404).json({ message: "Пользователь для приглашения не найден." });
 
-        // Проверка приватности
         if (!isAllowedByPrivacy(targetUser.privacySettings?.inviteToCommunity, inviterId, targetUser)) {
             return res.status(403).json({ message: "Пользователь ограничил круг лиц, которые могут приглашать его в сообщества." });
         }
 
-        // Проверки статуса
         if (community.members.includes(targetUserId)) return res.status(400).json({ message: "Пользователь уже является участником." });
         if (community.bannedUsers.includes(targetUserId)) return res.status(400).json({ message: "Пользователь заблокирован в этом сообществе." });
         if (community.pendingJoinRequests.includes(targetUserId)) return res.status(400).json({ message: "У пользователя уже есть активная заявка на вступление." });
 
-        // --- НОВАЯ ПРОВЕРКА: Проверяем, не было ли уже отправлено приглашение ---
         const existingInvite = await Notification.findOne({
             recipient: targetUserId,
             type: 'community_invite',
@@ -627,9 +601,7 @@ router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (r
         if (existingInvite) {
             return res.status(400).json({ message: "Приглашение этому пользователю уже было отправлено." });
         }
-        // --- КОНЕЦ НОВОЙ ПРОВЕРКИ ---
 
-        // Создание уведомления
         const notification = new Notification({
             recipient: targetUserId,
             senders: [inviterId],
@@ -652,7 +624,6 @@ router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (r
         res.status(500).json({ message: 'Ошибка на сервере.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 router.post('/invites/accept', authMiddleware, async (req, res) => {
     try {
@@ -736,7 +707,6 @@ router.post('/invites/decline', authMiddleware, async (req, res) => {
     }
 });
 
-// Отправка приглашения от владельца сообщества пользователю
 router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (req, res) => {
     try {
         const { targetUserId } = req.body;
@@ -746,17 +716,14 @@ router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (r
         const targetUser = await User.findById(targetUserId).select('privacySettings friends');
         if (!targetUser) return res.status(404).json({ message: "Пользователь для приглашения не найден." });
 
-        // Проверка приватности
         if (!isAllowedByPrivacy(targetUser.privacySettings?.inviteToCommunity, inviterId, targetUser)) {
             return res.status(403).json({ message: "Пользователь ограничил круг лиц, которые могут приглашать его в сообщества." });
         }
 
-        // Проверки статуса
         if (community.members.includes(targetUserId)) return res.status(400).json({ message: "Пользователь уже является участником." });
         if (community.bannedUsers.includes(targetUserId)) return res.status(400).json({ message: "Пользователь заблокирован в этом сообществе." });
         if (community.pendingJoinRequests.includes(targetUserId)) return res.status(400).json({ message: "У пользователя уже есть активная заявка на вступление." });
 
-        // Создание уведомления
         const notification = new Notification({
             recipient: targetUserId,
             senders: [inviterId],
@@ -780,7 +747,6 @@ router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (r
     }
 });
 
-// Принятие приглашения
 router.post('/invites/accept', authMiddleware, async (req, res) => {
     try {
         const { notificationId } = req.body;
@@ -798,7 +764,6 @@ router.post('/invites/accept', authMiddleware, async (req, res) => {
         await community.save();
         await User.findByIdAndUpdate(userId, { $addToSet: { subscribedCommunities: community._id } });
 
-        // Уведомление отправителю
         const inviterId = notification.senders[0];
         const acceptedNotification = new Notification({
             recipient: inviterId,
@@ -823,7 +788,6 @@ router.post('/invites/accept', authMiddleware, async (req, res) => {
     }
 });
 
-// Отклонение приглашения
 router.post('/invites/decline', authMiddleware, async (req, res) => {
     try {
         const { notificationId } = req.body;
@@ -837,7 +801,6 @@ router.post('/invites/decline', authMiddleware, async (req, res) => {
         const community = await Community.findById(notification.entityId);
         const inviterId = notification.senders[0];
 
-        // Опционально: уведомить отправителя об отказе
         if (community) {
              const declinedNotification = new Notification({
                 recipient: inviterId,
@@ -864,6 +827,5 @@ router.post('/invites/decline', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка на сервере.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 module.exports = router;
