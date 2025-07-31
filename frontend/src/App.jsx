@@ -38,24 +38,6 @@ import PremiumPage from './pages/PremiumPage';
 import { MusicPlayerProvider, useMusicPlayer } from './context/MusicPlayerContext';
 import MusicPlayerBar from './components/music/MusicPlayerBar';
 
-
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Удаляем глобальный перехватчик ---
-// Глобальный перехватчик для обработки ошибок авторизации
-// axios.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     if (error.response && error.response.status === 401) {
-//       localStorage.removeItem('token');
-//       localStorage.removeItem('user');
-//       localStorage.removeItem('rememberedEmail');
-//       window.location.href = '/login';
-//       return new Promise(() => {});
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
 // Компонент переключения темы
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
   <div className="flex items-center justify-center space-x-2 p-2 rounded-lg">
@@ -235,10 +217,4 @@ function App() {
   );
 }
 
-const AppWrapper = () => (
-  <MusicPlayerProvider>
-    <App />
-  </MusicPlayerProvider>
-);
-
-export default AppWrapper;
+export default App;
