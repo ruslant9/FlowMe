@@ -36,6 +36,7 @@ const musicRouter = require('./routes/music-router');
 const app = express();
 const server = http.createServer(app);
 
+app.set('trust proxy', 1);
 app.use(cors({
     origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true 
