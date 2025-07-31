@@ -20,6 +20,11 @@ import 'rc-slider/assets/index.css';
 // --- ИЗМЕНЕНИЕ: Глобальная настройка Axios для отправки cookie ---
 axios.defaults.withCredentials = true;
 
+const token = localStorage.getItem('token');
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

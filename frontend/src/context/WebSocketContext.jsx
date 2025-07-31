@@ -252,6 +252,7 @@ export const WebSocketProvider = ({ children }) => {
     const login = useCallback((wsToken, user) => {
         localStorage.setItem('token', wsToken);
         localStorage.setItem('user', JSON.stringify(user));
+        axios.defaults.headers.common['Authorization'] = `Bearer ${wsToken}`;
         updateUserToken(wsToken);
     }, [updateUserToken]);
 
