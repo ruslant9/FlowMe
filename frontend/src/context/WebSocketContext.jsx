@@ -94,12 +94,18 @@ export const WebSocketProvider = ({ children }) => {
     }, []);
 
     const connectWebSocket = useCallback(() => {
+        const apiUrl = import.meta.env.VITE_API_URL;
+
+        // 2. Заменяем http/https на ws/wss.
+        const wsUrl = apiUrl.replace(/^http/, 'ws');
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
         if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) {
             console.log('WebSocket: Попытка повторного подключения проигнорирована, соединение уже существует.');
             return;
         }
 
-        const socket = new WebSocket('ws://const API_URL = import.meta.env.VITE_API_URL;');
+        const socket = new WebSocket(wsUrl); // Используем новую переменную wsUrl
         ws.current = socket;
 
         socket.onopen = () => {
