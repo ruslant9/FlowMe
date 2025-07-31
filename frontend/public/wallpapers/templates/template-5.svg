@@ -1,0 +1,21 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Стиль 5: Paper Cut-out Layers
+    - Имитация аппликации из слоев цветной бумаги.
+    - Фильтр feDropShadow создает реалистичную мягкую тень и глубину.
+    - Органичный, "рукотворный" вид.
+    -->
+    <defs>
+        <filter id="paperShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="10" dy="10" stdDeviation="15" flood-color="#000000" flood-opacity="0.2"/>
+        </filter>
+    </defs>
+
+    <rect width="1920" height="1080" fill="#fef3c7" />
+
+    <g filter="url(#paperShadow)">
+        <path d="M-100 1080 C 400 900, 300 500, 800 600 S 1400 400, 2020 500 V 1080 Z" fill="#fca5a5" />
+        <path d="M-100 1080 C 300 800, 400 700, 900 800 S 1500 700, 2020 750 V 1080 Z" fill="#fdba74" />
+        <path d="M-100 1080 C 200 950, 500 900, 1000 950 S 1600 900, 2020 920 V 1080 Z" fill="#86efac" />
+    </g>
+</svg>

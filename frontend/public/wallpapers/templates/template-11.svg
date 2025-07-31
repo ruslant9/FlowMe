@@ -1,0 +1,20 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Стиль 10: Japanese Wave Pattern
+    - Традиционный японский узор "Сэйгайха" (голубые морские волны).
+    - Эффективно реализован через <pattern> с набором дуг.
+    - Элегантный, спокойный и культурно насыщенный стиль.
+    -->
+    <defs>
+        <pattern id="seigaiha" patternUnits="userSpaceOnUse" width="80" height="80">
+            <g fill="none" stroke="#dbeafe" stroke-width="3">
+                <path d="M 0 40 A 40 40 0 0 1 80 40" />
+                <path d="M 0 40 A 26.6 26.6 0 0 1 53.2 40 M 26.8 40 A 26.6 26.6 0 0 1 80 40" />
+                <path d="M 0 40 A 13.3 13.3 0 0 1 26.6 40 M 13.4 40 A 13.3 13.3 0 0 1 40 40 M 40 40 A 13.3 13.3 0 0 1 66.6 40 M 53.4 40 A 13.3 13.3 0 0 1 80 40" />
+            </g>
+        </pattern>
+    </defs>
+
+    <rect width="1920" height="1080" fill="#1e3a8a" />
+    <rect width="1920" height="1080" fill="url(#seigaiha)" />
+</svg>

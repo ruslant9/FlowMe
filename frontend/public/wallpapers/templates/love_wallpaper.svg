@@ -1,0 +1,59 @@
+<!-- public/wallpapers/templates/love_wallpaper.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Мягкий градиент для фона -->
+    <radialGradient id="loveGradient" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#FFDDE1" />
+      <stop offset="100%" stop-color="#EE9CA7" />
+    </radialGradient>
+    
+    <!-- Определяем форму сердца как символ для многократного использования -->
+    <symbol id="heartSymbol" viewBox="0 0 40 60">
+      <path d="M20,60 C-5,40 5,15 20,30 C35,15 45,40 20,60 Z" fill="currentColor"/>
+    </symbol>
+  </defs>
+
+  <!-- Фон с градиентом -->
+  <rect width="100%" height="100%" fill="url(#loveGradient)"/>
+
+  <!-- Группа для анимированных сердец -->
+  <g opacity="0.7">
+    <!-- Используем символ сердца много раз с разными параметрами -->
+    
+    <use href="#heartSymbol" x="10%" y="90%" width="80" height="80" fill="#FF69B4" opacity="0.8">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="50 -1200" dur="15s" repeatCount="indefinite" begin="-2s"/>
+    </use>
+    
+    <use href="#heartSymbol" x="20%" y="95%" width="50" height="50" fill="#FFB6C1" opacity="0.6">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="-30 -1200" dur="18s" repeatCount="indefinite" begin="0s"/>
+    </use>
+    
+    <use href="#heartSymbol" x="30%" y="100%" width="120" height="120" fill="#FFFFFF" opacity="0.3">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="20 -1300" dur="12s" repeatCount="indefinite" begin="-5s"/>
+    </use>
+    
+    <use href="#heartSymbol" x="45%" y="92%" width="60" height="60" fill="#FF1493" opacity="0.7">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="-60 -1200" dur="16s" repeatCount="indefinite" begin="-1s"/>
+    </use>
+    
+    <use href="#heartSymbol" x="60%" y="98%" width="90" height="90" fill="#FFB6C1" opacity="0.5">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="40 -1250" dur="14s" repeatCount="indefinite" begin="-8s"/>
+    </use>
+    
+    <use href="#heartSymbol" x="75%" y="90%" width="70" height="70" fill="#FFFFFF" opacity="0.4">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="-20 -1200" dur="20s" repeatCount="indefinite" begin="-3s"/>
+    </use>
+
+    <use href="#heartSymbol" x="85%" y="95%" width="100" height="100" fill="#FF69B4" opacity="0.6">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="10 -1300" dur="13s" repeatCount="indefinite" begin="-10s"/>
+    </use>
+    
+     <use href="#heartSymbol" x="5%" y="105%" width="40" height="40" fill="#FF1493" opacity="0.9">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="80 -1200" dur="17s" repeatCount="indefinite" begin="-6s"/>
+    </use>
+    
+    <use href="#heartSymbol" x="95%" y="102%" width="65" height="65" fill="#FFFFFF" opacity="0.5">
+      <animateTransform attributeName="transform" type="translate" from="0 0" to="-50 -1200" dur="19s" repeatCount="indefinite" begin="-4s"/>
+    </use>
+  </g>
+</svg>

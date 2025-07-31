@@ -1,0 +1,41 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Стиль 2: Circuit Board Blueprint
+    - Имитация технологической схемы.
+    - Использование <pattern> для сетки, тонких линий и текстовых меток.
+    - Высокотехнологичная, детальная эстетика.
+    -->
+    <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e3a8a" stroke-width="0.5"/>
+        </pattern>
+    </defs>
+
+    <rect width="1920" height="1080" fill="#0c1427" />
+    <rect width="1920" height="1080" fill="url(#grid)" />
+
+    <g fill="none" stroke="#60a5fa" stroke-width="1.5">
+        <!-- Основные "процессоры" -->
+        <rect x="860" y="440" width="200" height="200" stroke-width="3" />
+        <rect x="300" y="200" width="150" height="100" />
+        <rect x="1400" y="700" width="250" height="120" />
+
+        <!-- Соединительные линии (трассы) -->
+        <path d="M450 250 H 700 Q 800 250 800 350 V 480 H 860" />
+        <path d="M1060 540 H 1250 V 700 H 1400" />
+        <path d="M960 640 V 800 H 700 L 400 600" />
+        <path d="M1650 760 H 1800 V 200 H 1500 L 1200 450" stroke-dasharray="5 5" />
+        <path d="M375 300 V 500 H 880" stroke-width="1" />
+
+        <!-- Контактные площадки -->
+        <circle cx="450" cy="250" r="4" fill="#60a5fa" />
+        <circle cx="860" cy="480" r="4" fill="#60a5fa" />
+        <circle cx="1060" cy="540" r="4" fill="#60a5fa" />
+        <circle cx="1400" cy="700" r="4" fill="#60a5fa" />
+    </g>
+
+    <!-- Текстовые метки -->
+    <text x="870" y="470" font-family="monospace" font-size="14" fill="#bfdbfe">CPU_01</text>
+    <text x="1410" y="730" font-family="monospace" font-size="14" fill="#bfdbfe">MEM_BANK_A</text>
+    <text x="310" y="230" font-family="monospace" font-size="14" fill="#bfdbfe">IO_CTRL</text>
+</svg>

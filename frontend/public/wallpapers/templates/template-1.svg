@@ -1,0 +1,21 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Стиль 9: Crystalline Shards
+    - Абстрактная структура, похожая на расколотый кристалл или диаграмму Вороного.
+    - Состоит из множества неправильных полигонов.
+    - Яркие обводки создают эффект светящихся трещин.
+    -->
+    <rect width="1920" height="1080" fill="#1d2d44" />
+    <g stroke="#f0f4f8" stroke-width="2.5" fill-opacity="0.3">
+        <polygon fill="#3e5c76" points="960,540 800,400 1100,450" />
+        <polygon fill="#748cab" points="960,540 1100,450 1200,600 1000,700" />
+        <polygon fill="#1d2d44" points="960,540 1000,700 750,750 800,400" />
+        <polygon fill="#3e5c76" points="800,400 750,750 400,600 500,200" />
+        <polygon fill="#748cab" points="1100,450 1200,600 1600,500 1500,300" />
+        <polygon fill="#1d2d44" points="1000,700 750,750 900,1080 1300,900" />
+        <polygon fill="#3e5c76" points="0,0 500,200 400,600 0,300" />
+        <polygon fill="#748cab" points="1920,0 1500,300 1600,500 1920,400" />
+        <polygon fill="#3e5c76" points="0,1080 400,600 750,750 0,800" />
+        <polygon fill="#748cab" points="1920,1080 1300,900 900,1080" />
+    </g>
+</svg>

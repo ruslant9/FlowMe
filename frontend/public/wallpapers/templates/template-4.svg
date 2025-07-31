@@ -1,0 +1,20 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Стиль 6: Warped Grid
+    - Создает эффект искажения пространства с помощью фильтров.
+    - feTurbulence генерирует "карту шума", а feDisplacementMap применяет ее.
+    - Динамичный, киберпанковый вид.
+    -->
+    <defs>
+        <pattern id="lineGrid" width="50" height="50" patternUnits="userSpaceOnUse">
+            <path d="M 0 0 L 0 50 M 0 0 L 50 0" fill="none" stroke="#059669" stroke-width="2"/>
+        </pattern>
+        <filter id="warpFilter">
+            <feTurbulence type="fractalNoise" baseFrequency="0.005" numOctaves="3" result="warp"/>
+            <feDisplacementMap in="SourceGraphic" in2="warp" scale="100" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+    </defs>
+    
+    <rect width="1920" height="1080" fill="#0c0a09"/>
+    <rect width="1920" height="1080" fill="url(#lineGrid)" filter="url(#warpFilter)"/>
+</svg>

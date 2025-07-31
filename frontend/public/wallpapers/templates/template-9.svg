@@ -1,0 +1,30 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Стиль 1: Low-Poly Crystal
+    - Фон из множества треугольников (полигонов).
+    - Градиенты и разная прозрачность создают эффект 3D-поверхности.
+    - Современный и абстрактный вид.
+    -->
+    <defs>
+        <linearGradient id="crystalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a78bfa" />
+            <stop offset="100%" stop-color="#4c1d95" />
+        </linearGradient>
+    </defs>
+
+    <rect width="1920" height="1080" fill="#0c0a09" />
+
+    <g fill-opacity="0.8" stroke="#f5f3ff" stroke-width="0.5" stroke-opacity="0.2">
+        <polygon fill="url(#crystalGradient)" opacity="0.8" points="0,0 480,540 0,1080" />
+        <polygon fill="url(#crystalGradient)" opacity="0.6" points="0,0 960,0 480,540" />
+        <polygon fill="url(#crystalGradient)" opacity="0.7" points="960,0 1440,540 480,540" />
+        <polygon fill="url(#crystalGradient)" opacity="0.9" points="960,0 1920,0 1440,540" />
+        <polygon fill="url(#crystalGradient)" opacity="0.5" points="1920,0 1920,540 1440,540" />
+        <polygon fill="url(#crystalGradient)" opacity="0.8" points="1920,540 1920,1080 1440,540" />
+        <polygon fill="url(#crystalGradient)" opacity="0.7" points="1440,540 960,1080 480,540" />
+        <polygon fill="url(#crystalGradient)" opacity="0.6" points="480,540 960,1080 0,1080" />
+        <polygon fill="#7c3aed" opacity="0.7" points="960,300 1200,600 700,700" />
+        <polygon fill="#c4b5fd" opacity="0.4" points="200,800 500,750 300,1080" />
+        <polygon fill="#8b5cf6" opacity="0.6" points="1500,200 1920,300 1700,600" />
+    </g>
+</svg>

@@ -1,0 +1,130 @@
+// frontend/src/components/AnimatedSphere.scss
+
+// --- Переменные для легкой настройки ---
+$sphere-size: 300px;
+$ring-count: 20; // Должно совпадать с prop 'ringCount' в JSX
+$animation-duration-sphere: 30s;
+$animation-duration-ring: 4s;
+
+// --- Основные стили ---
+
+.scene {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  // perspective создает глубину для 3D-трансформаций
+  perspective: 1200px;
+  background-color: #010409; // Темный фон для контраста
+}
+
+.sphere {
+  position: relative;
+  width: $sphere-size;
+  height: $sphere-size;
+  transform-style: preserve-3d;
+  
+  // Определяем CSS переменные для интерактивного поворота
+  --mouse-x: 0deg;
+  --mouse-y: 0deg;
+
+  // Комбинируем анимацию и интерактивный поворот
+  transform: rotateX(var(--mouse-x)) rotateY(var(--mouse-y));
+  animation: rotate-sphere $animation-duration-sphere linear infinite;
+  
+  // Плавный переход для интерактивного поворота
+  transition: transform 0.2s ease-out;
+
+  // Используем цвет из props
+  --ring-color: var(--base-color);
+  --core-color: var(--base-color);
+  --glow-color: color-mix(in srgb, var(--base-color) 40%, transparent);
+}
+
+.core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20%;
+  height: 20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, var(--core-color));
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 20px 5px var(--core-color), 0 0 50px 15px var(--glow-color);
+  animation: pulse-core 3s ease-in-out infinite alternate;
+}
+
+.sphere-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  // Красивый градиент для эффекта неонового свечения
+  border-image: conic-gradient(
+    from calc(var(--i) * 10deg),
+    var(--ring-color),
+    transparent 30%,
+    transparent 70%,
+    var(--ring-color)
+  ) 1;
+  transform-style: preserve-3d;
+  
+  // Используем цикл SCSS для создания уникальной трансформации и задержки анимации для каждого кольца
+  @for $i from 0 to $ring-count {
+    &:nth-child(#{$i + 1}) {
+      // Распределяем кольца равномерно по сфере, поворачивая их по оси Y
+      // 180deg / $ring-count создает полусферу, что выглядит объемнее
+      $rotation-y: calc($i * (180deg / $ring-count));
+      // Добавляем небольшой случайный поворот по X для хаотичности
+      $rotation-x: calc(random(40) * 1deg - 20deg);
+
+      transform: rotateY($rotation-y) rotateX($rotation-x);
+      
+      // Анимация для каждого кольца с разной задержкой
+      animation:
+        breathe-ring $animation-duration-ring ease-in-out infinite alternate,
+        flicker-ring 5s linear infinite;
+      
+      // Задержка создает волновой эффект
+      animation-delay: calc($i * -0.1s);
+    }
+  }
+}
+
+// --- Анимации ---
+
+@keyframes rotate-sphere {
+  from {
+    transform: rotateX(var(--mouse-x)) rotateY(var(--mouse-y)) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(var(--mouse-x)) rotateY(var(--mouse-y)) rotateZ(360deg);
+  }
+}
+
+@keyframes pulse-core {
+  to {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 0 30px 10px var(--core-color), 0 0 70px 25px var(--glow-color);
+  }
+}
+
+@keyframes breathe-ring {
+  to {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+}
+
+@keyframes flicker-ring {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    opacity: 0.5;
+  }
+}

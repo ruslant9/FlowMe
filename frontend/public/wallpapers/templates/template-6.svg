@@ -1,0 +1,49 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Обои в стиле "Горный Туман"
+    - Используется многослойность и прозрачность для создания глубины.
+    - Градиентный фон имитирует небо на закате.
+    - Минималистичный, спокойный и атмосферный дизайн.
+    -->
+
+    <defs>
+        <!-- Градиент для неба -->
+        <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#0d1b2a" />
+            <stop offset="60%" style="stop-color:#2a4d69" />
+            <stop offset="100%" style="stop-color:#4b8d9c" />
+        </linearGradient>
+
+        <!-- Радиальный градиент для мягкого свечения луны/солнца -->
+        <radialGradient id="sunGlow">
+            <stop offset="20%" stop-color="#fdfcdc" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#fdfcdc" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+
+    <!-- 1. Фон (Небо) -->
+    <rect width="1920" height="1080" fill="url(#skyGradient)" />
+
+    <!-- 2. Солнце/Луна -->
+    <circle cx="1550" cy="250" r="150" fill="url(#sunGlow)" />
+    <circle cx="1550" cy="250" r="50" fill="#fdfcdc" />
+
+    <!-- 3. Слои гор (от дальних к ближним) -->
+    <g fill-rule="evenodd">
+        <!-- Самый дальний слой -->
+        <path d="M-5 800 L300 650 L650 750 L900 600 L1250 720 L1600 620 L1925 800 L1925 1085 L-5 1085 Z" 
+              fill="#1b263b" opacity="0.6"/>
+
+        <!-- Средний-дальний слой -->
+        <path d="M-5 850 L250 780 L550 880 L800 750 L1100 850 L1500 790 L1750 860 L1925 820 L1925 1085 L-5 1085 Z" 
+              fill="#151e2d" opacity="0.7"/>
+              
+        <!-- Средний-ближний слой -->
+        <path d="M-5 920 L350 850 L700 950 L1000 840 L1350 930 L1650 870 L1925 940 L1925 1085 L-5 1085 Z" 
+              fill="#0d141f" opacity="0.8"/>
+              
+        <!-- Самый ближний слой -->
+        <path d="M-5 1080 L150 950 L500 1020 L850 930 L1200 1000 L1600 940 L1925 1010 L1925 1085 L-5 1085 Z" 
+              fill="#06090f" />
+    </g>
+</svg>

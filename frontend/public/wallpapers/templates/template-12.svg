@@ -1,0 +1,96 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Стиль 3: Геометрический паттерн в стиле Арт-деко
+    - Симметрия и строгая геометрия.
+    - Контрастная палитра: черный и "золотой".
+    - Использование повторяющихся элементов (<use>) для создания узора.
+    -->
+    <defs>
+        <!-- Градиент для имитации золота -->
+        <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#fde047" />
+            <stop offset="50%" stop-color="#fbbf24" />
+            <stop offset="100%" stop-color="#f59e0b" />
+        </linearGradient>
+        
+        <!-- Основной мотив паттерна -->
+        <g id="artdeco-unit">
+            <path d="M 0,0 L 100,50 L 0,100 Z M 200,0 L 100,50 L 200,100 Z" fill="url(#goldGradient)" />
+            <path d="M 50,50 L 150,50" stroke="url(#goldGradient)" stroke-width="4" />
+        </g>
+    </defs>
+
+    <!-- Фон -->
+    <rect width="1920" height="1080" fill="#171717" />
+    
+    <!-- Создание паттерна путем повторения элемента -->
+    <g stroke="url(#goldGradient)" stroke-width="2" fill="none">
+      <use href="#artdeco-unit" x="100" y="40"/>
+      <use href="#artdeco-unit" x="300" y="40"/>
+      <use href="#artdeco-unit" x="500" y="40"/>
+      <use href="#artdeco-unit" x="700" y="40"/>
+      <use href="#artdeco-unit" x="900" y="40"/>
+      <use href="#artdeco-unit" x="1100" y="40"/>
+      <use href="#artdeco-unit" x="1300" y="40"/>
+      <use href="#artdeco-unit" x="1500" y="40"/>
+      <use href="#artdeco-unit" x="1700" y="40"/>
+      
+      <g transform="translate(0, 100)">
+        <use href="#artdeco-unit" x="0" y="90"/>
+        <use href="#artdeco-unit" x="200" y="90"/>
+        <use href="#artdeco-unit" x="400" y="90"/>
+        <use href="#artdeco-unit" x="600" y="90"/>
+        <use href="#artdeco-unit" x="800" y="90"/>
+        <use href="#artdeco-unit" x="1000" y="90"/>
+        <use href="#artdeco-unit" x="1200" y="90"/>
+        <use href="#artdeco-unit" x="1400" y="90"/>
+        <use href="#artdeco-unit" x="1600" y="90"/>
+      </g>
+      
+       <!-- Повторяем ряды для заполнения экрана -->
+       <g transform="translate(0, 200)">
+          <use href="#artdeco-unit" x="100" y="40"/>
+          <use href="#artdeco-unit" x="300" y="40"/>
+          <use href="#artdeco-unit" x="500" y="40"/>
+          <use href="#artdeco-unit" x="700" y="40"/>
+          <use href="#artdeco-unit" x="900" y="40"/>
+          <use href="#artdeco-unit" x="1100" y="40"/>
+          <use href="#artdeco-unit" x="1300" y="40"/>
+          <use href="#artdeco-unit" x="1500" y="40"/>
+          <use href="#artdeco-unit" x="1700" y="40"/>
+      </g>
+       <g transform="translate(0, 300)">
+        <use href="#artdeco-unit" x="0" y="90"/>
+        <use href="#artdeco-unit" x="200" y="90"/>
+        <use href="#artdeco-unit" x="400" y="90"/>
+        <use href="#artdeco-unit" x="600" y="90"/>
+        <use href="#artdeco-unit" x="800" y="90"/>
+        <use href="#artdeco-unit" x="1000" y="90"/>
+        <use href="#artdeco-unit" x="1200" y="90"/>
+        <use href="#artdeco-unit" x="1400" y="90"/>
+        <use href="#artdeco-unit" x="1600" y="90"/>
+      </g>
+       <g transform="translate(0, 500)">
+          <use href="#artdeco-unit" x="100" y="40"/>
+          <use href="#artdeco-unit" x="300" y="40"/>
+          <use href="#artdeco-unit" x="500" y="40"/>
+          <use href="#artdeco-unit" x="700" y="40"/>
+          <use href="#artdeco-unit" x="900" y="40"/>
+          <use href="#artdeco-unit" x="1100" y="40"/>
+          <use href="#artdeco-unit" x="1300" y="40"/>
+          <use href="#artdeco-unit" x="1500" y="40"/>
+          <use href="#artdeco-unit" x="1700" y="40"/>
+      </g>
+       <g transform="translate(0, 600)">
+        <use href="#artdeco-unit" x="0" y="90"/>
+        <use href="#artdeco-unit" x="200" y="90"/>
+        <use href="#artdeco-unit" x="400" y="90"/>
+        <use href="#artdeco-unit" x="600" y="90"/>
+        <use href="#artdeco-unit" x="800" y="90"/>
+        <use href="#artdeco-unit" x="1000" y="90"/>
+        <use href="#artdeco-unit" x="1200" y="90"/>
+        <use href="#artdeco-unit" x="1400" y="90"/>
+        <use href="#artdeco-unit" x="1600" y="90"/>
+      </g>
+    </g>
+</svg>

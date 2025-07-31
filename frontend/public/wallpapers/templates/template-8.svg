@@ -1,0 +1,39 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+    Стиль 2: Низкополигональная абстракция (Low Poly)
+    - Состоит из множества треугольников (полигонов).
+    - Яркий градиент, переходящий по всей поверхности.
+    - Создает эффект 3D-сетки.
+    -->
+    <rect width="1920" height="1080" fill="#1a1a2e" />
+    <g stroke-opacity="0.2" stroke="#fff">
+        <!-- Этот стиль генерируется программно, но здесь представлена его имитация -->
+        <!-- Ряд 1 -->
+        <polygon points="0,0 320,0 160,360" fill="#e040fb" />
+        <polygon points="320,0 640,0 480,360" fill="#7c4dff" />
+        <polygon points="640,0 960,0 800,360" fill="#536dfe" />
+        <polygon points="960,0 1280,0 1120,360" fill="#448aff" />
+        <polygon points="1280,0 1600,0 1440,360" fill="#40c4ff" />
+        <polygon points="1600,0 1920,0 1760,360" fill="#18ffff" />
+        <polygon points="0,0 160,360 0,360" fill="#be2edb" />
+        <polygon points="1920,0 1920,360 1760,360" fill="#16eded" />
+
+        <!-- Ряд 2 -->
+        <polygon points="160,360 480,360 320,720" fill="#9c27b0" />
+        <polygon points="480,360 800,360 640,720" fill="#673ab7" />
+        <polygon points="800,360 1120,360 960,720" fill="#3f51b5" />
+        <polygon points="1120,360 1440,360 1280,720" fill="#2196f3" />
+        <polygon points="1440,360 1760,360 1600,720" fill="#03a9f4" />
+        <polygon points="0,360 320,720 0,720" fill="#89239d" />
+        <polygon points="1920,360 1920,720 1600,720" fill="#0296e1" />
+        
+        <!-- Ряд 3 -->
+        <polygon points="0,1080 320,720 640,1080" fill="#7b1fa2" />
+        <polygon points="320,720 640,720 480,1080" fill="#5e35b1" />
+        <polygon points="640,720 960,720 800,1080" fill="#3949ab" />
+        <polygon points="960,720 1280,720 1120,1080" fill="#1e88e5" />
+        <polygon points="1280,720 1600,720 1440,1080" fill="#0288d1" />
+        <polygon points="1600,720 1920,1080 1920,720" fill="#0177c2" />
+        <polygon points="0,720 0,1080 320,1080" fill="#6a1b9a" />
+    </g>
+</svg>
