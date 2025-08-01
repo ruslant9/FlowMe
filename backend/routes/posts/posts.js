@@ -12,17 +12,18 @@ const path = require('path');
 const fs = require('fs');
 const { getPopulatedPost } = require('../../utils/posts');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
-const { createStorage } = require('../../config/cloudinary'); // ИЗМЕНЕНИЕ: Импортируем из конфига
+const { createStorage, cloudinary } = require('../../config/cloudinary');
 
-// --- ИЗМЕНЕНИЕ: Используем Cloudinary Storage ---
-const postStorage = createStorage('posts'); // 'posts' - папка в Cloudinary
+const postStorage = createStorage('posts');
 const uploadPost = multer({ storage: postStorage, limits: { files: 5 } });
 
 
 router.get('/feed', async (req, res) => {
     try {
         const currentUser = await User.findById(req.user.userId).select('friends blacklist subscribedCommunities');
-        const friendIds = currentUser.friends.map(friend => friend._id);
+        // --- ИЗМЕНЕНИЕ: Исправляем получение ID друга ---
+        const friendIds = currentUser.friends.map(friend => friend.user);
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         const subscribedCommunityIds = currentUser.subscribedCommunities;
         const posts = await Post.find({
             status: 'published',
@@ -95,11 +96,9 @@ router.get('/feed', async (req, res) => {
     }
 });
 
-// --- ИЗМЕНЕНИЕ: Обновленный роут для создания поста ---
 router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res) => {
     try {
         const { text, commentsDisabled, communityId, attachedTrackId, poll: pollJson, scheduledFor } = req.body;
-        // multer-storage-cloudinary возвращает полные URL в req.files
         const imageUrls = req.files ? req.files.map(file => file.path) : [];
         
         let pollData = null;
@@ -156,10 +155,9 @@ router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res)
         
         res.status(201).json(await getPopulatedPost(newPost._id, req.user.userId));
     } catch (e) {
-        // Если произошла ошибка, а файлы уже загружены в Cloudinary, их нужно удалить
         if (req.files) {
             req.files.forEach(file => {
-                const publicId = file.filename; // multer-storage-cloudinary сохраняет public_id в filename
+                const publicId = file.filename;
                 cloudinary.uploader.destroy(publicId);
             });
         }
@@ -168,7 +166,6 @@ router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res)
 });
 
 
-// ... (остальные роуты без изменений)
 router.put('/:postId', authMiddleware, uploadPost.array('images', 5), async (req, res) => {
     try {
         let { text, existingImages, scheduledFor } = req.body;

@@ -76,8 +76,7 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
             setCoverFile({ file, preview: URL.createObjectURL(file) });
         }
     };
-    
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем функцию удаления изображения ---
+
     const handleRemoveImage = (type) => {
         if (type === 'avatar' && avatarFile?.preview) {
             URL.revokeObjectURL(avatarFile.preview);
@@ -87,7 +86,6 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
             setCoverFile(null);
         }
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
     const handleEditImage = (type) => {
         setEditingImageFor(type);
@@ -182,7 +180,6 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
-                            // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Убираем overflow-y-auto ---
                             className="ios-glass-final w-full max-w-3xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
                         >
                             <div className="flex justify-between items-center mb-4">
@@ -270,60 +267,59 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                     </div>
                                 </div>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Новая верстка для блоков с изображениями --- */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                     <div>
-                                        <label className="block text-sm font-semibold mb-1">Аватар сообщества</label>
-                                        <div className="flex items-center space-x-2">
+                                        <label className="block text-sm font-semibold mb-2">Аватар сообщества</label>
+                                        <div className="flex items-center space-x-4">
                                             <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0 flex items-center justify-center">
                                                 {avatarFile?.preview ? (<img src={avatarFile.preview} alt="Avatar Preview" className="w-full h-full object-cover" />) : (<ImageIcon size={24} className="text-slate-400" />)}
                                             </div>
-                                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем кнопку удаления --- */}
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex flex-col items-start space-y-2">
                                                 <button type="button" onClick={() => avatarInputRef.current.click()} className="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center">
                                                     <ImageIcon size={16} className="mr-2" /> Загрузить
                                                 </button>
                                                 {avatarFile && (
-                                                    <>
+                                                    <div className="flex items-center space-x-2">
                                                         <button type="button" onClick={() => handleEditImage('avatar')} className="px-3 py-2 text-sm bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">
                                                             Редактировать
                                                         </button>
                                                         <button type="button" onClick={() => handleRemoveImage('avatar')} className="p-2 text-red-500 rounded-lg hover:bg-red-500/10" title="Удалить">
                                                             <Trash2 size={16} />
                                                         </button>
-                                                    </>
+                                                    </div>
                                                 )}
                                             </div>
                                             <input type="file" ref={avatarInputRef} hidden accept="image/jpeg, image/png, image/jpg, image/webp" onChange={(e) => handleFileChange(e, 'avatar')} />
-                                            {/* --- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold mb-1">Обложка сообщества (опционально)</label>
-                                        <div className="flex items-center space-x-2">
+                                        <label className="block text-sm font-semibold mb-2">Обложка сообщества</label>
+                                        <div className="flex items-center space-x-4">
                                             <div className="w-24 h-16 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0 flex items-center justify-center">
                                                 {coverFile?.preview ? (<img src={coverFile.preview} alt="Cover Preview" className="w-full h-full object-cover" />) : (<ImageIcon size={24} className="text-slate-400" />)}
                                             </div>
-                                             {/* --- НАЧАЛО ИЗМЕНЕНИЯ 4: Добавляем кнопку удаления --- */}
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex flex-col items-start space-y-2">
                                                 <button type="button" onClick={() => coverInputRef.current.click()} className="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center">
                                                     <ImageIcon size={16} className="mr-2" /> Загрузить
                                                 </button>
                                                 {coverFile && (
-                                                    <>
+                                                    <div className="flex items-center space-x-2">
                                                         <button type="button" onClick={() => handleEditImage('cover')} className="px-3 py-2 text-sm bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">
                                                             Редактировать
                                                         </button>
                                                         <button type="button" onClick={() => handleRemoveImage('cover')} className="p-2 text-red-500 rounded-lg hover:bg-red-500/10" title="Удалить">
                                                             <Trash2 size={16} />
                                                         </button>
-                                                    </>
+                                                    </div>
                                                 )}
                                             </div>
                                             <input type="file" ref={coverInputRef} hidden accept="image/jpeg, image/png, image/jpg, image/webp" onChange={(e) => handleFileChange(e, 'cover')} />
-                                            {/* --- КОНЕЦ ИЗМЕНЕНИЯ 4 --- */}
                                         </div>
                                     </div>
                                 </div>
+                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
+
 
                                 <div className="flex justify-end mt-6">
                                     <button
