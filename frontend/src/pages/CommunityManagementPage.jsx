@@ -12,6 +12,15 @@ import { Listbox, Transition } from '@headlessui/react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- ИЗМЕНЕНИЕ 1: Добавляем универсальную функцию ---
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
 const topics = [
     { id: 'General', name: 'Общая' }, { id: 'Gaming', name: 'Игры' }, { id: 'Art', name: 'Искусство' }, { id: 'Technology', name: 'Технологии' }, { id: 'Music', name: 'Музыка' }, { id: 'Sports', name: 'Спорт' }, { id: 'Science', name: 'Наука' }, { id: 'Books', name: 'Книги' }, { id: 'Food', name: 'Еда' }, { id: 'Travel', name: 'Путешествия' }, { id: 'Fashion', name: 'Мода' }, { id: 'Photography', name: 'Фотография' }, { id: 'Health', name: 'Здоровье' }, { id: 'Education', name: 'Образование' }, { id: 'Business', name: 'Бизнес' }, { id: 'Finance', name: 'Финансы' }, { id: 'Nature', name: 'Природа' }, { id: 'Pets', name: 'Питомцы' }, { id: 'DIY', name: 'Сделай сам' }, { id: 'Cars', name: 'Автомобили' }, { id: 'Movies', name: 'Фильмы' }, { id: 'TV Shows', name: 'ТВ-шоу' }, { id: 'Anime & Manga', name: 'Аниме и Манга' }, { id: 'Comics', name: 'Комиксы' }, { id: 'History', name: 'История' }, { id: 'Philosophy', name: 'Философия' }, { id: 'Politics', name: 'Политика' }, { id: 'News', name: 'Новости' }, { id: 'Humor', name: 'Юмор' }, { id: 'Fitness', name: 'Фитнес' }, { id: 'Other', name: 'Другое' },
 ];
@@ -119,8 +128,9 @@ const CommunityManagementPage = () => {
             setCommunity(res.data);
             setFormData(communityData);
             setInitialFormData(communityData); 
-            setAvatarFile({ file: null, preview: res.data.avatar ? `${API_URL}/${res.data.avatar}` : '', removed: false });
-            setCoverFile({ file: null, preview: res.data.coverImage ? `${API_URL}/${res.data.coverImage}` : '', removed: false });
+            // --- ИЗМЕНЕНИЕ 2: Используем getImageUrl ---
+            setAvatarFile({ file: null, preview: getImageUrl(res.data.avatar), removed: false });
+            setCoverFile({ file: null, preview: getImageUrl(res.data.coverImage), removed: false });
 
         } catch (error) {
             toast.error("Не удалось загрузить данные сообщества.");
@@ -196,7 +206,6 @@ const CommunityManagementPage = () => {
         });
     };
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Новые функции для управления участниками ---
     const handleRequestAction = async (action, requestingUserId) => {
         setProcessingActionId(requestingUserId);
         try {
@@ -229,7 +238,6 @@ const CommunityManagementPage = () => {
             }
         });
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     if (loading || !formData) {
         return <main className="flex-1 p-8 flex justify-center items-center"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></main>;
@@ -299,13 +307,17 @@ const CommunityManagementPage = () => {
                     </div>
                 </form>
 
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Блоки для управления участниками --- */}
                 {community?.pendingJoinRequests?.length > 0 && (
-                    <><hr className="border-slate-200 dark:border-white/10 my-8" /><div className="space-y-4"><h3 className="text-xl font-bold text-slate-800 dark:text-white">Заявки на вступление ({community.pendingJoinRequests.length})</h3><div className="space-y-2">{community.pendingJoinRequests.map(user => (<div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><Link to={`/profile/${user._id}`} className="flex items-center space-x-3 group"><Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} /><div><p className="font-semibold group-hover:underline">{user.fullName || user.username}</p></div></Link><div className="flex items-center space-x-2"><button onClick={() => handleRequestAction('approve', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}</button><button onClick={() => handleRequestAction('deny', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}</button></div></div>))}</div></div></>
+                    <><hr className="border-slate-200 dark:border-white/10 my-8" /><div className="space-y-4"><h3 className="text-xl font-bold text-slate-800 dark:text-white">Заявки на вступление ({community.pendingJoinRequests.length})</h3><div className="space-y-2">{community.pendingJoinRequests.map(user => (<div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><Link to={`/profile/${user._id}`} className="flex items-center space-x-3 group">
+                        {/* --- ИЗМЕНЕНИЕ 3 --- */}
+                        <Avatar username={user.username} fullName={user.fullName} avatarUrl={getImageUrl(user.avatar)} />
+                        <div><p className="font-semibold group-hover:underline">{user.fullName || user.username}</p></div></Link><div className="flex items-center space-x-2"><button onClick={() => handleRequestAction('approve', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}</button><button onClick={() => handleRequestAction('deny', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}</button></div></div>))}</div></div></>
                 )}
 
                 {community?.members?.length > 0 && (
-                    <><hr className="border-slate-200 dark:border-white/10 my-8" /><div className="space-y-4"><h3 className="text-xl font-bold text-slate-800 dark:text-white">Участники ({community.members.length})</h3><div className="space-y-2">{community.members.map(member => (<div key={member._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><Link to={`/profile/${member._id}`} className="flex items-center space-x-3 group"><Avatar username={member.username} fullName={member.fullName} avatarUrl={member.avatar ? `${API_URL}/${member.avatar}` : ''} />
+                    <><hr className="border-slate-200 dark:border-white/10 my-8" /><div className="space-y-4"><h3 className="text-xl font-bold text-slate-800 dark:text-white">Участники ({community.members.length})</h3><div className="space-y-2">{community.members.map(member => (<div key={member._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><Link to={`/profile/${member._id}`} className="flex items-center space-x-3 group">
+                        {/* --- ИЗМЕНЕНИЕ 4 --- */}
+                        <Avatar username={member.username} fullName={member.fullName} avatarUrl={getImageUrl(member.avatar)} />
                     <div>
                         <div className="flex items-baseline">
                             <p className="font-semibold group-hover:underline">{member.fullName || member.username}</p>
@@ -316,9 +328,11 @@ const CommunityManagementPage = () => {
                 )}
 
                 {community?.bannedUsers?.length > 0 && (
-                    <><hr className="border-slate-200 dark:border-white/10 my-8" /><div className="space-y-4"><h3 className="text-xl font-bold text-slate-800 dark:text-white">Заблокированные пользователи ({community.bannedUsers.length})</h3><div className="space-y-2">{community.bannedUsers.map(user => (<div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><div className="flex items-center space-x-3"><Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} /><div><p className="font-semibold">{user.fullName || user.username}</p></div></div><div className="flex items-center space-x-2">{processingActionId === user._id ? <Loader2 className="animate-spin" /> : <button onClick={() => handleMemberAction('unban', user)} title="Разбанить" className="p-2 rounded-full text-slate-500 hover:bg-green-100 hover:text-green-600"><UserCheck size={16} /></button>}</div></div>))}</div></div></>
+                    <><hr className="border-slate-200 dark:border-white/10 my-8" /><div className="space-y-4"><h3 className="text-xl font-bold text-slate-800 dark:text-white">Заблокированные пользователи ({community.bannedUsers.length})</h3><div className="space-y-2">{community.bannedUsers.map(user => (<div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg"><div className="flex items-center space-x-3">
+                        {/* --- ИЗМЕНЕНИЕ 5 --- */}
+                        <Avatar username={user.username} fullName={user.fullName} avatarUrl={getImageUrl(user.avatar)} />
+                        <div><p className="font-semibold">{user.fullName || user.username}</p></div></div><div className="flex items-center space-x-2">{processingActionId === user._id ? <Loader2 className="animate-spin" /> : <button onClick={() => handleMemberAction('unban', user)} title="Разбанить" className="p-2 rounded-full text-slate-500 hover:bg-green-100 hover:text-green-600"><UserCheck size={16} /></button>}</div></div>))}</div></div></>
                 )}
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 
                 <hr className="border-slate-200 dark:border-white/10 my-8" />
                 <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg">

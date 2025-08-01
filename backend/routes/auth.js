@@ -31,7 +31,7 @@ const setAuthCookie = (res, token) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-        sameSite: 'none', // было 'strict'
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         maxAge: 24 * 60 * 60 * 1000 // 24 часа
     });
