@@ -38,8 +38,19 @@ const server = http.createServer(app);
 
 app.set('trust proxy', 1);
 
+const allowedOrigins = [process.env.CLIENT_URL, process.env.CORS_ORIGIN].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.CLIENT_URL, // Убедитесь, что CLIENT_URL в .env это ваш Vercel URL
+    origin: function (origin, callback) {
+        // Разрешаем запросы без origin (например, от мобильных приложений или Postman)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     credentials: true 
 }));
 
