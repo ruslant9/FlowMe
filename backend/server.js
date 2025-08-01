@@ -27,7 +27,7 @@ const userRoutes = require('./routes/user');
 const postsRouter = require('./routes/posts-router');
 const messagesRouter = require('./routes/messages-router');
 const communityRoutes = require('./routes/communities');
-const youtubeRoutes = require('./routes/youtube');
+const youtubeRoutes = require('./routes/spotify');
 const premiumRoutes = require('./routes/premium'); 
 const musicRoutes = require('./routes/music');
 const wallpaperRoutes = require('./routes/wallpapers');
@@ -195,12 +195,11 @@ app.use('/api/user', userRoutes);
 app.use('/api/posts', postsRouter); 
 app.use('/api/messages', messagesRouter);
 app.use('/api/communities', communityRoutes);
-app.use('/api/youtube', youtubeRoutes.router);
+app.use('/api/spotify', youtubeRoutes.router);
 app.use('/api/music', musicRoutes);
 app.use('/api/wallpapers', wallpaperRoutes);
 app.use('/api/premium', premiumRoutes(wss, clients));
 app.use('/api/playlists', playlistRoutes);
-app.use('/api/music', musicRouter);
 
 const PORT = process.env.PORT || 5000;
 
