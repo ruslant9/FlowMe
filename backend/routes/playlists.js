@@ -5,8 +5,9 @@ const authMiddleware = require('../middleware/auth.middleware');
 const Playlist = require('../models/Playlist');
 const Track = require('../models/Track');
 const User = require('../models/User');
+// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
+const { sanitize } = require('../utils/sanitize');
 
-// Получить все плейлисты пользователя
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const playlists = await Playlist.find({ user: req.user.userId })
@@ -18,16 +19,19 @@ router.get('/', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при загрузке плейлистов.' });
     }
 });
-// Создать новый плейлист
+
 router.post('/', authMiddleware, async (req, res) => {
     try {
         const { name, description, visibility } = req.body;
-        if (!name) {
+        // --- ИЗМЕНЕНИЕ: Очищаем поля ---
+        const sanitizedName = sanitize(name);
+        const sanitizedDescription = sanitize(description);
+        if (!sanitizedName) {
             return res.status(400).json({ message: 'Название плейлиста обязательно.' });
         }
         const newPlaylist = new Playlist({
-            name,
-            description,
+            name: sanitizedName,
+            description: sanitizedDescription,
             visibility: ['public', 'unlisted', 'private'].includes(visibility) ? visibility : 'public',
             user: req.user.userId,
             tracks: [],
@@ -39,8 +43,7 @@ router.post('/', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при создании плейлиста.' });
     }
 });
-
-// Получить конкретный плейлист с его треками
+// ... (GET /:playlistId и POST /:playlistId/play без изменений)
 router.get('/:playlistId', authMiddleware, async (req, res) => {
     try {
         const playlist = await Playlist.findById(req.params.playlistId)
@@ -62,7 +65,6 @@ router.get('/:playlistId', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НОВЫЙ РОУТ: Увеличить счетчик прослушиваний ---
 router.post('/:playlistId/play', authMiddleware, async (req, res) => {
     try {
         await Playlist.updateOne({ _id: req.params.playlistId }, { $inc: { playCount: 1 } });
@@ -73,11 +75,13 @@ router.post('/:playlistId/play', authMiddleware, async (req, res) => {
     }
 });
 
-// Обновить информацию о плейлисте
 router.put('/:playlistId', authMiddleware, async (req, res) => {
     try {
         const { name, description, visibility } = req.body;
-        if (!name) {
+        // --- ИЗМЕНЕНИЕ: Очищаем поля ---
+        const sanitizedName = sanitize(name);
+        const sanitizedDescription = sanitize(description);
+        if (!sanitizedName) {
             return res.status(400).json({ message: 'Название плейлиста обязательно.' });
         }
 
@@ -90,8 +94,8 @@ router.put('/:playlistId', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Плейлист не найден или у вас нет прав на его редактирование.' });
         }
 
-        playlist.name = name;
-        playlist.description = description;
+        playlist.name = sanitizedName;
+        playlist.description = sanitizedDescription;
         playlist.visibility = visibility;
         
         await playlist.save();
@@ -101,8 +105,7 @@ router.put('/:playlistId', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при обновлении плейлиста.' });
     }
 });
-
-// Удалить плейлист
+// ... (остальные роуты без изменений)
 router.delete('/:playlistId', authMiddleware, async (req, res) => {
     try {
         const playlist = await Playlist.findOneAndDelete({
@@ -118,7 +121,6 @@ router.delete('/:playlistId', authMiddleware, async (req, res) => {
     }
 });
 
-// Добавить треки в плейлист
 router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
     try {
         const { trackIds } = req.body;
@@ -142,7 +144,6 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
     }
 });
 
-// Удалить трек из плейлиста
 router.delete('/:playlistId/tracks/:trackId', authMiddleware, async (req, res) => {
     try {
         const { playlistId, trackId } = req.params;
@@ -167,7 +168,6 @@ router.delete('/:playlistId/tracks/:trackId', authMiddleware, async (req, res) =
     }
 });
 
-// Получить публичные и "не в поиске" плейлисты другого пользователя
 router.get('/user/:userId', authMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;

@@ -8,14 +8,13 @@ const TrackList = ({
     onToggleSave, myMusicTrackIds, progress, duration, onSeek, 
     loadingTrackId, buffered, onPlayPauseToggle, 
     showDeleteButtons = false, onDeleteFromHistory,
-    showRemoveButtons = false, onRemoveFromPlaylist
+    showRemoveButtons = false, onRemoveFromPlaylist,
+    useSpotifyIdForSaving = false
 }) => {
     return (
-        <div className="space-y-1"> {/* Уменьшаем отступ для плотности */}
+        <div className="space-y-1">
             {tracks.map((track, index) => (
-                // Используем React.Fragment, чтобы добавить разделитель
-                <React.Fragment key={track.youtubeId}>
-                    {/* --- ИЗМЕНЕНИЕ: Добавляем разделитель перед каждым элементом, кроме первого --- */}
+                <React.Fragment key={track.spotifyId || track.youtubeId}>
                     {index > 0 && (
                         <hr className="border-slate-200/50 dark:border-slate-700/50 my-1" />
                     )}
@@ -25,7 +24,7 @@ const TrackList = ({
                         isCurrent={track.youtubeId === currentPlayingTrackId}
                         isPlaying={isPlaying}
                         onToggleSave={onToggleSave}
-                        isSaved={myMusicTrackIds.has(track.youtubeId)}
+                        isSaved={myMusicTrackIds.has(useSpotifyIdForSaving ? track.spotifyId : track.youtubeId)}
                         progress={progress}
                         duration={duration}
                         onSeek={onSeek}

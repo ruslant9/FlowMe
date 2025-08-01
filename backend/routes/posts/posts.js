@@ -13,6 +13,9 @@ const fs = require('fs');
 const { getPopulatedPost } = require('../../utils/posts');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
 const { createStorage, cloudinary } = require('../../config/cloudinary');
+// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
+const { sanitize } = require('../../utils/sanitize');
+
 
 const postStorage = createStorage('posts');
 const uploadPost = multer({ storage: postStorage, limits: { files: 5 } });
@@ -21,9 +24,7 @@ const uploadPost = multer({ storage: postStorage, limits: { files: 5 } });
 router.get('/feed', async (req, res) => {
     try {
         const currentUser = await User.findById(req.user.userId).select('friends blacklist subscribedCommunities');
-        // --- ИЗМЕНЕНИЕ: Исправляем получение ID друга ---
         const friendIds = currentUser.friends.map(friend => friend.user);
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         const subscribedCommunityIds = currentUser.subscribedCommunities;
         const posts = await Post.find({
             status: 'published',
@@ -99,12 +100,20 @@ router.get('/feed', async (req, res) => {
 router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res) => {
     try {
         const { text, commentsDisabled, communityId, attachedTrackId, poll: pollJson, scheduledFor } = req.body;
+        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
+        const sanitizedText = sanitize(text);
         const imageUrls = req.files ? req.files.map(file => file.path) : [];
         
         let pollData = null;
         if (pollJson) {
             try {
-                pollData = JSON.parse(pollJson);
+                const parsedPoll = JSON.parse(pollJson);
+                // --- ИЗМЕНЕНИЕ: Очищаем вопрос и варианты ответа в опросе ---
+                pollData = {
+                    ...parsedPoll,
+                    question: sanitize(parsedPoll.question),
+                    options: parsedPoll.options.map(opt => ({ ...opt, text: sanitize(opt.text) }))
+                };
                 if (!pollData.question || !Array.isArray(pollData.options) || pollData.options.length < 2) {
                     throw new Error('Некорректные данные для опроса.');
                 }
@@ -113,7 +122,7 @@ router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res)
             }
         }
 
-        if (!text && imageUrls.length === 0 && !attachedTrackId && !pollData) {
+        if (!sanitizedText && imageUrls.length === 0 && !attachedTrackId && !pollData) {
             return res.status(400).json({ message: 'Пост не может быть пустым' });
         }
 
@@ -131,12 +140,12 @@ router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res)
 
         const newPost = new Post({
             user: req.user.userId,
-            text,
+            text: sanitizedText, // --- ИЗМЕНЕНИЕ: Сохраняем очищенный текст ---
             imageUrls,
             commentsDisabled: commentsDisabled === 'true',
             community: communityId || null,
             attachedTrack: attachedTrackId || null,
-            poll: pollData,
+            poll: pollData, // --- ИЗМЕНЕНИЕ: Сохраняем очищенные данные опроса ---
             status: postStatus,
             scheduledFor: scheduledFor || null
         });
@@ -165,10 +174,11 @@ router.post('/', authMiddleware, uploadPost.array('images', 5), async (req, res)
     }
 });
 
-
 router.put('/:postId', authMiddleware, uploadPost.array('images', 5), async (req, res) => {
     try {
         let { text, existingImages, scheduledFor } = req.body;
+        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
+        const sanitizedText = sanitize(text);
         const post = await Post.findById(req.params.postId);
         if (!post) return res.status(404).json({ message: 'Пост не найден' });
         if (post.user.toString() !== req.user.userId) return res.status(403).json({ message: 'Нет прав на редактирование' });       
@@ -179,7 +189,7 @@ router.put('/:postId', authMiddleware, uploadPost.array('images', 5), async (req
             if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         });  
         const newImageUrls = req.files ? req.files.map(file => `uploads/posts/${file.filename}`) : [];   
-        post.text = text;
+        post.text = sanitizedText; // --- ИЗМЕНЕНИЕ: Сохраняем очищенный текст ---
         post.imageUrls = [...finalExistingImages, ...newImageUrls];
 
         if (scheduledFor !== undefined) {
@@ -206,8 +216,8 @@ router.put('/:postId', authMiddleware, uploadPost.array('images', 5), async (req
         res.status(500).json({ message: 'Ошибка обновления поста' });
     }
 });
-
-router.get('/user/scheduled', authMiddleware, async (req, res) => {
+// ... (остальные роуты без изменений)
+router.get('/user/scheduled', async (req, res) => {
     try {
         const userId = req.user.userId;
         const posts = await Post.find({ user: userId, status: 'scheduled' })

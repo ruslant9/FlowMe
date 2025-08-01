@@ -8,6 +8,7 @@ const User = require('../../models/User');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const { getPopulatedConversation } = require('../../utils/getPopulatedConversation');
+const { sanitize } = require('../../utils/sanitize');
 
 const broadcastToUsers = (req, userIds, message) => {
     userIds.forEach(userId => {
@@ -22,11 +23,13 @@ const broadcastToUsers = (req, userIds, message) => {
 const createAndBroadcastSystemMessage = async (req, conversation, text) => {
     const systemMessageUuid = crypto.randomUUID();
     
+    const sanitizedText = sanitize(text);
+
     const systemMessageDocs = conversation.participants.map(participantId => ({
         conversation: conversation._id,
         owner: participantId,
         uuid: systemMessageUuid,
-        text: text,
+        text: sanitizedText,
         type: 'system',
         readBy: [], 
     }));
@@ -41,7 +44,7 @@ const createAndBroadcastSystemMessage = async (req, conversation, text) => {
         _id: newSystemMessage._id,
         uuid: systemMessageUuid,
         conversation: conversation._id,
-        text: text,
+        text: sanitizedText,
         type: 'system',
         createdAt: newSystemMessage.createdAt,
         conversationParticipants: conversation.participants 
@@ -52,6 +55,8 @@ const createAndBroadcastSystemMessage = async (req, conversation, text) => {
         payload: payloadForBroadcast
     });
 };
+
+// ... (роуты /pin, /mute, /archive без изменений)
 
 router.post('/:conversationId/pin/:messageId', authMiddleware, async (req, res) => {
     try {
@@ -150,7 +155,6 @@ router.post('/:conversationId/archive', authMiddleware, async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера" });
     }
 });
-
 router.post('/:conversationId/wallpaper', authMiddleware, async (req, res) => {
     try {
         const { conversationId } = req.params;
@@ -180,9 +184,13 @@ router.post('/:conversationId/wallpaper', authMiddleware, async (req, res) => {
 
         if (shouldSendSystemMessage) {
             const systemMessageUuid = crypto.randomUUID();
-            const systemMessageText = name 
-                ? `${user.fullName || user.username} установил(а) обои «${name}».`
+            // --- ИЗМЕНЕНИЕ: Очищаем имя обоев перед вставкой в системное сообщение ---
+            const sanitizedName = sanitize(name);
+            const systemMessageText = sanitizedName 
+                ? `${user.fullName || user.username} установил(а) обои «${sanitizedName}».`
                 : `${user.fullName || user.username} изменил(а) обои в этом чате.`;
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
             const systemMessageDocs = conversation.participants.map(participantId => ({
                 conversation: conversation._id,
                 owner: participantId,
@@ -248,7 +256,6 @@ router.delete('/:conversationId/wallpaper', authMiddleware, async (req, res) => 
     }
 });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем логику проверки лимита ---
 router.post('/:conversationId/pin', authMiddleware, async (req, res) => {
     try {
         const { conversationId } = req.params;
@@ -263,7 +270,6 @@ router.post('/:conversationId/pin', authMiddleware, async (req, res) => {
         const isPinned = conversation.pinnedBy.includes(userId);
 
         if (!isPinned) {
-            // Пользователь пытается закрепить новый чат, проверяем лимит
             const pinLimit = user.premium?.isActive ? 8 : 4;
             const currentPinnedCount = await Conversation.countDocuments({ pinnedBy: userId });
 
@@ -275,7 +281,6 @@ router.post('/:conversationId/pin', authMiddleware, async (req, res) => {
             }
         }
         
-        // Логика закрепления/открепления
         if (isPinned) {
             await Conversation.updateOne({ _id: conversationId }, { $pull: { pinnedBy: userId } });
         } else {
@@ -294,6 +299,6 @@ router.post('/:conversationId/pin', authMiddleware, async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера при закреплении чата" });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 
 module.exports = router;

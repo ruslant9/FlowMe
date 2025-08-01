@@ -11,11 +11,13 @@ const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 const multer = require('multer');
 const { createStorage, cloudinary } = require('../config/cloudinary');
+// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
+const { sanitize } = require('../utils/sanitize');
+
 
 const communityImageStorage = createStorage('communities');
 const uploadCommunityImages = multer({ storage: communityImageStorage });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем вспомогательную функцию ---
 const getPublicIdFromUrl = (url) => {
     if (!url || !url.includes('cloudinary.com')) return null;
     const parts = url.split('/');
@@ -25,7 +27,6 @@ const getPublicIdFromUrl = (url) => {
     const publicId = publicIdWithFormat.substring(0, publicIdWithFormat.lastIndexOf('.'));
     return publicId;
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
 const canManageCommunity = async (req, res, next) => {
     try {
@@ -46,17 +47,20 @@ const canManageCommunity = async (req, res, next) => {
 router.post('/', authMiddleware, uploadCommunityImages.fields([{ name: 'avatar', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), async (req, res) => {
     try {
         const { name, description, topic, visibility, joinPolicy } = req.body;
-        if (!name) {
+        // --- ИЗМЕНЕНИЕ: Очищаем текстовые поля ---
+        const sanitizedName = sanitize(name);
+        const sanitizedDescription = sanitize(description);
+        if (!sanitizedName) {
             return res.status(400).json({ message: 'Название сообщества обязательно.' });
         }
-        const existingCommunity = await Community.findOne({ name });
+        const existingCommunity = await Community.findOne({ name: sanitizedName });
         if (existingCommunity) {
             return res.status(400).json({ message: 'Сообщество с таким названием уже существует.' });
         }
 
         const newCommunity = new Community({
-            name,
-            description: description || '',
+            name: sanitizedName,
+            description: sanitizedDescription || '',
             owner: req.user.userId,
             topic: topic || 'General',
             visibility: visibility || 'public',
@@ -86,16 +90,20 @@ router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityI
     try {
         const { name, description, topic, visibility, joinPolicy, postingPolicy, adminVisibility, memberListVisibility, removeAvatar, removeCoverImage } = req.body;
         const community = req.community;
+        
+        // --- ИЗМЕНЕНИЕ: Очищаем текстовые поля ---
+        const sanitizedName = sanitize(name);
+        const sanitizedDescription = sanitize(description);
 
-        if (name && name !== community.name) {
-            const existing = await Community.findOne({ name });
+        if (sanitizedName && sanitizedName !== community.name) {
+            const existing = await Community.findOne({ name: sanitizedName });
             if (existing) {
                 return res.status(400).json({ message: 'Сообщество с таким названием уже существует.' });
             }
-            community.name = name;
+            community.name = sanitizedName;
         }
 
-        community.description = description || '';
+        community.description = sanitizedDescription || '';
         community.topic = topic;
         community.visibility = visibility;
         community.joinPolicy = joinPolicy;
@@ -143,7 +151,7 @@ router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityI
     }
 });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ 2: Исправляем логику удаления файлов ---
+// ... (остальные роуты без изменений)
 router.delete('/:communityId', authMiddleware, canManageCommunity, async (req, res) => {
     try {
         const community = req.community;
@@ -196,10 +204,6 @@ router.delete('/:communityId', authMiddleware, canManageCommunity, async (req, r
         res.status(500).json({ message: 'Ошибка сервера при удалении сообщества.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
-
-// ... (остальные маршруты без изменений) ...
-
 router.get('/my', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.userId)
@@ -585,7 +589,6 @@ router.get('/:communityId/posts', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ 3: Удаляем дублирующиеся маршруты ---
 router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (req, res) => {
     try {
         const { targetUserId } = req.body;
@@ -717,6 +720,5 @@ router.post('/invites/decline', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка на сервере.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
 
 module.exports = router;

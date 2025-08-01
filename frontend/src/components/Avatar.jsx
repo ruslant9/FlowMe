@@ -2,6 +2,13 @@
 
 import { UserX } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
+const getImageUrl = (url) => {
+    if (!url || url.startsWith('http') || url.startsWith('blob:')) return url || '';
+    return `${API_URL}/${url}`;
+};
+
 const avatarColors = [
     '#F59E0B', // Оранжевый
     '#F472B6', // Розовый
@@ -52,13 +59,12 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
             style={borderStyle}
             onClick={onClick}
         >
-            {/* --- ИЗМЕНЕНИЕ: Теперь мы просто используем avatarUrl напрямую --- */}
             {avatarUrl ? (
                 <div
                     className={`${sizeClasses[size]} rounded-full flex-shrink-0 overflow-hidden bg-slate-200 dark:bg-slate-700 ${onClick ? 'cursor-pointer' : ''}`}
                 >
                     <img
-                        src={avatarUrl}
+                        src={getImageUrl(avatarUrl)}
                         alt={username}
                         className="w-full h-full object-cover"
                     />

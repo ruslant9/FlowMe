@@ -3,8 +3,10 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
 const Wallpaper = require('../models/Wallpaper');
+// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
+const { sanitize } = require('../utils/sanitize');
 
-// Получить все сохраненные пользователем обои
+
 router.get('/my', authMiddleware, async (req, res) => {
     try {
         const wallpapers = await Wallpaper.find({ user: req.user.userId }).sort({ createdAt: -1 });
@@ -14,16 +16,17 @@ router.get('/my', authMiddleware, async (req, res) => {
     }
 });
 
-// Создать новые обои
 router.post('/', authMiddleware, async (req, res) => {
     try {
         const { name, type, value } = req.body;
-        if (!name || !type || !value) {
+        // --- ИЗМЕНЕНИЕ: Очищаем имя ---
+        const sanitizedName = sanitize(name);
+        if (!sanitizedName || !type || !value) {
             return res.status(400).json({ message: "Не все поля заполнены" });
         }
         const newWallpaper = new Wallpaper({
             user: req.user.userId,
-            name,
+            name: sanitizedName,
             type,
             value
         });
@@ -34,7 +37,6 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
-// Удалить обои
 router.delete('/:wallpaperId', authMiddleware, async (req, res) => {
     try {
         const wallpaper = await Wallpaper.findOne({ _id: req.params.wallpaperId, user: req.user.userId });
@@ -51,12 +53,14 @@ router.delete('/:wallpaperId', authMiddleware, async (req, res) => {
 router.put('/:wallpaperId', authMiddleware, async (req, res) => {
     try {
         const { name, type, value } = req.body;
-        if (!name || !type || !value) {
+        // --- ИЗМЕНЕНИЕ: Очищаем имя ---
+        const sanitizedName = sanitize(name);
+        if (!sanitizedName || !type || !value) {
             return res.status(400).json({ message: "Не все поля заполнены" });
         }
         const updatedWallpaper = await Wallpaper.findOneAndUpdate(
             { _id: req.params.wallpaperId, user: req.user.userId },
-            { $set: { name, type, value } },
+            { $set: { name: sanitizedName, type, value } },
             { new: true }
         );
         if (!updatedWallpaper) return res.status(404).json({ message: "Обои не найдены или у вас нет прав." });

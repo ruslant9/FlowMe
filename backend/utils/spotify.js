@@ -76,11 +76,11 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
 
     if (daily) {
         // Логика для "Новинок и хитов"
-        const playlistsResponse = await axios.get('https://api.spotify.com/v1/browse/featured-playlists', {
-            params: { country: 'RU', limit: 1 },
+         const playlistsResponse = await axios.get('https://api.spotify.com/v1/browse/categories/toplists/playlists', {
+            params: { country: 'RU', limit: 5 },
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const playlistId = playlistsResponse.data.playlists.items[0].id;
+        const playlistId = playlistsResponse.data.playlists.items[Math.floor(Math.random() * playlistsResponse.data.playlists.items.length)].id;
         const tracksResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
             params: { limit: 50 },
             headers: { 'Authorization': `Bearer ${token}` }

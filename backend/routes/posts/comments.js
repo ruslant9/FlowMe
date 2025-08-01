@@ -8,6 +8,8 @@ const Notification = require('../../models/Notification');
 const Community = require('../../models/Community');
 const mongoose = require('mongoose');
 const { getPopulatedPost } = require('../../utils/posts');
+// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
+const { sanitize } = require('../../utils/sanitize');
 
 async function getAllChildCommentIds(commentIds) {
     let allIds = [...commentIds];
@@ -25,6 +27,12 @@ async function getAllChildCommentIds(commentIds) {
 router.post('/:postId/comments', authMiddleware, async (req, res) => {
     try {
         let { text, parentId, commentAs } = req.body;
+        // --- ИЗМЕНЕНИЕ: Очищаем текст комментария ---
+        const sanitizedText = sanitize(text);
+        if (!sanitizedText) {
+            return res.status(400).json({ message: 'Текст комментария не может быть пустым.' });
+        }
+
         const post = await Post.findById(req.params.postId).populate('community', 'members bannedUsers postingPolicy owner visibility joinPolicy name');
         if (!post) return res.status(404).json({ message: 'Пост не найден' });
         if (post.commentsDisabled) return res.status(403).json({ message: 'Комментарии к этому посту отключены' });
@@ -62,7 +70,8 @@ router.post('/:postId/comments', authMiddleware, async (req, res) => {
             authorModel = 'Community';
         }
         
-        const newComment = new Comment({ text, post: req.params.postId, parent: finalParentId, author: authorId, authorModel });
+        // --- ИЗМЕНЕНИЕ: Используем очищенный текст ---
+        const newComment = new Comment({ text: sanitizedText, post: req.params.postId, parent: finalParentId, author: authorId, authorModel });
         await newComment.save();
         
         if (finalParentId) await Comment.findByIdAndUpdate(finalParentId, { $push: { children: newComment._id } });
@@ -132,6 +141,7 @@ router.post('/:postId/comments', authMiddleware, async (req, res) => {
     }
 });
 
+// ... (GET /:postId/comments и POST /:postId/comments/:commentId/like без изменений)
 router.get('/:postId/comments', authMiddleware, async (req, res) => {
     try {
         const { postId } = req.params;
@@ -248,7 +258,6 @@ router.post('/:postId/comments/:commentId/like', authMiddleware, async (req, res
         res.status(500).json({ message: 'Ошибка сервера при изменении лайка комментария' });
     }
 });
-
 router.delete('/:postId/comments', authMiddleware, async (req, res) => {
     try {
         const { commentIds } = req.body;
@@ -280,7 +289,6 @@ router.delete('/:postId/comments/:commentId', authMiddleware, async (req, res) =
         const post = await Post.findById(req.params.postId);
         if (!post) return res.status(404).json({ message: 'Пост не найден' });
 
-        // --- ИЗМЕНЕНИЕ: Добавлена проверка прав доступа ---
         const isCommentOwner = comment.author.toString() === req.user.userId;
         const isPostOwner = post.user.toString() === req.user.userId;
         
@@ -295,7 +303,6 @@ router.delete('/:postId/comments/:commentId', authMiddleware, async (req, res) =
         if (!isCommentOwner && !isPostOwner && !isCommunityOwner) {
             return res.status(403).json({ message: 'У вас нет прав на удаление этого комментария.' });
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         if (post) {
             post.comments.pull(req.params.commentId);
@@ -303,7 +310,6 @@ router.delete('/:postId/comments/:commentId', authMiddleware, async (req, res) =
         }
         if(comment.parent) await Comment.findByIdAndUpdate(comment.parent, { $pull: { children: comment._id } });
         
-        // Рекурсивное удаление дочерних комментариев
         const childIds = await getAllChildCommentIds([comment._id]);
         await Comment.deleteMany({ _id: { $in: childIds }});
 
@@ -318,10 +324,12 @@ router.delete('/:postId/comments/:commentId', authMiddleware, async (req, res) =
 router.put('/:postId/comments/:commentId', authMiddleware, async (req, res) => {
     try {
         const { text } = req.body;
+        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
+        const sanitizedText = sanitize(text);
         const { commentId } = req.params;
         const userId = req.user.userId;
 
-        if (!text || text.trim() === '') {
+        if (!sanitizedText || sanitizedText.trim() === '') {
             return res.status(400).json({ message: 'Текст комментария не может быть пустым.' });
         }
 
@@ -330,12 +338,12 @@ router.put('/:postId/comments/:commentId', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Комментарий не найден.' });
         }
 
-        // Проверка прав: редактировать может только автор
         if (comment.author.toString() !== userId) {
             return res.status(403).json({ message: 'У вас нет прав на редактирование этого комментария.' });
         }
 
-        comment.text = text;
+        // --- ИЗМЕНЕНИЕ: Сохраняем очищенный текст ---
+        comment.text = sanitizedText;
         await comment.save();
 
         const populatedPost = await getPopulatedPost(req.params.postId, req.user.userId);

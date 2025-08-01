@@ -11,7 +11,7 @@ const { isAllowedByPrivacy } = require('../utils/privacy');
 const UserMusicProfile = require('../models/UserMusicProfile');
 const Playlist = require('../models/Playlist');
 // --- ИЗМЕНЕНИЕ: Импортируем новую функцию из spotify.js (который заменяет youtube.js) ---
-const { searchSpotifyAndFindYouTube } = require('./spotify'); 
+const { searchSpotifyAndFindYouTube } = require('../utils/spotify'); 
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const broadcastToUsers = (req, userIds, message) => {

@@ -13,9 +13,10 @@ const authMiddleware = require('../../middleware/auth.middleware');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { createStorage, cloudinary } = require('../../config/cloudinary'); // ИЗМЕНЕНИЕ: Импортируем из конфига
+const { createStorage, cloudinary } = require('../../config/cloudinary');
+// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
+const { sanitize } = require('../../utils/sanitize');
 
-// --- ИЗМЕНЕНИЕ: Используем Cloudinary Storage ---
 const avatarStorage = createStorage('avatars');
 const uploadAvatar = multer({ storage: avatarStorage });
 
@@ -58,6 +59,11 @@ router.put('/profile', authMiddleware, async (req, res) => {
         const { fullName, username, dob, gender, interests, country, city, status, premiumCustomization } = req.body;
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
+        
+        // --- ИЗМЕНЕНИЕ: Очищаем текстовые поля ---
+        const sanitizedFullName = sanitize(fullName);
+        const sanitizedStatus = sanitize(status);
+
         if (username && username !== user.username) {
             const existingUser = await User.findOne({ username });
             if (existingUser) return res.status(400).json({ message: 'Это имя пользователя уже занято' });
@@ -72,10 +78,11 @@ router.put('/profile', authMiddleware, async (req, res) => {
         } else {
              user.dob = null;
         }
-        user.fullName = fullName === '' ? null : fullName || user.fullName;
-        if (typeof status !== 'undefined') {
-            user.status = status.trim() === '' ? null : status.trim();
+        user.fullName = sanitizedFullName === '' ? null : sanitizedFullName || user.fullName;
+        if (typeof sanitizedStatus !== 'undefined') {
+            user.status = sanitizedStatus.trim() === '' ? null : sanitizedStatus.trim();
         }
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         if (premiumCustomization) {
             if (user.premium && user.premium.isActive) {
@@ -107,23 +114,20 @@ router.put('/profile', authMiddleware, async (req, res) => {
     }
 });
 
-// --- ИЗМЕНЕНИЕ: Обновленный роут для загрузки аватара ---
+// ... (остальные роуты без изменений)
 router.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Файл не загружен' });
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
-
-        // Удаление старого аватара из Cloudinary (опционально, но рекомендуется)
         if (user.avatar && user.avatar.includes('cloudinary')) {
             const publicId = user.avatar.split('/').pop().split('.')[0];
-            // Мы указываем, в какой папке искать, чтобы не удалить что-то не то
             cloudinary.uploader.destroy(`avatars/${publicId}`, (error, result) => {
                 if (error) console.error("Ошибка удаления старого аватара из Cloudinary:", error);
             });
         }
         
-        const avatarPath = req.file.path; // multer-storage-cloudinary возвращает полный URL
+        const avatarPath = req.file.path;
         user.avatar = avatarPath;
         await user.save();
         
@@ -134,7 +138,6 @@ router.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), async (req
     }
 });
 
-// --- ИЗМЕНЕНИЕ: Обновленный роут для удаления аватара ---
 router.delete('/avatar', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.userId);
@@ -157,7 +160,6 @@ router.delete('/avatar', authMiddleware, async (req, res) => {
     }
 });
 
-// ... (остальные роуты без изменений)
 router.get('/sessions', authMiddleware, async (req, res) => {
     try {
         const sessions = await Session.find({ user: req.user.userId }).sort({ lastActive: -1 });

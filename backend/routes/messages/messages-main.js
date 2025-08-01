@@ -13,6 +13,8 @@ const fs = require('fs');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
 const { getPopulatedConversation } = require('../../utils/getPopulatedConversation');
 const { createStorage, cloudinary } = require('../../config/cloudinary');
+// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
+const { sanitize } = require('../../utils/sanitize');
 
 const messageImageStorage = createStorage('messages');
 const uploadMessageImage = multer({ storage: messageImageStorage });
@@ -30,6 +32,8 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
     try {
         const senderId = new mongoose.Types.ObjectId(req.user.userId);
         let { recipientId, text, replyToMessageId, conversationId, attachedTrackId } = req.body;
+        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
+        const sanitizedText = sanitize(text);
         const recipientObjectId = new mongoose.Types.ObjectId(recipientId);
         
         if (attachedTrackId === 'null') {
@@ -70,7 +74,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             conversation: conversation._id,
             sender: senderId,
             uuid: messageUuid,
-            text: text || '',
+            text: sanitizedText || '', // --- ИЗМЕНЕНИЕ: Используем очищенный текст ---
             replyTo: replyToMessageId || null,
             imageUrl: req.file ? req.file.path : null,
             attachedTrack: attachedTrackId || null,
@@ -150,10 +154,12 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
 router.put('/:messageId', authMiddleware, async (req, res) => {
     try {
         const { text } = req.body;
+        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
+        const sanitizedText = sanitize(text);
         const { messageId } = req.params;
         const userId = req.user.userId;
 
-        if (!text || text.trim() === '') {
+        if (!sanitizedText || sanitizedText.trim() === '') {
             return res.status(400).json({ message: "Текст не может быть пустым" });
         }
 
@@ -167,7 +173,8 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: "Вы не можете редактировать это сообщение" });
         }
 
-        await Message.updateMany({ uuid: message.uuid }, { $set: { text: text } });
+        // --- ИЗМЕНЕНИЕ: Используем очищенный текст ---
+        await Message.updateMany({ uuid: message.uuid }, { $set: { text: sanitizedText } });
 
         const conversation = await Conversation.findById(message.conversation);
         if (conversation) {
@@ -180,7 +187,7 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
                     messageId: message._id,
                     uuid: message.uuid,
                     conversationId: message.conversation,
-                    updates: { text: text }
+                    updates: { text: sanitizedText } // --- ИЗМЕНЕНИЕ ---
                 }
             });
              broadcastToUsers(req, activeParticipants, { type: 'CONVERSATION_UPDATED', payload: { conversationId: conversation._id } });
@@ -193,6 +200,7 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
     }
 });
 
+// ... (остальные роуты без изменений)
 router.get('/:messageId/context', authMiddleware, async (req, res) => {
     try {
         const { messageId } = req.params;

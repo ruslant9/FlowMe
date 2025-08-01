@@ -305,7 +305,7 @@ const PlaylistPage = () => {
                                 track={track}
                                 index={index + 1}
                                 onPlay={() => handleSelectTrack(track)}
-                                isCurrent={track.youtubeId === currentTrack?.youtubeId}
+                                isCurrent={track.spotifyId === currentTrack?.spotifyId}
                                 isPlaying={isPlaying}
                                 isSaved={myMusicTrackIds?.has(track.youtubeId)}
                                 onToggleSave={onToggleLike}

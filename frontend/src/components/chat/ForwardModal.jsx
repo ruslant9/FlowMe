@@ -121,7 +121,7 @@ const ForwardModal = ({ messageIds, onClose }) => {
                                         <Bookmark size={20} className="text-white" fill="white" />
                                     </div>
                                 ) : (
-                                    <Avatar size="md" username={conv.interlocutor.username} avatarUrl={conv.interlocutor.avatar ? `${API_URL}/${conv.interlocutor.avatar}` : ''} />
+                                    <Avatar size="md" username={conv.interlocutor.username} avatarUrl={conv.interlocutor.avatar} />
                                 )}
                                 <span className="font-semibold">{isSaved ? 'Избранное' : (conv.interlocutor.fullName || conv.interlocutor.username)}</span>
                             </div>

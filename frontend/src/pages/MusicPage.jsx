@@ -60,9 +60,7 @@ const MusicPage = () => {
     const [loadingPlaylists, setLoadingPlaylists] = useState(false);
     const [isCreatePlaylistModalOpen, setCreatePlaylistModalOpen] = useState(false);
     
-    // --- ИЗМЕНЕНИЕ: Получаем myMusicTrackIds из контекста ---
     const { playTrack, currentTrack, isPlaying, onToggleLike, progress, duration, seekTo, loadingTrackId, buffered, togglePlayPause, myMusicTrackIds } = useMusicPlayer(); 
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     const [searchFilter, setSearchFilter] = useState('all');
     const [searchResults, setSearchResults] = useState({ tracks: [], playlists: [] });
@@ -154,11 +152,9 @@ const MusicPage = () => {
     }, [fetchMyMusic]);
 
     const handleToggleSave = useCallback(async (trackData) => {
-        // --- ИЗМЕНЕНИЕ: Оптимистическое обновление по spotifyId ---
         const isCurrentlySaved = myMusicTracks.some(t => t.spotifyId === trackData.spotifyId);
         setMyMusicTracks(prev => isCurrentlySaved ? prev.filter(t => t.spotifyId !== trackData.spotifyId) : [trackData, ...prev]);
         await onToggleLike(trackData);
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     }, [onToggleLike, myMusicTracks]);
 
     const fetchRecommendationsData = useCallback(async () => {
@@ -232,15 +228,6 @@ const MusicPage = () => {
             setData(originalTracks);
         }
     }, [data]);
-
-    // --- ИЗМЕНЕНИЕ: Этот useEffect больше не нужен, так как контекст сам обновляет статус лайка ---
-    // useEffect(() => {
-    //     if (currentTrack) {
-    //         const liked = myMusicTracks.some(t => t.youtubeId === currentTrack.youtubeId);
-    //         setLikedStatus(liked);
-    //     }
-    // }, [currentTrack, myMusicTracks, setLikedStatus]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     useEffect(() => {
         const debounce = setTimeout(() => {
@@ -376,8 +363,17 @@ const MusicPage = () => {
                                 {searchResults.tracks.length > 0 && (
                                     <div>
                                         <h3 className="font-bold text-lg mb-2">Треки</h3>
-                                        {/* --- ИЗМЕНЕНИЕ: Передаем myMusicTrackIds из контекста --- */}
-                                        <TrackList tracks={searchResults.tracks} onSelectTrack={handleSelectTrack} currentPlayingTrackId={currentTrack?.youtubeId} isPlaying={isPlaying} onToggleSave={handleToggleSave} myMusicTrackIds={myMusicTrackIds} progress={progress} duration={duration} onSeek={seekTo} loadingTrackId={loadingTrackId} buffered={buffered} onPlayPauseToggle={togglePlayPause} />
+                                        <TrackList 
+                                            tracks={searchResults.tracks} 
+                                            onSelectTrack={handleSelectTrack} 
+                                            currentPlayingTrackId={currentTrack?.youtubeId} 
+                                            isPlaying={isPlaying} 
+                                            onToggleSave={handleToggleSave} 
+                                            myMusicTrackIds={myMusicTrackIds}
+                                            useSpotifyIdForSaving={true}
+                                            progress={progress} duration={duration} onSeek={seekTo} 
+                                            loadingTrackId={loadingTrackId} buffered={buffered} onPlayPauseToggle={togglePlayPause} 
+                                        />
                                     </div>
                                 )}
                                 {searchResults.playlists.length > 0 && (
@@ -397,11 +393,19 @@ const MusicPage = () => {
                 ) : ( // my-music and recently-played
                     loading ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div>
                     : (activeTab === 'my-music' ? myMusicTracks : data).length > 0 ? ( 
-                        // --- ИЗМЕНЕНИЕ: Передаем myMusicTrackIds из контекста ---
-                        <TrackList tracks={activeTab === 'my-music' ? myMusicTracks : data} onSelectTrack={handleSelectTrack}
-                            currentPlayingTrackId={currentTrack?.youtubeId} isPlaying={isPlaying} onToggleSave={handleToggleSave} myMusicTrackIds={myMusicTrackIds}
-                            progress={progress} duration={duration} onSeek={seekTo} loadingTrackId={loadingTrackId} buffered={buffered} onPlayPauseToggle={togglePlayPause}
-                            showDeleteButtons={activeTab === 'recently-played'} onDeleteFromHistory={handleDeleteFromHistory} />
+                        <TrackList 
+                            tracks={activeTab === 'my-music' ? myMusicTracks : data} 
+                            onSelectTrack={handleSelectTrack}
+                            currentPlayingTrackId={currentTrack?.youtubeId} 
+                            isPlaying={isPlaying} 
+                            onToggleSave={handleToggleSave} 
+                            myMusicTrackIds={myMusicTrackIds}
+                            useSpotifyIdForSaving={true}
+                            progress={progress} duration={duration} onSeek={seekTo} 
+                            loadingTrackId={loadingTrackId} buffered={buffered} onPlayPauseToggle={togglePlayPause}
+                            showDeleteButtons={activeTab === 'recently-played'} 
+                            onDeleteFromHistory={handleDeleteFromHistory} 
+                        />
                     ) : (
                         <div className="text-center py-10 text-slate-500 dark:text-white/60">
                             {activeTab === 'search' && searchQuery ? 'Ничего не найдено.' : 'Здесь пока пусто.'}

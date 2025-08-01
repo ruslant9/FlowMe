@@ -29,14 +29,6 @@ const TabButton = ({ active, onClick, children, count }) => (
     </button>
 );
 
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
-    }
-    return `${API_URL}/${url}`;
-};
-
 const MusicListModal = ({ isOpen, onClose, user }) => {
     const { currentUser } = useUser();
     const navigate = useNavigate();
@@ -55,25 +47,9 @@ const MusicListModal = ({ isOpen, onClose, user }) => {
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds } = useMusicPlayer();
     
     const imageRef = useRef(null);
-    const [accentColors, setAccentColors] = useState(['#222222', '#444444']);
+    const [accentColors, setAccentColors] = useState(['#1f2937', '#111827']);
 
     const isOwnProfile = useMemo(() => user?._id === currentUser?._id, [user, currentUser]);
-
-    const extractColorsFromImage = () => {
-        const img = imageRef.current;
-        if (img && img.complete && img.src) {
-            try {
-                const colorThief = new ColorThief();
-                const palette = colorThief.getPalette(img, 2);
-                if (palette && palette.length >= 2) {
-                    const colors = palette.map(rgb => `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`);
-                    setAccentColors(colors);
-                }
-            } catch (e) {
-                console.error('Error extracting colors from avatar', e);
-            }
-        }
-    };
 
     const fetchMusicData = useCallback(async (pageNum) => {
         if (!user?._id || (loadingMore && pageNum > 1)) return;
@@ -102,6 +78,30 @@ const MusicListModal = ({ isOpen, onClose, user }) => {
         }
     }, [user, isOwnProfile, loadingMore]);
 
+    const extractColorsFromImage = () => {
+        const img = imageRef.current;
+        if (img && img.complete && img.src) {
+            try {
+                const colorThief = new ColorThief();
+                const palette = colorThief.getPalette(img, 5);
+                const vibrantColors = palette.filter(rgb => {
+                    const [r, g, b] = rgb;
+                    if (r > 230 && g > 230 && b > 230) return false;
+                    if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && Math.abs(r - b) < 20) return false;
+                    return true;
+                });
+                let mainColor = vibrantColors.length > 0 ? vibrantColors[0] : palette[0];
+                if (mainColor) {
+                    const vibrantRgb = `rgb(${mainColor[0]}, ${mainColor[1]}, ${mainColor[2]})`;
+                    const darkRgb = `rgb(${Math.floor(mainColor[0] * 0.3)}, ${Math.floor(mainColor[1] * 0.3)}, ${Math.floor(mainColor[2] * 0.3)})`;
+                    setAccentColors([vibrantRgb, darkRgb]);
+                }
+            } catch (e) {
+                console.error('Ошибка извлечения цветов', e);
+            }
+        }
+    };
+
     const fetchPlaylistsData = useCallback(async () => {
         if (!user?._id) return;
         try {
@@ -120,7 +120,6 @@ const MusicListModal = ({ isOpen, onClose, user }) => {
             setTracks([]);
             setPlaylists([]);
             setHasMore(true);
-            setAccentColors(['#222222', '#444444']);
             
             fetchMusicData(1);
             fetchPlaylistsData();
@@ -183,17 +182,15 @@ const MusicListModal = ({ isOpen, onClose, user }) => {
                         className="ios-glass-final w-full max-w-4xl rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[85vh] overflow-hidden dynamic-gradient"
                         style={{
                             '--color1': accentColors[0],
-                            '--color2': accentColors[1]
+                            '--color2': accentColors[1],
                         }}
                     >
-                        {/* --- ИЗМЕНЕНИЕ 1: Используем getImageUrl для скрытого img --- */}
-                        {user?.avatar && <img ref={imageRef} src={getImageUrl(user.avatar)} crossOrigin="anonymous" className="hidden" onLoad={extractColorsFromImage} />}
+                        {user?.avatar && <img ref={imageRef} src={user.avatar} crossOrigin="anonymous" className="hidden" onLoad={extractColorsFromImage} />}
                         
                          <div className="p-6 flex flex-col items-center space-y-4 relative">
                              <button onClick={handleClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/10 text-white/70 hover:text-white"><X /></button>
                              <div className="w-42 h-42 rounded-full shadow-2xl flex-shrink-0">
-                                {/* --- ИЗМЕНЕНИЕ 2: Используем getImageUrl для компонента Avatar --- */}
-                                <Avatar size="xl" username={user.username} avatarUrl={getImageUrl(user.avatar)} />
+                                <Avatar size="xl" username={user.username} avatarUrl={user.avatar} />
                              </div>
                              <div className="flex flex-col items-center text-center">
                                  <h1 className="text-6xl font-extrabold break-words">{user.username}</h1>
@@ -235,9 +232,9 @@ const MusicListModal = ({ isOpen, onClose, user }) => {
                                                     track={track}
                                                     index={index + 1}
                                                     onPlay={() => handleSelectTrack(track)}
-                                                    isCurrent={track.youtubeId === currentTrack?.youtubeId}
+                                                    isCurrent={track.spotifyId === currentTrack?.spotifyId}
                                                     isPlaying={isPlaying}
-                                                    isSaved={myMusicTrackIds?.has(track.youtubeId)}
+                                                    isSaved={myMusicTrackIds?.has(track.spotifyId)}
                                                     onToggleSave={onToggleLike}
                                                 />
                                             ))}
