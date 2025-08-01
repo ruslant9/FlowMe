@@ -341,10 +341,11 @@ const MyProfilePage = () => {
                             renderContent={(accentTextColor) => (
                                 <div className="text-center pt-4 pb-6">
                                     <div className="relative flex-shrink-0 mx-auto mb-4">
+                                        {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
                                         <Avatar 
                                             username={user.username} 
                                             fullName={user.fullName} 
-                                            avatarUrl={user.avatar ? `${API_URL}/${user.avatar}` : ''} 
+                                            avatarUrl={user.avatar} 
                                             size="xl" 
                                             isPremium={user.premium?.isActive} 
                                             customBorder={user.premiumCustomization?.avatarBorder}

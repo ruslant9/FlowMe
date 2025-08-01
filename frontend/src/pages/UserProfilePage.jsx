@@ -415,7 +415,6 @@ const UserProfilePage = () => {
         return format(new Date(user.dob), 'd MMMM yyyy', { locale: ru });
     };
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Отдельный рендер для заблокированного профиля ---
     if (isBlockedByThem) {
         return (
             <main className="flex-1 p-4 md:p-8 flex items-center justify-center">
@@ -429,7 +428,6 @@ const UserProfilePage = () => {
             </main>
         );
     }
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return (
         <main className="flex-1 p-4 md:p-8">
@@ -482,7 +480,8 @@ const UserProfilePage = () => {
                         renderContent={(accentTextColor) => (
                              <div className="text-center pt-4 pb-6">
                                 <div className="relative flex-shrink-0 mx-auto mb-4 w-24 h-24">
-                                    <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar ? `${API_URL}/${user.avatar}`: ''} size="xl" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder}/>
+                                    {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
+                                    <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} size="xl" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder}/>
                                 </div>
                                 <div className="flex flex-col items-center mt-4">
                                     <div className="flex items-center justify-center">
@@ -574,7 +573,7 @@ const UserProfilePage = () => {
                                                 </div>
                                             ))
                                         ) : (
-                                            <p className="text-slate-500 dark:text-white/50" style={accentTextColor ? {color: accentTextColor, opacity: 0.7} : {}}>Пользователь не добавил интересы.</p>
+                                            <p className="text-slate-500 dark:text-white/50" style={accentTextColor ? { color: accentTextColor, opacity: 0.7 } : {}}>Пользователь не добавил интересы.</p>
                                         )}
                                     </div>
                                 )}

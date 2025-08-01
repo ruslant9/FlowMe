@@ -25,7 +25,6 @@ const TabButton = ({ active, onClick, children, count }) => (
 );
 
 const UserListModal = ({ isOpen, onClose, user, listType, initialTitle }) => {
-    // ... (все состояния без изменений)
     const { currentUser } = useUser();
     const [activeTab, setActiveTab] = useState('all');
     const [allItems, setAllItems] = useState([]);
@@ -36,7 +35,6 @@ const UserListModal = ({ isOpen, onClose, user, listType, initialTitle }) => {
     const isListOfCommunities = listType === 'communities-with-tabs';
     const isOwnProfile = useMemo(() => user?._id === currentUser?._id, [user, currentUser]);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Добавляем обработку нового типа 'community-members-denied' ---
     const endpoints = useMemo(() => {
         if (!user?._id) return null;
         switch (listType) {
@@ -48,8 +46,8 @@ const UserListModal = ({ isOpen, onClose, user, listType, initialTitle }) => {
                 return { all: `/api/user/${user._id}/communities-list`, mutual: `/api/user/${user._id}/mutual-communities` };
             case 'community-members':
                 return { all: `/api/communities/${user._id}/members` };
-            case 'community-members-denied': // Новый тип
-                return { denied: true }; // Просто флаг, что доступ запрещен
+            case 'community-members-denied':
+                return { denied: true };
             default:
                 return null;
         }
@@ -58,7 +56,6 @@ const UserListModal = ({ isOpen, onClose, user, listType, initialTitle }) => {
     const fetchData = useCallback(async () => {
         if (!isOpen || !endpoints) return;
 
-        // Если доступ заранее запрещен, не делаем запрос к API
         if (endpoints.denied) {
             setLoading(false);
             setAllItems([]);
@@ -68,7 +65,6 @@ const UserListModal = ({ isOpen, onClose, user, listType, initialTitle }) => {
         
         setLoading(true);
         setError(null);
-        // ... (остальная логика fetchData остается без изменений)
         try {
             const token = localStorage.getItem('token');
             const requests = [axios.get(`${API_URL}${endpoints.all}`, { headers: { Authorization: `Bearer ${token}` } })];
@@ -93,9 +89,7 @@ const UserListModal = ({ isOpen, onClose, user, listType, initialTitle }) => {
             setLoading(false);
         }
     }, [isOpen, endpoints, isOwnProfile]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
-    // ... (остальная часть компонента без изменений)
     useEffect(() => {
         fetchData();
         return () => { if (!isOpen) { setActiveTab('all'); setSearchQuery(''); }};
@@ -164,7 +158,7 @@ const UserListModal = ({ isOpen, onClose, user, listType, initialTitle }) => {
                                 const avatarFullName = isListOfCommunities ? null : item.fullName;
                                 return (
                                 <Link to={linkTo} key={item._id} onClick={handleClose} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                                    <Avatar username={avatarUsername} fullName={avatarFullName} avatarUrl={item.avatar ? `${API_URL}/${item.avatar}` : ''} size="md" />
+                                    <Avatar username={avatarUsername} fullName={avatarFullName} avatarUrl={item.avatar} size="md" />
                                     <span className="font-semibold">{displayName}</span> 
                                 </Link>
                             )}))}

@@ -30,6 +30,16 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
 
+const getImageUrl = (url) => {
+    if (!url) return '';
+    // Если URL уже полный (от Cloudinary), используем его как есть.
+    if (url.startsWith('http')) {
+        return url;
+    }
+    // В противном случае, собираем URL (для старых файлов или системных)
+    return `${API_URL}/${url}`;
+};
+
 const customRuLocaleForDistance = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -145,6 +155,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [wallpaperCssVars, setWallpaperCssVars] = useState({});
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
+    
     // --- НАЧАЛО ИЗМЕНЕНИЯ: Функция для перезагрузки данных текущего диалога ---
     const refetchConversationDetails = useCallback(async () => {
         if (!internalConversation?._id) return;
@@ -279,14 +290,15 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         setWallpaperCssVars(cssVars);
     }, [internalConversation, currentUserId, appTheme]);
 
-    const chatImageUrls = useMemo(() => {
+     const chatImageUrls = useMemo(() => {
         return messages
             .filter(msg => msg.imageUrl)
-            .map(msg => msg.imageUrl);
+            .map(msg => getImageUrl(msg.imageUrl)); // --- ИЗМЕНЕНИЕ ---
     }, [messages]);
 
     const handleImageClickInBubble = (clickedImageUrl) => {
-        const index = chatImageUrls.findIndex(url => url === clickedImageUrl);
+        const fullClickedUrl = getImageUrl(clickedImageUrl); // --- ИЗМЕНЕНИЕ ---
+        const index = chatImageUrls.findIndex(url => url === fullClickedUrl);
         if (index !== -1) {
             setImageViewerStartIndex(index);
             setIsImageViewerOpen(true);

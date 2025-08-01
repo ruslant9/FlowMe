@@ -74,6 +74,7 @@ router.post('/', authMiddleware, uploadCommunityImages.fields([{ name: 'avatar',
     }
 });
 
+// --- ИЗМЕНЕНИЕ: Полностью переработанный роут обновления ---
 router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityImages.fields([{ name: 'avatar', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), async (req, res) => {
     try {
         const { name, description, topic, visibility, joinPolicy, postingPolicy, adminVisibility, memberListVisibility, removeAvatar, removeCoverImage } = req.body;
@@ -94,36 +95,35 @@ router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityI
         community.postingPolicy = postingPolicy;
         community.adminVisibility = adminVisibility;
         community.memberListVisibility = memberListVisibility;
-
-        if (removeAvatar === 'true' && !req.files?.avatar) {
-             if (community.avatar) {
-                const oldPath = path.join(__dirname, '..', community.avatar);
-                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        
+        // Обработка аватара
+        if (req.files?.avatar) {
+            if (community.avatar) {
+                const publicId = getPublicIdFromUrl(community.avatar);
+                if (publicId) cloudinary.uploader.destroy(publicId);
+            }
+            community.avatar = req.files.avatar[0].path;
+        } else if (removeAvatar === 'true') {
+            if (community.avatar) {
+                const publicId = getPublicIdFromUrl(community.avatar);
+                if (publicId) cloudinary.uploader.destroy(publicId);
             }
             community.avatar = null;
         }
-        if (removeCoverImage === 'true' && !req.files?.coverImage) {
+
+        // Обработка обложки
+        if (req.files?.coverImage) {
             if (community.coverImage) {
-                const oldPath = path.join(__dirname, '..', community.coverImage);
-                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+                const publicId = getPublicIdFromUrl(community.coverImage);
+                if (publicId) cloudinary.uploader.destroy(publicId);
+            }
+            community.coverImage = req.files.coverImage[0].path;
+        } else if (removeCoverImage === 'true') {
+            if (community.coverImage) {
+                const publicId = getPublicIdFromUrl(community.coverImage);
+                if (publicId) cloudinary.uploader.destroy(publicId);
             }
             community.coverImage = null;
-        }
-
-        if (req.files && req.files.avatar) {
-            if (community.avatar) {
-                const oldPath = path.join(__dirname, '..', community.avatar);
-                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-            }
-            community.avatar = `uploads/communities/${req.files.avatar[0].filename}`;
-        }
-        
-        if (req.files && req.files.coverImage) {
-            if (community.coverImage) {
-                const oldPath = path.join(__dirname, '..', community.coverImage);
-                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-            }
-            community.coverImage = `uploads/communities/${req.files.coverImage[0].filename}`;
         }
         
         await community.save();
@@ -137,6 +137,7 @@ router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityI
         res.status(500).json({ message: 'Ошибка сервера при обновлении сообщества.' });
     }
 });
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 router.delete('/:communityId', authMiddleware, canManageCommunity, async (req, res) => {
     try {

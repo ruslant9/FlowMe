@@ -24,6 +24,14 @@ import PollDisplay from '../PollDisplay';
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
 
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
 const customRuLocale = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -401,7 +409,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                 
                                 {hasImages ? (
                                     <div className="w-full md:w-3/5 bg-black flex items-center justify-center">
-                                        <img src={`${API_URL}/${activePost.imageUrls[0]}`} alt="Post" className="max-w-full max-h-full object-contain" />
+                                        <img src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
                                     </div>
                                 ) : null}
                                 <div className={`
@@ -411,7 +419,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center space-x-3 flex-shrink-0">
                                         {activePost.community ? (
                                             <Link to={`/communities/${activePost.community._id}`} onClick={onClose} className="flex items-center space-x-3 group">
-                                                <Avatar username={activePost.community.name} avatarUrl={activePost.community.avatar ? `${API_URL}/${activePost.community.avatar}` : ''} />
+                                                <Avatar username={activePost.community.name} avatarUrl={getImageUrl(activePost.community.avatar)} />
                                                 <div className="flex-grow">
                                                     <p className="text-xs text-slate-400 flex items-center"><Users size={12} className="mr-1"/>Сообщество</p>
                                                     <span className="font-bold group-hover:underline">{activePost.community.name}</span>
@@ -420,7 +428,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             </Link>
                                         ) : (
                                             <Link to={`/profile/${activePost.user._id}`} onClick={onClose} className="flex items-center space-x-3 group">
-                                                <Avatar username={activePost.user.username} fullName={activePost.user.fullName} avatarUrl={activePost.user.avatar ? `${API_URL}/${activePost.user.avatar}` : ''} />
+                                                <Avatar username={activePost.user.username} fullName={activePost.user.fullName} avatarUrl={getImageUrl(activePost.user.avatar)} />
                                                 <div className="flex-grow">
                                                     <span className="font-bold group-hover:underline">{activePost.user.username}</span>
                                                     <p className="text-xs text-slate-500 dark:text-slate-400">{formatDistanceToNow(new Date(activePost.createdAt), { addSuffix: true, locale: customRuLocale })}</p>

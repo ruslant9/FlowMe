@@ -3,9 +3,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from './Avatar';
-import { Users, Lock, Eye, Check, Loader2, Globe, ShieldQuestion } from 'lucide-react'; // ShieldQuestion для кнопки управления
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { Users, Lock, Eye, Check, Loader2, Globe, ShieldQuestion } from 'lucide-react';
 
 const CommunityCard = ({ community, onAction, isMember, isPending }) => {
     const isOwner = community.isOwner; // Признак того, что текущий пользователь - владелец
@@ -15,7 +13,7 @@ const CommunityCard = ({ community, onAction, isMember, isPending }) => {
             // Если текущий пользователь - владелец, показываем кнопку "Управление"
             return (
                 <Link 
-                    to={`/communities/${community._id}/manage`} // Ссылка на страницу управления сообществом (пока заглушка)
+                    to={`/communities/${community._id}/manage`}
                     className="px-4 py-2 text-sm font-semibold rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center space-x-2"
                 >
                     <ShieldQuestion size={18} /> Управление
@@ -68,7 +66,7 @@ const CommunityCard = ({ community, onAction, isMember, isPending }) => {
                 );
             }
         }
-        return null; // Ничего не показываем, если нет подходящих условий
+        return null;
     };
 
     const renderVisibilityIcon = () => {
@@ -82,32 +80,25 @@ const CommunityCard = ({ community, onAction, isMember, isPending }) => {
 
     return (
         <div className="ios-glass-final rounded-lg p-4 flex flex-col h-full">
-            {/* Ссылка на страницу деталей сообщества, пока не реализована, поэтому ведет на /communities/:id */}
             <Link to={`/communities/${community._id}`} className="flex-grow flex flex-col">
                 <div className="flex items-start space-x-4 mb-3">
-                    {/* Аватар сообщества */}
-                    <Avatar username={community.name} avatarUrl={community.avatar ? `${API_URL}/${community.avatar}` : ''} size="lg" />
+                    <Avatar username={community.name} avatarUrl={community.avatar} size="lg" />
                     <div className="flex-1 min-w-0">
-                        {/* Название сообщества */}
                         <h3 className="text-xl font-bold truncate mb-1">{community.name}</h3>
-                        {/* Иконка видимости и тематика */}
                         <div className="flex items-center space-x-2 text-sm text-slate-500 dark:text-white/60">
                             {renderVisibilityIcon()}
                             <span>{community.topic}</span>
                         </div>
                     </div>
                 </div>
-                {/* Описание сообщества, обрезается до 3 строк */}
                 <p className="text-sm text-slate-600 dark:text-white/80 mb-3 flex-grow line-clamp-3">
                     {community.description || 'Нет описания.'}
                 </p>
-                {/* Количество участников */}
                 <div className="flex items-center space-x-2 text-slate-500 dark:text-white/60 text-sm mt-auto">
                     <Users size={16} />
                     <span>{community.members?.length || 0} участников</span>
                 </div>
             </Link>
-            {/* Кнопка действия в зависимости от статуса пользователя в сообществе */}
             <div className="mt-4 flex justify-end">
                 {renderActionButton()}
             </div>

@@ -13,7 +13,17 @@ import PostViewModal from '../components/modals/PostViewModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const TabButton = ({ active, onClick, children, count }) => ( // --- ИЗМЕНЕНИЕ: Добавлен пропс count
+// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию для изображений ---
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
+const TabButton = ({ active, onClick, children, count }) => (
     <button
         onClick={onClick}
         className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${
@@ -23,7 +33,6 @@ const TabButton = ({ active, onClick, children, count }) => ( // --- ИЗМЕН�
         }`}
     >
         {children}
-        {/* --- ИЗМЕНЕНИЕ: Отображаем счетчик --- */}
         {typeof count === 'number' && count > 0 && 
             <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>
         }
@@ -47,7 +56,6 @@ const NotificationsPage = () => {
     useTitle('Уведомления');
     const [activeTab, setActiveTab] = useState('personal');
     const [activeFilter, setActiveFilter] = useState('all');
-    // --- ИЗМЕНЕНИЕ: Обновляем структуру состояния ---
     const [notificationsData, setNotificationsData] = useState({
         personal: { list: [], unreadCount: 0 },
         community: { list: [], unreadCount: 0 }
@@ -87,12 +95,10 @@ const NotificationsPage = () => {
         };
     }, [openPostInModal]);
 
-    // --- ИЗМЕНЕНИЕ: Обновляем функцию получения данных ---
     const fetchNotifications = useCallback(async (showLoader = false) => {
         if (showLoader) setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            // Запрос теперь один, без параметра type
             const res = await axios.get(`${API_URL}/api/user/notifications`, { headers: { Authorization: `Bearer ${token}` } });
             setNotificationsData(res.data);
 

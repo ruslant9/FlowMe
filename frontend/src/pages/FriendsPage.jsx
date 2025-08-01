@@ -230,10 +230,11 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
         <Link to={`/profile/${user._id}`} className="flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5">
             <div className="flex items-center space-x-4 min-w-0">
                 <div className="relative">
+                    {/* --- ИЗМЕНЕНИЕ: Используем user.avatar напрямую --- */}
                     <Avatar
                         username={user.username}
                         fullName={user.fullName}
-                        avatarUrl={user.avatar ? `${API_URL}/${user.avatar}` : ''}
+                        avatarUrl={user.avatar}
                         isBlockedByThem={status === 'blocked_by_them'}
                     />
                     {canShowOnlineIndicator && (

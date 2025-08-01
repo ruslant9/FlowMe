@@ -10,7 +10,8 @@ import { useNotifications } from '../context/NotificationContext';
 import Tippy from '@tippyjs/react/headless';
 import { motion, LayoutGroup } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL;
+// --- ИЗМЕНЕНИЕ: Убираем API_URL, он больше не нужен для изображений ---
+// const API_URL = import.meta.env.VITE_API_URL;
 
 const Tooltip = ({ text, attrs }) => (
     <div 
@@ -186,29 +187,25 @@ const Sidebar = ({ themeSwitcher }) => {
 
                                             <div className="relative">
                                                 {user ? (
-                                                    <Avatar username={user?.username} fullName={user?.fullName} avatarUrl={user?.avatar ? `${API_URL}/${user.avatar}` : ''} size="md" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} />
+                                                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                                                    <Avatar username={user?.username} fullName={user?.fullName} avatarUrl={user?.avatar} size="md" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} />
                                                 ) : (
                                                     <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
                                                 )}
-                                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
-                                                {/* Зеленая точка онлайн-статуса была здесь и была удалена */}
-                                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                             </div>
                                             <div className={`flex flex-col overflow-hidden transition-all duration-200 ${isExpanded ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>
-    {user?.premium?.isActive && (
-        <span className="premium-shimmer-text font-bold text-xs uppercase tracking-wider mb-0.5">
-            Premium
-        </span>
-    )}
-    {/* ИЗМЕНЕНИЕ: Добавляем динамические классы цвета */}
-    <span className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
-        {user?.fullName || user?.username || 'Профиль'}
-    </span>
-    {/* ИЗМЕНЕНИЕ: Добавляем динамические и более контрастные классы цвета */}
-    <span className={`text-xs transition-colors ${isActive ? 'text-blue-800/70 dark:text-blue-200/80' : 'text-slate-500 dark:text-slate-400'}`}>
-        Мой профиль
-    </span>
-</div>
+                                                {user?.premium?.isActive && (
+                                                    <span className="premium-shimmer-text font-bold text-xs uppercase tracking-wider mb-0.5">
+                                                        Premium
+                                                    </span>
+                                                )}
+                                                <span className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
+                                                    {user?.fullName || user?.username || 'Профиль'}
+                                                </span>
+                                                <span className={`text-xs transition-colors ${isActive ? 'text-blue-800/70 dark:text-blue-200/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                    Мой профиль
+                                                </span>
+                                            </div>
                                         </div>
                                     )}
                                 </NavLink>
