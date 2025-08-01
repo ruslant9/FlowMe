@@ -59,11 +59,7 @@ const MusicPage = () => {
     const [playlists, setPlaylists] = useState([]);
     const [loadingPlaylists, setLoadingPlaylists] = useState(false);
     const [isCreatePlaylistModalOpen, setCreatePlaylistModalOpen] = useState(false);
-    
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Убираем setLikedStatus ---
     const { playTrack, currentTrack, isPlaying, onToggleLike, progress, duration, seekTo, loadingTrackId, buffered, togglePlayPause } = useMusicPlayer(); 
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-    
     const [searchFilter, setSearchFilter] = useState('all');
     const [searchResults, setSearchResults] = useState({ tracks: [], playlists: [] });
     
@@ -230,15 +226,6 @@ const MusicPage = () => {
             setData(originalTracks);
         }
     }, [data]);
-
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Удаляем этот useEffect ---
-    // useEffect(() => {
-    //     if (currentTrack) {
-    //         const liked = myMusicTracks.some(t => t.youtubeId === currentTrack.youtubeId);
-    //         setLikedStatus(liked);
-    //     }
-    // }, [currentTrack, myMusicTracks, setLikedStatus]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     useEffect(() => {
         const debounce = setTimeout(() => {
