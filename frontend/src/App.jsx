@@ -89,15 +89,36 @@ const MainLayout = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // --- НАЧАЛО ИЗМЕНЕНИЯ: Решение проблемы с высотой на мобильных устройствах ---
+  useEffect(() => {
+    const setViewportHeight = () => {
+      // Создаем CSS-переменную --vh, которая будет равна 1% от реальной видимой высоты окна.
+      let vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    // Устанавливаем высоту при первой загрузке
+    setViewportHeight();
+
+    // Пересчитываем высоту при изменении размера окна (например, при повороте экрана)
+    window.addEventListener('resize', setViewportHeight);
+
+    // Убираем слушатель события при размонтировании компонента
+    return () => window.removeEventListener('resize', setViewportHeight);
+  }, []);
+  // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
     window.dispatchEvent(new Event('themeChanged'));
   };
 
   return (
-    <div className={`h-screen w-full font-sans transition-colors duration-300 overflow-hidden relative ${
+    // --- ИЗМЕНЕНИЕ: Заменяем h-screen на кастомную высоту ---
+    <div style={{ height: 'calc(var(--vh, 1vh) * 100)' }} className={`w-full font-sans transition-colors duration-300 overflow-hidden relative ${
       theme === 'dark' ? 'bg-liquid-background text-white' : 'bg-slate-100 text-slate-900'
     }`}>
+    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
       {theme === 'dark' && (
         <Suspense fallback={null}>
           <LiquidGlassBackground />
@@ -130,7 +151,9 @@ const MainLayout = ({ children }) => {
         </div>
       )}
       
-      <div className={`flex relative z-10 h-screen overflow-hidden ${currentTrack ? 'pb-[100px]' : ''}`}>
+      {/* --- ИЗМЕНЕНИЕ: Заменяем h-screen на h-full, чтобы он наследовал правильную высоту --- */}
+      <div className={`flex relative z-10 h-full overflow-hidden ${currentTrack ? 'pb-[100px]' : ''}`}>
+      {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
         <Sidebar themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} />
         <div className="flex-1 relative overflow-y-auto">
           {children}
