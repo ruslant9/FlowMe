@@ -21,7 +21,7 @@ const postStorage = createStorage('posts');
 const uploadPost = multer({ storage: postStorage, limits: { files: 5 } });
 
 
-router.get('/feed', async (req, res) => {
+router.get('/feed', authMiddleware, async (req, res) => {
     try {
         const currentUser = await User.findById(req.user.userId).select('friends blacklist subscribedCommunities');
         const friendIds = currentUser.friends.map(friend => friend.user);
@@ -216,8 +216,8 @@ router.put('/:postId', authMiddleware, uploadPost.array('images', 5), async (req
         res.status(500).json({ message: 'Ошибка обновления поста' });
     }
 });
-// ... (остальные роуты без изменений)
-router.get('/user/scheduled', async (req, res) => {
+
+router.get('/user/scheduled', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
         const posts = await Post.find({ user: userId, status: 'scheduled' })
