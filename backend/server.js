@@ -27,12 +27,12 @@ const userRoutes = require('./routes/user');
 const postsRouter = require('./routes/posts-router');
 const messagesRouter = require('./routes/messages-router');
 const communityRoutes = require('./routes/communities');
-const youtubeRoutes = require('./routes/spotify');
+// --- ИЗМЕНЕНИЕ: Убираем некорректный импорт spotify ---
 const premiumRoutes = require('./routes/premium'); 
 const musicRoutes = require('./routes/music');
 const wallpaperRoutes = require('./routes/wallpapers');
 const playlistRoutes = require('./routes/playlists');
-const musicRouter = require('./routes/music-router');
+// --- ИЗМЕНЕНИЕ: Убираем импорт дублирующего роутера ---
 const app = express();
 const server = http.createServer(app);
 
@@ -195,7 +195,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/posts', postsRouter); 
 app.use('/api/messages', messagesRouter);
 app.use('/api/communities', communityRoutes);
-app.use('/api/spotify', youtubeRoutes.router);
+// --- ИЗМЕНЕНИЕ: Убираем некорректный роут spotify и дублирующиеся роуты music/playlists ---
 app.use('/api/music', musicRoutes);
 app.use('/api/wallpapers', wallpaperRoutes);
 app.use('/api/premium', premiumRoutes(wss, clients));
