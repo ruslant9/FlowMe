@@ -575,40 +575,38 @@ const UserProfilePage = () => {
                             />
                             
                             <ProfileCard 
-                                icon={Music} 
-                                title="Музыка пользователя" 
-                                actionButton={
-                                    totalMusicCount > 3 ? (
-                                        <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-500 hover:underline">
-                                            Показать все
-                                        </button>
-                                    ) : null
-                                }
-                                renderContent={() => (
-                                     musicError ? (
-                                        <p className="text-slate-500 dark:text-white/50">{musicError}</p>
-                                    ) : loading ? (
-                                        <div className="flex justify-center py-4"><Loader2 className="animate-spin" /></div>
-                                    ) : musicTracks.length > 0 ? (
-                                        <TrackList
-                                            tracks={musicTracks} 
-                                            onSelectTrack={(youtubeId) => playTrack(musicTracks.find(t => t.youtubeId === youtubeId), musicTracks)}
-                                            currentPlayingTrackId={currentTrack?.youtubeId}
-                                            isPlaying={isPlaying}
-                                            onToggleSave={onToggleLike}
-                                            myMusicTrackIds={new Set(myMusicTracks.map(t => t.youtubeId))}
-                                            progress={progress}
-                                            duration={duration}
-                                            onSeek={seekTo}
-                                            loadingTrackId={loadingTrackId}
-                                            buffered={buffered}
-                                            togglePlayPause={togglePlayPause}
-                                        />
-                                    ) : (
-                                        <p className="text-slate-500 dark:text-white/50">У пользователя нет сохраненной музыки.</p>
-                                    )
-                                )}
-                            />
+    icon={Music} 
+    title="Музыка пользователя" 
+    actionButton={
+        <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-500 hover:underline">
+            Показать все
+        </button>
+    }
+    renderContent={() => (
+         musicError ? (
+            <p className="text-slate-500 dark:text-white/50">{musicError}</p>
+        ) : loading ? (
+            <div className="flex justify-center py-4"><Loader2 className="animate-spin" /></div>
+        ) : musicTracks.length > 0 ? (
+            <TrackList
+                tracks={musicTracks} 
+                onSelectTrack={(youtubeId) => playTrack(musicTracks.find(t => t.youtubeId === youtubeId), musicTracks)}
+                currentPlayingTrackId={currentTrack?.youtubeId}
+                isPlaying={isPlaying}
+                onToggleSave={onToggleLike}
+                myMusicTrackIds={new Set(myMusicTracks.map(t => t.youtubeId))}
+                progress={progress}
+                duration={duration}
+                onSeek={seekTo}
+                loadingTrackId={loadingTrackId}
+                buffered={buffered}
+                togglePlayPause={togglePlayPause}
+            />
+        ) : (
+            <p className="text-slate-500 dark:text-white/50">У пользователя нет сохраненной музыки.</p>
+        )
+    )}
+/>
                         </>
                     )}
                 </div>

@@ -158,7 +158,7 @@ const LoginPage = () => {
                 </form>
                 <div className="flex items-center my-6"><hr className="flex-grow border-white/20"/><span className="mx-4 text-white/50 text-sm">или</span><hr className="flex-grow border-white/20"/></div>
                 <div className="space-y-4">
-                    <a href={`${API_URL}/api/auth/google`} className="w-full flex items-center justify-center py-3 px-4 rounded-xl bg-black/30 text-white hover:bg-black/40 transition-colors">
+                    <a href={"/api/auth/google"} className="w-full flex items-center justify-center py-3 px-4 rounded-xl bg-black/30 text-white hover:bg-black/40 transition-colors">
                         <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3"/>Продолжить с Google
                     </a>
                 </div>
