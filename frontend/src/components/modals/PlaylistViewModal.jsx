@@ -71,7 +71,7 @@ const PlaylistViewModal = ({
                                                 size="sm"
                                                 username={playlist.user.username}
                                                 fullName={playlist.user.fullName}
-                                                avatarUrl={playlist.user.avatar ? `${API_URL}/${playlist.user.avatar}` : ''}
+                                                avatarUrl={playlist.user.avatar}
                                             />
                                             <div>
                                                 <span className="text-sm font-semibold group-hover:underline">{playlist.user.fullName || playlist.user.username}</span>

@@ -10,6 +10,14 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
 const ImageEditorModal = ({ post, onSave, onClose }) => {
     // ИЗМЕНЕНИЕ: Добавляем 'eraser' в возможные инструменты
     const [activeTool, setActiveTool] = useState('crop'); // 'crop', 'draw', или 'eraser'
@@ -24,9 +32,11 @@ const ImageEditorModal = ({ post, onSave, onClose }) => {
 
     useEffect(() => {
         if (post?.imageUrl) {
-            setImageUrl(`${API_URL}/${post.imageUrl}?t=${new Date().getTime()}`);
+            // --- ИЗМЕНЕНИЕ ---
+            setImageUrl(`${getImageUrl(post.imageUrl)}?t=${new Date().getTime()}`);
         }
     }, [post]);
+
 
     // Управляем видимостью и интерактивностью рамки обрезки
     useEffect(() => {

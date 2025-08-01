@@ -15,6 +15,15 @@ const Picker = React.lazy(() => import('emoji-picker-react'));
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
 
+// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
 const getMinTime = (date) => {
     if (!date || !isToday(date)) {
         return setHours(setMinutes(new Date(), 0), 0);
@@ -35,19 +44,15 @@ const EditPostModal = ({ isOpen, onClose, post }) => {
     const pickerRef = useRef(null);
     const smileButtonRef = useRef(null);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояние для отложенной публикации ---
     const [scheduledFor, setScheduledFor] = useState(null);
     const isScheduledPost = !!post?.scheduledFor;
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     useEffect(() => {
         if (isOpen && post) {
             setText(post.text || '');
             setExistingImages(post.imageUrls || []);
             setNewImages([]);
-            // --- НАЧАЛО ИЗМЕНЕНИЯ: Инициализация даты при открытии ---
             setScheduledFor(post.scheduledFor ? new Date(post.scheduledFor) : null);
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         }
     }, [isOpen, post]);
 
@@ -116,12 +121,9 @@ const EditPostModal = ({ isOpen, onClose, post }) => {
             formData.append('images', img.file);
         });
         
-        // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем дату в запрос ---
-        // Если дата очищена (опубликовать сейчас), отправляем пустую строку
         if (isScheduledPost) {
             formData.append('scheduledFor', scheduledFor ? scheduledFor.toISOString() : '');
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         try {
             const token = localStorage.getItem('token');
@@ -185,7 +187,8 @@ const EditPostModal = ({ isOpen, onClose, post }) => {
                             <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-4">
                                 {existingImages.map((url) => (
                                     <div key={url} className="relative aspect-square">
-                                        <img src={`${API_URL}/${url}`} alt="existing" className="w-full h-full object-cover rounded-md" />
+                                        {/* --- ИЗМЕНЕНИЕ --- */}
+                                        <img src={getImageUrl(url)} alt="existing" className="w-full h-full object-cover rounded-md" />
                                         <button type="button" onClick={() => removeExistingImage(url)} className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full hover:bg-red-600"><X size={14} /></button>
                                     </div>
                                 ))}
@@ -197,7 +200,6 @@ const EditPostModal = ({ isOpen, onClose, post }) => {
                                 ))}
                             </div>
                             
-                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Блок для DatePicker --- */}
                             {isScheduledPost && (
                                 <div className="mt-4 flex items-center space-x-2">
                                     <label className="text-sm font-semibold whitespace-nowrap">Время публикации:</label>
@@ -219,7 +221,6 @@ const EditPostModal = ({ isOpen, onClose, post }) => {
                                     />
                                 </div>
                             )}
-                            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
                             <div className="flex items-center justify-between mt-4">
                                 <div className="flex items-center space-x-2">

@@ -10,7 +10,8 @@ import { motion } from 'framer-motion';
 import Tippy from '@tippyjs/react/headless'; 
 import NotificationSendersList from './NotificationSendersList'; 
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Убираем API_URL
+// const API_URL = import.meta.env.VITE_API_URL;
 
 const notificationDetails = {
     like_post: { 
@@ -192,18 +193,20 @@ const NotificationItem = ({ notification, onDelete, onAction }) => {
     const isCommunitySystemNotif = details.isCommunityAction;
     let avatarLink, avatarProps;
 
-    if (isCommunitySystemNotif) {
+     if (isCommunitySystemNotif) {
         avatarLink = notification.link;
         avatarProps = {
-            username: notification.previewText, // community name
-            avatarUrl: notification.previewImage ? `${API_URL}/${notification.previewImage}` : ''
+            username: notification.previewText,
+            // --- ИЗМЕНЕНИЕ 1 ---
+            avatarUrl: notification.previewImage // Используем напрямую
         };
     } else {
         avatarLink = `/profile/${notification.lastSender?._id}`;
         avatarProps = {
             username: notification.lastSender?.username,
             fullName: notification.lastSender?.fullName,
-            avatarUrl: notification.lastSender?.avatar ? `${API_URL}/${notification.lastSender.avatar}` : ''
+            // --- ИЗМЕНЕНИЕ 2 ---
+            avatarUrl: notification.lastSender?.avatar // Используем напрямую
         };
     }
 
@@ -256,8 +259,8 @@ const NotificationItem = ({ notification, onDelete, onAction }) => {
                     </div>
                     {notification.previewImage && !isCommunitySystemNotif && (
                         <div className="flex-shrink-0 ml-4">
-                            <img 
-                                src={`${API_URL}/${notification.previewImage}`} 
+                             <img 
+                                src={notification.previewImage} 
                                 alt="preview" 
                                 className="w-12 h-12 object-cover rounded-md"
                             />

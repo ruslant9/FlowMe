@@ -555,10 +555,10 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                           <div className="relative">
                                                               <Listbox.Button className="focus:outline-none">
                                                                   <Avatar 
-                                                                      username={commentAs.name || commentAs.username}
-                                                                      avatarUrl={commentAs.avatar ? `${API_URL}/${commentAs.avatar}` : ''}
-                                                                      size="sm"
-                                                                  />
+                                                      username={commentAs.name || commentAs.username}
+                                                      avatarUrl={commentAs.avatar} // Используем напрямую
+                                                      size="sm"
+                                                  />
                                                               </Listbox.Button>
                                                               <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
                                                                   <Listbox.Options className="absolute bottom-full mb-2 w-56 max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-20">
@@ -578,11 +578,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                       </Listbox>
                                                   ) : (
                                                       <Avatar 
-                                                          username={currentUser?.username} 
-                                                          fullName={currentUser?.fullName} 
-                                                          avatarUrl={currentUser?.avatar ? `${API_URL}/${currentUser.avatar}` : ''} 
-                                                          size="sm" 
-                                                      />
+                                          username={currentUser?.username} 
+                                          fullName={currentUser?.fullName} 
+                                          avatarUrl={currentUser?.avatar} // Используем напрямую
+                                          size="sm" 
+                                      />
                                                   )
                                               )}
                                               <div className="relative flex-1">

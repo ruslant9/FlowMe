@@ -1063,7 +1063,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                         <Avatar
                                             size="md"
                                             username={liveInterlocutor.username}
-                                            avatarUrl={canShowAvatar && liveInterlocutor.avatar ? `${API_URL}/${liveInterlocutor.avatar}` : ''}
+                                            avatarUrl={canShowAvatar ? liveInterlocutor.avatar : ''}
                                             isPremium={isPremium}
                                             customBorder={customBorder}
                                         />

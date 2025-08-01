@@ -29,6 +29,14 @@ const TabButton = ({ active, onClick, children, count }) => (
     </button>
 );
 
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
 const MusicListModal = ({ isOpen, onClose, user }) => {
     const { currentUser } = useUser();
     const navigate = useNavigate();
@@ -183,7 +191,7 @@ const MusicListModal = ({ isOpen, onClose, user }) => {
                          <div className="p-6 flex flex-col items-center space-y-4 relative">
                              <button onClick={handleClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/10 text-white/70 hover:text-white"><X /></button>
                              <div className="w-42 h-42 rounded-full shadow-2xl flex-shrink-0">
-                                <Avatar size="xl" username={user.username} avatarUrl={user.avatar ? `${API_URL}/${user.avatar}` : ''} />
+                                <Avatar size="xl" username={user.username} avatarUrl={user.avatar} />
                              </div>
                              <div className="flex flex-col items-center text-center">
                                  <h1 className="text-6xl font-extrabold break-words">{user.username}</h1>
