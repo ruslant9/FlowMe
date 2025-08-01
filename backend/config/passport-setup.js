@@ -8,8 +8,7 @@ passport.use(
         // опции для стратегии Google
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        // ИЗМЕНЕНИЕ: Указываем полный URL с портом 5000 для перенаправления
-        callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`,
+        callbackURL: `/api/auth/google/callback`,
         proxy: true // Добавляем этот параметр для корректной работы за прокси (например, при деплое)
     }, async (accessToken, refreshToken, profile, done) => {
         // Эта функция вызывается, когда Google успешно аутентифицировал пользователя

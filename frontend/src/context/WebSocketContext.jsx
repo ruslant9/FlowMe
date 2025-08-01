@@ -94,29 +94,28 @@ export const WebSocketProvider = ({ children }) => {
     }, []);
 
     const connectWebSocket = useCallback(() => {
-        const apiUrl = import.meta.env.VITE_API_URL;
+        const wsUrl = import.meta.env.VITE_WSS_URL;
 
-        // 2. Заменяем http/https на ws/wss.
-        const wsUrl = apiUrl.replace(/^http/, 'ws');
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    if (!wsUrl) {
+        console.error("WebSocket URL is not defined. Please set VITE_WSS_URL environment variable.");
+        return;
+    }
 
-        if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) {
-            console.log('WebSocket: Попытка повторного подключения проигнорирована, соединение уже существует.');
-            return;
+    if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
+
+    const socket = new WebSocket(wsUrl);
+    ws.current = socket;
+
+    socket.onopen = () => {
+        console.log('WebSocket: Соединение установлено.');
+        setIsConnected(true);
+        const wsToken = localStorage.getItem('token');
+        if (wsToken) {
+            socket.send(JSON.stringify({ type: 'auth', token: wsToken }));
         }
-
-        const socket = new WebSocket(wsUrl); // Используем новую переменную wsUrl
-        ws.current = socket;
-
-        socket.onopen = () => {
-            console.log('WebSocket: Соединение установлено.');
-            setIsConnected(true);
-            const wsToken = localStorage.getItem('token');
-            if (wsToken) {
-                socket.send(JSON.stringify({ type: 'auth', token: wsToken }));
-            }
-        };
-        
+    };
         socket.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
