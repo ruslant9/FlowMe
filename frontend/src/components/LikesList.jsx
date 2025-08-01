@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Avatar from './Avatar';
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Убираем API_URL, он больше не нужен
+// const API_URL = import.meta.env.VITE_API_URL;
 
 const LikesList = ({ likers, attrs, postOwnerId }) => {
     if (!likers || likers.length === 0) {
@@ -25,12 +26,14 @@ const LikesList = ({ likers, attrs, postOwnerId }) => {
                 const isPostCreator = user._id === postOwnerId;
                 return (
                     <Link to={`/profile/${user._id}`} key={user._id} title={user.fullName || user.username} className="flex items-center space-x-2 p-1 -m-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
+                        {/* --- ИЗМЕНЕНИЕ --- */}
                         <Avatar
                             username={user.username}
                             fullName={user.fullName}
-                            avatarUrl={user.avatar ? `${API_URL}/${user.avatar}` : ''}
+                            avatarUrl={user.avatar}
                             size="sm"
                         />
+                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                         <span className="text-sm text-slate-800 dark:text-white truncate">{user.fullName || user.username}</span>
                         {isPostCreator && (
                             <span className="ml-1 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 px-1.5 py-0.5 rounded-full">

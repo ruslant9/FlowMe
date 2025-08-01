@@ -36,7 +36,6 @@ const CommunityInviteModal = ({ isOpen, onClose, targetUser }) => {
     }, [fetchOwnedCommunities]);
     
     useEffect(() => {
-        // Сбрасываем выбор при закрытии/открытии
         if (!isOpen) {
             setSelectedCommunity(null);
             setSearchTerm('');
@@ -107,7 +106,8 @@ const CommunityInviteModal = ({ isOpen, onClose, targetUser }) => {
                                         onClick={() => setSelectedCommunity(community)} 
                                         className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors ${selectedCommunity?._id === community._id ? 'bg-blue-500/20' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                                     >
-                                        <Avatar size="md" username={community.name} avatarUrl={community.avatar ? `${API_URL}/${community.avatar}` : ''} />
+                                        {/* --- ИЗМЕНЕНИЕ --- */}
+                                        <Avatar size="md" username={community.name} avatarUrl={community.avatar} />
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold truncate">{community.name}</p>
                                             <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center"><Users size={12} className="mr-1"/>{community.members?.length || 0}</p>

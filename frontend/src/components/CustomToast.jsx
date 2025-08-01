@@ -6,20 +6,18 @@ import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import Avatar from './Avatar';
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Убираем API_URL, он больше не нужен
+// const API_URL = import.meta.env.VITE_API_URL;
 
 const CustomToast = ({ t, sender, title, message, link, entityId, type }) => {
     const navigate = useNavigate();
 
     const handleToastClick = () => {
-        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
         const postLinkRegex = /^\/posts\/([a-f\d]{24})$/;
         const match = link.match(postLinkRegex);
 
-        // Если это ссылка на пост...
         if (match) {
             const postId = match[1];
-            // ...создаем и отправляем глобальное событие, чтобы страница его поймала и открыла модальное окно.
             const event = new CustomEvent('openPostModal', {
                 detail: {
                     postId,
@@ -27,13 +25,11 @@ const CustomToast = ({ t, sender, title, message, link, entityId, type }) => {
                 }
             });
             window.dispatchEvent(event);
-            toast.dismiss(t.id); // Закрываем уведомление после клика
+            toast.dismiss(t.id);
         } else {
-            // Для всех остальных ссылок (например, /friends) используем обычную навигацию.
             navigate(link);
             toast.dismiss(t.id);
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     };
 
     return (
@@ -45,12 +41,14 @@ const CustomToast = ({ t, sender, title, message, link, entityId, type }) => {
             onClick={handleToastClick}
         >
             <div className="flex-shrink-0">
+                {/* --- ИЗМЕНЕНИЕ --- */}
                 <Avatar
                     username={sender?.username}
                     fullName={sender?.fullName}
-                    avatarUrl={sender?.avatar ? `${API_URL}/${sender.avatar}` : ''}
+                    avatarUrl={sender?.avatar}
                     size="md"
                 />
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
             </div>
             <div className="flex-1 min-w-0">
                 <p className="font-bold text-slate-800 dark:text-white truncate">{title}</p>

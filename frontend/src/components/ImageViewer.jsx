@@ -6,6 +6,15 @@ import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
 const variants = {
   enter: (direction) => ({
     x: direction > 0 ? '100%' : '-100%',
@@ -90,15 +99,16 @@ const ImageViewer = ({ images, startIndex, onClose }) => {
         </>
       )}
 
-      {/* Контейнер только для анимированного изображения */}
       <div 
         className="relative w-full h-full flex items-center justify-center"
-        onClick={(e) => e.stopPropagation()} // ИСПРАВЛЕНИЕ: Добавляем stopPropagation сюда
+        onClick={(e) => e.stopPropagation()}
       >
         <AnimatePresence initial={false} custom={direction}>
           <motion.img
             key={page}
-            src={`${API_URL}/${images[activeImageIndex]}`}
+            // --- ИЗМЕНЕНИЕ ---
+            src={getImageUrl(images[activeImageIndex])}
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
             custom={direction}
             variants={variants}
             initial="enter"
@@ -119,7 +129,6 @@ const ImageViewer = ({ images, startIndex, onClose }) => {
                 paginate(-1);
               }
             }}
-            // Убираем onClick с самой картинки, так как он теперь на родительском div
             className="absolute max-w-[90%] max-h-[85%] object-contain"
           />
         </AnimatePresence>

@@ -152,7 +152,7 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
             showConfirmation({
                 title: "Удалить чат?",
                 message: "Как вы хотите удалить этот чат?",
-                children: (closeModal) => { // --- ИЗМЕНЕНИЕ: Принимаем функцию closeModal ---
+                children: (closeModal) => {
                     const [shouldAddToBlacklist, setShouldAddToBlacklist] = useState(false);
                     return (
                         <>
@@ -218,7 +218,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
         !lastMessage.readBy.includes(currentUserId) &&
         lastMessageSenderId !== currentUserId;
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -233,7 +232,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
         }
         return artist;
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const renderLastMessage = () => {
         if (isTyping) {
@@ -255,10 +253,8 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
             );
         }
         
-        // --- ИЗМЕНЕНИЕ ---
         const content = lastMessage.text || 
                         (lastMessage.attachedTrack ? `Трек: ${cleanArtist(lastMessage.attachedTrack.artist)} - ${cleanTitle(lastMessage.attachedTrack.title)}` : "Нет сообщений");
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         return (
              <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                 {prefix}{content}
@@ -309,10 +305,11 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                 ) : (
                     <div className="relative flex-shrink-0">
+                        {/* --- ИЗМЕНЕНИЕ: Используем `liveInterlocutor.avatar` напрямую --- */}
                         <Avatar
                             size="lg"
                             username={liveInterlocutor?.username}
-                            avatarUrl={canShowAvatar && liveInterlocutor?.avatar ? `${API_URL}/${liveInterlocutor.avatar}` : ''}
+                            avatarUrl={canShowAvatar ? liveInterlocutor?.avatar : ''}
                             isPremium={isPremium}
                             customBorder={customBorder}
                         />

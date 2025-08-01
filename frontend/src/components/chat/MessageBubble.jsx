@@ -13,6 +13,16 @@ import AttachedTrack from '../music/AttachedTrack';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 const avatarColors = [
     '#F59E0B', '#F472B6', '#A78BFA', '#60A5FA', '#4ADE80', '#F87171',
 ];
@@ -45,8 +55,9 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
         if (!message.replyTo?.sender) return {};
 
         if (message.replyTo.imageUrl) {
+            // --- ИЗМЕНЕНИЕ ---
             return {
-                backgroundImage: `url(${API_URL}/${message.replyTo.imageUrl})`,
+                backgroundImage: `url(${getImageUrl(message.replyTo.imageUrl)})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
             };
@@ -74,7 +85,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             }
 
             if (finalAccentUrl) {
-                // --- НАЧАЛО ИЗМЕНЕНИЯ: Проверяем, является ли URL цветом или изображением ---
                 if (finalAccentUrl.startsWith('#')) {
                     return { backgroundColor: finalAccentUrl };
                 }
@@ -313,8 +323,9 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 )}
                 {message.imageUrl && (
                     <div className="relative p-1">
+                        {/* --- ИЗМЕНЕНИЕ --- */}
                         <img 
-                            src={`${API_URL}/${message.imageUrl}`} 
+                            src={getImageUrl(message.imageUrl)} 
                             alt="Attachment" 
                             className="max-w-full h-auto rounded-xl object-cover cursor-pointer"
                             onClick={() => onImageClick && onImageClick(message.imageUrl)}

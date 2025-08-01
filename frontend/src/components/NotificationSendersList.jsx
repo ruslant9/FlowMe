@@ -6,10 +6,9 @@ import { Link } from 'react-router-dom';
 import Avatar from './Avatar';
 import Tippy from '@tippyjs/react';
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Убираем API_URL
+// const API_URL = import.meta.env.VITE_API_URL;
 
-// ИЗМЕНЕНИЕ: Этот компонент может быть переименован или перенесен, если нужно
-// Он отображает список отправителей для сгруппированных уведомлений
 const NotificationSendersList = ({ senders, attrs }) => {
     return (
         <motion.div
@@ -25,14 +24,15 @@ const NotificationSendersList = ({ senders, attrs }) => {
                 {senders.map(sender => {
                     const userName = sender.fullName || sender.username;
                     return (
-                        // ИЗМЕНЕНИЕ: Оборачиваем Link в Tippy
                         <Tippy key={sender._id} content={userName} placement="right" delay={[100, 50]}>
                             <Link 
                                 to={`/profile/${sender._id}`} 
                                 className="flex items-center space-x-2 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-md p-1 -mx-1"
-                                onClick={e => e.stopPropagation()} // ИЗМЕНЕНИЕ: Предотвращаем всплытие клика
+                                onClick={e => e.stopPropagation()}
                             >
-                                <Avatar username={sender.username} fullName={sender.fullName} avatarUrl={sender.avatar ? `${API_URL}/${sender.avatar}` : ''} size="sm" />
+                                {/* --- ИЗМЕНЕНИЕ --- */}
+                                <Avatar username={sender.username} fullName={sender.fullName} avatarUrl={sender.avatar} size="sm" />
+                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                 <span className="text-sm truncate">{userName}</span>
                             </Link>
                         </Tippy>

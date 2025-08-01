@@ -10,14 +10,22 @@ const Comment = require('../models/Comment');
 const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { isAllowedByPrivacy } = require('../utils/privacy');
-const { createStorage, cloudinary } = require('../config/cloudinary'); // ИЗМЕНЕНИЕ: Импорт Cloudinary
+const { createStorage, cloudinary } = require('../config/cloudinary');
 
-// --- ИЗМЕНЕНИЕ: Используем Cloudinary Storage ---
 const communityImageStorage = createStorage('communities');
 const uploadCommunityImages = multer({ storage: communityImageStorage });
+
+// --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем вспомогательную функцию ---
+const getPublicIdFromUrl = (url) => {
+    if (!url || !url.includes('cloudinary.com')) return null;
+    const parts = url.split('/');
+    const uploadIndex = parts.indexOf('upload');
+    if (uploadIndex === -1 || uploadIndex + 2 >= parts.length) return null;
+    const publicIdWithFormat = parts.slice(uploadIndex + 2).join('/');
+    const publicId = publicIdWithFormat.substring(0, publicIdWithFormat.lastIndexOf('.'));
+    return publicId;
+};
+// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
 const canManageCommunity = async (req, res, next) => {
     try {
@@ -74,7 +82,6 @@ router.post('/', authMiddleware, uploadCommunityImages.fields([{ name: 'avatar',
     }
 });
 
-// --- ИЗМЕНЕНИЕ: Полностью переработанный роут обновления ---
 router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityImages.fields([{ name: 'avatar', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), async (req, res) => {
     try {
         const { name, description, topic, visibility, joinPolicy, postingPolicy, adminVisibility, memberListVisibility, removeAvatar, removeCoverImage } = req.body;
@@ -96,7 +103,6 @@ router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityI
         community.adminVisibility = adminVisibility;
         community.memberListVisibility = memberListVisibility;
         
-        // Обработка аватара
         if (req.files?.avatar) {
             if (community.avatar) {
                 const publicId = getPublicIdFromUrl(community.avatar);
@@ -111,7 +117,6 @@ router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityI
             community.avatar = null;
         }
 
-        // Обработка обложки
         if (req.files?.coverImage) {
             if (community.coverImage) {
                 const publicId = getPublicIdFromUrl(community.coverImage);
@@ -137,8 +142,8 @@ router.put('/:communityId', authMiddleware, canManageCommunity, uploadCommunityI
         res.status(500).json({ message: 'Ошибка сервера при обновлении сообщества.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ 2: Исправляем логику удаления файлов ---
 router.delete('/:communityId', authMiddleware, canManageCommunity, async (req, res) => {
     try {
         const community = req.community;
@@ -161,8 +166,8 @@ router.delete('/:communityId', authMiddleware, canManageCommunity, async (req, r
         postsToDelete.forEach(post => {
             if (post.imageUrls && post.imageUrls.length > 0) {
                 post.imageUrls.forEach(url => {
-                    const filePath = path.join(__dirname, '..', url);
-                    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                    const publicId = getPublicIdFromUrl(url);
+                    if (publicId) cloudinary.uploader.destroy(publicId);
                 });
             }
         });
@@ -170,12 +175,12 @@ router.delete('/:communityId', authMiddleware, canManageCommunity, async (req, r
         await Post.deleteMany({ community: community._id });
 
         if (community.avatar) {
-            const filePath = path.join(__dirname, '..', community.avatar);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            const publicId = getPublicIdFromUrl(community.avatar);
+            if (publicId) cloudinary.uploader.destroy(publicId);
         }
         if (community.coverImage) {
-            const filePath = path.join(__dirname, '..', community.coverImage);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            const publicId = getPublicIdFromUrl(community.coverImage);
+            if (publicId) cloudinary.uploader.destroy(publicId);
         }
 
         await User.updateMany(
@@ -191,6 +196,10 @@ router.delete('/:communityId', authMiddleware, canManageCommunity, async (req, r
         res.status(500).json({ message: 'Ошибка сервера при удалении сообщества.' });
     }
 });
+// --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
+
+// ... (остальные маршруты без изменений) ...
+
 router.get('/my', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.userId)
@@ -576,6 +585,7 @@ router.get('/:communityId/posts', authMiddleware, async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ 3: Удаляем дублирующиеся маршруты ---
 router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (req, res) => {
     try {
         const { targetUserId } = req.body;
@@ -707,126 +717,6 @@ router.post('/invites/decline', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка на сервере.' });
     }
 });
-
-router.post('/:communityId/invite', authMiddleware, canManageCommunity, async (req, res) => {
-    try {
-        const { targetUserId } = req.body;
-        const community = req.community;
-        const inviterId = req.user.userId;
-
-        const targetUser = await User.findById(targetUserId).select('privacySettings friends');
-        if (!targetUser) return res.status(404).json({ message: "Пользователь для приглашения не найден." });
-
-        if (!isAllowedByPrivacy(targetUser.privacySettings?.inviteToCommunity, inviterId, targetUser)) {
-            return res.status(403).json({ message: "Пользователь ограничил круг лиц, которые могут приглашать его в сообщества." });
-        }
-
-        if (community.members.includes(targetUserId)) return res.status(400).json({ message: "Пользователь уже является участником." });
-        if (community.bannedUsers.includes(targetUserId)) return res.status(400).json({ message: "Пользователь заблокирован в этом сообществе." });
-        if (community.pendingJoinRequests.includes(targetUserId)) return res.status(400).json({ message: "У пользователя уже есть активная заявка на вступление." });
-
-        const notification = new Notification({
-            recipient: targetUserId,
-            senders: [inviterId],
-            lastSender: inviterId,
-            type: 'community_invite',
-            entityId: community._id,
-            link: `/communities/${community._id}`,
-            previewText: community.name,
-            previewImage: community.avatar
-        });
-        await notification.save();
-
-        const populatedNotification = await Notification.findById(notification._id).populate('lastSender', 'username fullName avatar');
-        req.broadcastToUsers([targetUserId.toString()], { type: 'NEW_NOTIFICATION', payload: populatedNotification });
-
-        res.status(200).json({ message: 'Приглашение отправлено.' });
-
-    } catch (error) {
-        console.error("Error sending community invite:", error);
-        res.status(500).json({ message: 'Ошибка на сервере.' });
-    }
-});
-
-router.post('/invites/accept', authMiddleware, async (req, res) => {
-    try {
-        const { notificationId } = req.body;
-        const userId = req.user.userId;
-
-        const notification = await Notification.findById(notificationId);
-        if (!notification || notification.type !== 'community_invite' || notification.recipient.toString() !== userId) {
-            return res.status(404).json({ message: "Приглашение не найдено или недействительно." });
-        }
-
-        const community = await Community.findById(notification.entityId);
-        if (!community) return res.status(404).json({ message: "Сообщество не найдено." });
-
-        community.members.addToSet(userId);
-        await community.save();
-        await User.findByIdAndUpdate(userId, { $addToSet: { subscribedCommunities: community._id } });
-
-        const inviterId = notification.senders[0];
-        const acceptedNotification = new Notification({
-            recipient: inviterId,
-            senders: [userId],
-            lastSender: userId,
-            type: 'community_invite_accepted',
-            entityId: community._id,
-            link: `/communities/${community._id}`,
-            previewText: community.name,
-            previewImage: community.avatar
-        });
-        await acceptedNotification.save();
-        const populatedAccepted = await Notification.findById(acceptedNotification._id).populate('lastSender', 'username fullName avatar');
-        req.broadcastToUsers([inviterId.toString()], { type: 'NEW_NOTIFICATION', payload: populatedAccepted });
-        
-        await Notification.findByIdAndDelete(notificationId);
-        req.broadcastToUsers([userId.toString()], { type: 'NEW_NOTIFICATION' });
-    
-        res.status(200).json({ message: 'Вы вступили в сообщество.' });
-    } catch (error) {
-        res.status(500).json({ message: 'Ошибка на сервере.' });
-    }
-});
-
-router.post('/invites/decline', authMiddleware, async (req, res) => {
-    try {
-        const { notificationId } = req.body;
-        const userId = req.user.userId;
-
-        const notification = await Notification.findById(notificationId);
-        if (!notification || notification.type !== 'community_invite' || notification.recipient.toString() !== userId) {
-            return res.status(404).json({ message: "Приглашение не найдено или недействительно." });
-        }
-        
-        const community = await Community.findById(notification.entityId);
-        const inviterId = notification.senders[0];
-
-        if (community) {
-             const declinedNotification = new Notification({
-                recipient: inviterId,
-                senders: [userId],
-                lastSender: userId,
-                type: 'community_invite_declined',
-                entityId: community._id,
-                link: `/profile/${userId}`,
-                previewText: community.name,
-                previewImage: community.avatar
-            });
-            await declinedNotification.save();
-            const populatedDeclined = await Notification.findById(declinedNotification._id).populate('lastSender', 'username fullName avatar');
-            req.broadcastToUsers([inviterId.toString()], { type: 'NEW_NOTIFICATION', payload: populatedDeclined });
-        }
-
-        await Notification.findByIdAndDelete(notificationId);
-        req.broadcastToUsers([userId.toString()], { type: 'NEW_NOTIFICATION' });
-
-        req.broadcastMessage({ type: 'COMMUNITY_UPDATED', payload: { communityId: community._id } });
-        
-        res.status(200).json({ message: 'Приглашение отклонено.' });
-    } catch (error) {
-        res.status(500).json({ message: 'Ошибка на сервере.' });
-    }
-});
+// --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
 
 module.exports = router;

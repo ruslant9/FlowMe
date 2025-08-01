@@ -55,25 +55,19 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const isLikedByMe = localComment.likes.some(like => like && like._id === currentUserId);
     const hasChildren = localComment.children && localComment.children.length > 0;
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Новая, правильная логика для бейджа "Автор" ---
     const getAuthorBadge = () => {
-        // Если это пост сообщества...
         if (postCommunityId) {
-            // ...и комментарий оставлен этим же сообществом
             if (authorModel === 'Community' && authorObject._id === postCommunityId) {
                 return <span className="ml-2 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 px-2 py-0.5 rounded-full">Автор</span>;
             }
         } 
-        // Иначе (если это личный пост)...
         else {
-            // ...и комментарий оставлен тем же пользователем, который создал пост
             if (authorModel === 'User' && authorObject._id === postOwnerId) {
                 return <span className="ml-2 text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 px-2 py-0.5 rounded-full">Автор</span>;
             }
         }
         return null;
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     const toggleEditPicker = () => {
         if (smileButtonRef.current) {
@@ -160,7 +154,9 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
 
     const authorName = authorObject.name || authorObject.username;
     const authorFullName = authorObject.fullName;
-    const authorAvatar = authorObject.avatar ? `${API_URL}/${authorObject.avatar}` : '';
+    // --- ИЗМЕНЕНИЕ ---
+    const authorAvatar = authorObject.avatar || ''; // Используем URL напрямую
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     const authorLink = authorModel === 'Community' ? `/communities/${authorObject._id}` : `/profile/${authorObject._id}`;
     const authorIsPremium = authorModel === 'User' && authorObject.premium?.isActive;
     const authorCustomBorder = authorModel === 'User' ? authorObject.premiumCustomization?.avatarBorder : null;

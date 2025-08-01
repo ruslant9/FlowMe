@@ -5,6 +5,15 @@ import { Loader2, X, Image as ImageIcon } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
 const AttachmentsPanel = ({ attachments, loading, hasMore, onLoadMore, onClose, onImageClick }) => {
     const observer = useRef();
     const lastAttachmentElementRef = useCallback(node => {
@@ -37,7 +46,8 @@ const AttachmentsPanel = ({ attachments, loading, hasMore, onLoadMore, onClose, 
                     <div className="grid grid-cols-3 gap-1">
                         {attachments.map((att, index) => (
                             <div key={att._id} ref={attachments.length === index + 1 ? lastAttachmentElementRef : null} className="aspect-square bg-slate-200 dark:bg-slate-700 rounded-md overflow-hidden cursor-pointer" onClick={() => onImageClick(index)}>
-                                <img src={`${API_URL}/${att.imageUrl}`} alt="attachment" className="w-full h-full object-cover" />
+                                {/* --- ИЗМЕНЕНИЕ --- */}
+                                <img src={getImageUrl(att.imageUrl)} alt="attachment" className="w-full h-full object-cover" />
                             </div>
                         ))}
                     </div>
