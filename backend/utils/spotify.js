@@ -1,4 +1,4 @@
-// backend/routes/spotify.js (новый файл)
+// backend/utils/spotify.js
 
 const axios = require('axios');
 const Track = require('../models/Track');
@@ -12,7 +12,6 @@ let spotifyToken = {
     expiresAt: 0,
 };
 
-// Получение токена доступа для Spotify API
 async function getSpotifyToken() {
     if (spotifyToken.value && Date.now() < spotifyToken.expiresAt) {
         return spotifyToken.value;
@@ -31,7 +30,7 @@ async function getSpotifyToken() {
         const tokenData = response.data;
         spotifyToken = {
             value: tokenData.access_token,
-            expiresAt: Date.now() + (tokenData.expires_in - 300) * 1000, // Обновляем за 5 минут до истечения
+            expiresAt: Date.now() + (tokenData.expires_in - 300) * 1000,
         };
         return spotifyToken.value;
     } catch (error) {
@@ -40,9 +39,11 @@ async function getSpotifyToken() {
     }
 }
 
-// Поиск видео на YouTube для трека из Spotify
 async function findYouTubeVideoForTrack(trackName, artistName) {
-    if (!YOUTUBE_API_KEY) return null;
+    if (!YOUTUBE_API_KEY) {
+        console.error("YOUTUBE_API_KEY не установлен. Поиск на YouTube невозможен.");
+        return null;
+    }
     const query = `${trackName} ${artistName} official audio`;
     try {
         const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
@@ -60,12 +61,15 @@ async function findYouTubeVideoForTrack(trackName, artistName) {
         }
         return null;
     } catch (error) {
-        console.error(`Ошибка поиска на YouTube для "${query}":`, error.message);
+        console.error(`Ошибка поиска на YouTube для "${query}":`, error.response?.data?.error?.message || error.message);
+        if (error.response && error.response.status === 403) {
+            console.error("КВОТА YOUTUBE API СКОРЕЕ ВСЕГО ИСЧЕРПАНА!");
+        }
         return null;
     }
 }
 
-// Основная функция: ищет треки на Spotify и находит для них видео на YouTube
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Полная переработка функции с внедрением кэширования ---
 async function searchSpotifyAndFindYouTube({ q, daily = false }) {
     if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
         throw new Error('Сервис музыки не настроен на сервере.');
@@ -74,30 +78,47 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
     const token = await getSpotifyToken();
     let spotifyTracks = [];
 
-    if (daily) {
-        // Логика для "Новинок и хитов"
-         const playlistsResponse = await axios.get('https://api.spotify.com/v1/browse/categories/toplists/playlists', {
-            params: { country: 'RU', limit: 5 },
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const playlistId = playlistsResponse.data.playlists.items[Math.floor(Math.random() * playlistsResponse.data.playlists.items.length)].id;
-        const tracksResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            params: { limit: 50 },
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        spotifyTracks = tracksResponse.data.items.map(item => item.track).filter(Boolean);
-    } else {
-        // Стандартный поиск
-        const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
-            params: { q, type: 'track', market: 'RU', limit: 20 },
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
-        spotifyTracks = searchResponse.data.tracks.items;
+    // 1. Получаем треки из Spotify
+    try {
+        if (daily) {
+            const playlistsResponse = await axios.get('https://api.spotify.com/v1/browse/categories/toplists/playlists', {
+                params: { country: 'RU', limit: 5 },
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const playlistId = playlistsResponse.data.playlists.items[Math.floor(Math.random() * playlistsResponse.data.playlists.items.length)].id;
+            const tracksResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+                params: { limit: 50 },
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            spotifyTracks = tracksResponse.data.items.map(item => item.track).filter(Boolean);
+        } else {
+            const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
+                params: { q, type: 'track', market: 'RU', limit: 20 },
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            spotifyTracks = searchResponse.data.tracks.items;
+        }
+    } catch (error) {
+        console.error("Ошибка при запросе к Spotify API:", error.response?.data || error.message);
+        throw new Error("Ошибка при поиске треков в Spotify.");
+    }
+    
+    if (spotifyTracks.length === 0) {
+        return { tracks: [], nextPageToken: null };
     }
 
-    const trackPromises = spotifyTracks.map(async (track) => {
-        if (!track || !track.name || !track.artists.length > 0) return null;
+    const spotifyIds = spotifyTracks.map(track => track.id).filter(Boolean);
 
+    // 2. Проверяем наш кэш в базе данных
+    const cachedTracks = await Track.find({ spotifyId: { $in: spotifyIds }, type: 'search_cache' });
+    const cachedTracksMap = new Map(cachedTracks.map(track => [track.spotifyId, track]));
+
+    // 3. Определяем, для каких треков нужно искать видео на YouTube
+    const tracksToSearchOnYouTube = spotifyTracks.filter(track => !cachedTracksMap.has(track.id));
+
+    // 4. Ищем на YouTube только недостающие треки
+    const youtubePromises = tracksToSearchOnYouTube.map(async (track) => {
+        if (!track || !track.name || !track.artists.length > 0) return null;
         const artistName = track.artists.map(a => a.name).join(', ');
         const youtubeVideo = await findYouTubeVideoForTrack(track.name, artistName);
         if (!youtubeVideo) return null;
@@ -105,8 +126,8 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
         return {
             spotifyId: track.id,
             youtubeId: youtubeVideo.id.videoId,
-            title: youtubeVideo.snippet.title, // Берем заголовок из YouTube, т.к. он будет виден при переходе
-            artist: youtubeVideo.snippet.channelTitle, // Аналогично с каналом
+            title: youtubeVideo.snippet.title,
+            artist: youtubeVideo.snippet.channelTitle,
             album: track.album.name,
             albumArtUrl: track.album.images[0]?.url || youtubeVideo.snippet.thumbnails.high.url,
             durationMs: track.duration_ms,
@@ -114,17 +135,27 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
         };
     });
 
-    const finalTracks = (await Promise.all(trackPromises)).filter(Boolean);
-    
-    // Кеширование результатов поиска
-    if (finalTracks.length > 0 && !daily) {
-        const tracksToCache = finalTracks.map(track => ({ ...track, type: 'search_cache' }));
+    const newlyFoundTracks = (await Promise.all(youtubePromises)).filter(Boolean);
+
+    // 5. Кэшируем новые найденные треки в базу данных
+    if (newlyFoundTracks.length > 0) {
+        const tracksToCache = newlyFoundTracks.map(track => ({ ...track, type: 'search_cache' }));
         Track.insertMany(tracksToCache, { ordered: false }).catch(err => {
+            // Игнорируем ошибки дубликатов (код 11000), остальные выводим в консоль
             if (err.code !== 11000) console.error("Ошибка кеширования:", err.message);
         });
     }
 
+    // 6. Собираем финальный результат, сохраняя порядок из Spotify
+    const finalTracks = spotifyTracks.map(track => {
+        if (cachedTracksMap.has(track.id)) {
+            return cachedTracksMap.get(track.id);
+        }
+        return newlyFoundTracks.find(t => t.spotifyId === track.id);
+    }).filter(Boolean); // Убираем те, для которых так и не нашлось видео
+
     return { tracks: finalTracks, nextPageToken: null };
 }
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 module.exports = { searchSpotifyAndFindYouTube };

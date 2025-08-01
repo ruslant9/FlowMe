@@ -46,7 +46,7 @@ const createSessionAndToken = async (user, req) => {
         device: ua.device.vendor ? `${ua.device.vendor} ${ua.device.model}` : 'Unknown Device',
         os: ua.os.name ? `${ua.os.name} ${ua.os.version}` : 'Unknown OS',
         browser: ua.browser.name ? `${ua.browser.name} ${ua.browser.version}` : 'Unknown Browser',
-        countryCode: geo ? geo.country.toLowerCase() : 'xx',
+        countryCode: (geo && geo.country) ? geo.country.toLowerCase() : 'xx',
     });
 
     const token = jwt.sign(
