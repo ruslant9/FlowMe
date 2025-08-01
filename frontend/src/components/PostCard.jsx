@@ -24,6 +24,18 @@ import AnimatedAccent from './AnimatedAccent';
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
 
+// --- НОВАЯ ХЕЛПЕР-ФУНКЦИЯ ---
+const getImageUrl = (url) => {
+    if (!url) return '';
+    // Если URL уже полный (от Cloudinary), используем его как есть.
+    if (url.startsWith('http')) {
+        return url;
+    }
+    // В противном случае, собираем URL (для старых файлов, если они есть).
+    return `${API_URL}/${url}`;
+};
+// --- КОНЕЦ НОВОЙ ФУНКЦИИ ---
+
 const customRuLocale = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -529,7 +541,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                             <div onClick={handleOpenPostInModal} className="flex items-center space-x-3 cursor-pointer">
                                 {currentPost.community ? (
                                     <Link to={`/communities/${currentPost.community._id}`} onClick={e => e.stopPropagation()} className="flex items-center space-x-3 group">
-                                        <Avatar username={currentPost.community.name} avatarUrl={currentPost.community.avatar ? `${API_URL}/${currentPost.community.avatar}` : ''} size="md" />
+                                        <Avatar username={currentPost.community.name} avatarUrl={getImageUrl(currentPost.community.avatar)} size="md" />
                                         <div>
                                             <p className="text-xs text-slate-400 flex items-center mb-1"><Users size={12} className="mr-1"/> Сообщество</p>
                                             <p className="font-bold group-hover:underline">{currentPost.community.name}</p> 
@@ -539,7 +551,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                     </Link>
                                 ) : (
                                     <Link to={`/profile/${authorData._id}`} onClick={e => e.stopPropagation()} className="flex items-center space-x-3 group">
-                                        <Avatar username={authorData.username} fullName={authorData.fullName} avatarUrl={authorData.avatar ? `${API_URL}/${authorData.avatar}` : ''} isPremium={authorData.premium?.isActive} customBorder={authorData.premiumCustomization?.avatarBorder} />
+                                        <Avatar username={authorData.username} fullName={authorData.fullName} avatarUrl={getImageUrl(authorData.avatar)} isPremium={authorData.premium?.isActive} customBorder={authorData.premiumCustomization?.avatarBorder} />
                                         <div>
                                             {currentPost.isPinned && <p className="text-xs text-slate-400 flex items-center mb-1"><Pin size={12} className="mr-1"/> Закреплено в профиле</p>}
                                             <p className="font-bold group-hover:underline">{authorData.fullName || authorData.username}</p>
@@ -549,7 +561,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                 )}
                             </div>
                             
-                            {/* --- ИЗМЕНЕНИЕ: Добавляем проверку context !== 'feed' --- */}
                             {(isOwner || isCommunityOwner) && context !== 'feed' && (
                                 !isScheduled ? ( <Tippy
                                     interactive
@@ -698,7 +709,9 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                     <AnimatePresence initial={false} custom={imageDirection}>
                                         <motion.img
                                             key={imagePage}
-                                            src={`${API_URL}/${currentPost.imageUrls[imagePage]}`}
+                                            // --- ИЗМЕНЕНИЕ: Используем новую функцию для получения URL ---
+                                            src={getImageUrl(currentPost.imageUrls[imagePage])}
+                                            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                                             custom={carouselVariants}
                                             initial="enter"
                                             animate="center"
@@ -872,7 +885,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                                                 <Avatar
                                                                                     username={option.type === 'user' ? option.username : option.name}
                                                                                     fullName={option.name}
-                                                                                    avatarUrl={option.avatar ? `${API_URL}/${option.avatar}` : ''}
+                                                                                    avatarUrl={getImageUrl(option.avatar)}
                                                                                     size="md"
                                                                                     isPremium={option.premium?.isActive}
                                                                                     customBorder={option.premiumCustomization?.avatarBorder}
@@ -896,7 +909,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                         <Avatar
                                                             username={commentAs.type === 'user' ? commentAs.username : commentAs.name}
                                                             fullName={commentAs.name}
-                                                            avatarUrl={commentAs.avatar ? `${API_URL}/${commentAs.avatar}` : ''}
+                                                            avatarUrl={getImageUrl(commentAs.avatar)}
                                                             isPremium={commentAs.premium?.isActive}
                                                             customBorder={commentAs.premiumCustomization?.avatarBorder}
                                                             size="sm"
