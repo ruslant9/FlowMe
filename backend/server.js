@@ -37,8 +37,9 @@ const app = express();
 const server = http.createServer(app);
 
 app.set('trust proxy', 1);
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: process.env.CLIENT_URL, // Убедитесь, что CLIENT_URL в .env это ваш Vercel URL
     credentials: true 
 }));
 
