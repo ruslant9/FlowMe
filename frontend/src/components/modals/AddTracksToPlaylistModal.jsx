@@ -21,7 +21,11 @@ const cleanTitle = (title) => {
 };
 const cleanArtist = (artist) => {
     if (!artist) return '';
-    return artist; // Spotify предоставляет более чистые имена артистов
+    // Spotify предоставляет более чистые имена артистов, но YouTube может добавлять " - Topic"
+    if (artist.endsWith(' - Topic')) {
+        return artist.substring(0, artist.length - ' - Topic'.length).trim();
+    }
+    return artist;
 };
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 

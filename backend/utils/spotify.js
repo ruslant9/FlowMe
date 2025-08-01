@@ -2,21 +2,23 @@
 
 const axios = require('axios');
 const Track = require('../models/Track');
+const ytsr = require('youtube-sr').default; // <-- ИЗМЕНЕНИЕ: Импортируем новую библиотеку
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+// --- ИЗМЕНЕНИЕ: Ключ YouTube API больше не нужен ---
+// const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY; 
 
 let spotifyToken = {
     value: null,
     expiresAt: 0,
 };
 
+// Получение токена доступа для Spotify API (без изменений)
 async function getSpotifyToken() {
     if (spotifyToken.value && Date.now() < spotifyToken.expiresAt) {
         return spotifyToken.value;
     }
-
     try {
         const response = await axios.post('https://accounts.spotify.com/api/token',
             'grant_type=client_credentials', {
@@ -26,7 +28,6 @@ async function getSpotifyToken() {
                 },
             }
         );
-
         const tokenData = response.data;
         spotifyToken = {
             value: tokenData.access_token,
@@ -39,37 +40,33 @@ async function getSpotifyToken() {
     }
 }
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Переписываем поиск на YouTube, чтобы он не использовал API ---
 async function findYouTubeVideoForTrack(trackName, artistName) {
-    if (!YOUTUBE_API_KEY) {
-        console.error("YOUTUBE_API_KEY не установлен. Поиск на YouTube невозможен.");
-        return null;
-    }
     const query = `${trackName} ${artistName} official audio`;
     try {
-        const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-            params: {
-                part: 'snippet',
-                q: query,
-                type: 'video',
-                maxResults: 1,
-                key: YOUTUBE_API_KEY,
-                videoEmbeddable: 'true',
-            },
-        });
-        if (response.data.items && response.data.items.length > 0) {
-            return response.data.items[0];
+        // Используем библиотеку youtube-sr для поиска без API ключа
+        const searchResults = await ytsr.search(query, { limit: 1, type: 'video' });
+        if (searchResults && searchResults.length > 0) {
+            const video = searchResults[0];
+            // Адаптируем результат под структуру, которую ожидает остальная часть приложения
+            return {
+                id: { videoId: video.id },
+                snippet: {
+                    title: video.title,
+                    channelTitle: video.channel.name,
+                    thumbnails: { high: { url: video.thumbnail.url } }
+                }
+            };
         }
         return null;
     } catch (error) {
-        console.error(`Ошибка поиска на YouTube для "${query}":`, error.response?.data?.error?.message || error.message);
-        if (error.response && error.response.status === 403) {
-            console.error("КВОТА YOUTUBE API СКОРЕЕ ВСЕГО ИСЧЕРПАНА!");
-        }
-        return null;
+        console.error(`Ошибка поиска на YouTube (без API) для "${query}":`, error.message);
+        return null; // Возвращаем null, чтобы не прерывать весь процесс
     }
 }
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Полная переработка функции с внедрением кэширования ---
+
 async function searchSpotifyAndFindYouTube({ q, daily = false }) {
     if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
         throw new Error('Сервис музыки не настроен на сервере.');
@@ -78,7 +75,7 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
     const token = await getSpotifyToken();
     let spotifyTracks = [];
 
-    // 1. Получаем треки из Spotify
+    // Шаг 1: Получаем треки из Spotify
     try {
         if (daily) {
             const playlistsResponse = await axios.get('https://api.spotify.com/v1/browse/categories/toplists/playlists', {
@@ -109,14 +106,14 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
 
     const spotifyIds = spotifyTracks.map(track => track.id).filter(Boolean);
 
-    // 2. Проверяем наш кэш в базе данных
+    // Шаг 2: Проверяем наш кэш в базе данных
     const cachedTracks = await Track.find({ spotifyId: { $in: spotifyIds }, type: 'search_cache' });
     const cachedTracksMap = new Map(cachedTracks.map(track => [track.spotifyId, track]));
 
-    // 3. Определяем, для каких треков нужно искать видео на YouTube
+    // Шаг 3: Определяем, для каких треков нужно искать видео
     const tracksToSearchOnYouTube = spotifyTracks.filter(track => !cachedTracksMap.has(track.id));
 
-    // 4. Ищем на YouTube только недостающие треки
+    // Шаг 4: Ищем на YouTube только недостающие треки
     const youtubePromises = tracksToSearchOnYouTube.map(async (track) => {
         if (!track || !track.name || !track.artists.length > 0) return null;
         const artistName = track.artists.map(a => a.name).join(', ');
@@ -137,25 +134,23 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
 
     const newlyFoundTracks = (await Promise.all(youtubePromises)).filter(Boolean);
 
-    // 5. Кэшируем новые найденные треки в базу данных
+    // Шаг 5: Кэшируем новые найденные треки
     if (newlyFoundTracks.length > 0) {
         const tracksToCache = newlyFoundTracks.map(track => ({ ...track, type: 'search_cache' }));
         Track.insertMany(tracksToCache, { ordered: false }).catch(err => {
-            // Игнорируем ошибки дубликатов (код 11000), остальные выводим в консоль
             if (err.code !== 11000) console.error("Ошибка кеширования:", err.message);
         });
     }
 
-    // 6. Собираем финальный результат, сохраняя порядок из Spotify
+    // Шаг 6: Собираем финальный результат
     const finalTracks = spotifyTracks.map(track => {
         if (cachedTracksMap.has(track.id)) {
             return cachedTracksMap.get(track.id);
         }
         return newlyFoundTracks.find(t => t.spotifyId === track.id);
-    }).filter(Boolean); // Убираем те, для которых так и не нашлось видео
+    }).filter(Boolean);
 
     return { tracks: finalTracks, nextPageToken: null };
 }
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 module.exports = { searchSpotifyAndFindYouTube };

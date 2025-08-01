@@ -469,14 +469,9 @@ const UserProfilePage = () => {
                         title="Профиль"
                         noHeaderMargin
                         userAccent={userAccent}
-                        actionButton={
-                            user.premium?.isActive && (
-                                <button onClick={handlePremiumFeatureClick} className="flex items-center space-x-2 cursor-pointer" title="Функция Premium">
-                                    <span className="premium-shimmer-text font-bold">Premium</span>
-                                    <Crown size={18} className="text-yellow-400" />
-                                </button>
-                            )
-                        }
+                        actionButton={<button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-500 hover:underline">
+                            Показать все
+                            </button>}
                         renderContent={(accentTextColor) => (
                              <div className="text-center pt-4 pb-6">
                                 <div className="relative flex-shrink-0 mx-auto mb-4 w-24 h-24">
