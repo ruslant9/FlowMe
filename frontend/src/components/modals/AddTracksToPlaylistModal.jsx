@@ -21,10 +21,7 @@ const cleanTitle = (title) => {
 };
 const cleanArtist = (artist) => {
     if (!artist) return '';
-    if (artist.endsWith(' - Topic')) {
-        return artist.substring(0, artist.length - ' - Topic'.length).trim();
-    }
-    return artist;
+    return artist; // Spotify предоставляет более чистые имена артистов
 };
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
@@ -77,7 +74,6 @@ return (
                         : myMusic.length > 0 ? myMusic.map(track => {
                             const isSelected = selectedTrackIds.includes(track._id);
                             return (
-                            // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Переделываем отображение трека ---
                             <div key={track._id} onClick={() => handleToggleTrack(track._id)}
                                 className={`flex items-center space-x-4 p-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-blue-500/20' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                                 <div className="relative w-12 h-12 flex-shrink-0">
@@ -96,13 +92,10 @@ return (
                                     </AnimatePresence>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    {/* --- ИЗМЕНЕНИЕ --- */}
                                     <p className="font-semibold truncate">{cleanTitle(track.title)}</p>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{cleanArtist(track.artist)}</p>
-                                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                 </div>
                             </div>
-                            // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
                         )})
                         : <div className="text-center py-10 text-slate-500"><Music className="mx-auto mb-2"/>Ваша медиатека пуста или все треки уже добавлены.</div>}
                     </div>

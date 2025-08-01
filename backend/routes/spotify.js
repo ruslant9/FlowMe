@@ -1,178 +1,130 @@
-// backend/routes/youtube.js
+// backend/routes/spotify.js (новый файл)
 
-const express = require('express');
-const router = express.Router();
 const axios = require('axios');
-const authMiddleware = require('../middleware/auth.middleware');
 const Track = require('../models/Track');
 
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const YOUTUBE_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
-const HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36',
+let spotifyToken = {
+    value: null,
+    expiresAt: 0,
 };
 
-const parseDuration = (durationIso) => {
-    let durationMs = 0;
-    const matches = durationIso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (matches) {
-        const hours = parseInt(matches[1] || 0, 10);
-        const minutes = parseInt(matches[2] || 0, 10);
-        const seconds = parseInt(matches[3] || 0, 10);
-        durationMs = (hours * 3600 + minutes * 60 + seconds) * 1000;
+// Получение токена доступа для Spotify API
+async function getSpotifyToken() {
+    if (spotifyToken.value && Date.now() < spotifyToken.expiresAt) {
+        return spotifyToken.value;
     }
-    return durationMs;
-};
-
-const mapYouTubeVideoToTrack = (item, durationMap) => {
-    return {
-        youtubeId: item.id.videoId,
-        title: item.snippet.title,
-        artist: item.snippet.channelTitle,
-        albumArtUrl: item.snippet.thumbnails.high.url,
-        durationMs: durationMap.get(item.id.videoId) || null,
-        previewUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-    };
-};
-
-async function searchYouTubeTracks(queryParams) {
-    const { q, pageToken, daily } = queryParams;
-    const isDaily = daily === 'true';
-
-    let searchQuery = q;
-    if (isDaily) {
-        searchQuery = ['Русские хиты 2024', 'Новинки русской музыки', 'Топ чарт Россия', 'Популярная музыка'][Math.floor(Math.random() * 4)];
-    }
-
-    if (!searchQuery) {
-        throw new Error('Параметр "q" обязателен для поиска.');
-    }
-
-    let finalQuery = searchQuery;
-    const searchParams = {
-        part: 'snippet', type: 'video', maxResults: 20, key: YOUTUBE_API_KEY,
-        videoEmbeddable: 'true', regionCode: 'RU',
-    };
-    
-    if (isDaily) {
-        const negativeKeywords = "-remix -speed up -slowed -nightcore -instrumental -karaoke -cover -mix -lyrics -live";
-        finalQuery = `${searchQuery} official audio ${negativeKeywords}`;
-        searchParams.maxResults = 50;
-    }
-
-    searchParams.q = finalQuery;
-    if (pageToken) searchParams.pageToken = pageToken;
 
     try {
-        const searchResponse = await axios.get(`${YOUTUBE_BASE_URL}/search`, { params: searchParams, headers: HEADERS });
-        const videoItems = searchResponse.data.items.filter(item => item.id.kind === 'youtube#video');
-        
-        const responseData = { tracks: [], nextPageToken: searchResponse.data.nextPageToken || null };
-
-        if (videoItems.length > 0) {
-            const videoIds = videoItems.map(item => item.id.videoId).join(',');
-            const detailsResponse = await axios.get(`${YOUTUBE_BASE_URL}/videos`, {
-                params: { part: 'contentDetails', id: videoIds, key: YOUTUBE_API_KEY },
-                headers: HEADERS,
-            });
-
-            const durationMap = new Map();
-            detailsResponse.data.items.forEach(item => {
-                durationMap.set(item.id, parseDuration(item.contentDetails.duration));
-            });
-            
-            const MAX_DURATION_MS = 10 * 60 * 1000;
-            const MIN_DURATION_MS = 60 * 1000;
-            
-            let mappedTracks = videoItems
-                .map(item => mapYouTubeVideoToTrack(item, durationMap))
-                .filter(track => track.durationMs && track.durationMs >= MIN_DURATION_MS);
-
-            if (isDaily) {
-                mappedTracks = mappedTracks.filter(track => track.durationMs < MAX_DURATION_MS);
+        const response = await axios.post('https://accounts.spotify.com/api/token',
+            'grant_type=client_credentials', {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': 'Basic ' + Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'),
+                },
             }
-                
-            responseData.tracks = isDaily ? mappedTracks.slice(0, 12) : mappedTracks;
-        }
-        
-        return responseData;
+        );
 
+        const tokenData = response.data;
+        spotifyToken = {
+            value: tokenData.access_token,
+            expiresAt: Date.now() + (tokenData.expires_in - 300) * 1000, // Обновляем за 5 минут до истечения
+        };
+        return spotifyToken.value;
     } catch (error) {
-        // --- ИЗМЕНЕНИЕ: Улучшенная обработка ошибок ---
-        if (error.response && error.response.status === 403) {
-            console.error('[YouTube API Error] Доступ запрещен (403). Вероятнее всего, закончилась дневная квота.');
-            console.error('[YouTube API Error] Details:', JSON.stringify(error.response.data.error, null, 2));
-        } else {
-            console.error("Неизвестная ошибка при запросе к YouTube API:", error.message);
-        }
-        // Возвращаем пустой результат, чтобы приложение не падало
-        return { tracks: [], nextPageToken: null }; 
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+        console.error("Ошибка получения токена Spotify:", error.response?.data || error.message);
+        throw new Error("Не удалось получить доступ к сервису Spotify.");
     }
 }
 
-
-router.get('/search', authMiddleware, async (req, res) => {
+// Поиск видео на YouTube для трека из Spotify
+async function findYouTubeVideoForTrack(trackName, artistName) {
+    if (!YOUTUBE_API_KEY) return null;
+    const query = `${trackName} ${artistName} official audio`;
     try {
-        if (!YOUTUBE_API_KEY) {
-            console.error('YOUTUBE_API_KEY не установлен в переменных окружения.');
-            return res.status(500).json({ message: 'Музыкальный сервис не настроен.' });
-        }
-        if (!req.query.q && !req.query.daily) {
-            return res.status(400).json({ message: 'Параметр "q" или "daily" обязателен для поиска.' });
-        }
-        
-        if (!req.query.pageToken && !req.query.daily && req.query.q) {
-             const cachedTracks = await Track.find({ type: 'search_cache', $text: { $search: req.query.q } }).limit(20).lean();
-             if (cachedTracks.length > 0) {
-                 return res.json({ tracks: cachedTracks, nextPageToken: null });
-             }
-        }
-        
-        const responseData = await searchYouTubeTracks(req.query);
-        
-        if (responseData.tracks.length > 0 && !req.query.daily) {
-             const tracksToCache = responseData.tracks.map(track => ({ ...track, type: 'search_cache' }));
-             Track.insertMany(tracksToCache, { ordered: false }).catch(err => {
-                 if (err.code !== 11000) console.error("Ошибка кеширования:", err.message);
-             });
-        }
-        
-        res.json(responseData);
-    } catch (error) {
-        // Этот catch теперь будет ловить только внутренние ошибки, а не ошибки API
-        console.error("Критическая ошибка в роуте /search:", error);
-        res.status(500).json({ message: 'Ошибка поиска YouTube треков.' });
-    }
-});
-
-
-router.get('/videos', authMiddleware, async (req, res) => {
-    const { ids } = req.query;
-    if (!ids) return res.status(400).json({ message: 'Параметр "ids" обязателен.' });
-    if (!YOUTUBE_API_KEY) return res.status(500).json({ message: 'Музыкальный сервис не настроен.' });
-
-    try {
-        const response = await axios.get(`${YOUTUBE_BASE_URL}/videos`, {
-            params: { part: 'snippet,contentDetails', id: ids, key: YOUTUBE_API_KEY },
-            headers: HEADERS,
+        const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+            params: {
+                part: 'snippet',
+                q: query,
+                type: 'video',
+                maxResults: 1,
+                key: YOUTUBE_API_KEY,
+                videoEmbeddable: 'true',
+            },
         });
-
-        const detailedVideos = response.data.items.map(item => ({
-            youtubeId: item.id,
-            title: item.snippet.title,
-            artist: item.snippet.channelTitle,
-            albumArtUrl: item.snippet.thumbnails.high.url,
-            durationMs: parseDuration(item.contentDetails.duration),
-            previewUrl: `https://www.youtube.com/watch?v=${item.id}`,
-        }));
-
-        res.json(detailedVideos);
+        if (response.data.items && response.data.items.length > 0) {
+            return response.data.items[0];
+        }
+        return null;
     } catch (error) {
-        res.status(500).json({ message: 'Ошибка получения деталей YouTube видео.' });
+        console.error(`Ошибка поиска на YouTube для "${query}":`, error.message);
+        return null;
     }
-});
+}
 
-// --- ИЗМЕНЕНИЕ 3: Экспортируем не только роутер, но и нашу новую функцию ---
-module.exports = { router, searchYouTubeTracks };
+// Основная функция: ищет треки на Spotify и находит для них видео на YouTube
+async function searchSpotifyAndFindYouTube({ q, daily = false }) {
+    if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+        throw new Error('Сервис музыки не настроен на сервере.');
+    }
+    
+    const token = await getSpotifyToken();
+    let spotifyTracks = [];
+
+    if (daily) {
+        // Логика для "Новинок и хитов"
+        const playlistsResponse = await axios.get('https://api.spotify.com/v1/browse/featured-playlists', {
+            params: { country: 'RU', limit: 1 },
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const playlistId = playlistsResponse.data.playlists.items[0].id;
+        const tracksResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+            params: { limit: 50 },
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        spotifyTracks = tracksResponse.data.items.map(item => item.track).filter(Boolean);
+    } else {
+        // Стандартный поиск
+        const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
+            params: { q, type: 'track', market: 'RU', limit: 20 },
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        spotifyTracks = searchResponse.data.tracks.items;
+    }
+
+    const trackPromises = spotifyTracks.map(async (track) => {
+        if (!track || !track.name || !track.artists.length > 0) return null;
+
+        const artistName = track.artists.map(a => a.name).join(', ');
+        const youtubeVideo = await findYouTubeVideoForTrack(track.name, artistName);
+        if (!youtubeVideo) return null;
+
+        return {
+            spotifyId: track.id,
+            youtubeId: youtubeVideo.id.videoId,
+            title: youtubeVideo.snippet.title, // Берем заголовок из YouTube, т.к. он будет виден при переходе
+            artist: youtubeVideo.snippet.channelTitle, // Аналогично с каналом
+            album: track.album.name,
+            albumArtUrl: track.album.images[0]?.url || youtubeVideo.snippet.thumbnails.high.url,
+            durationMs: track.duration_ms,
+            previewUrl: track.preview_url,
+        };
+    });
+
+    const finalTracks = (await Promise.all(trackPromises)).filter(Boolean);
+    
+    // Кеширование результатов поиска
+    if (finalTracks.length > 0 && !daily) {
+        const tracksToCache = finalTracks.map(track => ({ ...track, type: 'search_cache' }));
+        Track.insertMany(tracksToCache, { ordered: false }).catch(err => {
+            if (err.code !== 11000) console.error("Ошибка кеширования:", err.message);
+        });
+    }
+
+    return { tracks: finalTracks, nextPageToken: null };
+}
+
+module.exports = { searchSpotifyAndFindYouTube };

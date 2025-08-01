@@ -5,141 +5,201 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
 const Track = require('../models/Track');
 const User = require('../models/User');
-const Playlist = require('../models/Playlist');
-const UserMusicProfile = require('../models/UserMusicProfile');
+const Session = require('../models/Session');
 const axios = require('axios');
 const { isAllowedByPrivacy } = require('../utils/privacy');
-const { searchSpotifyTracks, mapSpotifyTrack } = require('./spotify'); // Переименованный spotify.js
+const UserMusicProfile = require('../models/UserMusicProfile');
+const Playlist = require('../models/Playlist');
+// --- ИЗМЕНЕНИЕ: Импортируем новую функцию из spotify.js (который заменяет youtube.js) ---
+const { searchSpotifyAndFindYouTube } = require('./spotify'); 
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-
-// Helper для поиска видео на YouTube по данным трека из Spotify
-const findYouTubeVideoForTrack = async (track) => {
-    try {
-        // Проверяем, есть ли у нас уже youtubeId в кеше
-        const cachedTrack = await Track.findOne({ spotifyId: track.spotifyId, type: 'search_cache' }).select('youtubeId');
-        if (cachedTrack && cachedTrack.youtubeId) {
-            return { ...track, youtubeId: cachedTrack.youtubeId };
+const broadcastToUsers = (req, userIds, message) => {
+    userIds.forEach(userId => {
+        const userSocket = req.clients.get(userId.toString());
+        if (userSocket && userSocket.readyState === 1) {
+            userSocket.send(JSON.stringify(message));
         }
-
-        const query = `${track.artist} - ${track.title} audio`;
-        const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-            params: {
-                part: 'snippet',
-                q: query,
-                type: 'video',
-                maxResults: 1,
-                key: YOUTUBE_API_KEY,
-                videoEmbeddable: 'true',
-            },
-        });
-
-        if (response.data.items && response.data.items.length > 0) {
-            const youtubeId = response.data.items[0].id.videoId;
-            return { ...track, youtubeId };
-        }
-        return { ...track, youtubeId: null }; // Если не нашли, возвращаем null
-    } catch (error) {
-        console.error(`Ошибка поиска на YouTube для трека ${track.title}:`, error.message);
-        return { ...track, youtubeId: null };
-    }
+    });
 };
 
-// Сохранить/удалить трек
+const GENRE_MOOD_KEYWORDS = {
+    'Chill': ['chill', 'lofi', 'relax', 'acoustic', 'slowed', 'reverb'],
+    'Energetic': ['dance', 'power', 'gym', 'workout', 'running', 'upbeat'],
+    'Party': ['party', 'club', 'remix', 'bootleg', 'mix'],
+    'Sad': ['sad', 'slow', 'emotional', 'heartbreak'],
+    'Rock': ['rock', 'metal', 'punk', 'alternative', 'hard rock'],
+    'Pop': ['pop', 'hits', 'charts', 'billboard'],
+    'Hip-Hop': ['hip-hop', 'rap', 'trap', 'drill'],
+    'Electronic': ['electronic', 'edm', 'techno', 'house', 'dnb', 'drum and bass', 'phonk'],
+    'Phonk': ['phonk']
+};
+
+const analyzeTrackForGenres = (track) => {
+    const foundGenres = new Set();
+    const searchableText = `${(track.title || '').toLowerCase()} ${(track.artist || '').toLowerCase()}`;
+    for (const genre in GENRE_MOOD_KEYWORDS) {
+        for (const keyword of GENRE_MOOD_KEYWORDS[genre]) {
+            if (searchableText.includes(keyword)) {
+                foundGenres.add(genre);
+            }
+        }
+    }
+    return Array.from(foundGenres);
+};
+
 router.post('/toggle-save', authMiddleware, async (req, res) => {
     try {
-        const trackData = req.body;
+        // --- ИЗМЕНЕНИЕ: Принимаем и используем spotifyId ---
+        const { youtubeId, title, artist, album, albumArtUrl, previewUrl, durationMs, spotifyId } = req.body;
         const userId = req.user.userId;
-
-        if (!trackData.spotifyId || !trackData.title || !trackData.artist) {
+        if (!spotifyId || !youtubeId || !title || !artist) {
             return res.status(400).json({ message: 'Необходимые поля для трека отсутствуют.' });
         }
-        
-        let track = await Track.findOne({ user: userId, spotifyId: trackData.spotifyId, type: 'saved' });
-
+        let track = await Track.findOne({ user: userId, spotifyId, type: 'saved' });
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         if (track) {
             await Track.deleteOne({ _id: track._id });
             res.status(200).json({ message: 'Трек удален из Моей музыки.', saved: false });
         } else {
-            // Если трека нет, убедимся, что у него есть youtubeId
-            if (!trackData.youtubeId) {
-                const updatedTrackData = await findYouTubeVideoForTrack(trackData);
-                if (!updatedTrackData.youtubeId) {
-                    return res.status(404).json({ message: 'Не удалось найти воспроизводимую версию трека.' });
-                }
-                trackData.youtubeId = updatedTrackData.youtubeId;
-            }
-
             track = new Track({
-                ...trackData,
-                user: userId,
-                type: 'saved',
-                savedAt: new Date(),
+                // --- ИЗМЕНЕНИЕ: Сохраняем spotifyId в базу данных ---
+                user: userId, youtubeId, title, artist, album, albumArtUrl, previewUrl, durationMs, spotifyId,
+                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+                type: 'saved', savedAt: new Date(),
             });
             await track.save();
             res.status(201).json({ message: 'Трек добавлен в Мою музыку.', saved: true });
         }
+        broadcastToUsers(req, [userId], { type: 'MUSIC_UPDATED', payload: { userId } });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при обновлении трека.' });
     }
 });
-
-// Получить "Мою музыку"
 router.get('/saved', authMiddleware, async (req, res) => {
     try {
-        const savedTracks = await Track.find({ user: req.user.userId, type: 'saved' }).sort({ savedAt: -1 });
+        const userId = req.user.userId;
+        const savedTracks = await Track.find({ user: userId, type: 'saved' }).sort({ savedAt: -1 });
         res.status(200).json(savedTracks);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при получении треков.' });
     }
 });
 
-// Получить музыку другого пользователя с пагинацией
 router.get('/user/:userId/saved', authMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;
+        const requesterId = req.user.userId;
         const page = parseInt(req.query.page) || 1;
-        const limit = 20;
+        const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
         const targetUser = await User.findById(userId).select('privacySettings friends blacklist');
-        if (!targetUser) return res.status(404).json({ message: 'Пользователь не найден.' });
-        if (targetUser.blacklist.includes(req.user.userId)) return res.status(403).json({ message: 'Доступ запрещен.' });
-        if (!isAllowedByPrivacy(targetUser.privacySettings.viewMusic, req.user.userId, targetUser)) {
+        if (!targetUser) {
+            return res.status(404).json({ message: 'Пользователь не найден.' });
+        }
+
+        if (targetUser.blacklist.includes(requesterId)) {
+            return res.status(403).json({ message: 'Доступ запрещен.' });
+        }
+
+        if (!isAllowedByPrivacy(targetUser.privacySettings.viewMusic, requesterId, targetUser)) {
             return res.status(403).json({ message: 'Пользователь скрыл свою музыку.' });
         }
         
         const query = { user: userId, type: 'saved' };
+
         const totalTracks = await Track.countDocuments(query);
-        const savedTracks = await Track.find(query).sort({ savedAt: -1 }).skip(skip).limit(limit);
+        const savedTracks = await Track.find(query)
+            .sort({ savedAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         res.status(200).json({
             tracks: savedTracks,
             hasMore: (skip + savedTracks.length) < totalTracks,
             totalCount: totalTracks
         });
+
     } catch (error) {
+        console.error('Ошибка при получении сохраненных треков пользователя:', error);
         res.status(500).json({ message: 'Ошибка сервера при получении треков.' });
     }
 });
 
-// История прослушиваний
+const countryMap = { RU: 'Russia', UA: 'Ukraine', BY: 'Belarus', KZ: 'Kazakhstan', US: 'United States', DE: 'Germany' };
+router.get('/popular-artists', authMiddleware, async (req, res) => {
+    if (!process.env.LASTFM_API_KEY) {
+        return res.status(500).json({ message: 'Сервис рекомендаций не настроен на сервере.' });
+    }
+    try {
+        let artistsToFetch = [];
+        const desiredArtistCount = 6;
+        const profile = await UserMusicProfile.findOne({ user: req.user.userId }).lean();
+        if (profile && profile.topArtists && profile.topArtists.length > 0) {
+            const userTopArtists = profile.topArtists.map(a => a.name);
+            artistsToFetch = userTopArtists.slice(0, desiredArtistCount);
+            if (artistsToFetch.length < desiredArtistCount) {
+                const seedArtist = artistsToFetch[0];
+                try {
+                    const similarArtistsResponse = await axios.get('http://ws.audioscrobbler.com/2.0/', {
+                        params: { method: 'artist.getSimilar', artist: seedArtist, api_key: process.env.LASTFM_API_KEY, format: 'json', limit: 15 }
+                    });
+                    if (similarArtistsResponse.data.similarartists) {
+                        const similarArtists = similarArtistsResponse.data.similarartists.artist.map(a => a.name);
+                        const uniqueSimilar = similarArtists.filter(name => !artistsToFetch.includes(name));
+                        artistsToFetch.push(...uniqueSimilar);
+                    }
+                } catch (similarError) {}
+            }
+        }
+        if (artistsToFetch.length === 0) {
+            const session = await Session.findById(req.user.sessionId).select('countryCode');
+            const countryCode = session?.countryCode?.toUpperCase();
+            const countryName = countryMap[countryCode] || 'Russia';
+            const topArtistsResponse = await axios.get('http://ws.audioscrobbler.com/2.0/', {
+                params: { method: 'chart.gettopartists', country: countryName, api_key: process.env.LASTFM_API_KEY, format: 'json', limit: 10 }
+            });
+            artistsToFetch = topArtistsResponse.data.artists.artist.map(a => a.name);
+        }
+        const uniqueArtists = [...new Set(artistsToFetch)].slice(0, 15);
+        const artistInfoPromises = uniqueArtists.map(artistName => 
+            axios.get('http://ws.audioscrobbler.com/2.0/', {
+                params: { method: 'artist.getinfo', artist: artistName, api_key: process.env.LASTFM_API_KEY, format: 'json', autocorrect: 1 }
+            })
+        );
+        const artistInfoResponses = await Promise.allSettled(artistInfoPromises);
+        const result = artistInfoResponses
+            .filter(response => response.status === 'fulfilled' && response.value.data && !response.value.data.error)
+            .map(response => {
+                const artistData = response.value.data.artist;
+                const image = artistData.image.find(img => img.size === 'extralarge') || artistData.image[artistData.image.length - 1];
+                if (!image || !image['#text']) return null;
+                return { name: artistData.name, imageUrl: image['#text'] };
+            })
+            .filter(Boolean);
+        res.json(result.slice(0, desiredArtistCount));
+    } catch (error) {
+        res.status(500).json({ message: 'Не удалось получить список популярных исполнителей.' });
+    }
+});
 router.get('/history', authMiddleware, async (req, res) => {
     try {
-        const history = await Track.find({ user: req.user.userId, type: 'recent' }).sort({ playedAt: -1 }).limit(50);
+        const userId = req.user.userId;
+        const history = await Track.find({ user: userId, type: 'recent' }).sort({ playedAt: -1 }).limit(50);
         res.json(history);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при получении истории.' });
     }
 });
-
 router.post('/history', authMiddleware, async (req, res) => {
     try {
-        const trackData = req.body;
-        if (!trackData.spotifyId || !trackData.youtubeId) return res.status(400).json({ message: 'Недостаточно данных о треке.' });
+        const { youtubeId, title, artist, albumArtUrl, durationMs } = req.body;
+        const userId = req.user.userId;
+        if (!youtubeId || !title || !artist) return res.status(400).json({ message: 'Недостаточно данных о треке.' });
         await Track.findOneAndUpdate(
-            { user: req.user.userId, spotifyId: trackData.spotifyId, type: 'recent' },
-            { ...trackData, user: req.user.userId, type: 'recent', playedAt: new Date() },
+            { user: userId, youtubeId: youtubeId, type: 'recent' },
+            { user: userId, youtubeId, title, artist, albumArtUrl, durationMs, type: 'recent', playedAt: new Date() },
             { upsert: true, new: true }
         );
         res.status(200).json({ message: 'История обновлена.' });
@@ -147,126 +207,240 @@ router.post('/history', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при обновлении истории.' });
     }
 });
-
-router.delete('/history/:spotifyId', authMiddleware, async (req, res) => {
+router.delete('/history/:youtubeId', authMiddleware, async (req, res) => {
     try {
-        const { spotifyId } = req.params;
-        await Track.deleteOne({ spotifyId: spotifyId, user: req.user.userId, type: 'recent' });
+        const { youtubeId } = req.params;
+        const userId = req.user.userId;
+        const result = await Track.deleteOne({ youtubeId: youtubeId, user: userId, type: 'recent' });
+        if (result.deletedCount === 0) return res.status(404).json({ message: 'Трек не найден в вашей истории.' });
         res.status(200).json({ message: 'Трек удален из истории.' });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при удалении трека из истории.' });
     }
 });
+router.post('/log-action', authMiddleware, async (req, res) => {
+    try {
+        const { track, action } = req.body;
+        const userId = req.user.userId;
 
+        if (!track || !action) {
+            return res.status(400).json({ message: 'Недостаточно данных.' });
+        }
+        
+        let points = 0;
+        switch(action) {
+            case 'listen': points = 1; break;
+            case 'like': points = 5; break;
+            case 'skip': points = -2; break;
+            case 'seek_skip': points = -1; break;
+        }
 
-// Поиск
+        const artists = (track.artist && typeof track.artist === 'string') ? track.artist.split(',').map(a => a.trim()) : [];
+        const genres = analyzeTrackForGenres(track);
+
+        if (artists.length === 0 && genres.length === 0) {
+            return res.status(200).send('No data to log.');
+        }
+        
+        const bulkOps = [];
+
+        artists.forEach(artistName => {
+            bulkOps.push({
+                updateOne: {
+                    filter: { user: userId, 'topArtists.name': artistName },
+                    update: { $inc: { 'topArtists.$.score': points } }
+                }
+            });
+            bulkOps.push({
+                updateOne: {
+                    filter: { user: userId, 'topArtists.name': { $ne: artistName } },
+                    update: { $addToSet: { topArtists: { name: artistName, score: points } } }
+                }
+            });
+        });
+
+        genres.forEach(genreName => {
+            bulkOps.push({
+                updateOne: {
+                    filter: { user: userId, 'topGenres.name': genreName },
+                    update: { $inc: { 'topGenres.$.score': points } }
+                }
+            });
+            bulkOps.push({
+                updateOne: {
+                    filter: { user: userId, 'topGenres.name': { $ne: genreName } },
+                    update: { $addToSet: { topGenres: { name: genreName, score: points } } }
+                }
+            });
+        });
+
+        if (bulkOps.length > 0) {
+            await UserMusicProfile.bulkWrite(bulkOps);
+        }
+
+        const profile = await UserMusicProfile.findOne({ user: userId });
+        if (profile) {
+            profile.topArtists.sort((a, b) => b.score - a.score);
+            profile.topGenres.sort((a, b) => b.score - a.score);
+            profile.topArtists = profile.topArtists.slice(0, 50);
+            profile.topGenres = profile.topGenres.slice(0, 20);
+            await profile.save();
+        } else {
+            const newProfile = new UserMusicProfile({ user: userId });
+            artists.forEach(name => newProfile.topArtists.push({ name, score: points }));
+            genres.forEach(name => newProfile.topGenres.push({ name, score: points }));
+            await newProfile.save();
+        }
+        
+        res.status(200).send();
+    } catch (error) {
+        console.error('Ошибка логирования действия:', error);
+        res.status(500).json({ message: 'Ошибка сервера' });
+    }
+});
+
+router.get('/wave', authMiddleware, async (req, res) => {
+    try {
+        let searchQueries = new Set();
+        const profile = await UserMusicProfile.findOne({ user: req.user.userId }).lean();
+        if (profile) {
+            profile.topArtists?.slice(0, 10).forEach(a => searchQueries.add(a.name));
+            profile.topGenres?.slice(0, 5).forEach(g => searchQueries.add(g.name + ' music'));
+        }
+        const history = await Track.find({ user: req.user.userId, type: 'recent' }).sort({ playedAt: -1 }).limit(10);
+        if (history.length > 0) {
+            history.forEach(track => searchQueries.add(track.artist));
+        }
+        
+        if (searchQueries.size === 0) {
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
+            const fallbackResponse = await searchSpotifyAndFindYouTube({ daily: 'true' });
+            return res.json(fallbackResponse.tracks.sort(() => 0.5 - Math.random()));
+        }
+
+        const shuffledQueries = Array.from(searchQueries).sort(() => 0.5 - Math.random()).slice(0, 20);
+        
+        const searchPromises = shuffledQueries.map(query => 
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
+            searchSpotifyAndFindYouTube({ q: query, daily: false }).catch(e => {
+                console.error(`Ошибка при поиске для "Волны" (запрос: ${query}):`, e.message);
+                return { tracks: [] };
+            })
+        );
+
+        const youtubeResults = await Promise.all(searchPromises);
+        
+        const finalTracks = youtubeResults.flatMap(res => res.tracks.slice(0, 2));
+            
+        const uniqueTracks = Array.from(new Map(finalTracks.map(item => [item.youtubeId, item])).values());
+
+        if (uniqueTracks.length < 10) { 
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
+            const fallbackResponse = await searchSpotifyAndFindYouTube({ daily: 'true' });
+            fallbackResponse.tracks.forEach(track => {
+                if (!uniqueTracks.some(t => t.youtubeId === track.youtubeId)) {
+                    uniqueTracks.push(track);
+                }
+            });
+        }
+        
+        res.json(uniqueTracks.sort(() => 0.5 - Math.random()).slice(0, 50));
+
+    } catch (error) {
+        console.error('Ошибка генерации волны:', error.message);
+        res.status(500).json({ message: 'Не удалось сгенерировать вашу волну.' });
+    }
+});
+
+router.get('/personalized-recommendations', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const profile = await UserMusicProfile.findOne({ user: userId }).lean();
+
+        if (!profile || !profile.topArtists || profile.topArtists.length === 0) {
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
+            const dailyTracks = await searchSpotifyAndFindYouTube({ daily: 'true' });
+            return res.json(dailyTracks.tracks);
+        }
+
+        let searchQueries = new Set();
+        const topArtists = profile.topArtists.slice(0, 5).map(a => a.name);
+        const topGenres = profile.topGenres.slice(0, 4).map(g => g.name);
+
+        topArtists.forEach(artist => searchQueries.add(`${artist} official`));
+        topGenres.forEach(genre => searchQueries.add(`${genre} music new`));
+        if (topArtists.length > 0) searchQueries.add(`${topArtists[0]} similar artists`);
+
+        const searchPromises = Array.from(searchQueries).map(q => 
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
+            searchSpotifyAndFindYouTube({ q }).catch(e => {
+                console.error(`Ошибка при поиске для рекомендаций (запрос: ${q}):`, e.message);
+                return { tracks: [] };
+            })
+        );
+
+        const results = await Promise.all(searchPromises);
+
+        let finalTracks = [];
+        results.forEach(result => {
+            if (result.tracks.length > 0) {
+                finalTracks.push(...result.tracks.slice(0, 4));
+            }
+        });
+        
+        let uniqueTracks = Array.from(new Map(finalTracks.map(t => [t.youtubeId, t])).values());
+        
+        if(uniqueTracks.length < 6) {
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
+            const daily = await searchSpotifyAndFindYouTube({ daily: 'true' });
+            daily.tracks.forEach(track => {
+                if (!uniqueTracks.some(t => t.youtubeId === track.youtubeId)) {
+                    uniqueTracks.push(track);
+                }
+            });
+        }
+
+        const shuffledTracks = uniqueTracks.sort(() => 0.5 - Math.random());
+        res.json(shuffledTracks.slice(0, 12));
+    } catch (error) {
+        console.error('Ошибка генерации персональных рекомендаций:', error.message);
+        // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
+        const fallbackResponse = await searchSpotifyAndFindYouTube({ daily: 'true' });
+        res.json(fallbackResponse.tracks);
+    }
+});
+
 router.get('/search-all', authMiddleware, async (req, res) => {
     try {
         const { q, type = 'all' } = req.query;
-        if (!q) return res.json({ tracks: [], playlists: [] });
+        if (!q) {
+            return res.json({ tracks: [], playlists: [] });
+        }
 
         let tracks = [];
         let playlists = [];
 
         if (type === 'all' || type === 'tracks') {
-            const spotifyTracks = await searchSpotifyTracks(q);
-            const tracksWithYoutube = await Promise.all(spotifyTracks.map(findYouTubeVideoForTrack));
-            tracks = tracksWithYoutube.filter(t => t.youtubeId); // Отсеиваем треки без видео
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
+            const searchResult = await searchSpotifyAndFindYouTube({ q });
+            tracks = searchResult.tracks;
         }
 
         if (type === 'all' || type === 'playlists') {
             playlists = await Playlist.find({
                 visibility: 'public',
                 $text: { $search: q }
-            }).populate('user', 'username').limit(10).lean();
+            })
+            .populate('user', 'username')
+            .limit(10)
+            .lean();
         }
 
         res.json({ tracks, playlists });
 
     } catch (error) {
+        console.error("Ошибка в универсальном поиске музыки:", error);
         res.status(500).json({ message: "Ошибка сервера при поиске." });
-    }
-});
-
-// Моя волна
-router.get('/wave', authMiddleware, async (req, res) => {
-    const token = await require('./spotify').getSpotifyToken();
-    try {
-        const profile = await UserMusicProfile.findOne({ user: req.user.userId }).lean();
-        
-        const recommendationParams = {
-            limit: 50,
-            market: 'RU',
-        };
-
-        if (profile && (profile.topArtists?.length > 0 || profile.topGenres?.length > 0)) {
-            recommendationParams.seed_artists = profile.topArtists.slice(0, 2).map(a => a.artistId).join(',');
-            recommendationParams.seed_genres = profile.topGenres.slice(0, 3).map(g => g.name.toLowerCase().replace(' ', '-')).join(',');
-        } else {
-            recommendationParams.seed_genres = 'pop,rock,hip-hop,dance,electronic';
-        }
-
-        const response = await axios.get('https://api.spotify.com/v1/recommendations', {
-            headers: { 'Authorization': `Bearer ${token}` },
-            params: recommendationParams,
-        });
-
-        const spotifyTracks = response.data.tracks.map(mapSpotifyTrack).filter(Boolean);
-        const tracksWithYoutube = await Promise.all(spotifyTracks.map(findYouTubeVideoForTrack));
-        
-        res.json(tracksWithYoutube.filter(t => t.youtubeId));
-
-    } catch (error) {
-        console.error('Ошибка генерации волны:', error.response ? error.response.data : error.message);
-        res.status(500).json({ message: 'Не удалось сгенерировать вашу волну.' });
-    }
-});
-
-// Персональные рекомендации (Главная страница)
-router.get('/personalized-recommendations', authMiddleware, async (req, res) => {
-    const token = await require('./spotify').getSpotifyToken();
-    try {
-        const profile = await UserMusicProfile.findOne({ user: req.user.userId }).lean();
-        let finalTracks = [];
-
-        if (profile && profile.topArtists?.length > 0) {
-            const topArtistId = profile.topArtists[0].artistId;
-            const response = await axios.get(`https://api.spotify.com/v1/artists/${topArtistId}/related-artists`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const relatedArtists = response.data.artists.slice(0, 5);
-            
-            const artistTracksPromises = relatedArtists.map(artist => 
-                axios.get(`https://api.spotify.com/v1/artists/${artist.id}/top-tracks`, {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    params: { market: 'RU' }
-                })
-            );
-            const artistTracksResponses = await Promise.all(artistTracksPromises);
-            finalTracks = artistTracksResponses.flatMap(r => r.data.tracks.slice(0, 3).map(mapSpotifyTrack));
-        } else {
-            // Если нет данных, берем новые релизы
-            const response = await axios.get('https://api.spotify.com/v1/browse/new-releases', {
-                headers: { 'Authorization': `Bearer ${token}` },
-                params: { country: 'RU', limit: 20 }
-            });
-            finalTracks = response.data.albums.items.flatMap(album => album.artists.map(artist => ({
-                id: album.id + artist.id, // Fake unique ID
-                name: album.name,
-                artists: [{ name: artist.name }],
-                album: { name: album.name, images: album.images },
-                duration_ms: 0
-            }))).map(mapSpotifyTrack);
-        }
-        
-        const uniqueTracks = Array.from(new Map(finalTracks.map(t => [t.spotifyId, t])).values());
-        const tracksWithYoutube = await Promise.all(uniqueTracks.map(findYouTubeVideoForTrack));
-
-        res.json(tracksWithYoutube.filter(t => t.youtubeId).slice(0, 12));
-
-    } catch (error) {
-        console.error('Ошибка персональных рекомендаций:', error.response ? error.response.data : error.message);
-        res.status(500).json({ message: 'Ошибка.' });
     }
 });
 

@@ -43,10 +43,10 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [isPlaying]);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Этот useEffect будет автоматически синхронизировать статус лайка ---
+    // --- ИЗМЕНЕНИЕ: Этот useEffect будет автоматически синхронизировать статус лайка по spotifyId ---
     useEffect(() => {
         if (currentTrack) {
-            setIsLiked(myMusicTrackIds.has(currentTrack.youtubeId));
+            setIsLiked(myMusicTrackIds.has(currentTrack.spotifyId));
         } else {
             setIsLiked(false);
         }
@@ -80,14 +80,14 @@ export const MusicPlayerProvider = ({ children }) => {
     const fetchMyMusicIds = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ: Предотвращаем запрос, если нет токена ---
             if (!token) {
-                setMyMusicTrackIds(new Set()); // Убедимся, что список пуст, если пользователь не вошел
+                setMyMusicTrackIds(new Set());
                 return;
             }
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-            setMyMusicTrackIds(new Set(res.data.map(track => track.youtubeId)));
+            // --- ИЗМЕНЕНИЕ: Сохраняем spotifyId вместо youtubeId ---
+            setMyMusicTrackIds(new Set(res.data.map(track => track.spotifyId)));
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         } catch (error) {
             console.error("Не удалось обновить список сохраненной музыки");
         }
@@ -102,19 +102,21 @@ export const MusicPlayerProvider = ({ children }) => {
     const handleToggleLike = useCallback(async (trackData) => {
         if (!trackData) return;
         
-        const wasLiked = myMusicTrackIds.has(trackData.youtubeId);
+        // --- ИЗМЕНЕНИЕ: Работаем со spotifyId для определения статуса "лайка" ---
+        const wasLiked = myMusicTrackIds.has(trackData.spotifyId);
         
         const newSet = new Set(myMusicTrackIds);
         if (wasLiked) {
-            newSet.delete(trackData.youtubeId);
+            newSet.delete(trackData.spotifyId);
         } else {
-            newSet.add(trackData.youtubeId);
+            newSet.add(trackData.spotifyId);
         }
         setMyMusicTrackIds(newSet);
 
-        if (currentTrack?.youtubeId === trackData.youtubeId) {
+        if (currentTrack?.spotifyId === trackData.spotifyId) {
             setIsLiked(!wasLiked);
         }
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         try {
             const token = localStorage.getItem('token');
@@ -165,7 +167,9 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsPlaying(true);
             setProgress(0);
             setBuffered(0);
-            setIsLiked(myMusicTrackIds.has(trackData.youtubeId));
+            // --- ИЗМЕНЕНИЕ: Проверяем лайк по spotifyId ---
+            setIsLiked(myMusicTrackIds.has(trackData.spotifyId));
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
             
             if (youtubePlayerRef.current) {
                 youtubePlayerRef.current.setVolume(volume);
