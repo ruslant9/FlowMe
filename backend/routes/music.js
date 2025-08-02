@@ -10,6 +10,12 @@ const axios = require('axios');
 const { isAllowedByPrivacy } = require('../utils/privacy');
 const UserMusicProfile = require('../models/UserMusicProfile');
 const Playlist = require('../models/Playlist');
+
+// --- ИСПРАВЛЕНИЕ: Добавляем недостающие импорты ---
+const Artist = require('../models/Artist');
+const Album = require('../models/Album');
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 // Импортируем все необходимые утилиты из spotify.js
 const { searchSpotifyAndFindYouTube, getSpotifyToken, findAndCacheYouTubeVideos } = require('../utils/spotify');
 
@@ -118,7 +124,6 @@ router.get('/user/:userId/saved', authMiddleware, async (req, res) => {
 
 const countryMap = { RU: 'Russia', UA: 'Ukraine', BY: 'Belarus', KZ: 'Kazakhstan', US: 'United States', DE: 'Germany' };
 
-// ИСПРАВЛЕННЫЙ РОУТ ДЛЯ ПОЛУЧЕНИЯ АРТИСТОВ
 router.get('/popular-artists', authMiddleware, async (req, res) => {
     try {
         let artistNames = new Set();
@@ -168,7 +173,6 @@ router.get('/popular-artists', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Не удалось получить список популярных исполнителей.' });
     }
 });
-
 
 router.get('/history', authMiddleware, async (req, res) => {
     try {
@@ -289,7 +293,6 @@ router.get('/wave', authMiddleware, async (req, res) => {
     }
 });
 
-// ИСПРАВЛЕННЫЙ РОУТ ДЛЯ РЕКОМЕНДАЦИЙ
 router.get('/personalized-recommendations', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -344,42 +347,60 @@ router.get('/personalized-recommendations', authMiddleware, async (req, res) => 
     }
 });
 
-router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
+router.get('/search-all', authMiddleware, async (req, res) => {
     try {
-        const track = await Track.findById(req.params.id);
-        if (!track || track.status !== 'approved') {
-            return res.status(404).json({ message: 'Трек не найден или не одобрен.' });
+        const { q, type = 'all', page = 1 } = req.query;
+        const limit = 25;
+        const offset = (parseInt(page) - 1) * limit;
+
+        if (!q) {
+            return res.json({ tracks: [], playlists: [], hasMore: false });
         }
 
-        const command = new GetObjectCommand({
-            Bucket: process.env.R2_BUCKET_NAME,
-            Key: track.storageKey,
-        });
+        let tracks = [];
+        let playlists = [];
+        let hasMoreTracks = false;
 
-        // Генерируем временную ссылку на 1 час
-        const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
-        
-        res.json({ url });
+        if ((type === 'all' || type === 'playlists') && page == 1) {
+            playlists = await Playlist.find({
+                visibility: 'public',
+                $text: { $search: q }
+            }).populate('user', 'username').limit(10).lean();
+        }
+
+        if (type === 'all' || type === 'tracks') {
+            const searchResult = await searchSpotifyAndFindYouTube({ q, offset });
+            tracks = searchResult.tracks;
+            hasMoreTracks = searchResult.hasMore;
+        }
+
+        res.json({ tracks, playlists, hasMore: hasMoreTracks });
 
     } catch (error) {
-        res.status(500).json({ message: 'Ошибка при получении ссылки на трек.' });
+        res.status(500).json({ message: "Ошибка сервера при поиске." });
     }
 });
 
-// --- ПЕРЕРАБОТАННЫЙ ПОИСК ---
-router.get('/search-all', authMiddleware, async (req, res) => {
-    const { q } = req.query;
-    if (!q) return res.json({ tracks: [], playlists: [], artists: [], albums: [] });
+// --- НОВЫЕ РОУТЫ ДЛЯ АДМИН-ПАНЕЛИ ---
 
-    const query = { name: { $regex: q, $options: 'i' }, status: 'approved' };
+// Получить всех одобренных артистов для выпадающего списка
+router.get('/artists/all', authMiddleware, async (req, res) => {
+    try {
+        const artists = await Artist.find({ status: 'approved' }).select('name').sort({ name: 1 });
+        res.json(artists);
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки артистов" });
+    }
+});
 
-    const [tracks, artists, albums] = await Promise.all([
-        Track.find({ title: { $regex: q, $options: 'i' }, status: 'approved' }).populate('artist album'),
-        Artist.find(query),
-        Album.find({ title: { $regex: q, $options: 'i' }, status: 'approved' }).populate('artist'),
-    ]);
-    
-    res.json({ tracks, artists, albums });
+// Получить все одобренные альбомы для выпадающего списка
+router.get('/albums/all', authMiddleware, async (req, res) => {
+    try {
+        const albums = await Album.find({ status: 'approved' }).select('title artist').sort({ title: 1 });
+        res.json(albums);
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки альбомов" });
+    }
 });
 
 module.exports = router;

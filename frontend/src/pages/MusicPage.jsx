@@ -1,5 +1,3 @@
-// frontend/src/pages/MusicPage.jsx
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useTitle from '../hooks/useTitle';
 import axios from 'axios';
@@ -7,13 +5,14 @@ import toast from 'react-hot-toast';
 import TrackList from '../components/music/TrackList';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Loader2, Search, Music, History, Star, ListMusic, PlusCircle } from 'lucide-react';
+import { Loader2, Search, Music, History, Star, ListMusic, PlusCircle, UploadCloud } from 'lucide-react';
 import RecommendationCard from '../components/music/RecommendationCard';
 import ArtistAvatar from '../components/music/ArtistAvatar';
 import MusicWave from '../components/music/MusicWave';
 import CreatePlaylistModal from '../components/modals/CreatePlaylistModal';
 import PlaylistCard from '../components/music/PlaylistCard';
 import EditPlaylistModal from '../components/modals/EditPlaylistModal';
+import UploadContentModal from '../components/modals/UploadContentModal'; // Импортируем модальное окно загрузки
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -36,14 +35,9 @@ const MusicPage = () => {
     const navigate = useNavigate();
     
     const getInitialTab = () => {
-        if (location.state?.defaultTab) {
-            return location.state.defaultTab;
-        }
+        if (location.state?.defaultTab) return location.state.defaultTab;
         const savedTab = localStorage.getItem('musicActiveTab');
-        if (savedTab && ['search', 'recommendations', 'my-music', 'recently-played', 'playlists'].includes(savedTab)) {
-            return savedTab;
-        }
-        return 'recommendations';
+        return ['search', 'recommendations', 'my-music', 'recently-played', 'playlists'].includes(savedTab) ? savedTab : 'recommendations';
     };
 
     const [activeTab, setActiveTab] = useState(getInitialTab);
@@ -51,7 +45,7 @@ const MusicPage = () => {
     const [popularArtists, setPopularArtists] = useState([]);
     const [loadingRecommendations, setLoadingRecommendations] = useState(true);
     
-    const [data, setData] = useState([]);
+    const [data, setData] = useState([]); // Для истории прослушиваний
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [myMusicTracks, setMyMusicTracks] = useState([]);
@@ -68,13 +62,14 @@ const MusicPage = () => {
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [playlistToEdit, setPlaylistToEdit] = useState(null);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЙ: Состояния для пагинации поиска ---
+    // Состояния для пагинации поиска
     const [searchPage, setSearchPage] = useState(1);
     const [hasMoreSearchResults, setHasMoreSearchResults] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const observer = useRef();
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
+    
+    // Состояние для модального окна загрузки
+    const [isUploadModalOpen, setUploadModalOpen] = useState(false);
 
     const handleEditPlaylist = (playlist) => {
         setPlaylistToEdit(playlist);
@@ -91,24 +86,14 @@ const MusicPage = () => {
         localStorage.setItem('musicActiveTab', activeTab);
     }, [activeTab]);
 
-    const handleSelectTrack = useCallback((youtubeId) => {
+    const handleSelectTrack = useCallback((track) => {
         let currentPlaylist = [];
-        if (activeTab === 'my-music') {
-            currentPlaylist = myMusicTracks;
-        } else if (activeTab === 'recently-played') {
-            currentPlaylist = data;
-        } else if (activeTab === 'recommendations') {
-            currentPlaylist = dailyRecommendations;
-        } else { // search
-            currentPlaylist = searchResults.tracks;
-        }
+        if (activeTab === 'my-music') currentPlaylist = myMusicTracks;
+        else if (activeTab === 'recently-played') currentPlaylist = data;
+        else if (activeTab === 'recommendations') currentPlaylist = dailyRecommendations;
+        else currentPlaylist = searchResults.tracks;
         
-        const allAvailableTracks = [...myMusicTracks, ...data, ...dailyRecommendations, ...searchResults.tracks];
-        const trackToPlay = allAvailableTracks.find(t => t.youtubeId === youtubeId);
-
-        if (trackToPlay) {
-            playTrack(trackToPlay, currentPlaylist); 
-        }
+        playTrack(track, currentPlaylist); 
     }, [data, myMusicTracks, dailyRecommendations, searchResults, activeTab, playTrack]);
     
     const fetchMyMusic = useCallback(async (showLoader = true) => {
@@ -154,14 +139,14 @@ const MusicPage = () => {
     };
 
     useEffect(() => {
-        const handleMusicUpdate = () => { fetchMyMusic(false); };
+        const handleMusicUpdate = () => fetchMyMusic(false);
         window.addEventListener('myMusicUpdated', handleMusicUpdate);
         return () => window.removeEventListener('myMusicUpdated', handleMusicUpdate);
     }, [fetchMyMusic]);
 
     const handleToggleSave = useCallback(async (trackData) => {
-        const isCurrentlySaved = myMusicTracks.some(t => t.spotifyId === trackData.spotifyId);
-        setMyMusicTracks(prev => isCurrentlySaved ? prev.filter(t => t.spotifyId !== trackData.spotifyId) : [trackData, ...prev]);
+        const isCurrentlySaved = myMusicTracks.some(t => t._id === trackData._id);
+        setMyMusicTracks(prev => isCurrentlySaved ? prev.filter(t => t._id !== trackData._id) : [trackData, ...prev]);
         await onToggleLike(trackData);
     }, [onToggleLike, myMusicTracks]);
 
@@ -184,14 +169,13 @@ const MusicPage = () => {
         }
     }, []);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЙ: Обновляем fetchDataForTab для обработки пагинации в поиске ---
     const fetchDataForTab = useCallback(async (tab, query = '', page = 1) => {
         if (tab === 'playlists') { await fetchPlaylists(); return; }
         if (tab === 'recommendations') { await fetchRecommendationsData(); setData([]); setSearchQuery(''); return; }
         if (tab === 'my-music') { await fetchMyMusic(); return; }
 
         if (tab === 'search') {
-            if (!query) {
+            if (!query.trim()) {
                 setSearchResults({ tracks: [], playlists: [] });
                 setHasMoreSearchResults(true);
                 return;
@@ -207,15 +191,11 @@ const MusicPage = () => {
                 });
                 
                 setSearchResults(prev => {
-                    if (page === 1) return res.data; // Для первой страницы просто заменяем данные
-                    return { // Для последующих страниц добавляем только треки
-                        ...prev,
-                        tracks: [...prev.tracks, ...res.data.tracks]
-                    };
+                    if (page === 1) return res.data;
+                    return { ...prev, tracks: [...prev.tracks, ...res.data.tracks] };
                 });
                 setHasMoreSearchResults(res.data.hasMore);
                 setSearchPage(page);
-
             } catch (error) {
                 toast.error("Ошибка при поиске.");
             } finally {
@@ -232,13 +212,12 @@ const MusicPage = () => {
                 const res = await axios.get(`${API_URL}/api/music/history`, { headers: { Authorization: `Bearer ${token}` } });
                 setData(res.data || []);
             } catch (error) {
-                toast.error(error.response?.data?.message || `Не удалось загрузить данные.`);
+                toast.error(`Не удалось загрузить данные.`);
             } finally {
                 setLoading(false);
             }
         }
     }, [fetchMyMusic, fetchRecommendationsData, fetchPlaylists, searchFilter]);
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const handleDeleteFromHistory = useCallback(async (trackId) => {
         const originalTracks = [...data];
@@ -255,14 +234,12 @@ const MusicPage = () => {
 
     useEffect(() => {
         const debounce = setTimeout(() => {
-             // При любом изменении поискового запроса или фильтра, сбрасываем на первую страницу
              setSearchPage(1);
              fetchDataForTab(activeTab, searchQuery, 1);
         }, 300);
         return () => clearTimeout(debounce);
     }, [activeTab, searchQuery, searchFilter, fetchDataForTab]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЙ: Хук для Intersection Observer ---
     const lastTrackElementRef = useCallback(node => {
         if (loadingMore) return;
         if (observer.current) observer.current.disconnect();
@@ -273,7 +250,6 @@ const MusicPage = () => {
         });
         if (node) observer.current.observe(node);
     }, [loadingMore, hasMoreSearchResults, fetchDataForTab, searchQuery, searchPage]);
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const handleArtistClick = (artistName) => {
         setActiveTab('search');
@@ -309,10 +285,21 @@ const MusicPage = () => {
                 playlist={playlistToEdit}
                 onPlaylistUpdated={() => fetchPlaylists(false)}
             />
+            <UploadContentModal 
+                isOpen={isUploadModalOpen} 
+                onClose={() => setUploadModalOpen(false)} 
+            />
             
             <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold">Музыка</h1>
+                    <button 
+                        onClick={() => setUploadModalOpen(true)}
+                        className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <UploadCloud size={18} /> 
+                        <span>Загрузить аудио</span>
+                    </button>
                 </div>
 
                 <div className="flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
@@ -343,7 +330,7 @@ const MusicPage = () => {
                                 <h2 className="text-2xl font-bold mb-4">Новинки и хиты</h2>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                     {dailyRecommendations.map(track => (
-                                        <RecommendationCard key={track.youtubeId} track={track} isCurrent={track.youtubeId === currentTrack?.youtubeId} isPlaying={isPlaying} isLoading={track.youtubeId === loadingTrackId} onPlayPause={togglePlayPause} onSelectTrack={handleSelectTrack} />
+                                        <RecommendationCard key={track._id} track={track} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying} isLoading={track._id === loadingTrackId} onPlayPause={togglePlayPause} onSelectTrack={() => handleSelectTrack(track)} />
                                     ))}
                                 </div>
                             </div>
@@ -413,22 +400,19 @@ const MusicPage = () => {
                                         <TrackList 
                                             tracks={searchResults.tracks} 
                                             onSelectTrack={handleSelectTrack} 
-                                            currentPlayingTrackId={currentTrack?.youtubeId} 
+                                            currentPlayingTrackId={currentTrack?._id} 
                                             isPlaying={isPlaying} 
                                             onToggleSave={handleToggleSave} 
                                             myMusicTrackIds={myMusicTrackIds}
-                                            useSpotifyIdForSaving={true}
                                             progress={progress} duration={duration} onSeek={seekTo} 
                                             loadingTrackId={loadingTrackId} buffered={buffered} onPlayPauseToggle={togglePlayPause} 
                                         />
-                                        {/* --- НАЧАЛО ИЗМЕНЕНИЙ: Элемент для отслеживания и индикатор загрузки --- */}
                                         <div ref={lastTrackElementRef} className="h-10 flex justify-center items-center">
                                             {loadingMore && <Loader2 className="animate-spin text-slate-400" />}
                                             {!hasMoreSearchResults && searchResults.tracks.length > 0 && (
                                                 <p className="text-sm text-slate-500">Это все результаты</p>
                                             )}
                                         </div>
-                                        {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
                                     </div>
                                 )}
                                 {!loading && !loadingMore && searchResults.tracks.length === 0 && searchResults.playlists.length === 0 && searchQuery && (
@@ -437,17 +421,16 @@ const MusicPage = () => {
                             </div>
                         )}
                     </div>
-                ) : ( // my-music and recently-played
+                ) : (
                     loading ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div>
                     : (activeTab === 'my-music' ? myMusicTracks : data).length > 0 ? ( 
                         <TrackList 
                             tracks={activeTab === 'my-music' ? myMusicTracks : data} 
                             onSelectTrack={handleSelectTrack}
-                            currentPlayingTrackId={currentTrack?.youtubeId} 
+                            currentPlayingTrackId={currentTrack?._id} 
                             isPlaying={isPlaying} 
                             onToggleSave={handleToggleSave} 
                             myMusicTrackIds={myMusicTrackIds}
-                            useSpotifyIdForSaving={true}
                             progress={progress} duration={duration} onSeek={seekTo} 
                             loadingTrackId={loadingTrackId} buffered={buffered} onPlayPauseToggle={togglePlayPause}
                             showDeleteButtons={activeTab === 'recently-played'} 
