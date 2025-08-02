@@ -27,9 +27,21 @@ export const UserProvider = ({ children }) => {
                 const res = await axios.get(`${API_URL}/api/user/profile`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setCurrentUser(res.data);
+                 // --- НОВОЕ: Проверка на бан ---
+                const userData = res.data;
+                const isBanned = userData.banInfo?.isBanned;
+                const banExpires = userData.banInfo?.banExpires ? new Date(userData.banInfo.banExpires) : null;
+                if (isBanned && (!banExpires || banExpires > new Date())) {
+                    // Если пользователь забанен, мы все равно сохраняем его данные, чтобы показать оверлей
+                    setCurrentUser(userData);
+                } else {
+                    setCurrentUser(userData);
+                }
             } catch (error) {
-                console.error("Failed to fetch user in context", error);
+                // Если 403 Forbidden из-за бана, ошибку не показываем, так как это ожидаемое поведение
+                if (error.response?.status !== 403) {
+                    console.error("Failed to fetch user in context", error);
+                }
                 setCurrentUser(null);
             } finally {
                 // Снимаем флаг загрузки, только если мы его устанавливали.

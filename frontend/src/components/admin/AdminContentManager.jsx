@@ -9,6 +9,15 @@ import { useModal } from '../../hooks/useModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- ИСПРАВЛЕНИЕ: Добавляем недостающую хелпер-функцию ---
+const getImageUrl = (url) => {
+    if (!url || url.startsWith('http') || url.startsWith('blob:')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
     <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${active ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'}`}>
         <Icon size={16} />
@@ -17,7 +26,7 @@ const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
 );
 
 export const AdminContentManager = () => {
-    const [activeType, setActiveType] = useState('artists'); // artists, albums, tracks
+    const [activeType, setActiveType] = useState('artists');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -25,12 +34,9 @@ export const AdminContentManager = () => {
     const [sortOrder, setSortOrder] = useState('desc');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-
     const { showConfirmation } = useModal();
     const [editingItem, setEditingItem] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-    // Эти состояния нужны для передачи в модальное окно, чтобы в формах были актуальные списки
     const [allArtists, setAllArtists] = useState([]);
     const [allAlbums, setAllAlbums] = useState([]);
 
@@ -52,7 +58,6 @@ export const AdminContentManager = () => {
         }
     }, [activeType, page, search, sortBy, sortOrder]);
     
-    // Функция для загрузки вспомогательных данных (артистов и альбомов) для форм
     const fetchAuxiliaryData = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
@@ -80,7 +85,6 @@ export const AdminContentManager = () => {
         fetchData();
     }, [activeType, sortBy, sortOrder]);
     
-    // Загружаем артистов/альбомы один раз при монтировании
     useEffect(() => {
         fetchAuxiliaryData();
     }, [fetchAuxiliaryData]);
@@ -123,7 +127,7 @@ export const AdminContentManager = () => {
         setIsEditModalOpen(false);
         setEditingItem(null);
         fetchData();
-        fetchAuxiliaryData(); // Обновляем и вспомогательные данные на случай изменения имен
+        fetchAuxiliaryData();
     };
 
     const SortableHeader = ({ label, sortKey }) => (

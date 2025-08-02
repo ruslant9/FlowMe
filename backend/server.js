@@ -17,6 +17,7 @@ require('dotenv').config();
 const User = require('./models/User');
 const Conversation = require('./models/Conversation');
 const Community = require('./models/Community');
+const Submission = require('./models/Submission');
 const Post = require('./models/Post');
 const { getPopulatedPost } = require('./utils/posts');
 
@@ -24,6 +25,7 @@ const { getPopulatedPost } = require('./utils/posts');
 const passportSetup = require('./config/passport-setup');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user'); 
+const banMiddleware = require('./middleware/ban.middleware'); // <-- НОВЫЙ ИМПОРТ
 const postsRouter = require('./routes/posts-router');
 const messagesRouter = require('./routes/messages-router');
 const communityRoutes = require('./routes/communities');
@@ -202,17 +204,17 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/verify-email', authLimiter);
 app.use('/api/auth/forgot-password', codeLimiter);
 app.use('/api/auth/register', codeLimiter);
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/posts', postsRouter); 
-app.use('/api/messages', messagesRouter);
-app.use('/api/communities', communityRoutes);
-app.use('/api/music', musicRoutes);
-app.use('/api/wallpapers', wallpaperRoutes);
-app.use('/api/premium', premiumRoutes(wss, clients));
-app.use('/api/playlists', playlistRoutes);
-app.use('/api/submissions', submissionsRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes); // Роуты входа/регистрации не должны проверяться на бан
+app.use('/api/user', banMiddleware, userRoutes);
+app.use('/api/posts', banMiddleware, postsRouter); 
+app.use('/api/messages', banMiddleware, messagesRouter);
+app.use('/api/communities', banMiddleware, communityRoutes);
+app.use('/api/music', banMiddleware, musicRoutes);
+app.use('/api/wallpapers', banMiddleware, wallpaperRoutes);
+app.use('/api/premium', banMiddleware, premiumRoutes(wss, clients));
+app.use('/api/playlists', banMiddleware, playlistRoutes);
+app.use('/api/submissions', banMiddleware, submissionsRoutes);
+app.use('/api/admin', adminRoutes); // Админ-роуты защищены своим middleware
 
 const PORT = process.env.PORT || 5000;
 

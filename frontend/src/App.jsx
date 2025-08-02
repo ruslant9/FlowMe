@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
-import { Sun, Moon, Loader2 } from 'lucide-react';
+import { Sun, Moon, Loader2, ShieldAlert } from 'lucide-react';
 import { useUser } from './context/UserContext';
 
 // Ленивая загрузка нашего тяжелого компонента с шейдерами
@@ -164,6 +164,31 @@ const MainLayout = ({ children }) => {
   );
 };
 
+// --- НОВЫЙ КОМПОНЕНТ: Оверлей для забаненных пользователей ---
+const BannedOverlay = ({ banInfo }) => {
+    const banExpiresDate = banInfo.banExpires ? new Date(banInfo.banExpires) : null;
+    const isPermanent = !banExpiresDate;
+    
+    const formattedDate = banExpiresDate 
+        ? new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(banExpiresDate)
+        : 'навсегда';
+
+    return (
+        <div className="fixed inset-0 bg-red-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4 text-white">
+            <div className="text-center">
+                <ShieldAlert size={64} className="mx-auto text-red-300 mb-4" />
+                <h1 className="text-3xl font-bold mb-2">Доступ ограничен</h1>
+                <p className="text-lg mb-4">
+                    Вы были заблокированы. Блокировка истекает: <strong className="font-bold">{formattedDate}</strong>.
+                </p>
+                <p className="text-md bg-red-500/30 p-3 rounded-lg">
+                    <strong>Причина:</strong> {banInfo.banReason || 'Не указана'}
+                </p>
+            </div>
+        </div>
+    );
+};
+
 // Компонент ProtectedLayout для защиты роутов
 const ProtectedLayout = () => {
   const { loadingUser, currentUser } = useUser();
@@ -183,6 +208,13 @@ const ProtectedLayout = () => {
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
+  }
+
+  // --- НОВОЕ: Проверка на бан ---
+  const isBanned = currentUser.banInfo?.isBanned;
+  const banExpires = currentUser.banInfo?.banExpires ? new Date(currentUser.banInfo.banExpires) : null;
+  if (isBanned && (!banExpires || banExpires > new Date())) {
+    return <BannedOverlay banInfo={currentUser.banInfo} />;
   }
 
   return (

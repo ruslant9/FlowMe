@@ -51,6 +51,14 @@ const premiumCustomizationSchema = new Schema({
 }, { _id: false });
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Новые поля для блокировки ---
+const banInfoSchema = new Schema({
+    isBanned: { type: Boolean, default: false, index: true },
+    banReason: { type: String, default: null },
+    banExpires: { type: Date, default: null }
+}, { _id: false });
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 const UserSchema = new Schema({
     username: { type: String, required: true, unique: true, trim: true },
     fullName: { type: String, trim: true, default: null },
@@ -83,5 +91,6 @@ const UserSchema = new Schema({
     resetPasswordExpires: Date,
     subscribedCommunities: [{ type: Schema.Types.ObjectId, ref: 'Community' }],
 }, { timestamps: true });
+UserSchema.add({ banInfo: { type: banInfoSchema, default: () => ({}) } });
 
 module.exports = mongoose.model('User', UserSchema);

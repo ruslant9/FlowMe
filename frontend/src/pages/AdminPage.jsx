@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import useTitle from '../hooks/useTitle';
 import AdminSubmissionsList from '../components/admin/AdminSubmissionsList';
 import AdminUploadPanel from '../components/admin/AdminUploadPanel';
-import AdminContentManager from '../components/admin/AdminContentManager'; // <-- Импортируем новый компонент
-import { CheckCircle, UploadCloud, Database } from 'lucide-react';
+import AdminContentManager from '../components/admin/AdminContentManager';
+import AdminUserManager from '../components/admin/AdminUserManager'; // <-- НОВЫЙ ИМПОРТ
+import { CheckCircle, UploadCloud, Database, Users } from 'lucide-react';
 
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
@@ -44,6 +45,14 @@ const AdminPage = () => {
                     >
                         Управление контентом
                     </TabButton>
+                     {/* --- НОВАЯ ВКЛАДКА --- */}
+                    <TabButton 
+                        active={activeTab === 'users'} 
+                        onClick={() => setActiveTab('users')}
+                        icon={Users}
+                    >
+                        Управление пользователями
+                    </TabButton>
                     {/* --- ИЗМЕНЕНИЕ: Переименованная вкладка для создания --- */}
                     <TabButton 
                         active={activeTab === 'create'} 
@@ -57,6 +66,7 @@ const AdminPage = () => {
                 <div>
                     {activeTab === 'submissions' && <AdminSubmissionsList />}
                     {activeTab === 'content' && <AdminContentManager />}
+                    {activeTab === 'users' && <AdminUserManager />}
                     {activeTab === 'create' && <AdminUploadPanel />}
                 </div>
             </div>

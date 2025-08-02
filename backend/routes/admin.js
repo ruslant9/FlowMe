@@ -11,6 +11,7 @@ const Artist = require('../models/Artist');
 const Album = require('../models/Album');
 const Track = require('../models/Track');
 const Submission = require('../models/Submission');
+const User = require('../models/User');
 
 // --- ИЗМЕНЕНИЕ 1: Меняем импорты и настройку Multer ---
 const multer = require('multer');
@@ -355,6 +356,49 @@ router.delete('/content/tracks/:id', async (req, res) => {
         res.json({ message: 'Трек удален' });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при удалении трека' });
+    }
+});
+
+// Получить список всех пользователей
+router.get('/users', async (req, res) => {
+    try {
+        const { page = 1, limit = 15, search = '' } = req.query;
+
+        const query = {};
+        if (search) {
+            query.$or = [
+                { username: { $regex: search, $options: 'i' } },
+                { fullName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const users = await User.find(query)
+            .select('username fullName email createdAt banInfo')
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        const total = await User.countDocuments(query);
+
+        res.json({
+            items: users,
+            totalPages: Math.ceil(total / limit),
+            currentPage: parseInt(page)
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки пользователей" });
+    }
+});
+
+// Забанить/разбанить пользователя
+router.post('/users/:id/ban', async (req, res) => {
+    try {
+        const { isBanned, banReason, banExpires } = req.body;
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, { $set: { 'banInfo.isBanned': isBanned, 'banInfo.banReason': banReason, 'banInfo.banExpires': banExpires } }, { new: true });
+        res.json(updatedUser);
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при обновлении статуса пользователя' });
     }
 });
 
