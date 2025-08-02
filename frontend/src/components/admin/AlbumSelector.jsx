@@ -1,8 +1,10 @@
 // frontend/components/admin/AlbumSelector.jsx
 
 import React, { useState, useMemo, Fragment } from 'react';
-import { Combobox, Transition } from '@headlessui/react';
-import { useFloating, useInteractions, useClick, useDismiss, FloatingPortal } from '@floating-ui/react';
+// --- ИЗМЕНЕНИЕ 1: Добавляем Portal из Headless UI ---
+import { Combobox, Transition, Portal } from '@headlessui/react';
+// --- ИЗМЕНЕНИЕ 2: Убираем FloatingPortal из Floating UI ---
+import { useFloating, useInteractions, useClick, useDismiss } from '@floating-ui/react';
 import { Check, ChevronDown, Music } from 'lucide-react';
 
 const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
@@ -40,25 +42,25 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
     return (
         <Combobox value={selectedAlbum} onChange={(album) => onChange(album ? album._id : '')} disabled={disabled}>
             <div className="relative">
-                 {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Combobox.Button as="div" заменен на простой div --- */}
                  <div 
                     ref={refs.setReference} 
                     {...getReferenceProps()} 
                     className="relative w-full cursor-default overflow-hidden rounded-lg bg-white dark:bg-slate-700 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm"
                 >
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     <Combobox.Input
                         className="w-full border-none py-3 pl-4 pr-10 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-700 focus:ring-0 disabled:opacity-50"
                         displayValue={(album) => album?.title || ''}
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder="-- Сольный трек (сингл) --"
+                        readOnly // --- ИЗМЕНЕНИЕ 3: Делаем поле нередактируемым ---
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                         <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
                     </div>
                 </div>
                 {isOpen && (
-                    <FloatingPortal>
+                    // --- ИЗМЕНЕНИЕ 4: Заменяем FloatingPortal на Portal ---
+                    <Portal>
                         <Transition
                             as={Fragment}
                             leave="transition ease-in duration-100"
@@ -137,7 +139,8 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
                                 )}
                             </Combobox.Options>
                         </Transition>
-                    </FloatingPortal>
+                    </Portal>
+                     // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                 )}
             </div>
         </Combobox>
