@@ -1,10 +1,10 @@
-// frontend/components/admin/AdminUserManager.jsx --- НОВЫЙ ФАЙЛ ---
+// frontend/components/admin/AdminUserManager.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, Search, Shield, ShieldCheck, ShieldAlert, Edit, User, Mail, Calendar } from 'lucide-react';
-import BanUserModal from '../modals/BanUserModal';
+import { Loader2, Search, Shield, ShieldCheck, ShieldAlert, User, Mail, Calendar } from 'lucide-react';
+import AdminUserManagementOverlay from './AdminUserManagementOverlay'; // <-- ИЗМЕНЯЕМ ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -15,7 +15,7 @@ const AdminUserManager = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    const [isBanModalOpen, setIsBanModalOpen] = useState(false);
+    const [isOverlayOpen, setIsOverlayOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
 
     const fetchData = useCallback(async () => {
@@ -46,17 +46,17 @@ const AdminUserManager = () => {
 
     useEffect(() => {
         fetchData();
-    }, [page]);
+    }, [page, fetchData]);
 
-    const handleOpenBanModal = (user) => {
+    const handleOpenOverlay = (user) => {
         setSelectedUser(user);
-        setIsBanModalOpen(true);
+        setIsOverlayOpen(true);
     };
 
-    const handleBanSuccess = () => {
-        setIsBanModalOpen(false);
+    const handleSuccess = () => {
+        setIsOverlayOpen(false);
         setSelectedUser(null);
-        fetchData(); // Обновляем список после бана/разбана
+        fetchData();
     };
 
     const renderBanStatus = (user) => {
@@ -116,7 +116,7 @@ const AdminUserManager = () => {
                                 <td className="p-2">
                                     <div className="flex items-center justify-end">
                                         <button 
-                                            onClick={() => handleOpenBanModal(user)} 
+                                            onClick={() => handleOpenOverlay(user)} 
                                             className="flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
                                         >
                                             <Shield size={14} />
@@ -134,14 +134,12 @@ const AdminUserManager = () => {
 
     return (
         <div className="space-y-4">
-            {selectedUser && (
-                 <BanUserModal 
-                    isOpen={isBanModalOpen}
-                    onClose={() => setIsBanModalOpen(false)}
-                    user={selectedUser}
-                    onSuccess={handleBanSuccess}
-                 />
-            )}
+             <AdminUserManagementOverlay 
+                isOpen={isOverlayOpen}
+                onClose={() => setIsOverlayOpen(false)}
+                user={selectedUser}
+                onSuccess={handleSuccess}
+             />
            
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="relative">
