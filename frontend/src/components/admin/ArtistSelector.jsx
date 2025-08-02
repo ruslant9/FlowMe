@@ -1,91 +1,92 @@
 // frontend/components/admin/ArtistSelector.jsx --- НОВЫЙ ФАЙЛ ---
 
-import React, { useState, useMemo, useRef, useEffect, Fragment } from 'react';
-import { Combobox, Transition } from '@headlessui/react';
-import { Check, ChevronDown, User } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import ReactDOM from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Search, ChevronDown } from 'lucide-react';
 import Avatar from '../Avatar';
 
 const ArtistSelector = ({ artists, value, onChange, required = true }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [query, setQuery] = useState('');
-
+    
     const selectedArtist = useMemo(() => 
         artists.find(a => a._id === value) || null
     , [artists, value]);
+
+    const handleSelectAndClose = (artist) => {
+        onChange(artist ? artist._id : '');
+        setIsModalOpen(false);
+    };
 
     const filteredArtists =
         query === ''
             ? artists
             : artists.filter((artist) =>
-                artist.name
-                    .toLowerCase()
-                    .replace(/\s+/g, '')
-                    .includes(query.toLowerCase().replace(/\s+/g, ''))
+                artist.name.toLowerCase().includes(query.toLowerCase())
             );
 
-    return (
-        <Combobox value={selectedArtist} onChange={(artist) => onChange(artist ? artist._id : '')}>
-            <div className="relative">
-                <div className="relative w-full cursor-default overflow-hidden rounded-lg bg-white dark:bg-slate-700 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
-                    <Combobox.Input
-                        className="w-full border-none py-3 pl-4 pr-10 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-700 focus:ring-0"
-                        displayValue={(artist) => artist?.name || ''}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Начните вводить имя артиста..."
-                        required={required && !value}
-                    />
-                    <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
-                        <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                    </Combobox.Button>
-                </div>
-                <Transition
-                    as={Fragment}
-                    leave="transition ease-in duration-100"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
-                    afterLeave={() => setQuery('')}
+    const ModalContent = () => (
+        <AnimatePresence>
+            {isModalOpen && ReactDOM.createPortal(
+                <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={() => setIsModalOpen(false)}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
                 >
-                    <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
-                        {filteredArtists.length === 0 && query !== '' ? (
-                            <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-gray-400">
-                                Артист не найден.
-                            </div>
-                        ) : (
-                            filteredArtists.map((artist) => (
-                                <Combobox.Option
+                    <motion.div
+                        initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="ios-glass-final w-full max-w-lg p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[80vh]"
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold">Выбрать исполнителя</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
+                        </div>
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Поиск по имени..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex-1 overflow-y-auto -mr-2 pr-2 space-y-2">
+                            {filteredArtists.map(artist => (
+                                <div
                                     key={artist._id}
-                                    className={({ active }) =>
-                                        `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                                            active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-gray-200'
-                                        }`
-                                    }
-                                    value={artist}
+                                    onClick={() => handleSelectAndClose(artist)}
+                                    className="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
                                 >
-                                    {({ selected, active }) => (
-                                        <>
-                                            <span className="flex items-center">
-                                                <Avatar
-                                                    size="sm"
-                                                    username={artist.name}
-                                                    avatarUrl={artist.avatarUrl}
-                                                />
-                                                <span className={`ml-3 truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                    {artist.name}
-                                                </span>
-                                            </span>
-                                            {selected ? (
-                                                <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`}>
-                                                    <Check className="h-5 w-5" aria-hidden="true" />
-                                                </span>
-                                            ) : null}
-                                        </>
-                                    )}
-                                </Combobox.Option>
-                            ))
-                        )}
-                    </Combobox.Options>
-                </Transition>
-            </div>
-        </Combobox>
+                                    <Avatar size="md" username={artist.name} avatarUrl={artist.avatarUrl} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold truncate">{artist.name}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                </motion.div>,
+                document.getElementById('modal-root')
+            )}
+        </AnimatePresence>
+    );
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="w-full h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-slate-700 text-left flex items-center justify-between shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+                <span className="truncate">{selectedArtist?.name || 'Выберите исполнителя...'}</span>
+                <ChevronDown className="h-5 w-5 text-gray-400" />
+            </button>
+            <ModalContent />
+        </>
     );
 };
 

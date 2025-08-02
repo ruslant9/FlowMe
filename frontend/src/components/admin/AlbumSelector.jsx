@@ -1,120 +1,107 @@
 // frontend/components/admin/AlbumSelector.jsx
 
-import React, { useState, useMemo, Fragment } from 'react';
-import { Combobox, Transition, Portal } from '@headlessui/react';
-import { Check, ChevronDown, Music } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import ReactDOM from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Search, ChevronDown, Music } from 'lucide-react';
 
 const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [query, setQuery] = useState('');
 
     const selectedAlbum = useMemo(() =>
         albums.find(a => a._id === value) || null
     , [albums, value]);
 
+    const handleSelectAndClose = (album) => {
+        onChange(album ? album._id : '');
+        setIsModalOpen(false);
+    };
+
     const filteredAlbums =
         query === ''
             ? albums
             : albums.filter((album) =>
-                album.title
-                    .toLowerCase()
-                    .replace(/\s+/g, '')
-                    .includes(query.toLowerCase().replace(/\s+/g, ''))
+                album.title.toLowerCase().includes(query.toLowerCase()) ||
+                album.artist.name.toLowerCase().includes(query.toLowerCase())
             );
 
-    return (
-        <Combobox value={selectedAlbum} onChange={(album) => onChange(album ? album._id : '')} disabled={disabled}>
-            <div className="relative">
-                 <Combobox.Button
-                    className="relative w-full cursor-default overflow-hidden rounded-lg bg-white dark:bg-slate-700 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm"
+    const ModalContent = () => (
+        <AnimatePresence>
+            {isModalOpen && ReactDOM.createPortal(
+                <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={() => setIsModalOpen(false)}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
                 >
-                    <Combobox.Input
-                        className="w-full border-none py-3 pl-4 pr-10 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-700 focus:ring-0 disabled:opacity-50 cursor-pointer"
-                        displayValue={(album) => album?.title || ''}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="-- Сольный трек (сингл) --"
-                        readOnly // Это делает поле нередактируемым
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                        <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                    </div>
-                </Combobox.Button>
-                <Transition
-                    as={Fragment}
-                    leave="transition ease-in duration-100"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
-                    afterLeave={() => setQuery('')}
-                >
-                    <Combobox.Options
-                        className="absolute z-[60] mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm"
+                    <motion.div
+                        initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="ios-glass-final w-full max-w-lg p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[80vh]"
                     >
-                        <Combobox.Option
-                            value={null}
-                            className={({ active }) =>
-                                `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                                    active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-gray-200'
-                                }`
-                            }
-                        >
-                           -- Сольный трек (сингл) --
-                        </Combobox.Option>
-                         <div className="p-2">
-                            <Combobox.Input
-                                as="input"
-                                className="w-full border-gray-300 dark:border-slate-600 rounded-md py-2 pl-3 pr-2 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-800 focus:ring-0"
-                                onChange={(event) => setQuery(event.target.value)}
-                                placeholder="Поиск альбома..."
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold">Выбрать альбом</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
+                        </div>
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Поиск по названию или артисту..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 autoFocus
                             />
                         </div>
-                        {filteredAlbums.length === 0 && query !== '' ? (
-                            <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-gray-400">
-                                Альбом не найден.
+                        <div className="flex-1 overflow-y-auto -mr-2 pr-2 space-y-2">
+                            <div
+                                onClick={() => handleSelectAndClose(null)}
+                                className="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                                <div className="w-12 h-12 flex-shrink-0 bg-slate-200 dark:bg-slate-700 rounded-md flex items-center justify-center">
+                                    <Music/>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold">-- Сольный трек (сингл) --</p>
+                                </div>
                             </div>
-                        ) : (
-                            filteredAlbums.map((album) => (
-                                <Combobox.Option
+                            {filteredAlbums.map(album => (
+                                <div
                                     key={album._id}
-                                    className={({ active }) =>
-                                        `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                                            active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-gray-200'
-                                        }`
-                                    }
-                                    value={album}
+                                    onClick={() => handleSelectAndClose(album)}
+                                    className="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
                                 >
-                                    {({ selected, active }) => (
-                                        <>
-                                            <span className="flex items-center">
-                                                <div className="w-8 h-8 rounded-md bg-slate-200 dark:bg-slate-600 mr-3 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                                                    {album.coverArtUrl ? (
-                                                        <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover"/>
-                                                    ) : (
-                                                        <Music size={16} />
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                        {album.title}
-                                                    </span>
-                                                    <span className={`text-xs ${active ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'}`}>
-                                                        {album.artist.name}
-                                                    </span>
-                                                </div>
-                                            </span>
-                                            {selected ? (
-                                                <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`}>
-                                                    <Check className="h-5 w-5" aria-hidden="true" />
-                                                </span>
-                                            ) : null}
-                                        </>
-                                    )}
-                                </Combobox.Option>
-                            ))
-                        )}
-                    </Combobox.Options>
-                </Transition>
-            </div>
-        </Combobox>
+                                    <div className="relative w-12 h-12 flex-shrink-0">
+                                        <img src={album.coverArtUrl} alt={album.title} className="w-full h-full rounded-md object-cover"/>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold truncate">{album.title}</p>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{album.artist.name}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                </motion.div>,
+                document.getElementById('modal-root')
+            )}
+        </AnimatePresence>
+    );
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => !disabled && setIsModalOpen(true)}
+                disabled={disabled}
+                className="w-full h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-slate-700 text-left flex items-center justify-between shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
+            >
+                <span className="truncate">{selectedAlbum?.title || '-- Сольный трек (сингл) --'}</span>
+                <ChevronDown className="h-5 w-5 text-gray-400" />
+            </button>
+            <ModalContent />
+        </>
     );
 };
 
