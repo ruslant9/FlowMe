@@ -1,6 +1,6 @@
 // frontend/components/admin/CreateAlbumForm.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Music, Edit } from 'lucide-react';
@@ -27,6 +27,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [loading, setLoading] = useState(false);
     const [coverPreview, setCoverPreview] = useState('');
     const [albumTracks, setAlbumTracks] = useState([]);
+    
+    // --- ИЗМЕНЕНИЕ 1: Создаем ref для инпута файла ---
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         if (isEditMode && initialData) {
@@ -127,9 +130,18 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Обложка альбома</label>
+                {/* --- ИЗМЕНЕНИЕ 2: Обновляем верстку блока загрузки --- */}
                 <div className="flex items-center space-x-4">
-                    <input type="file" accept="image/*" onChange={handleCoverChange} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
-                    {coverPreview && <img src={coverPreview} alt="Предпросмотр" className="w-24 h-24 rounded object-cover flex-shrink-0"/>}
+                    <button 
+                        type="button" 
+                        onClick={() => fileInputRef.current.click()}
+                        className="px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                        Выберите файл
+                    </button>
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
+                    <span className="text-sm text-slate-500">{coverArt?.name || 'Файл не выбран'}</span>
+                    {coverPreview && <img src={coverPreview} alt="Предпросмотр" className="ml-auto w-24 h-24 rounded object-cover flex-shrink-0"/>}
                 </div>
             </div>
 

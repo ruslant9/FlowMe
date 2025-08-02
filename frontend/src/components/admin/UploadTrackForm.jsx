@@ -31,12 +31,10 @@ const ToggleSwitch = ({ checked, onChange, label }) => (
 // Компонент для одного трека в списке пакетной загрузки
 const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemove }) => {
     return (
-        <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3">
-            <div className="flex items-center justify-end">
-                <button type="button" onClick={onRemove} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full">
-                    <Trash2 size={16} />
-                </button>
-            </div>
+        <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3 relative">
+            <button type="button" onClick={onRemove} className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full z-10">
+                <Trash2 size={16} />
+            </button>
             <input 
                 type="text" 
                 placeholder="Название трека" 

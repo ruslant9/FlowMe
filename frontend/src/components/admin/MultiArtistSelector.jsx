@@ -2,11 +2,18 @@
 
 import React, { useState, useMemo, Fragment } from 'react';
 import { Combobox, Transition, Portal } from '@headlessui/react';
+import { usePopper } from 'react-popper';
 import { Check, ChevronDown, X } from 'lucide-react';
 import Avatar from '../Avatar';
 
 const MultiArtistSelector = ({ artists, value, onChange, required = true, excludeIds = [] }) => {
     const [query, setQuery] = useState('');
+    const [referenceElement, setReferenceElement] = useState(null);
+    const [popperElement, setPopperElement] = useState(null);
+    const { styles, attributes } = usePopper(referenceElement, popperElement, {
+        placement: 'bottom-start',
+    });
+
 
     const selectedArtists = useMemo(() =>
         value.map(id => artists.find(a => a._id === id)).filter(Boolean)
@@ -39,7 +46,7 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
 
     return (
         <Combobox value={selectedArtists} onChange={handleSelect} multiple>
-            <div className="relative">
+            <div className="relative" ref={setReferenceElement}>
                 <Combobox.Button className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
                     <div className="flex flex-wrap gap-2 p-2 items-center min-h-[44px]">
                         {selectedArtists.map(artist => (
@@ -63,12 +70,18 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
                         leaveTo="opacity-0"
                         afterLeave={() => setQuery('')}
                     >
-                        <Combobox.Options className="absolute z-[60] mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
+                        <Combobox.Options 
+                            ref={setPopperElement}
+                            style={styles.popper}
+                            {...attributes.popper}
+                            className="z-[60] mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm"
+                        >
                             <div className="p-2">
                                <Combobox.Input
                                     className="w-full border-gray-300 dark:border-slate-600 rounded-md py-2 pl-3 pr-2 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-800 focus:ring-0"
                                     onChange={(event) => setQuery(event.target.value)}
                                     placeholder="Поиск артиста..."
+                                    autoFocus
                                 />
                             </div>
                             {filteredArtists.length === 0 && query !== '' ? (
