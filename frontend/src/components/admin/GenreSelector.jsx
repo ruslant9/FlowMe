@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { musicGenres } from '../../data/genres'; // Используем наш централизованный список жанров
+import { musicGenresRu } from '../../data/genres'; // Используем наш централизованный список жанров
 import toast from 'react-hot-toast';
 
 const GenreSelector = ({ selectedGenres, onGenreChange }) => {
@@ -28,7 +28,7 @@ const GenreSelector = ({ selectedGenres, onGenreChange }) => {
         <div>
             <label className="text-sm font-semibold block mb-2">Жанры (до {MAX_GENRES})</label>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg max-h-48 overflow-y-auto">
-                {musicGenres.map(genre => {
+                {musicGenresRu.map(genre => {
                     const isSelected = selectedGenres.includes(genre);
                     return (
                         <motion.button

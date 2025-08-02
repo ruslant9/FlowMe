@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { musicGenres } from '../../data/genres';
+import { musicGenresRu } from '../../data/genres';
 
 const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" }) => {
 
@@ -19,7 +19,7 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
         <div>
             <label className="text-sm font-semibold block mb-2">{label} *</label>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg max-h-48 overflow-y-auto">
-                {musicGenres.map(genre => {
+                {musicGenresRu.map(genre => {
                     const isSelected = selectedGenre === genre;
                     return (
                         <motion.button
