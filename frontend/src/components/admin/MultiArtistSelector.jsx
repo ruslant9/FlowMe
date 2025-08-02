@@ -1,19 +1,28 @@
 // frontend/components/admin/MultiArtistSelector.jsx
 
-import React, { useState, useMemo, Fragment } from 'react';
-import { Combobox, Transition, Portal } from '@headlessui/react';
-import { usePopper } from 'react-popper';
+import React from 'react';
+import { Combobox, Transition } from '@headlessui/react';
+import { useFloating, useInteractions, useClick, useDismiss, FloatingPortal } from '@floating-ui/react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import Avatar from '../Avatar';
 
 const MultiArtistSelector = ({ artists, value, onChange, required = true, excludeIds = [] }) => {
+    const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState('');
-    const [referenceElement, setReferenceElement] = useState(null);
-    const [popperElement, setPopperElement] = useState(null);
-    const { styles, attributes } = usePopper(referenceElement, popperElement, {
+
+    const { refs, floatingStyles, context } = useFloating({
+        open: isOpen,
+        onOpenChange: setIsOpen,
         placement: 'bottom-start',
     });
 
+    const click = useClick(context);
+    const dismiss = useDismiss(context);
+
+    const { getReferenceProps, getFloatingProps } = useInteractions([
+        click,
+        dismiss,
+    ]);
 
     const selectedArtists = useMemo(() =>
         value.map(id => artists.find(a => a._id === id)).filter(Boolean)
@@ -35,7 +44,7 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
 
     const filteredArtists =
         query === ''
-            ? availableArtists.filter(a => !value.includes(a._id)) // Не показывать уже выбранных
+            ? availableArtists.filter(a => !value.includes(a._id))
             : availableArtists.filter((artist) =>
                 !value.includes(artist._id) &&
                 artist.name
@@ -46,8 +55,8 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
 
     return (
         <Combobox value={selectedArtists} onChange={handleSelect} multiple>
-            <div className="relative" ref={setReferenceElement}>
-                <Combobox.Button className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
+            <div className="relative">
+                <Combobox.Button as="div" ref={refs.setReference} {...getReferenceProps()} className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 cursor-pointer">
                     <div className="flex flex-wrap gap-2 p-2 items-center min-h-[44px]">
                         {selectedArtists.map(artist => (
                             <div key={artist._id} className="flex items-center space-x-2 bg-blue-100 dark:bg-blue-900/50 rounded-full pl-1 pr-2 py-0.5">
@@ -62,63 +71,66 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
                         <ChevronDown className="h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2" aria-hidden="true" />
                     </div>
                 </Combobox.Button>
-                <Portal>
-                    <Transition
-                        as={Fragment}
-                        leave="transition ease-in duration-100"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                        afterLeave={() => setQuery('')}
-                    >
-                        <Combobox.Options 
-                            ref={setPopperElement}
-                            style={styles.popper}
-                            {...attributes.popper}
-                            className="z-[60] mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm"
+                {isOpen && (
+                    <FloatingPortal>
+                        <Transition
+                            as={Fragment}
+                            leave="transition ease-in duration-100"
+                            leaveFrom="opacity-100"
+                            leaveTo="opacity-0"
+                            afterLeave={() => setQuery('')}
                         >
-                            <div className="p-2">
-                               <Combobox.Input
-                                    className="w-full border-gray-300 dark:border-slate-600 rounded-md py-2 pl-3 pr-2 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-800 focus:ring-0"
-                                    onChange={(event) => setQuery(event.target.value)}
-                                    placeholder="Поиск артиста..."
-                                    autoFocus
-                                />
-                            </div>
-                            {filteredArtists.length === 0 && query !== '' ? (
-                                <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-gray-400">
-                                    Артист не найден.
+                            <Combobox.Options 
+                                ref={refs.setFloating}
+                                style={{ ...floatingStyles, width: refs.reference.current?.getBoundingClientRect().width }}
+                                {...getFloatingProps()}
+                                className="z-[60] mt-1 max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm"
+                            >
+                                <div className="p-2">
+                                   <Combobox.Input
+                                        as="input"
+                                        className="w-full border-gray-300 dark:border-slate-600 rounded-md py-2 pl-3 pr-2 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-800 focus:ring-0"
+                                        onChange={(event) => setQuery(event.target.value)}
+                                        placeholder="Поиск артиста..."
+                                        autoFocus
+                                    />
                                 </div>
-                            ) : (
-                                filteredArtists.map((artist) => (
-                                    <Combobox.Option
-                                        key={artist._id}
-                                        className={({ active }) =>
-                                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                                                active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-gray-200'
-                                            }`
-                                        }
-                                        value={artist}
-                                    >
-                                        {({ selected, active }) => (
-                                            <>
-                                                <span className="flex items-center">
-                                                    <Avatar
-                                                        size="sm"
-                                                        username={artist.name}
-                                                        avatarUrl={artist.avatarUrl}
-                                                    />
-                                                    <span className={`ml-3 truncate font-normal`}>
-                                                        {artist.name}
+                                {filteredArtists.length === 0 && query !== '' ? (
+                                    <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-gray-400">
+                                        Артист не найден.
+                                    </div>
+                                ) : (
+                                    filteredArtists.map((artist) => (
+                                        <Combobox.Option
+                                            key={artist._id}
+                                            className={({ active }) =>
+                                                `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                                    active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-gray-200'
+                                                }`
+                                            }
+                                            value={artist}
+                                        >
+                                            {({ selected, active }) => (
+                                                <>
+                                                    <span className="flex items-center">
+                                                        <Avatar
+                                                            size="sm"
+                                                            username={artist.name}
+                                                            avatarUrl={artist.avatarUrl}
+                                                        />
+                                                        <span className={`ml-3 truncate font-normal`}>
+                                                            {artist.name}
+                                                        </span>
                                                     </span>
-                                                </span>
-                                            </>
-                                        )}
-                                    </Combobox.Option>
-                                ))
-                            )}
-                        </Combobox.Options>
-                    </Transition>
-                </Portal>
+                                                </>
+                                            )}
+                                        </Combobox.Option>
+                                    ))
+                                )}
+                            </Combobox.Options>
+                        </Transition>
+                    </FloatingPortal>
+                )}
             </div>
         </Combobox>
     );
