@@ -56,7 +56,9 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
     return (
         <Combobox value={selectedArtists} onChange={handleSelect} multiple>
             <div className="relative">
-                <Combobox.Button as="div" ref={refs.setReference} {...getReferenceProps()} className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 cursor-pointer">
+                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Combobox.Button as="div" заменен на простой div --- */}
+                <div ref={refs.setReference} {...getReferenceProps()} className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 cursor-pointer">
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     <div className="flex flex-wrap gap-2 p-2 items-center min-h-[44px]">
                         {selectedArtists.map(artist => (
                             <div key={artist._id} className="flex items-center space-x-2 bg-blue-100 dark:bg-blue-900/50 rounded-full pl-1 pr-2 py-0.5">
@@ -70,7 +72,7 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
                         {value.length === 0 && <span className="text-sm text-slate-400 pl-2">Добавьте исполнителей...</span>}
                         <ChevronDown className="h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2" aria-hidden="true" />
                     </div>
-                </Combobox.Button>
+                </div>
                 {isOpen && (
                     <FloatingPortal>
                         <Transition
