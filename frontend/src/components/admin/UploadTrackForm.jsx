@@ -7,24 +7,43 @@ import { Loader2, Trash2 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelector from './GenreSelector';
 import MultiArtistSelector from './MultiArtistSelector';
-import AlbumSelector from './AlbumSelector'; // Предполагаем, что у нас есть аналогичный селектор для альбомов
+import AlbumSelector from './AlbumSelector';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+// НОВЫЙ КОМПОНЕНТ: Тумблер-переключатель
+const ToggleSwitch = ({ checked, onChange, label }) => (
+    <label className="flex items-center space-x-2 cursor-pointer text-sm">
+        <div className="relative">
+            <input 
+                type="checkbox" 
+                className="sr-only" 
+                checked={checked} 
+                onChange={e => onChange(e.target.checked)} 
+            />
+            <div className={`block w-10 h-6 rounded-full transition ${checked ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${checked ? 'transform translate-x-full' : ''}`}></div>
+        </div>
+        <span>{label}</span>
+    </label>
+);
 
 // Компонент для одного трека в списке пакетной загрузки
 const BatchTrackItem = ({ track, index, artists, onUpdate, onRemove }) => {
     return (
         <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3">
-            <div className="flex items-center justify-between">
-                <p className="font-semibold text-sm text-slate-500 dark:text-slate-400 truncate">{track.file.name}</p>
+            <div className="flex items-center justify-end">
                 <button type="button" onClick={onRemove} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full">
                     <Trash2 size={16} />
                 </button>
             </div>
+            {/* ИЗМЕНЕНИЕ 1: Оставляем только одно редактируемое поле */}
             <input 
                 type="text" 
                 placeholder="Название трека" 
                 value={track.title}
                 onChange={(e) => onUpdate(index, 'title', e.target.value)}
-                className="w-full p-2 rounded bg-white dark:bg-slate-700"
+                className="w-full p-2 rounded bg-white dark:bg-slate-700 font-semibold"
                 required
             />
             <MultiArtistSelector 
@@ -32,15 +51,12 @@ const BatchTrackItem = ({ track, index, artists, onUpdate, onRemove }) => {
                 value={track.artistIds}
                 onChange={(ids) => onUpdate(index, 'artistIds', ids)}
             />
-             <label className="flex items-center space-x-2 text-sm">
-                <input 
-                    type="checkbox" 
-                    checked={track.isExplicit}
-                    onChange={(e) => onUpdate(index, 'isExplicit', e.target.checked)}
-                    className="form-checkbox h-4 w-4 rounded bg-slate-300 dark:bg-slate-600 border-transparent focus:ring-blue-500"
-                />
-                <span>Explicit (ненормативная лексика)</span>
-            </label>
+            {/* ИЗМЕНЕНИЕ 2: Заменяем чекбокс на тумблер */}
+            <ToggleSwitch 
+                checked={track.isExplicit}
+                onChange={(checked) => onUpdate(index, 'isExplicit', checked)}
+                label="Explicit (ненормативная лексика)"
+            />
         </div>
     );
 };
@@ -201,10 +217,17 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                 <div className="space-y-4">
                     <div>
                         <label className="text-sm font-semibold block mb-1">Аудиофайлы *</label>
-                        <input type="file" multiple accept="audio/mpeg, audio/wav, audio/mp3" onChange={handleBatchFileChange} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
+                        <div className="flex items-center space-x-4">
+                            <label htmlFor="batch-file-upload" className="cursor-pointer px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">
+                                Выбрать файлы
+                            </label>
+                             <input id="batch-file-upload" type="file" multiple accept="audio/mpeg, audio/wav, audio/mp3" onChange={handleBatchFileChange} className="hidden" />
+                            {trackList.length > 0 && <span className="text-sm text-slate-500 dark:text-slate-400">Число файлов: {trackList.length}</span>}
+                        </div>
                     </div>
                     {trackList.length > 0 && (
-                        <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                        // ИЗМЕНЕНИЕ 3: Удаляем max-h-96 и overflow-y-auto
+                        <div className="space-y-3 pr-2">
                             {trackList.map((track, index) => (
                                 <BatchTrackItem 
                                     key={index}

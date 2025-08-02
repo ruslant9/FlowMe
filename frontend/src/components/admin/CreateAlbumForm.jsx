@@ -30,6 +30,12 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         }
     }, [isEditMode, initialData]);
 
+    const getImageUrl = (url) => {
+    if (!url || url.startsWith('http') || url.startsWith('blob:')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+    };
 
     const handleCoverChange = (e) => {
         const file = e.target.files[0];
