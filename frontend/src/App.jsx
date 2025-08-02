@@ -1,6 +1,6 @@
 // frontend/src/App.jsx
 
-import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
@@ -34,6 +34,7 @@ import PlaylistPage from './pages/PlaylistPage'; // <-- НОВЫЙ ИМПОРТ
 import axios from 'axios';
 import PremiumPage from './pages/PremiumPage';
 import AdminPage from './pages/AdminPage'; 
+import toast from 'react-hot-toast';
 
 // Импорт MusicPlayerProvider и MusicPlayerBar
 import { MusicPlayerProvider, useMusicPlayer } from './context/MusicPlayerContext';
@@ -224,6 +225,28 @@ const ProtectedLayout = () => {
   );
 };
 
+// --- НОВЫЙ КОМПОНЕНТ: Защищенный лейаут ТОЛЬКО для админов ---
+const AdminProtectedLayout = () => {
+  const { currentUser, loadingUser } = useUser();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Если загрузка пользователя завершена и у него нет прав администратора
+    if (!loadingUser && currentUser && currentUser.role !== 'admin') {
+      toast.error("Доступ запрещен. У вас нет прав администратора.");
+      navigate('/', { replace: true }); // Перенаправляем на главную
+    }
+  }, [currentUser, loadingUser, navigate]);
+
+  // Если пользователь не админ, ничего не рендерим, пока происходит редирект
+  if (!loadingUser && currentUser && currentUser.role !== 'admin') {
+    return null; 
+  }
+
+  // В остальных случаях (загрузка или пользователь - админ) показываем контент
+  return <Outlet />;
+};
+
 
 // Главный компонент приложения
 function App() {
@@ -260,7 +283,10 @@ function App() {
             <Route path="/communities/:communityId/manage" element={<CommunityManagementPage />} />
             <Route path="/communities/:communityId" element={<CommunityDetailPage />} />
             <Route path="/premium" element={<PremiumPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+            {/* --- ИЗМЕНЯЕМ МАРШРУТИЗАЦИЮ: Оборачиваем админ-панель в новый защищенный лейаут --- */}
+            <Route element={<AdminProtectedLayout />}>
+              <Route path="/admin" element={<AdminPage />} />
+            </Route>
           </Route>
 
           {/* Роут для всех остальных путей, ведет на главную */}
