@@ -32,7 +32,8 @@ const premiumRoutes = require('./routes/premium');
 const musicRoutes = require('./routes/music');
 const wallpaperRoutes = require('./routes/wallpapers');
 const playlistRoutes = require('./routes/playlists');
-// --- ИЗМЕНЕНИЕ: Убираем импорт дублирующего роутера ---
+const submissionsRoutes = require('./routes/submissions'); // <-- Этот роут для обычных пользователей
+const adminRoutes = require('./routes/admin'); // <-- А этот для админов
 const app = express();
 const server = http.createServer(app);
 
@@ -206,11 +207,12 @@ app.use('/api/user', userRoutes);
 app.use('/api/posts', postsRouter); 
 app.use('/api/messages', messagesRouter);
 app.use('/api/communities', communityRoutes);
-// --- ИЗМЕНЕНИЕ: Убираем некорректный роут spotify и дублирующиеся роуты music/playlists ---
 app.use('/api/music', musicRoutes);
 app.use('/api/wallpapers', wallpaperRoutes);
 app.use('/api/premium', premiumRoutes(wss, clients));
 app.use('/api/playlists', playlistRoutes);
+app.use('/api/submissions', submissionsRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 

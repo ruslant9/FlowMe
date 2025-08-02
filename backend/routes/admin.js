@@ -131,19 +131,22 @@ router.post('/submissions/:id/reject', async (req, res) => {
 router.post('/artists', upload.single('avatar'), async (req, res) => {
     try {
         const { name, description, tags } = req.body;
-        const submission = new Submission({
-            entityType: 'Artist',
-            action: 'create',
-            submittedBy: req.user._id,
-            data: {
-                name,
-                description,
-                tags: tags ? tags.split(',').map(t => t.trim()) : [],
-                avatarUrl: req.file ? req.file.key : null // .key из multer-s3
-            }
-        });
-        await submission.save();
-        res.status(201).json({ message: 'Заявка на создание артиста отправлена на проверку.' });
+
+        // Если отправитель - админ, создаем артиста напрямую
+        const artistData = {
+            name,
+            description,
+            tags: tags ? tags.split(',').map(t => t.trim()) : [],
+            avatarUrl: req.file ? req.file.key : null,
+            status: 'approved', // Сразу одобрен
+            createdBy: req.user._id,
+            reviewedBy: req.user._id, // Сам себе модератор
+        };
+        const newArtist = new Artist(artistData);
+        await newArtist.save();
+
+        res.status(201).json({ message: 'Артист успешно создан.' });
+
     } catch (error) {
         console.error("Ошибка создания заявки на артиста:", error);
         res.status(500).json({ message: 'Ошибка сервера' });
@@ -157,21 +160,26 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });
         }
-
-        const submission = new Submission({
-            entityType: 'Track',
-            action: 'create',
-            submittedBy: req.user._id,
-            data: {
-                title,
-                artist: artistId,
-                album: albumId || null,
-                durationMs,
-                storageKey: req.file.key
-            }
+        
+        // Админ сразу создает одобренный трек
+        const newTrack = new Track({
+            title,
+            artist: artistId,
+            album: albumId || null,
+            durationMs,
+            storageKey: req.file.key,
+            status: 'approved',
+            createdBy: req.user._id,
+            reviewedBy: req.user._id,
         });
-        await submission.save();
-        res.status(201).json({ message: 'Заявка на добавление трека отправлена на проверку.' });
+        await newTrack.save();
+
+        // Если трек добавлен в альбом, обновляем альбом
+        if (albumId) {
+            await Album.updateOne({ _id: albumId }, { $addToSet: { tracks: newTrack._id } });
+        }
+
+        res.status(201).json({ message: 'Трек успешно загружен и опубликован.' });
     } catch (error) {
         console.error("Ошибка создания заявки на трек:", error);
         res.status(500).json({ message: 'Ошибка сервера' });
@@ -182,19 +190,20 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
         const { title, artistId } = req.body;
-        const submission = new Submission({
-            entityType: 'Album',
-            action: 'create',
-            submittedBy: req.user._id,
-            data: {
-                title,
-                artist: artistId,
-                coverArtUrl: req.file ? req.file.key : null
-            }
+        
+        // Админ сразу создает одобренный альбом
+        const newAlbum = new Album({
+            title,
+            artist: artistId,
+            coverArtUrl: req.file ? req.file.key : null,
+            status: 'approved',
+            createdBy: req.user._id,
+            reviewedBy: req.user._id,
         });
-        await submission.save();
-        res.status(201).json({ message: 'Заявка на создание альбома отправлена.' });
-    } catch (error) {
+        await newAlbum.save();
+
+        res.status(201).json({ message: 'Альбом успешно создан.' });
+    }  catch (error) {
         console.error("Ошибка создания заявки на альбом:", error);
         res.status(500).json({ message: 'Ошибка сервера' });
     }
