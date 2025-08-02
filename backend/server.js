@@ -215,7 +215,6 @@ app.use('/api/premium', banMiddleware, premiumRoutes(wss, clients));
 app.use('/api/playlists', banMiddleware, playlistRoutes);
 app.use('/api/submissions', banMiddleware, submissionsRoutes);
 app.use('/api/admin', adminRoutes); // Админ-роуты защищены своим middleware
-app.use('/api/music', musicRouter);
 
 const PORT = process.env.PORT || 5000;
 
