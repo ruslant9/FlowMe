@@ -3,7 +3,8 @@
 import React, { useState, useEffect, forwardRef } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import Avatar from './Avatar';
-import { LogOut, Settings, Users, Newspaper, Menu, MessageSquare, Bell, Globe, Music, Sparkles, Crown } from 'lucide-react';
+// --- ИСПРАВЛЕНИЕ ЗДЕСЬ: Добавляем иконку "Shield" в импорт ---
+import { LogOut, Settings, Users, Newspaper, Menu, MessageSquare, Bell, Globe, Music, Sparkles, Crown, Shield } from 'lucide-react';
 import { useWebSocket } from '../context/WebSocketContext';
 import { useUser } from '../context/UserContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -143,15 +144,6 @@ const Sidebar = ({ themeSwitcher }) => {
                             isExpanded={isExpanded}
                         />
 
-{user?.role === 'admin' && (
-                <NavItem
-                    to="/admin"
-                    icon={Shield}
-                    text="Админ-панель"
-                    count={0} // Сюда можно будет добавить счетчик заявок
-                    isExpanded={isExpanded}
-                />
-            )}
                         <Tippy
                             disabled={isExpanded}
                             placement="right"
@@ -193,7 +185,6 @@ const Sidebar = ({ themeSwitcher }) => {
 
                                             <div className="relative">
                                                 {user ? (
-                                                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
                                                     <Avatar username={user?.username} fullName={user?.fullName} avatarUrl={user?.avatar} size="md" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} />
                                                 ) : (
                                                     <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
@@ -217,6 +208,16 @@ const Sidebar = ({ themeSwitcher }) => {
                                 </NavLink>
                             </TippyWrapper>
                         </Tippy>
+                        
+                        {user?.role === 'admin' && (
+                            <NavItem
+                                to="/admin"
+                                icon={Shield}
+                                text="Админ-панель"
+                                count={0} // Сюда можно будет добавить счетчик заявок
+                                isExpanded={isExpanded}
+                            />
+                        )}
 
                         {menuItems.map(item => (
                             <NavItem
