@@ -12,43 +12,23 @@ const Album = require('../models/Album');
 const Track = require('../models/Track');
 const Submission = require('../models/Submission');
 
-// Настройка Multer для загрузки в Cloudflare R2
+// --- ИЗМЕНЕНИЕ 1: Меняем импорты и настройку Multer ---
 const multer = require('multer');
-const { S3Client } = require('@aws-sdk/client-s3');
-const multerS3 = require('multer-s3');
+const { createStorage } = require('../config/cloudinary');
 
-// Инициализация S3 клиента для R2
-const s3 = new S3Client({
-    region: 'auto',
-    endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-    },
-});
+// Создаем хранилище для файлов, которые загружает админ.
+// Они будут помещены в папку 'music' на Cloudinary.
+const adminStorage = createStorage('music');
+const upload = multer({ storage: adminStorage });
+// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
-// Middleware для загрузки файлов
-const upload = multer({
-    storage: multerS3({
-        s3: s3,
-        bucket: process.env.R2_BUCKET_NAME,
-        acl: 'public-read', // Файлы будут доступны по прямой ссылке
-        metadata: function (req, file, cb) {
-            cb(null, { fieldName: file.fieldname });
-        },
-        key: function (req, file, cb) {
-            // Уникальное имя файла: music/1678886400000-cool-song.mp3
-            cb(null, `music/${Date.now().toString()}-${file.originalname.replace(/\s+/g, '-')}`);
-        }
-    })
-});
 
 // Защищаем все роуты в этом файле - только для авторизованных админов
 router.use(authMiddleware, adminMiddleware);
 
-// --- РОУТЫ ДЛЯ МОДЕРАЦИИ ---
+// --- РОУТЫ ДЛЯ МОДЕРАЦИИ (остаются без изменений) ---
 
-// 1. Получить список всех заявок на проверку
+// Получить список всех заявок на проверку
 router.get('/submissions', async (req, res) => {
     try {
         const submissions = await Submission.find({ status: 'pending' })
@@ -61,7 +41,7 @@ router.get('/submissions', async (req, res) => {
     }
 });
 
-// 2. Одобрить заявку
+// Одобрить заявку
 router.post('/submissions/:id/approve', async (req, res) => {
     try {
         const submission = await Submission.findById(req.params.id);
@@ -97,7 +77,7 @@ router.post('/submissions/:id/approve', async (req, res) => {
     }
 });
 
-// 3. Отклонить заявку
+// Отклонить заявку
 router.post('/submissions/:id/reject', async (req, res) => {
     try {
         const { reason } = req.body;
@@ -110,8 +90,7 @@ router.post('/submissions/:id/reject', async (req, res) => {
         submission.rejectionReason = reason;
         submission.reviewedBy = req.user._id;
         await submission.save();
-
-        // Если это была заявка на редактирование, нужно откатить статус у самой сущности
+        
         if (submission.action === 'edit') {
             const Model = mongoose.model(submission.entityType);
             await Model.updateOne({ _id: submission.entityId }, { $set: { status: 'approved' } });
@@ -125,35 +104,31 @@ router.post('/submissions/:id/reject', async (req, res) => {
 });
 
 
-// --- РОУТЫ ДЛЯ СОЗДАНИЯ ЗАЯВОК ---
+// --- РОУТЫ ДЛЯ ПРЯМОГО УПРАВЛЕНИЯ КОНТЕНТОМ (только для админов) ---
 
-// Создать артиста (создает заявку)
+// Создать артиста напрямую
 router.post('/artists', upload.single('avatar'), async (req, res) => {
     try {
         const { name, description, tags } = req.body;
-
-        // Если отправитель - админ, создаем артиста напрямую
-        const artistData = {
+        const newArtist = new Artist({
             name,
             description,
             tags: tags ? tags.split(',').map(t => t.trim()) : [],
-            avatarUrl: req.file ? req.file.key : null,
-            status: 'approved', // Сразу одобрен
+            // --- ИЗМЕНЕНИЕ 2: Используем req.file.path для URL из Cloudinary ---
+            avatarUrl: req.file ? req.file.path : null,
+            status: 'approved',
             createdBy: req.user._id,
-            reviewedBy: req.user._id, // Сам себе модератор
-        };
-        const newArtist = new Artist(artistData);
+            reviewedBy: req.user._id,
+        });
         await newArtist.save();
-
         res.status(201).json({ message: 'Артист успешно создан.' });
-
     } catch (error) {
-        console.error("Ошибка создания заявки на артиста:", error);
+        console.error("Ошибка создания артиста:", error);
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
 
-// Загрузить трек (создает заявку)
+// Загрузить трек напрямую
 router.post('/tracks', upload.single('trackFile'), async (req, res) => {
     try {
         const { title, artistId, albumId, durationMs } = req.body;
@@ -161,52 +136,52 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });
         }
         
-        // Админ сразу создает одобренный трек
         const newTrack = new Track({
             title,
             artist: artistId,
             album: albumId || null,
             durationMs,
-            storageKey: req.file.key,
+            // --- ИЗМЕНЕНИЕ 3: Используем req.file.path ---
+            storageKey: req.file.path,
             status: 'approved',
             createdBy: req.user._id,
             reviewedBy: req.user._id,
         });
         await newTrack.save();
 
-        // Если трек добавлен в альбом, обновляем альбом
         if (albumId) {
             await Album.updateOne({ _id: albumId }, { $addToSet: { tracks: newTrack._id } });
         }
-
         res.status(201).json({ message: 'Трек успешно загружен и опубликован.' });
     } catch (error) {
-        console.error("Ошибка создания заявки на трек:", error);
+        console.error("Ошибка загрузки трека:", error);
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
 
-// Создать альбом (создает заявку)
+// Создать альбом напрямую
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
         const { title, artistId } = req.body;
         
-        // Админ сразу создает одобренный альбом
         const newAlbum = new Album({
             title,
             artist: artistId,
-            coverArtUrl: req.file ? req.file.key : null,
+            // --- ИЗМЕНЕНИЕ 4: Используем req.file.path ---
+            coverArtUrl: req.file ? req.file.path : null,
             status: 'approved',
             createdBy: req.user._id,
             reviewedBy: req.user._id,
         });
         await newAlbum.save();
-
         res.status(201).json({ message: 'Альбом успешно создан.' });
-    }  catch (error) {
-        console.error("Ошибка создания заявки на альбом:", error);
+    } catch (error) {
+        console.error("Ошибка создания альбома:", error);
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
+
+// TODO: Роуты для редактирования сущностей админом
+// router.put('/artists/:id', upload.single('avatar'), async (req, res) => { ... });
 
 module.exports = router;
