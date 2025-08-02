@@ -193,10 +193,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
-                <select value={albumId} onChange={e => setAlbumId(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700">
-                    <option value="">-- Сольный трек (сингл) --</option>
-                    {albums.map(album => <option key={album._id} value={album._id}>{album.title}</option>)}
-                </select>
+                <AlbumSelector albums={albums} value={albumId} onChange={setAlbumId} />
             </div>
 
             {albumId ? (
