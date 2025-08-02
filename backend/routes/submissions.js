@@ -5,20 +5,14 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
 const Submission = require('../models/Submission');
 const multer = require('multer');
-
-// Импортируем нашу новую конфигурацию Cloudinary
 const { createStorage } = require('../config/cloudinary');
-
-// Создаем хранилище для файлов, которые отправляются на модерацию.
-// Они будут помещены в папку 'submissions' на вашем Cloudinary.
 const submissionStorage = createStorage('submissions'); 
 const upload = multer({ storage: submissionStorage });
+const Artist = require('../models/Artist');
 
-// Все роуты в этом файле требуют только авторизации пользователя (не админа)
 router.use(authMiddleware);
 
 // 1. Создать заявку на нового артиста
-// Middleware upload.single('avatar') перехватывает файл из поля 'avatar'
 router.post('/artists', upload.single('avatar'), async (req, res) => {
     try {
         const { name, description, tags } = req.body;
@@ -31,7 +25,7 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
         if (existingArtist) {
             return res.status(400).json({ message: 'Артист с таким именем уже существует.' });
         }
-        
+
         const submission = new Submission({
             entityType: 'Artist',
             action: 'create',

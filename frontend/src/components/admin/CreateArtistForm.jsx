@@ -116,7 +116,7 @@ export const CreateArtistForm = ({ onSuccess, isEditMode = false, initialData = 
             
             <input type="text" placeholder="Имя артиста" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
             <textarea placeholder="Описание" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
-            <input type="text" placeholder="Теги через запятую (для поиска)" value={tags} onChange={e => setTags(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
+            <input type="text" placeholder="Теги через запятую (например: поп-панк, русский рэп)" value={tags} onChange={e => setTags(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
             
             <div>
                 <label className="text-sm font-semibold block mb-2">Аватар артиста (обложка)</label>

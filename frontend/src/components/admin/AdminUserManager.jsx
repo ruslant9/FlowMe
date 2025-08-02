@@ -144,7 +144,7 @@ const AdminUserManager = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по имени, @username или почте..." className="pl-10 pr-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 w-full sm:w-72" />
+                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по имени, @username или почте..." className="pl-10 pr-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 w-full sm:w-96" />
                 </div>
             </div>
             {renderContent()}
