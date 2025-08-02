@@ -7,15 +7,14 @@ import { Loader2, Trash2 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelector from './GenreSelector';
 import MultiArtistSelector from './MultiArtistSelector';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import AlbumSelector from './AlbumSelector'; // Предполагаем, что у нас есть аналогичный селектор для альбомов
 
 // Компонент для одного трека в списке пакетной загрузки
 const BatchTrackItem = ({ track, index, artists, onUpdate, onRemove }) => {
     return (
         <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3">
             <div className="flex items-center justify-between">
-                <p className="font-semibold">{track.file.name}</p>
+                <p className="font-semibold text-sm text-slate-500 dark:text-slate-400 truncate">{track.file.name}</p>
                 <button type="button" onClick={onRemove} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full">
                     <Trash2 size={16} />
                 </button>

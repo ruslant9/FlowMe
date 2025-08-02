@@ -26,7 +26,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setArtistId(initialData.artist?._id || initialData.artist || '');
             setGenre(initialData.genre || '');
             setReleaseYear(initialData.releaseYear || '');
-            setCoverPreview(initialData.coverArtUrl ? `${API_URL}/${initialData.coverArtUrl}` : '');
+            setCoverPreview(initialData.coverArtUrl ? getImageUrl(initialData.coverArtUrl) : '');
         }
     }, [isEditMode, initialData]);
 

@@ -311,8 +311,8 @@ router.delete('/content/artists/:id', async (req, res) => {
 // --- АЛЬБОМЫ ---
 router.put('/content/albums/:id', upload.single('coverArt'), async (req, res) => {
     try {
-        const { title, artistId, genre } = req.body;
-        const updateData = { title, artist: artistId, genre };
+        const { title, artistId, genre, releaseYear } = req.body;
+        const updateData = { title, artist: artistId, genre, releaseYear: releaseYear || null };
         
         if (req.file) {
             updateData.coverArtUrl = req.file.path;

@@ -1,4 +1,4 @@
-// frontend/components/admin/MultiArtistSelector.jsx --- НОВЫЙ ФАЙЛ ---
+// frontend/components/admin/MultiArtistSelector.jsx
 
 import React, { useState, useMemo, Fragment } from 'react';
 import { Combobox, Transition } from '@headlessui/react';
@@ -16,7 +16,6 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true }) => {
         if (!value.includes(artist._id)) {
             onChange([...value, artist._id]);
         }
-        setQuery('');
     };
     
     const handleRemove = (artistId) => {
@@ -35,27 +34,22 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true }) => {
             );
 
     return (
-        <Combobox value={value} onChange={handleSelect} multiple>
+        <Combobox value={selectedArtists} onChange={handleSelect} multiple>
             <div className="relative">
-                <div className="flex flex-wrap gap-2 p-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
-                    {selectedArtists.map(artist => (
-                        <div key={artist._id} className="flex items-center space-x-2 bg-blue-100 dark:bg-blue-900/50 rounded-full px-2 py-1">
-                            <Avatar size="sm" username={artist.name} avatarUrl={artist.avatarUrl} />
-                            <span className="text-sm font-medium">{artist.name}</span>
-                            <button type="button" onClick={() => handleRemove(artist._id)} className="p-0.5 rounded-full hover:bg-red-200 dark:hover:bg-red-800/50">
-                                <X size={14} />
-                            </button>
-                        </div>
-                    ))}
-                    <Combobox.Input
-                        className="flex-grow border-none py-1.5 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-transparent focus:ring-0"
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Добавьте исполнителей..."
-                        required={required && value.length === 0}
-                    />
-                </div>
-                <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2 top-1/2 -translate-y-1/2">
-                    <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Combobox.Button className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
+                    <div className="flex flex-wrap gap-2 p-2 items-center min-h-[44px]">
+                        {selectedArtists.map(artist => (
+                            <div key={artist._id} className="flex items-center space-x-2 bg-blue-100 dark:bg-blue-900/50 rounded-full pl-1 pr-2 py-0.5">
+                                <Avatar size="sm" username={artist.name} avatarUrl={artist.avatarUrl} />
+                                <span className="text-sm font-medium">{artist.name}</span>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); handleRemove(artist._id); }} className="p-0.5 rounded-full hover:bg-red-200 dark:hover:bg-red-800/50">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ))}
+                        {value.length === 0 && <span className="text-sm text-slate-400 pl-2">Добавьте исполнителей...</span>}
+                        <ChevronDown className="h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                    </div>
                 </Combobox.Button>
                 <Transition
                     as={Fragment}
@@ -65,6 +59,13 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true }) => {
                     afterLeave={() => setQuery('')}
                 >
                     <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
+                        <div className="p-2">
+                           <Combobox.Input
+                                className="w-full border-gray-300 dark:border-slate-600 rounded-md py-2 pl-3 pr-2 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-800 focus:ring-0"
+                                onChange={(event) => setQuery(event.target.value)}
+                                placeholder="Поиск артиста..."
+                            />
+                        </div>
                         {filteredArtists.length === 0 && query !== '' ? (
                             <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-gray-400">
                                 Артист не найден.
@@ -92,6 +93,11 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true }) => {
                                                     {artist.name}
                                                 </span>
                                             </span>
+                                            {selected ? (
+                                                <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`}>
+                                                    <Check className="h-5 w-5" aria-hidden="true" />
+                                                </span>
+                                            ) : null}
                                         </>
                                     )}
                                 </Combobox.Option>
