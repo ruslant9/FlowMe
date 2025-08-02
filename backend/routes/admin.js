@@ -181,7 +181,181 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
     }
 });
 
-// TODO: Роуты для редактирования сущностей админом
-// router.put('/artists/:id', upload.single('avatar'), async (req, res) => { ... });
+// 1. Получить список всех артистов с фильтрацией и сортировкой
+router.get('/content/artists', async (req, res) => {
+    try {
+        const { page = 1, limit = 15, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+        
+        const query = { status: 'approved' };
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+        
+        const sortOptions = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+        
+        const artists = await Artist.find(query)
+            .sort(sortOptions)
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+            
+        const total = await Artist.countDocuments(query);
+        
+        res.json({
+            items: artists,
+            totalPages: Math.ceil(total / limit),
+            currentPage: parseInt(page)
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки артистов" });
+    }
+});
+
+// 2. Получить список всех альбомов с фильтрацией и сортировкой
+router.get('/content/albums', async (req, res) => {
+    try {
+        const { page = 1, limit = 15, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+        
+        const query = { status: 'approved' };
+        if (search) {
+            query.title = { $regex: search, $options: 'i' };
+        }
+
+        const sortOptions = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+        
+        const albums = await Album.find(query)
+            .populate('artist', 'name')
+            .sort(sortOptions)
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+            
+        const total = await Album.countDocuments(query);
+
+        res.json({
+            items: albums,
+            totalPages: Math.ceil(total / limit),
+            currentPage: parseInt(page)
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки альбомов" });
+    }
+});
+
+// 3. Получить список всех СОЛЬНЫХ треков с фильтрацией и сортировкой
+router.get('/content/tracks', async (req, res) => {
+    try {
+        const { page = 1, limit = 15, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+        
+        // Ищем только треки, у которых нет альбома (album is null)
+        const query = { status: 'approved', album: null };
+        if (search) {
+            query.title = { $regex: search, $options: 'i' };
+        }
+
+        const sortOptions = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+        
+        const tracks = await Track.find(query)
+            .populate('artist', 'name')
+            .sort(sortOptions)
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        const total = await Track.countDocuments(query);
+
+        res.json({
+            items: tracks,
+            totalPages: Math.ceil(total / limit),
+            currentPage: parseInt(page)
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки треков" });
+    }
+});
+
+// --- АРТИСТЫ ---
+router.put('/content/artists/:id', upload.single('avatar'), async (req, res) => {
+    try {
+        const { name, description, tags } = req.body;
+        const updateData = { name, description, tags: tags ? tags.split(',').map(t => t.trim()) : [] };
+
+        if (req.file) {
+            updateData.avatarUrl = req.file.path;
+            // TODO: Удалить старый аватар из Cloudinary, если он был
+        }
+
+        const updatedArtist = await Artist.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        if (!updatedArtist) return res.status(404).json({ message: 'Артист не найден' });
+        
+        res.json(updatedArtist);
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при обновлении артиста' });
+    }
+});
+
+router.delete('/content/artists/:id', async (req, res) => {
+    try {
+        // TODO: Перед удалением артиста нужно решить, что делать с его альбомами и треками
+        // Например, удалить их тоже или оставить "без автора". Пока просто удаляем.
+        await Artist.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Артист удален' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при удалении артиста' });
+    }
+});
+
+
+// --- АЛЬБОМЫ ---
+router.put('/content/albums/:id', upload.single('coverArt'), async (req, res) => {
+    try {
+        const { title, artistId, genre } = req.body;
+        const updateData = { title, artist: artistId, genre };
+        
+        if (req.file) {
+            updateData.coverArtUrl = req.file.path;
+        }
+
+        const updatedAlbum = await Album.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        if (!updatedAlbum) return res.status(404).json({ message: 'Альбом не найден' });
+        
+        res.json(updatedAlbum);
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при обновлении альбома' });
+    }
+});
+
+router.delete('/content/albums/:id', async (req, res) => {
+    try {
+        // TODO: Удалить треки из этого альбома
+        await Album.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Альбом удален' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при удалении альбома' });
+    }
+});
+
+
+// --- ТРЕКИ ---
+router.put('/content/tracks/:id', async (req, res) => {
+    try {
+        const { title, artistId, albumId, genres } = req.body;
+        const updateData = { title, artist: artistId, album: albumId || null, genres: genres || [] };
+
+        const updatedTrack = await Track.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        if (!updatedTrack) return res.status(404).json({ message: 'Трек не найден' });
+        
+        res.json(updatedTrack);
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при обновлении трека' });
+    }
+});
+
+router.delete('/content/tracks/:id', async (req, res) => {
+    try {
+        // TODO: Удалить файл трека из Cloudinary
+        await Track.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Трек удален' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при удалении трека' });
+    }
+});
 
 module.exports = router;

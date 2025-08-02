@@ -1,15 +1,17 @@
-// frontend/components/admin/CreateAlbumForm.jsx
-
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
+import { useUser } from '../../context/UserContext';
+import { musicGenres } from '../../data/genres'; // Импортируем жанры
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export const CreateAlbumForm = ({ artists, onSuccess }) => {
+    const { currentUser } = useUser();
     const [title, setTitle] = useState('');
     const [artistId, setArtistId] = useState('');
+    const [genre, setGenre] = useState(''); // Новое состояние для жанра
     const [coverArt, setCoverArt] = useState(null);
     const [loading, setLoading] = useState(false);
     const [coverPreview, setCoverPreview] = useState('');
@@ -24,32 +26,32 @@ export const CreateAlbumForm = ({ artists, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!artistId) {
-            toast.error("Пожалуйста, выберите артиста.");
-            return;
-        }
+        if (!artistId) { toast.error("Пожалуйста, выберите артиста."); return; }
+        if (!genre) { toast.error("Пожалуйста, выберите жанр."); return; }
+
         setLoading(true);
         const formData = new FormData();
         formData.append('title', title);
         formData.append('artistId', artistId);
+        formData.append('genre', genre); // Добавляем жанр в отправку
         if (coverArt) formData.append('coverArt', coverArt);
 
-        const toastId = toast.loading("Отправка альбома на модерацию...");
+        const isAdmin = currentUser.role === 'admin';
+        const endpoint = isAdmin ? `${API_URL}/api/admin/albums` : `${API_URL}/api/submissions/albums`;
+        const successMessage = isAdmin ? 'Альбом успешно создан!' : 'Заявка отправлена на модерацию!';
+        const toastId = toast.loading("Отправка данных...");
+
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`${API_URL}/api/admin/albums`, formData, {
+            const res = await axios.post(endpoint, formData, {
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
             });
-            toast.success(res.data.message, { id: toastId });
-            // Сброс формы
-            setTitle('');
-            setArtistId('');
-            setCoverArt(null);
-            setCoverPreview('');
+            toast.success(res.data.message || successMessage, { id: toastId });
+            setTitle(''); setArtistId(''); setGenre(''); setCoverArt(null); setCoverPreview('');
             e.target.reset();
-            onSuccess(); // Обновляем списки
+            onSuccess();
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при отправке заявки на альбом.", { id: toastId });
+            toast.error(error.response?.data?.message || "Ошибка при отправке заявки.", { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -57,33 +59,40 @@ export const CreateAlbumForm = ({ artists, onSuccess }) => {
 
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-4">
-            <h3 className="font-bold text-lg">Создать Альбом</h3>
-            <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>
+            <h3 className="font-bold text-lg">{currentUser.role === 'admin' ? 'Создать Альбом' : 'Предложить новый альбом'}</h3>
+            {currentUser.role !== 'admin' && <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>}
             
-            <div>
-                <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
-                <select value={artistId} onChange={e => setArtistId(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required>
-                    <option value="">-- Выберите артиста --</option>
-                    {artists.map(artist => (
-                        <option key={artist._id} value={artist._id}>{artist.name}</option>
-                    ))}
-                </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
+                    <select value={artistId} onChange={e => setArtistId(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required>
+                        <option value="">-- Выберите --</option>
+                        {artists.map(artist => <option key={artist._id} value={artist._id}>{artist.name}</option>)}
+                    </select>
+                </div>
+                 <div>
+                    <label className="text-sm font-semibold block mb-1">Жанр *</label>
+                    <select value={genre} onChange={e => setGenre(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required>
+                        <option value="">-- Выберите --</option>
+                        {musicGenres.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                </div>
             </div>
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Название альбома *</label>
-                <input type="text" placeholder="Название альбома" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
+                <input type="text" placeholder="Название" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
             </div>
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Обложка альбома</label>
                 <input type="file" accept="image/*" onChange={handleCoverChange} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
-                {coverPreview && <img src={coverPreview} alt="Предпросмотр обложки" className="mt-2 w-24 h-24 rounded object-cover"/>}
+                {coverPreview && <img src={coverPreview} alt="Предпросмотр" className="mt-2 w-24 h-24 rounded object-cover"/>}
             </div>
 
             <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
                 {loading && <Loader2 className="animate-spin mr-2"/>}
-                Отправить на проверку
+                {currentUser.role === 'admin' ? 'Создать альбом' : 'Отправить на проверку'}
             </button>
         </form>
     );

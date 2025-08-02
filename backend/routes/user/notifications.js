@@ -139,9 +139,20 @@ router.delete('/clear', authMiddleware, async (req, res) => {
 router.get('/summary', authMiddleware, async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
+        const user = await User.findById(userId).select('friendRequestsReceived role'); // <-- Добавляем 'role'
+        if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
+        
+        // --- НОВЫЙ БЛОК ДЛЯ ПОДСЧЕТА ЗАЯВОК ---
+        let submissionsCount = 0;
+        if (user.role === 'admin') {
+            submissionsCount = await Submission.countDocuments({ status: 'pending' });
+        }
+        // --- КОНЕЦ НОВОГО БЛОКА ---
+
         const unreadNotificationsCount = await Notification.countDocuments({ recipient: userId, read: false });
-        const user = await User.findById(userId).select('friendRequestsReceived');
-        const friendRequestsCount = user ? user.friendRequestsReceived.length : 0;
+        const friendRequestsCount = user.friendRequestsReceived.length;
+        
+        // ... (код для подсчета непрочитанных диалогов остается без изменений)
         const userConversations = await Conversation.find({ participants: userId, 'deletedBy.user': { $ne: userId }, mutedBy: { $ne: userId }, archivedBy: { $ne: userId } }).select('_id');
         const conversationIds = userConversations.map(c => c._id);
         const convosWithUnreadMessages = await Message.distinct("conversation", {
@@ -155,7 +166,16 @@ router.get('/summary', authMiddleware, async (req, res) => {
         });
         const allUnreadConversationIds = new Set([...convosWithUnreadMessages.map(id => id.toString()), ...convosMarkedAsUnread.map(id => id.toString())]);
         const unreadConversationsCount = allUnreadConversationIds.size;
-        res.json({ unreadNotificationsCount, friendRequestsCount, unreadConversationsCount });
+        
+        // --- ИЗМЕНЕНИЕ В ОТВЕТЕ ---
+        res.json({ 
+            unreadNotificationsCount, 
+            friendRequestsCount, 
+            unreadConversationsCount,
+            submissionsCount // <-- Добавляем новое поле
+        });
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }

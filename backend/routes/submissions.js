@@ -27,6 +27,11 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
             return res.status(400).json({ message: 'Имя артиста обязательно для заполнения.' });
         }
 
+        const existingArtist = await Artist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+        if (existingArtist) {
+            return res.status(400).json({ message: 'Артист с таким именем уже существует.' });
+        }
+        
         const submission = new Submission({
             entityType: 'Artist',
             action: 'create',

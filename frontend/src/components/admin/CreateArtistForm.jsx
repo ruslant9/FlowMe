@@ -1,6 +1,6 @@
 // frontend/components/admin/CreateArtistForm.jsx
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Trash2, Image as ImageIcon } from 'lucide-react';
@@ -8,30 +8,43 @@ import { useUser } from '../../context/UserContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const CreateArtistForm = ({ onSuccess }) => {
+const getImageUrl = (url) => {
+    if (!url || url.startsWith('http') || url.startsWith('blob:')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
+export const CreateArtistForm = ({ onSuccess, isEditMode = false, initialData = null }) => {
     const { currentUser } = useUser();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState('');
     const [avatar, setAvatar] = useState(null);
     const [loading, setLoading] = useState(false);
-
-    // --- ИЗМЕНЕНИЕ 1: Состояние для предпросмотра и реф для инпута ---
     const [avatarPreview, setAvatarPreview] = useState(null);
     const fileInputRef = useRef(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
-    // --- ИЗМЕНЕНИЕ 2: Обновляем обработчик выбора файла ---
+    useEffect(() => {
+        if (isEditMode && initialData) {
+            setName(initialData.name || '');
+            setDescription(initialData.description || '');
+            setTags(initialData.tags?.join(', ') || '');
+            setAvatarPreview(initialData.avatarUrl ? getImageUrl(initialData.avatarUrl) : null);
+        }
+    }, [isEditMode, initialData]);
+
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setAvatar(file);
+            if (avatarPreview) {
+                URL.revokeObjectURL(avatarPreview);
+            }
             setAvatarPreview(URL.createObjectURL(file));
         }
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
-    // --- ИЗМЕНЕНИЕ 3: Функция для удаления выбранного аватара ---
     const handleRemoveAvatar = () => {
         setAvatar(null);
         if (avatarPreview) {
@@ -42,7 +55,6 @@ export const CreateArtistForm = ({ onSuccess }) => {
             fileInputRef.current.value = "";
         }
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -51,28 +63,42 @@ export const CreateArtistForm = ({ onSuccess }) => {
         formData.append('name', name);
         formData.append('description', description);
         formData.append('tags', tags);
-        if (avatar) formData.append('avatar', avatar);
+        if (avatar) {
+            formData.append('avatar', avatar);
+        }
 
-        const endpoint = currentUser.role === 'admin'
-            ? `${API_URL}/api/admin/artists`
-            : `${API_URL}/api/submissions/artists`;
+        const isAdmin = currentUser.role === 'admin';
+        const endpoint = isEditMode
+            ? `${API_URL}/api/admin/content/artists/${initialData._id}`
+            : isAdmin
+                ? `${API_URL}/api/admin/artists`
+                : `${API_URL}/api/submissions/artists`;
         
-        const successMessage = currentUser.role === 'admin'
-            ? 'Артист успешно создан!'
-            : 'Заявка отправлена на модерацию!';
-
+        const method = isEditMode ? 'put' : 'post';
+        
+        const successMessage = isEditMode
+            ? 'Артист успешно обновлен!'
+            : (isAdmin ? 'Артист успешно создан!' : 'Заявка отправлена на модерацию!');
+        
         const toastId = toast.loading("Отправка данных...");
+
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(endpoint, formData, {
+            const res = await axios[method](endpoint, formData, {
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
             });
-            toast.success(successMessage, { id: toastId });
-            setName(''); setDescription(''); setTags('');
-            handleRemoveAvatar(); // Очищаем аватар после успешной отправки
-            onSuccess();
+
+            toast.success(res.data.message || successMessage, { id: toastId });
+
+            if (!isEditMode) {
+                setName('');
+                setDescription('');
+                setTags('');
+                handleRemoveAvatar();
+            }
+            onSuccess(); // Вызываем колбэк для обновления списка или закрытия модалки
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка отправки.", { id: toastId });
+            toast.error(error.response?.data?.message || "Ошибка при отправке.", { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -81,9 +107,10 @@ export const CreateArtistForm = ({ onSuccess }) => {
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-4">
             <h3 className="font-bold text-lg">
-                {currentUser.role === 'admin' ? 'Создать/Редактировать Артиста' : 'Предложить нового артиста'}
+                {isEditMode ? `Редактирование: ${initialData.name}` : 
+                 (currentUser.role === 'admin' ? 'Создать Артиста' : 'Предложить нового артиста')}
             </h3>
-            {currentUser.role !== 'admin' && (
+            {currentUser.role !== 'admin' && !isEditMode && (
                 <p className="text-xs text-slate-500 -mt-3">Ваша заявка будет рассмотрена администратором.</p>
             )}
             
@@ -91,7 +118,6 @@ export const CreateArtistForm = ({ onSuccess }) => {
             <textarea placeholder="Описание" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
             <input type="text" placeholder="Теги через запятую (для поиска)" value={tags} onChange={e => setTags(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
             
-            {/* --- ИЗМЕНЕНИЕ 4: Обновляем JSX для отображения превью и кнопки удаления --- */}
             <div>
                 <label className="text-sm font-semibold block mb-2">Аватар артиста (обложка)</label>
                 <div className="flex items-center space-x-4">
@@ -106,7 +132,7 @@ export const CreateArtistForm = ({ onSuccess }) => {
                         <button type="button" onClick={() => fileInputRef.current.click()} className="px-4 py-2 text-sm bg-white dark:bg-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600">
                             Выберите файл
                         </button>
-                        {avatar && (
+                        {(avatar || avatarPreview) && (
                              <button type="button" onClick={handleRemoveAvatar} className="flex items-center justify-center space-x-2 px-4 py-2 text-sm bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20">
                                 <Trash2 size={16} />
                                 <span>Удалить</span>
@@ -116,11 +142,10 @@ export const CreateArtistForm = ({ onSuccess }) => {
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                 </div>
             </div>
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ 4 --- */}
 
             <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
                 {loading && <Loader2 className="animate-spin mr-2"/>}
-                {currentUser.role === 'admin' ? 'Создать артиста' : 'Отправить на проверку'}
+                {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? 'Создать артиста' : 'Отправить на проверку')}
             </button>
         </form>
     );

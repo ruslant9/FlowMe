@@ -1,10 +1,9 @@
-// frontend/pages/AdminPage.jsx
-
 import React, { useState } from 'react';
 import useTitle from '../hooks/useTitle';
 import AdminSubmissionsList from '../components/admin/AdminSubmissionsList';
 import AdminUploadPanel from '../components/admin/AdminUploadPanel';
-import { CheckCircle, UploadCloud } from 'lucide-react';
+import AdminContentManager from '../components/admin/AdminContentManager'; // <-- Импортируем новый компонент
+import { CheckCircle, UploadCloud, Database } from 'lucide-react';
 
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
@@ -37,18 +36,28 @@ const AdminPage = () => {
                     >
                         Заявки на модерацию
                     </TabButton>
+                    {/* --- ИЗМЕНЕНИЕ: Новая вкладка для просмотра контента --- */}
                     <TabButton 
-                        active={activeTab === 'upload'} 
-                        onClick={() => setActiveTab('upload')}
-                        icon={UploadCloud}
+                        active={activeTab === 'content'} 
+                        onClick={() => setActiveTab('content')}
+                        icon={Database}
                     >
                         Управление контентом
+                    </TabButton>
+                    {/* --- ИЗМЕНЕНИЕ: Переименованная вкладка для создания --- */}
+                    <TabButton 
+                        active={activeTab === 'create'} 
+                        onClick={() => setActiveTab('create')}
+                        icon={UploadCloud}
+                    >
+                        Создать контент
                     </TabButton>
                 </div>
 
                 <div>
                     {activeTab === 'submissions' && <AdminSubmissionsList />}
-                    {activeTab === 'upload' && <AdminUploadPanel />}
+                    {activeTab === 'content' && <AdminContentManager />}
+                    {activeTab === 'create' && <AdminUploadPanel />}
                 </div>
             </div>
         </main>

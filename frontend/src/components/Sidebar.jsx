@@ -36,6 +36,9 @@ const NavItem = ({ to, end, icon: Icon, text, count, isExpanded }) => {
 
     const textContent = typeof text === 'string' ? <span>{text}</span> : text;
 
+    // Функция для форматирования числа
+    const formattedCount = count > 99 ? '99+' : count;
+
     return (
         <Tippy
             disabled={isExpanded}
@@ -65,7 +68,11 @@ const NavItem = ({ to, end, icon: Icon, text, count, isExpanded }) => {
                             
                             <div className="relative">
                                 <Icon className="w-5 h-5 flex-shrink-0" />
-                                {count > 0 && <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">{count > 9 ? '9+' : count}</span>}
+                                {count > 0 && 
+                                    <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 min-w-[18px] h-[18px] flex items-center justify-center border-2 border-slate-50 dark:border-slate-900">
+                                        {formattedCount}
+                                    </span>
+                                }
                             </div>
                             <span className={`whitespace-nowrap transition-all duration-200 ${isExpanded ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>{textContent}</span>
                         </>
@@ -75,7 +82,6 @@ const NavItem = ({ to, end, icon: Icon, text, count, isExpanded }) => {
         </Tippy>
     );
 };
-
 
 const Sidebar = ({ themeSwitcher }) => {
     const [isExpanded, setIsExpanded] = useState(localStorage.getItem('sidebarExpanded') !== 'false');
@@ -214,7 +220,7 @@ const Sidebar = ({ themeSwitcher }) => {
                                 to="/admin"
                                 icon={Shield}
                                 text="Админ-панель"
-                                count={0} // Сюда можно будет добавить счетчик заявок
+                                count={summary.submissionsCount} // Используем новое поле
                                 isExpanded={isExpanded}
                             />
                         )}

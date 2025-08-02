@@ -1,11 +1,10 @@
-// frontend/components/admin/AdminUploadPanel.jsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import { CreateArtistForm } from './CreateArtistForm';
 import { CreateAlbumForm } from './CreateAlbumForm';
 import { UploadTrackForm } from './UploadTrackForm';
-import { MicVocal, Disc, Music } from 'lucide-react';
+import { MicVocal, Disc, Music, Loader2 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -27,25 +26,31 @@ export const AdminUploadPanel = () => {
     const [activeSubTab, setActiveSubTab] = useState('artist');
     const [artists, setArtists] = useState([]);
     const [albums, setAlbums] = useState([]);
-    
-    // Функция для перезагрузки данных (артистов, альбомов)
-    const refetchData = async () => {
+    const [loadingData, setLoadingData] = useState(true); // Состояние для общей загрузки
+
+    // --- ИЗМЕНЕНИЕ 1: Создаем единую функцию для загрузки данных ---
+    const refetchData = useCallback(async () => {
+        setLoadingData(true);
         try {
             const token = localStorage.getItem('token');
+            // Запрашиваем данные параллельно для скорости
             const [artistsRes, albumsRes] = await Promise.all([
-                axios.get(`${API_URL}/api/music/artists/all`, { headers: { Authorization: `Bearer ${token}` } }), // Вам нужно будет создать этот роут
-                axios.get(`${API_URL}/api/music/albums/all`, { headers: { Authorization: `Bearer ${token}` } })   // и этот
+                axios.get(`${API_URL}/api/music/artists/all`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${API_URL}/api/music/albums/all`, { headers: { Authorization: `Bearer ${token}` } })
             ]);
             setArtists(artistsRes.data);
             setAlbums(albumsRes.data);
         } catch (error) {
             toast.error("Не удалось обновить списки артистов и альбомов.");
+        } finally {
+            setLoadingData(false);
         }
-    };
-
-    useEffect(() => {
-        // refetchData(); // Загружаем данные при первом рендере
     }, []);
+
+    // --- ИЗМЕНЕНИЕ 2: Используем useEffect для первоначальной загрузки данных ---
+    useEffect(() => {
+        refetchData();
+    }, [refetchData]);
 
     return (
         <div className="space-y-6">
@@ -55,9 +60,19 @@ export const AdminUploadPanel = () => {
                 <SubTabButton active={activeSubTab === 'track'} onClick={() => setActiveSubTab('track')} icon={Music}>Трек</SubTabButton>
             </div>
             
-            {activeSubTab === 'artist' && <CreateArtistForm onSuccess={refetchData} />}
-            {activeSubTab === 'album' && <CreateAlbumForm artists={artists} onSuccess={refetchData} />}
-            {activeSubTab === 'track' && <UploadTrackForm artists={artists} albums={albums} onSuccess={refetchData} />}
+            {loadingData ? (
+                <div className="flex justify-center items-center p-8">
+                    <Loader2 className="animate-spin w-8 h-8 text-slate-400" />
+                    <span className="ml-2">Загрузка данных...</span>
+                </div>
+            ) : (
+                <>
+                    {/* --- ИЗМЕНЕНИЕ 3: Передаем функцию refetchData в дочерние компоненты --- */}
+                    {activeSubTab === 'artist' && <CreateArtistForm onSuccess={refetchData} />}
+                    {activeSubTab === 'album' && <CreateAlbumForm artists={artists} onSuccess={refetchData} />}
+                    {activeSubTab === 'track' && <UploadTrackForm artists={artists} albums={albums} onSuccess={refetchData} />}
+                </>
+            )}
         </div>
     );
 };
