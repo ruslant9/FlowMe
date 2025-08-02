@@ -2,19 +2,16 @@
 
 const axios = require('axios');
 const Track = require('../models/Track');
-const ytsr = require('youtube-sr').default; // <-- ИЗМЕНЕНИЕ: Импортируем новую библиотеку
+const ytsr = require('youtube-sr').default;
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-// --- ИЗМЕНЕНИЕ: Ключ YouTube API больше не нужен ---
-// const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY; 
 
 let spotifyToken = {
     value: null,
     expiresAt: 0,
 };
 
-// Получение токена доступа для Spotify API (без изменений)
 async function getSpotifyToken() {
     if (spotifyToken.value && Date.now() < spotifyToken.expiresAt) {
         return spotifyToken.value;
@@ -40,15 +37,12 @@ async function getSpotifyToken() {
     }
 }
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Переписываем поиск на YouTube, чтобы он не использовал API ---
 async function findYouTubeVideoForTrack(trackName, artistName) {
     const query = `${trackName} ${artistName} official audio`;
     try {
-        // Используем библиотеку youtube-sr для поиска без API ключа
         const searchResults = await ytsr.search(query, { limit: 1, type: 'video' });
         if (searchResults && searchResults.length > 0) {
             const video = searchResults[0];
-            // Адаптируем результат под структуру, которую ожидает остальная часть приложения
             return {
                 id: { videoId: video.id },
                 snippet: {
@@ -61,10 +55,9 @@ async function findYouTubeVideoForTrack(trackName, artistName) {
         return null;
     } catch (error) {
         console.error(`Ошибка поиска на YouTube (без API) для "${query}":`, error.message);
-        return null; // Возвращаем null, чтобы не прерывать весь процесс
+        return null;
     }
 }
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
 async function searchSpotifyAndFindYouTube({ q, daily = false }) {
@@ -78,10 +71,12 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
     // Шаг 1: Получаем треки из Spotify
     try {
         if (daily) {
-            const playlistsResponse = await axios.get('https://api.spotify.com/v1/browse/categories/toplists/playlists', {
-                params: { country: 'RU', limit: 5 },
+            // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+            const playlistsResponse = await axios.get('https://api.spotify.com/v1/browse/featured-playlists', {
+                params: { limit: 20 }, // Берем больше плейлистов для разнообразия
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             const playlistId = playlistsResponse.data.playlists.items[Math.floor(Math.random() * playlistsResponse.data.playlists.items.length)].id;
             const tracksResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
                 params: { limit: 50 },
