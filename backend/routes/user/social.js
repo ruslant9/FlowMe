@@ -171,9 +171,9 @@ router.get('/friends', authMiddleware, async (req, res) => {
                 path: 'friends.user',
                 select: 'username fullName avatar privacySettings city lastSeen status'
             })
-            .populate({ path: 'friendRequestsReceived', select: 'username fullName avatar privacySettings city' })
-            .populate({ path: 'friendRequestsSent', select: 'username fullName avatar privacySettings city status'})
-            .populate({ path: 'blacklist', select: 'username fullName avatar status'});
+            .populate({ path: 'friendRequestsReceived', select: 'username fullName avatar privacySettings city lastSeen' })
+            .populate({ path: 'friendRequestsSent', select: 'username fullName avatar privacySettings city status lastSeen'})
+            .populate({ path: 'blacklist', select: 'username fullName avatar status lastSeen'});
 
         if (!user) return res.status(404).json({ message: "Пользователь не найден" });
 

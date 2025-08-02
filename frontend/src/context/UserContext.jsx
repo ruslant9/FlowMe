@@ -60,7 +60,8 @@ export const UserProvider = ({ children }) => {
 
     }, [fetchUser]);
 
-    const updateUserToken = (newToken) => {
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const updateUserToken = useCallback((newToken) => {
         setToken(newToken);
         if (newToken) {
             localStorage.setItem('token', newToken);
@@ -69,7 +70,8 @@ export const UserProvider = ({ children }) => {
             localStorage.removeItem('user');
             setCurrentUser(null);
         }
-    };
+    }, []); // Пустой массив зависимостей делает эту функцию стабильной и предотвращает лишние ререндеры
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     const value = {
