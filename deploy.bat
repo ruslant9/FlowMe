@@ -23,7 +23,7 @@ if not exist .git (
     echo "D:\онлайн сайт\social-app"
     echo Пожалуйста, убедитесь, что вы выполнили шаги по инициализации репозитория.
     echo.
-    pause
+    timeout /t 5 > nul
     exit /b
 )
 
@@ -39,12 +39,11 @@ git add .
 echo [SUCCESS] Файлы добавлены.
 echo.
 
-echo [INPUT] Введите описание изменений (для коммита) и нажмите Enter:
-set /p commit_message=" > "
+:: --- Автоматическое сообщение коммита с текущей датой и временем ---
+for /f "tokens=1-4 delims=/ " %%a in ('date /t') do set date=%%a-%%b-%%c
+for /f "tokens=1-2 delims=: " %%a in ('time /t') do set time=%%a-%%b
+set commit_message=Auto-commit %date%_%time%
 
-if "%commit_message%"=="" set commit_message="Update and deploy project"
-
-:: --- ИСПРАВЛЕНИЕ ЗДЕСЬ: Дополнительные кавычки вокруг сообщения ---
 echo [ACTION] Создаем коммит с сообщением: %commit_message% ...
 git commit -m "%commit_message%"
 echo [SUCCESS] Коммит создан.
@@ -66,6 +65,4 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ==========================================================
-echo.
-echo Нажмите любую клавишу для выхода...
-pause > nul
+exit
