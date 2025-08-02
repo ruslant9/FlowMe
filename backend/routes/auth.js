@@ -182,32 +182,37 @@ router.get('/google', passport.authenticate('google', {
 // --- ИЗМЕНЕНИЕ: Убираем токен из URL редиректа ---
 router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/login' }), async (req, res) => {
     const token = await createSessionAndToken(req.user, req);
-    setAuthCookie(res, token);
-    
-    // Просто перенаправляем на страницу-обработчик на фронтенде без токена
-    res.redirect(`${process.env.CLIENT_URL}/auth/callback`);
+    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
 });
 
-// --- ИЗМЕНЕНИЕ: Новый безопасный роут для получения токена и данных сессии ---
-router.get('/session-data', authMiddleware, async (req, res) => {
+router.post('/finalize-google-auth', async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId).select('id username');
-        if (!user) {
-            return res.status(404).json({ message: 'Пользователь не найден.' });
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ message: 'Token not provided.' });
         }
-        // Возвращаем токен из cookie и данные пользователя
+
+        // Проверяем токен, чтобы убедиться в его валидности
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.userId).select('id username');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Этот запрос пришел через прокси, поэтому установка cookie сработает
+        setAuthCookie(res, token); 
+
         res.json({
-            token: req.cookies.token,
+            message: 'Аутентификация успешна!',
             user: { id: user._id, username: user.username }
         });
+
     } catch (error) {
-        console.error('Ошибка при получении данных сессии:', error);
-        res.status(500).json({ message: 'Ошибка на сервере.' });
+        console.error('Error finalizing Google auth:', error);
+        res.status(500).json({ message: 'Ошибка сервера при завершении аутентификации.' });
     }
 });
 
-
-// ... роуты сброса пароля без изменений ...
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
