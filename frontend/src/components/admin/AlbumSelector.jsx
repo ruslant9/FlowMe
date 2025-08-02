@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, Fragment } from 'react';
 import { Combobox, Transition, Portal } from '@headlessui/react';
-import { useFloating, useInteractions, useClick, useDismiss } from '@floating-ui/react';
+import { useFloating, useInteractions, useClick, useDismiss, FloatingPortal } from '@floating-ui/react';
 import { Check, ChevronDown, Music } from 'lucide-react';
 
 const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
