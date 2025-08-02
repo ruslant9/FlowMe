@@ -27,16 +27,11 @@ const transporter = nodemailer.createTransport({
 });
 
 const setAuthCookie = (res, token) => {
-    const cookieDomain = process.env.NODE_ENV === 'production' 
-        ? '.onrender.com' 
-        : undefined;
-
     res.cookie('token', token, {
         httpOnly: true,
-        secure: true, // Всегда true для продакшена
-        sameSite: 'none', // Обязательно 'none' для кросс-доменных запросов
+        secure: true, // Всегда true, так как Render использует HTTPS
+        sameSite: 'lax', // ИЗМЕНЯЕМ 'none' на 'lax' - это безопаснее для same-site
         maxAge: 24 * 60 * 60 * 1000, // 24 часа
-        domain: cookieDomain // Явно указываем домен
     });
 };
 
