@@ -38,14 +38,13 @@
   }
 }
 
-/* --- НАЧАЛО ИЗМЕНЕНИЙ: Обновленный стиль для Liquid Glass "iOS 26" --- */
+/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновленный стиль для Liquid Glass "iOS 26" --- */
 /* Стили для стеклянного эффекта, адаптивные к теме */
 .ios-glass-final {
   position: relative;
   background-image: url('/noise.png');
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
-  /* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */
   background-color: #e9edf0; /* Новый сплошной серый цвет для светлой темы */
   border: 1px solid #d1d5db; /* Слегка заметная граница */
 }
@@ -94,12 +93,7 @@ html.dark .ios-glass-final::after,
   pointer-events: none;
 }
 
-/* Отключаем псевдо-элементы для светлой темы, чтобы сохранить простой вид */
-.ios-glass-final::before,
-.ios-glass-final::after {
-  content: none;
-}
-/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
+/* --- КОНЕЦ ИСПРАВЛЕНИЯ: Проблемный блок ниже был удален --- */
 
 
 /* ИЗМЕНЕНИЕ: Новый класс для всплывающих окон с эффектом стекла */
