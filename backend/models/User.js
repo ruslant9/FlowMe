@@ -73,6 +73,11 @@ const UserSchema = new Schema({
     privacySettings: { type: privacySettingsSchema, default: () => ({}) },
     country: { type: String, trim: true, default: null },
     city: { type: String, trim: true, default: null },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
     lastSeen: { type: Date, default: Date.now },
     resetPasswordToken: String,
     resetPasswordExpires: Date,

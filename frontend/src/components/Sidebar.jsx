@@ -10,9 +10,6 @@ import { useNotifications } from '../context/NotificationContext';
 import Tippy from '@tippyjs/react/headless';
 import { motion, LayoutGroup } from 'framer-motion';
 
-// --- ИЗМЕНЕНИЕ: Убираем API_URL, он больше не нужен для изображений ---
-// const API_URL = import.meta.env.VITE_API_URL;
-
 const Tooltip = ({ text, attrs }) => (
     <div 
         className="ios-glass-popover px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-800 dark:text-white" 
@@ -146,6 +143,15 @@ const Sidebar = ({ themeSwitcher }) => {
                             isExpanded={isExpanded}
                         />
 
+{user?.role === 'admin' && (
+                <NavItem
+                    to="/admin"
+                    icon={Shield}
+                    text="Админ-панель"
+                    count={0} // Сюда можно будет добавить счетчик заявок
+                    isExpanded={isExpanded}
+                />
+            )}
                         <Tippy
                             disabled={isExpanded}
                             placement="right"

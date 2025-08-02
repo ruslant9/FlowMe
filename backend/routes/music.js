@@ -344,39 +344,42 @@ router.get('/personalized-recommendations', authMiddleware, async (req, res) => 
     }
 });
 
-// ИСПРАВЛЕННЫЙ РОУТ ДЛЯ ПОИСКА С ПАГИНАЦИЕЙ
-router.get('/search-all', authMiddleware, async (req, res) => {
+router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
     try {
-        const { q, type = 'all', page = 1 } = req.query;
-        const limit = 25;
-        const offset = (parseInt(page) - 1) * limit;
-
-        if (!q) {
-            return res.json({ tracks: [], playlists: [], hasMore: false });
+        const track = await Track.findById(req.params.id);
+        if (!track || track.status !== 'approved') {
+            return res.status(404).json({ message: 'Трек не найден или не одобрен.' });
         }
 
-        let tracks = [];
-        let playlists = [];
-        let hasMoreTracks = false;
+        const command = new GetObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: track.storageKey,
+        });
 
-        if ((type === 'all' || type === 'playlists') && page == 1) {
-            playlists = await Playlist.find({
-                visibility: 'public',
-                $text: { $search: q }
-            }).populate('user', 'username').limit(10).lean();
-        }
-
-        if (type === 'all' || type === 'tracks') {
-            const searchResult = await searchSpotifyAndFindYouTube({ q, offset });
-            tracks = searchResult.tracks;
-            hasMoreTracks = searchResult.hasMore;
-        }
-
-        res.json({ tracks, playlists, hasMore: hasMoreTracks });
+        // Генерируем временную ссылку на 1 час
+        const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+        
+        res.json({ url });
 
     } catch (error) {
-        res.status(500).json({ message: "Ошибка сервера при поиске." });
+        res.status(500).json({ message: 'Ошибка при получении ссылки на трек.' });
     }
+});
+
+// --- ПЕРЕРАБОТАННЫЙ ПОИСК ---
+router.get('/search-all', authMiddleware, async (req, res) => {
+    const { q } = req.query;
+    if (!q) return res.json({ tracks: [], playlists: [], artists: [], albums: [] });
+
+    const query = { name: { $regex: q, $options: 'i' }, status: 'approved' };
+
+    const [tracks, artists, albums] = await Promise.all([
+        Track.find({ title: { $regex: q, $options: 'i' }, status: 'approved' }).populate('artist album'),
+        Artist.find(query),
+        Album.find({ title: { $regex: q, $options: 'i' }, status: 'approved' }).populate('artist'),
+    ]);
+    
+    res.json({ tracks, artists, albums });
 });
 
 module.exports = router;

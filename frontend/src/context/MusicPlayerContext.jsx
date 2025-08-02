@@ -1,11 +1,9 @@
-// frontend/src/context/MusicPlayerContext.jsx
-
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
-import YouTubePlayer from '../components/YouTubePlayer';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 const MusicPlayerContext = createContext(null);
 
 export const useMusicPlayer = () => {
@@ -21,7 +19,10 @@ export const MusicPlayerProvider = ({ children }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [volume, setVolume] = useState(0.5);
+    const [volume, setVolume] = useState(() => {
+        const savedVolume = localStorage.getItem('playerVolume');
+        return savedVolume ? parseFloat(savedVolume) : 0.5;
+    });
     const [isShuffle, setIsShuffle] = useState(false);
     const [isRepeat, setIsRepeat] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
@@ -32,40 +33,11 @@ export const MusicPlayerProvider = ({ children }) => {
     const [playerNotification, setPlayerNotification] = useState(null);
     const notificationTimeoutRef = useRef(null);
 
-    const youtubePlayerRef = useRef(null);
-    const [currentPlaylistId, setCurrentPlaylistId] = useState(null);
+    const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
-    
-    useEffect(() => {
-        if (isPlaying) {
-            setLoadingTrackId(null);
-        }
-    }, [isPlaying]);
 
-    // --- ИЗМЕНЕНИЕ: Этот useEffect будет автоматически синхронизировать статус лайка по spotifyId ---
-    useEffect(() => {
-        if (currentTrack) {
-            setIsLiked(myMusicTrackIds.has(currentTrack.spotifyId));
-        } else {
-            setIsLiked(false);
-        }
-    }, [currentTrack, myMusicTrackIds]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
-    const stopAndClearPlayer = useCallback(() => {
-        setIsPlaying(false);
-        setCurrentTrack(null);
-        setProgress(0);
-        setDuration(0);
-        setBuffered(0);
-        playlistRef.current = [];
-        currentTrackIndexRef.current = -1;
-        if (youtubePlayerRef.current) {
-            youtubePlayerRef.current.stopVideo();
-        }
-    }, []);
-
+    // Логирование действий для системы рекомендаций
     const logMusicAction = useCallback(async (track, action) => {
         try {
             const token = localStorage.getItem('token');
@@ -77,6 +49,7 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, []);
 
+    // Получение списка ID сохраненных треков
     const fetchMyMusicIds = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
@@ -85,9 +58,8 @@ export const MusicPlayerProvider = ({ children }) => {
                 return;
             }
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-            // --- ИЗМЕНЕНИЕ: Сохраняем spotifyId вместо youtubeId ---
-            setMyMusicTrackIds(new Set(res.data.map(track => track.spotifyId)));
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+            // Теперь используем ID трека из вашей БД как уникальный идентификатор
+            setMyMusicTrackIds(new Set(res.data.map(track => track._id)));
         } catch (error) {
             console.error("Не удалось обновить список сохраненной музыки");
         }
@@ -98,245 +70,228 @@ export const MusicPlayerProvider = ({ children }) => {
         window.addEventListener('myMusicUpdated', fetchMyMusicIds);
         return () => window.removeEventListener('myMusicUpdated', fetchMyMusicIds);
     }, [fetchMyMusicIds]);
-    
-    const handleToggleLike = useCallback(async (trackData) => {
-        if (!trackData) return;
-        
-        // --- ИЗМЕНЕНИЕ: Работаем со spotifyId для определения статуса "лайка" ---
-        const wasLiked = myMusicTrackIds.has(trackData.spotifyId);
-        
-        const newSet = new Set(myMusicTrackIds);
-        if (wasLiked) {
-            newSet.delete(trackData.spotifyId);
-        } else {
-            newSet.add(trackData.spotifyId);
-        }
-        setMyMusicTrackIds(newSet);
 
-        if (currentTrack?.spotifyId === trackData.spotifyId) {
-            setIsLiked(!wasLiked);
+    // Синхронизация статуса "лайка" при смене трека
+    useEffect(() => {
+        if (currentTrack) {
+            setIsLiked(myMusicTrackIds.has(currentTrack._id));
+        } else {
+            setIsLiked(false);
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    }, [currentTrack, myMusicTrackIds]);
+
+    // Основная функция воспроизведения трека
+    const playTrack = useCallback(async (trackData, playlistData = [], options = {}) => {
+        if (!trackData?._id) return;
+
+        const { playlistId = null, startShuffled = false, startRepeat = false } = options;
+
+        logMusicAction(trackData, 'listen');
+        
+        setIsLoading(true);
+        setLoadingTrackId(trackData._id);
+        setCurrentTrack(trackData);
+        setIsPlaying(false); // Сначала ставим на паузу, пока грузится URL
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
+            const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const streamUrl = res.data.url;
+            const audio = audioRef.current;
+            audio.src = streamUrl;
+            audio.volume = volume;
+            await audio.play();
             
-            if (res.data.saved) {
-                logMusicAction(trackData, 'like');
+            setIsPlaying(true);
+            
+            let finalPlaylist = playlistData.length > 0 ? [...playlistData] : [trackData];
+            let trackIndex = finalPlaylist.findIndex(t => t._id === trackData._id);
+            if (trackIndex === -1) trackIndex = 0;
+
+            if (startShuffled) {
+                const firstTrack = finalPlaylist[trackIndex];
+                let rest = finalPlaylist.filter((_, i) => i !== trackIndex);
+                for (let i = rest.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [rest[i], rest[j]] = [rest[j], rest[i]];
+                }
+                finalPlaylist = [firstTrack, ...rest];
+                trackIndex = 0;
             }
-            window.dispatchEvent(new CustomEvent('myMusicUpdated'));
+
+            playlistRef.current = finalPlaylist;
+            currentTrackIndexRef.current = trackIndex;
+            setIsShuffle(startShuffled);
+            setIsRepeat(startRepeat);
+
         } catch (error) {
-            fetchMyMusicIds();
-            toast.error(error.response?.data?.message || 'Ошибка при изменении статуса трека.');
+            toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
+            setCurrentTrack(null);
+        } finally {
+            setIsLoading(false);
+            setLoadingTrackId(null);
         }
-    }, [myMusicTrackIds, logMusicAction, currentTrack, fetchMyMusicIds]);
+    }, [volume, logMusicAction]);
 
-    const handlePlayPauseToggle = useCallback(() => {
-        if (!currentTrack || !youtubePlayerRef.current) return;
-        setIsPlaying(prev => !prev);
-    }, [currentTrack]);
-    
-    const playTrack = useCallback((trackData, playlistData = [], options = {}) => {
-    if (!trackData || !trackData.youtubeId) return;
+    // Обработчик следующего трека
+    const handleNextTrack = useCallback(() => {
+        if (currentTrack && progress > 0 && duration > 0 && progress < duration * 0.9) {
+            logMusicAction(currentTrack, 'skip');
+        }
+        if (playlistRef.current.length === 0) return;
 
-    const { playlistId = null, startShuffled = false, startRepeat = false } = options;
-
-    logMusicAction(trackData, 'listen');
-    
-    setIsShuffle(startShuffled);
-    setIsRepeat(startRepeat);
-
-    if (playlistId && (!currentPlaylistId || currentPlaylistId !== playlistId)) {
-        setCurrentPlaylistId(playlistId);
-        const token = localStorage.getItem('token');
-        axios.post(`${API_URL}/api/playlists/${playlistId}/play`, {}, {
-            headers: { Authorization: `Bearer ${token}` }
-        }).catch(e => console.error("Не удалось обновить счетчик прослушиваний плейлиста", e));
-    } else if (!playlistId) {
-        setCurrentPlaylistId(null);
-    }
-
-    setCurrentTrack(current => {
-        if (current && current.youtubeId === trackData.youtubeId) {
-            setIsPlaying(p => !p);
-            return current;
+        let nextIndex;
+        if (isShuffle) {
+            nextIndex = Math.floor(Math.random() * playlistRef.current.length);
+        } else {
+            nextIndex = (currentTrackIndexRef.current + 1) % playlistRef.current.length;
         }
         
-        setLoadingTrackId(trackData.youtubeId);
-        setIsPlaying(true);
+        const nextTrackData = playlistRef.current[nextIndex];
+        if (nextTrackData) {
+            playTrack(nextTrackData, playlistRef.current);
+        }
+    }, [isShuffle, playTrack, currentTrack, progress, duration, logMusicAction]);
+
+    // Управление событиями элемента <audio>
+    useEffect(() => {
+        const audio = audioRef.current;
+        
+        const handleTimeUpdate = () => setProgress(audio.currentTime);
+        const handleDurationChange = () => setDuration(audio.duration);
+        const handleEnded = () => {
+            if (isRepeat) {
+                audio.currentTime = 0;
+                audio.play();
+                logMusicAction(currentTrack, 'listen');
+            } else {
+                handleNextTrack();
+            }
+        };
+        const handleProgress = () => {
+            if (audio.buffered.length > 0 && audio.duration > 0) {
+                setBuffered(audio.buffered.end(audio.buffered.length - 1) / audio.duration);
+            }
+        };
+        
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('durationchange', handleDurationChange);
+        audio.addEventListener('ended', handleEnded);
+        audio.addEventListener('progress', handleProgress);
+
+        return () => {
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            audio.removeEventListener('durationchange', handleDurationChange);
+            audio.removeEventListener('ended', handleEnded);
+            audio.removeEventListener('progress', handleProgress);
+        };
+    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
+
+    const togglePlayPause = useCallback(() => {
+        if (!currentTrack) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+    }, [currentTrack, isPlaying]);
+
+    const seekTo = useCallback((time) => {
+        audioRef.current.currentTime = time;
+        setProgress(time);
+    }, []);
+
+    const setVolumeAndSave = useCallback((vol) => {
+        audioRef.current.volume = vol;
+        setVolume(vol);
+        localStorage.setItem('playerVolume', vol.toString());
+    }, []);
+
+    const prevTrack = useCallback(() => {
+        if (progress > 3) { // Если прошло больше 3 секунд, начинаем трек заново
+            seekTo(0);
+        } else {
+            if (playlistRef.current.length === 0) return;
+            const prevIndex = (currentTrackIndexRef.current - 1 + playlistRef.current.length) % playlistRef.current.length;
+            playTrack(playlistRef.current[prevIndex], playlistRef.current);
+        }
+    }, [progress, seekTo, playTrack]);
+    
+    const stopAndClearPlayer = useCallback(() => {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        setIsPlaying(false);
+        setCurrentTrack(null);
         setProgress(0);
+        setDuration(0);
         setBuffered(0);
-        setIsLiked(myMusicTrackIds.has(trackData.spotifyId));
-        
-        if (youtubePlayerRef.current) {
-            youtubePlayerRef.current.setVolume(volume);
-        }
-
-        let finalPlaylist = playlistData.length > 0 ? [...playlistData] : [trackData];
-        
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        let trackIndex = finalPlaylist.findIndex(t => t.youtubeId === trackData.youtubeId);
-        if (trackIndex === -1) {
-            trackIndex = 0; // Если вдруг трек не найден в плейлисте, играем с начала
-        }
-
-        if (startShuffled) {
-            // Перемешиваем плейлист, но оставляем выбранный трек первым
-            const firstTrack = finalPlaylist[trackIndex];
-            let restOfPlaylist = finalPlaylist.filter((t, i) => i !== trackIndex);
-            
-            for (let i = restOfPlaylist.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [restOfPlaylist[i], restOfPlaylist[j]] = [restOfPlaylist[j], restOfPlaylist[i]];
-            }
-            finalPlaylist = [firstTrack, ...restOfPlaylist];
-            trackIndex = 0; // Теперь наш трек точно на 0-й позиции
-        }
-
-        playlistRef.current = finalPlaylist;
-        currentTrackIndexRef.current = trackIndex; // Устанавливаем правильный индекс
-
-        return finalPlaylist[trackIndex]; // Возвращаем и проигрываем нужный трек
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-    });
-}, [volume, logMusicAction, currentPlaylistId, myMusicTrackIds]);
-
-    const handleSeek = useCallback((value) => {
-        if (youtubePlayerRef.current) {
-            const seekDifference = value - progress;
-            if (
-                currentTrack &&
-                seekDifference > 30 &&
-                progress < duration * 0.3
-            ) {
-                logMusicAction(currentTrack, 'seek_skip');
-            }
-            youtubePlayerRef.current.seekTo(value);
-            setProgress(value);
-        }
-    }, [progress, duration, currentTrack, logMusicAction]);
-
-    const handleSetVolume = useCallback((value) => {
-        if (youtubePlayerRef.current) {
-            youtubePlayerRef.current.setVolume(value);
-            setVolume(value);
-        }
+        playlistRef.current = [];
+        currentTrackIndexRef.current = -1;
     }, []);
 
     const showPlayerNotification = (notification) => {
-        if (notificationTimeoutRef.current) {
-            clearTimeout(notificationTimeoutRef.current);
-        }
+        if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
         setPlayerNotification(notification);
-        notificationTimeoutRef.current = setTimeout(() => {
-            setPlayerNotification(null);
-        }, 2500);
+        notificationTimeoutRef.current = setTimeout(() => setPlayerNotification(null), 2500);
     };
 
-    const handleToggleShuffle = useCallback(() => {
-        setIsShuffle(prevShuffle => {
-            const newShuffleState = !prevShuffle;
-            if (newShuffleState) {
+    const toggleShuffle = useCallback(() => {
+        setIsShuffle(prev => {
+            const newState = !prev;
+            if (newState) {
                 setIsRepeat(false);
                 showPlayerNotification({ message: 'Перемешивание включено', target: 'shuffle' });
             } else {
                 showPlayerNotification({ message: 'Перемешивание выключено', target: 'shuffle' });
             }
-            return newShuffleState;
+            return newState;
         });
     }, []);
-
-    const handleToggleRepeat = useCallback(() => {
-        setIsRepeat(prevRepeat => {
-            const newRepeatState = !prevRepeat;
-            if (newRepeatState) {
+    
+    const toggleRepeat = useCallback(() => {
+        setIsRepeat(prev => {
+            const newState = !prev;
+            if (newState) {
                 setIsShuffle(false);
                 showPlayerNotification({ message: 'Повтор трека включен', target: 'repeat' });
             } else {
                 showPlayerNotification({ message: 'Повтор трека выключен', target: 'repeat' });
             }
-            return newRepeatState;
+            return newState;
         });
     }, []);
 
-    const handleNextTrack = useCallback(() => {
-        if (currentTrack && progress > 0 && duration > 0 && progress < duration * 0.9) {
-            logMusicAction(currentTrack, 'skip');
-        }
-
-        if (!currentTrack || playlistRef.current.length === 0) return;
-
-        let nextIndex;
-        const currentTrackId = currentTrack.youtubeId;
+    const onToggleLike = useCallback(async (trackData) => {
+        if (!trackData?._id) return;
         
-        const currentIndexInPlaylist = playlistRef.current.findIndex(t => t.youtubeId === currentTrackId);
-        currentTrackIndexRef.current = currentIndexInPlaylist;
-
-
-        if (isShuffle) {
-            const tempPlaylist = playlistRef.current.filter(t => t.youtubeId !== currentTrackId);
-            if (tempPlaylist.length === 0) {
-                if (isRepeat) {
-                    playTrack(currentTrack, playlistRef.current, { startRepeat: true });
-                } else {
-                    setCurrentTrack(null);
-                    setIsPlaying(false);
-                }
-                return;
-            }
-            const randomIndex = Math.floor(Math.random() * tempPlaylist.length);
-            nextIndex = playlistRef.current.findIndex(t => t.youtubeId === tempPlaylist[randomIndex].youtubeId);
-        } else {
-            nextIndex = (currentIndexInPlaylist + 1) % playlistRef.current.length;
-        }
+        const wasLiked = myMusicTrackIds.has(trackData._id);
         
-        const nextTrackData = playlistRef.current[nextIndex];
-
-        if (nextTrackData) {
-            playTrack(nextTrackData, playlistRef.current, { startRepeat: isRepeat });
-        } else if (isRepeat && playlistRef.current.length > 0) {
-            playTrack(playlistRef.current[0], playlistRef.current, { startRepeat: true });
+        const newSet = new Set(myMusicTrackIds);
+        if (wasLiked) {
+            newSet.delete(trackData._id);
         } else {
-            setCurrentTrack(null);
-            setIsPlaying(false);
-            if(youtubePlayerRef.current) youtubePlayerRef.current.pauseVideo();
+            newSet.add(trackData._id);
         }
-    }, [isShuffle, isRepeat, currentTrack, playTrack, progress, duration, logMusicAction]);
-
-    const handlePrevTrack = useCallback(() => {
-        if (!currentTrack || playlistRef.current.length === 0) return;
-
-        const currentIndexInPlaylist = playlistRef.current.findIndex(t => t.youtubeId === currentTrack.youtubeId);
-        let prevIndex = (currentIndexInPlaylist - 1 + playlistRef.current.length) % playlistRef.current.length;
-        const prevTrackData = playlistRef.current[prevIndex];
-
-        if (prevTrackData) {
-            playTrack(prevTrackData, playlistRef.current, { startRepeat: isRepeat });
-        } else if (isRepeat && playlistRef.current.length > 0) {
-            playTrack(playlistRef.current[playlistRef.current.length - 1], playlistRef.current, { startRepeat: true });
-        } else {
-            setCurrentTrack(null);
-            setIsPlaying(false);
-            if(youtubePlayerRef.current) youtubePlayerRef.current.pauseVideo();
+        setMyMusicTrackIds(newSet);
+        
+        if (currentTrack?._id === trackData._id) {
+            setIsLiked(!wasLiked);
         }
-    }, [isRepeat, currentTrack, playTrack]);
 
-    const handleVideoEnd = useCallback(() => {
-        if (isRepeat && currentTrack) {
-            if (youtubePlayerRef.current) {
-                youtubePlayerRef.current.seekTo(0);
-                youtubePlayerRef.current.playVideo();
-            }
-        } else {
-            handleNextTrack();
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
+            if (!wasLiked) logMusicAction(trackData, 'like');
+            window.dispatchEvent(new CustomEvent('myMusicUpdated'));
+        } catch (error) {
+            fetchMyMusicIds(); // Восстанавливаем актуальное состояние в случае ошибки
+            toast.error('Ошибка при изменении статуса трека.');
         }
-    }, [isRepeat, currentTrack, handleNextTrack]);
-    
-    const handlePlaybackError = useCallback((failedVideoId) => {
-        toast.error(`Не удалось воспроизвести трек (ошибка встраивания). Пропускаем...`);
-        handleNextTrack();
-    }, [handleNextTrack]);
+    }, [myMusicTrackIds, currentTrack, logMusicAction, fetchMyMusicIds]);
 
     const contextValue = {
         currentTrack,
@@ -352,34 +307,20 @@ export const MusicPlayerProvider = ({ children }) => {
         buffered,
         playerNotification,
         playTrack,
-        togglePlayPause: handlePlayPauseToggle,
-        seekTo: handleSeek,
-        setVolume: handleSetVolume,
-        toggleShuffle: handleToggleShuffle,
-        toggleRepeat: handleToggleRepeat,
+        togglePlayPause,
+        seekTo,
+        setVolume: setVolumeAndSave,
+        toggleShuffle,
+        toggleRepeat,
         nextTrack: handleNextTrack,
-        prevTrack: handlePrevTrack,
-        onToggleLike: handleToggleLike,
+        prevTrack,
+        onToggleLike,
         stopAndClearPlayer,
     };
 
     return (
         <MusicPlayerContext.Provider value={contextValue}>
             {children}
-            <div className="fixed bottom-0 left-0" style={{ visibility: 'hidden', pointerEvents: 'none', width: '1px', height: '1px', opacity: 0, overflow: 'hidden' }}>
-                <YouTubePlayer
-                    ref={youtubePlayerRef}
-                    videoId={currentTrack?.youtubeId}
-                    autoPlay={isPlaying}
-                    onVideoEnd={handleVideoEnd}
-                    onPlayPauseChange={setIsPlaying}
-                    onProgressChange={setProgress}
-                    onDurationChange={setDuration}
-                    onVolumeChange={setVolume}
-                    onBufferChange={setBuffered}
-                    onPlaybackError={handlePlaybackError}
-                />
-            </div>
         </MusicPlayerContext.Provider>
     );
 };

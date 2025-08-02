@@ -1,33 +1,29 @@
-// backend/models/Track.js
+// backend/models/Track.js --- СУЩЕСТВЕННЫЕ ИЗМЕНЕНИЯ ---
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const TrackSchema = new Schema({
-    user: { type: Schema.Types.ObjectId, ref: 'User', index: true }, 
+    title: { type: String, required: true, index: true },
+    artist: { type: Schema.Types.ObjectId, ref: 'Artist', required: true },
+    album: { type: Schema.Types.ObjectId, ref: 'Album' }, // Необязательно
     
-    // --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
-    spotifyId: { type: String, index: true }, // Новый идентификатор от Spotify
-    youtubeId: { type: String, required: true, index: true },
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
-    title: { type: String, required: true },
-    artist: { type: String, required: true },
-    album: { type: String },
-    albumArtUrl: { type: String },
-    previewUrl: { type: String },
+    storageKey: { type: String, required: true }, // Ключ файла в Cloudflare R2
+    albumArtUrl: { type: String }, // Обложка, если это сингл
     durationMs: { type: Number },
     
-    type: { type: String, enum: ['saved', 'recent', 'search_cache'], required: true, index: true },
-    
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+
+    // Поля для пользовательских библиотек (как и раньше)
+    user: { type: Schema.Types.ObjectId, ref: 'User' }, 
+    type: { type: String, enum: ['saved', 'recent', 'library_track'], index: true },
     savedAt: { type: Date },
     playedAt: { type: Date }
 }, { timestamps: true });
 
-// --- ИЗМЕНЕНИЕ: Обновляем уникальный индекс, чтобы он работал со spotifyId ---
-TrackSchema.index({ user: 1, spotifyId: 1, type: 1 }, { unique: true, sparse: true });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
-TrackSchema.index({ title: 'text', artist: 'text' });
+// Индекс для пользовательских треков
+TrackSchema.index({ user: 1, type: 1 });
 
 module.exports = mongoose.model('Track', TrackSchema);
