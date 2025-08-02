@@ -469,9 +469,6 @@ const UserProfilePage = () => {
                         title="Профиль"
                         noHeaderMargin
                         userAccent={userAccent}
-                        actionButton={<button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-500 hover:underline">
-                            Показать все
-                            </button>}
                         renderContent={(accentTextColor) => (
                              <div className="text-center pt-4 pb-6">
                                 <div className="relative flex-shrink-0 mx-auto mb-4 w-24 h-24">

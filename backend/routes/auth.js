@@ -37,7 +37,7 @@ const setAuthCookie = (res, token) => {
 
 const createSessionAndToken = async (user, req) => {
     const ua = parser(req.headers['user-agent']);
-    let finalIp = (req.body && req.body.publicIp) ? req.body.publicIp : (req.headers['x-forwarded-for'] || req.connection.remoteAddress);
+    let finalIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const geo = geoip.lookup(finalIp);
     const newSession = new Session({
         user: user._id,

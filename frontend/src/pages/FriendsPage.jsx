@@ -172,13 +172,11 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
         );
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика статуса ---
     const getStatusText = useCallback(() => {
         if (currentUser?.privacySettings?.viewOnlineStatus === 'private') {
             return 'Недавно';
         }
 
-        // Показываем "давно", только если ОНИ нас заблокировали
         if (status === 'blocked_by_them') {
             return 'Был(а) очень давно';
         }
@@ -208,7 +206,6 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
             return false;
         }
 
-        // Скрываем индикатор, только если ОНИ нас заблокировали
         if (status === 'blocked_by_them') {
             return false;
         }
@@ -223,14 +220,12 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
 
         return privacySetting === 'everyone' || (privacySetting === 'friends' && status === 'friend');
     }, [user.privacySettings, status, userStatuses, currentUser]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     return (
         <Link to={`/profile/${user._id}`} className="flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5">
             <div className="flex items-center space-x-4 min-w-0">
                 <div className="relative">
-                    {/* --- ИЗМЕНЕНИЕ: Используем user.avatar напрямую --- */}
                     <Avatar
                         username={user.username}
                         fullName={user.fullName}
@@ -263,7 +258,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
 const FriendsPage = () => {
     useTitle('Друзья');
     const location = useLocation();
-    const [friendsSubTab, setFriendsSubTab] = useState('important'); // 'important' or 'all'
+    const [friendsSubTab, setFriendsSubTab] = useState('important');
     const [importantFriends, setImportantFriends] = useState([]);
     const [allFriends, setAllFriends] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'descending' });
@@ -283,6 +278,18 @@ const FriendsPage = () => {
     const { userStatuses } = useWebSocket();
     const navigate = useNavigate();
     const { currentUser } = useUser();
+
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setNow(new Date());
+        }, 60000); // 1 минута
+
+        return () => clearInterval(interval);
+    }, []);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({ city: '', interests: [] });
@@ -523,7 +530,6 @@ const FriendsPage = () => {
                 const dateB = b.friendshipDate ? new Date(b.friendshipDate).getTime() : 0;
                 return sortConfig.direction === 'ascending' ? dateA - dateB : dateB - dateA;
             }
-            // Default sort by score (important friends)
             return (b.score || 0) - (a.score || 0);
         });
         return sorted;
@@ -535,7 +541,7 @@ const FriendsPage = () => {
             direction = 'descending';
         }
         if (key === 'friendshipDate') {
-            direction = 'descending'; // Default to newest first
+            direction = 'descending'; 
             if (sortConfig.key === key && sortConfig.direction === 'descending') {
                 direction = 'ascending';
             }

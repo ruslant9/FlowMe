@@ -10,8 +10,6 @@ import { useWebSocket } from '../context/WebSocketContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ... (вспомогательные компоненты LeftBlobs, RightBlobs, AnimatedSlogans остаются без изменений) ...
-
 const LeftBlobs = () => (
     <>
         <div className="blob absolute top-0 -left-1/4 w-[500px] h-[500px] bg-cyan-400 opacity-20" style={{ animation: 'move 32s infinite alternate' }}></div>
@@ -51,9 +49,6 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useWebSocket(); 
   
-  // --- ИЗМЕНЕНИЕ 1: Добавляем состояние для публичного IP ---
-  const [publicIp, setPublicIp] = useState(null);
-
   useTitle('Вход в аккаунт');
 
   useEffect(() => {
@@ -62,18 +57,6 @@ const LoginPage = () => {
       setFormData(prev => ({ ...prev, email: savedEmail }));
       setRememberMe(true);
     }
-
-    // --- ИЗМЕНЕНИЕ 2: Запрашиваем IP при монтировании компонента ---
-    const fetchPublicIp = async () => {
-        try {
-            const response = await axios.get('https://api.ipify.org?format=json', { withCredentials: false });
-            setPublicIp(response.data.ip);
-        } catch (error) {
-            console.warn("Не удалось получить публичный IP-адрес. Будет использован IP сервера.");
-        }
-    };
-    fetchPublicIp();
-
   }, []);
 
   const handleChange = (e) => {
@@ -88,11 +71,8 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // --- ИЗМЕНЕНИЕ 3: Добавляем publicIp в тело запроса ---
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
-          ...formData,
-          publicIp: publicIp 
-      });
+      // ИСПРАВЛЕНИЕ: Удалена передача publicIp
+      const response = await axios.post(`${API_URL}/api/auth/login`, formData);
       
       login(response.data.token, response.data.user);
       
@@ -133,7 +113,6 @@ const LoginPage = () => {
                 <h2 className="text-4xl font-bold mb-2 text-white">Вход в аккаунт</h2>
                 <p className="text-white/70 mb-8">Добро пожаловать! Мы рады видеть вас снова.</p>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* ... (остальная часть формы без изменений) ... */}
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={20} />
                     <input type="email" name="email" id="email" className="w-full pl-12 pr-5 py-4 rounded-xl bg-black/30 text-white placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:ring-white/50" placeholder="Email" onChange={handleChange} value={formData.email} required />
