@@ -1,8 +1,8 @@
 // frontend/components/admin/MultiArtistSelector.jsx
 
-import React from 'react';
-import { Combobox, Transition } from '@headlessui/react';
-import { useFloating, useInteractions, useClick, useDismiss, FloatingPortal } from '@floating-ui/react';
+import React, { useState, useMemo, Fragment } from 'react';
+import { Combobox, Transition, Portal } from '@headlessui/react';
+import { useFloating, useInteractions, useClick, useDismiss } from '@floating-ui/react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import Avatar from '../Avatar';
 
@@ -44,7 +44,7 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
 
     const filteredArtists =
         query === ''
-            ? availableArtists.filter(a => !value.includes(a._id))
+            ? availableArtists.filter(a => !value.includes(a._id)) // Не показывать уже выбранных
             : availableArtists.filter((artist) =>
                 !value.includes(artist._id) &&
                 artist.name
