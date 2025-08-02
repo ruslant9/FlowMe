@@ -8,11 +8,10 @@ const Message = require('../../models/Message');
 const Conversation = require('../../models/Conversation'); 
 const Notification = require('../../models/Notification');
 const Submission = require('../../models/Submission'); 
-const authMiddleware = require('../../middleware/auth.middleware');
 const mongoose = require('mongoose');
 
 // --- НАЧАЛО ИЗМЕНЕНИЯ: Переработанный роут для получения уведомлений ---
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
 
@@ -77,7 +76,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
-router.post('/mark-read', authMiddleware, async (req, res) => {
+router.post('/mark-read', async (req, res) => {
     try {
         const userId = req.user.userId;
         await Notification.updateMany({ recipient: userId, read: false }, { $set: { read: true } });
@@ -88,7 +87,7 @@ router.post('/mark-read', authMiddleware, async (req, res) => {
     }
 });
 
-router.delete('/:notificationId', authMiddleware, async (req, res) => {
+router.delete('/:notificationId', async (req, res) => {
     try {
         const { notificationId } = req.params;
         const userId = req.user.userId;
@@ -100,7 +99,7 @@ router.delete('/:notificationId', authMiddleware, async (req, res) => {
     }
 });
 
-router.delete('/clear', authMiddleware, async (req, res) => {
+router.delete('/clear', async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
         const { type } = req.query;
@@ -137,7 +136,7 @@ router.delete('/clear', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/summary', authMiddleware, async (req, res) => {
+router.get('/summary', async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
         const user = await User.findById(userId).select('friendRequestsReceived role');

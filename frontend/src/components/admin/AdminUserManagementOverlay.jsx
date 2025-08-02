@@ -68,6 +68,7 @@ const AdminUserManagementOverlay = ({ isOpen, onClose, user, onSuccess }) => {
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                onClick={onClose}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             >
@@ -75,6 +76,7 @@ const AdminUserManagementOverlay = ({ isOpen, onClose, user, onSuccess }) => {
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.95, opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white"
                 >

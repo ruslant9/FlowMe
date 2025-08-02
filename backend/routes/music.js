@@ -2,7 +2,6 @@
 
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/auth.middleware');
 const Track = require('../models/Track');
 const User = require('../models/User');
 const Session = require('../models/Session');
@@ -53,7 +52,7 @@ const analyzeTrackForGenres = (track) => {
     return Array.from(foundGenres);
 };
 
-router.post('/toggle-save', authMiddleware, async (req, res) => {
+router.post('/toggle-save', async (req, res) => {
     try {
         const { youtubeId, title, artist, album, albumArtUrl, previewUrl, durationMs, spotifyId } = req.body;
         const userId = req.user.userId;
@@ -78,7 +77,7 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/saved', authMiddleware, async (req, res) => {
+router.get('/saved', async (req, res) => {
     try {
         const userId = req.user.userId;
         const savedTracks = await Track.find({ user: userId, type: 'saved' }).sort({ savedAt: -1 });
@@ -88,7 +87,7 @@ router.get('/saved', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/user/:userId/saved', authMiddleware, async (req, res) => {
+router.get('/user/:userId/saved', async (req, res) => {
     try {
         const { userId } = req.params;
         const requesterId = req.user.userId;
@@ -124,7 +123,7 @@ router.get('/user/:userId/saved', authMiddleware, async (req, res) => {
 
 const countryMap = { RU: 'Russia', UA: 'Ukraine', BY: 'Belarus', KZ: 'Kazakhstan', US: 'United States', DE: 'Germany' };
 
-router.get('/popular-artists', authMiddleware, async (req, res) => {
+router.get('/popular-artists', async (req, res) => {
     try {
         let artistNames = new Set();
         const desiredArtistCount = 6;
@@ -174,7 +173,7 @@ router.get('/popular-artists', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/history', authMiddleware, async (req, res) => {
+router.get('/history', async (req, res) => {
     try {
         const userId = req.user.userId;
         const history = await Track.find({ user: userId, type: 'recent' }).sort({ playedAt: -1 }).limit(50);
@@ -184,7 +183,7 @@ router.get('/history', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/history', authMiddleware, async (req, res) => {
+router.post('/history', async (req, res) => {
     try {
         const { youtubeId, title, artist, albumArtUrl, durationMs, spotifyId } = req.body;
         const userId = req.user.userId;
@@ -201,7 +200,7 @@ router.post('/history', authMiddleware, async (req, res) => {
     }
 });
 
-router.delete('/history/:youtubeId', authMiddleware, async (req, res) => {
+router.delete('/history/:youtubeId', async (req, res) => {
     try {
         const { youtubeId } = req.params;
         const userId = req.user.userId;
@@ -213,7 +212,7 @@ router.delete('/history/:youtubeId', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/log-action', authMiddleware, async (req, res) => {
+router.post('/log-action', async (req, res) => {
     try {
         const { track, action } = req.body;
         const userId = req.user.userId;
@@ -249,7 +248,7 @@ router.post('/log-action', authMiddleware, async (req, res) => {
 });
 
 // --- ПЕРЕРАБОТАННАЯ "МОЯ ВОЛНА" ---
-router.get('/wave', authMiddleware, async (req, res) => {
+router.get('/wave', async (req, res) => {
     try {
         const userId = req.user.userId;
         const profile = await UserMusicProfile.findOne({ user: userId }).lean();
@@ -314,7 +313,7 @@ router.get('/wave', authMiddleware, async (req, res) => {
 });
 
 // --- ПЕРЕРАБОТАННЫЕ РЕКОМЕНДАЦИИ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ ---
-router.get('/main-page-data', authMiddleware, async (req, res) => {
+router.get('/main-page-data', async (req, res) => {
     try {
         const userId = req.user.userId;
 
@@ -348,7 +347,7 @@ router.get('/main-page-data', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/search-all', authMiddleware, async (req, res) => {
+router.get('/search-all', async (req, res) => {
     try {
         const { q, type = 'all', page = 1 } = req.query;
         const limit = 25;
@@ -383,7 +382,7 @@ router.get('/search-all', authMiddleware, async (req, res) => {
 });
 
 // Получить всех одобренных артистов для выпадающего списка
-router.get('/artists/all', authMiddleware, async (req, res) => {
+router.get('/artists/all', async (req, res) => {
     try {
         const artists = await Artist.find({ status: 'approved' }).select('name').sort({ name: 1 });
         res.json(artists);
@@ -393,7 +392,7 @@ router.get('/artists/all', authMiddleware, async (req, res) => {
 });
 
 // Получить все одобренные альбомы для выпадающего списка
-router.get('/albums/all', authMiddleware, async (req, res) => {
+router.get('/albums/all', async (req, res) => {
     try {
         const albums = await Album.find({ status: 'approved' }).select('title artist').sort({ title: 1 });
         res.json(albums);
@@ -403,7 +402,7 @@ router.get('/albums/all', authMiddleware, async (req, res) => {
 });
 
 // --- НОВЫЙ РОУТ ДЛЯ ПОДСЧЕТА ПРОСЛУШИВАНИЙ ---
-router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
+router.post('/track/:id/log-play', async (req, res) => {
     try {
         // Просто увеличиваем счетчик и не ждем завершения
         Track.updateOne({ _id: req.params.id }, { $inc: { playCount: 1 } }).exec();

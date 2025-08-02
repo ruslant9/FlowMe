@@ -29,7 +29,7 @@ const banMiddleware = require('./middleware/ban.middleware'); // <-- НОВЫЙ 
 const postsRouter = require('./routes/posts-router');
 const messagesRouter = require('./routes/messages-router');
 const communityRoutes = require('./routes/communities');
-// --- ИЗМЕНЕНИЕ: Убираем некорректный импорт spotify ---
+const authMiddleware = require('./middleware/auth.middleware');
 const premiumRoutes = require('./routes/premium'); 
 const musicRoutes = require('./routes/music');
 const wallpaperRoutes = require('./routes/wallpapers');
@@ -205,15 +205,15 @@ app.use('/api/auth/verify-email', authLimiter);
 app.use('/api/auth/forgot-password', codeLimiter);
 app.use('/api/auth/register', codeLimiter);
 app.use('/api/auth', authRoutes); // Роуты входа/регистрации не должны проверяться на бан
-app.use('/api/user', banMiddleware, userRoutes);
-app.use('/api/posts', banMiddleware, postsRouter); 
-app.use('/api/messages', banMiddleware, messagesRouter);
-app.use('/api/communities', banMiddleware, communityRoutes);
-app.use('/api/music', banMiddleware, musicRoutes);
-app.use('/api/wallpapers', banMiddleware, wallpaperRoutes);
-app.use('/api/premium', banMiddleware, premiumRoutes(wss, clients));
-app.use('/api/playlists', banMiddleware, playlistRoutes);
-app.use('/api/submissions', banMiddleware, submissionsRoutes);
+app.use('/api/user', authMiddleware, banMiddleware, userRoutes);
+app.use('/api/posts', authMiddleware, banMiddleware, postsRouter); 
+app.use('/api/messages', authMiddleware, banMiddleware, messagesRouter);
+app.use('/api/communities', authMiddleware, banMiddleware, communityRoutes);
+app.use('/api/music', authMiddleware, banMiddleware, musicRoutes);
+app.use('/api/wallpapers', authMiddleware, banMiddleware, wallpaperRoutes);
+app.use('/api/premium', authMiddleware, banMiddleware, premiumRoutes(wss, clients));
+app.use('/api/playlists', authMiddleware, banMiddleware, playlistRoutes);
+app.use('/api/submissions', authMiddleware, banMiddleware, submissionsRoutes); 
 app.use('/api/admin', adminRoutes); // Админ-роуты защищены своим middleware
 
 const PORT = process.env.PORT || 5000;
