@@ -4,41 +4,21 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth.middleware');
 const Submission = require('../models/Submission');
-
-// Настройка Multer для Cloudflare R2
 const multer = require('multer');
-const { S3Client } = require('@aws-sdk/client-s3');
-const multerS3 = require('multer-s3');
 
-const s3 = new S3Client({
-    region: 'auto',
-    endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-    },
-});
+// Импортируем нашу новую конфигурацию Cloudinary
+const { createStorage } = require('../config/cloudinary');
 
-// Middleware для загрузки файлов. Заявки храним в отдельной папке 'submissions' в R2, чтобы отличать от финальных файлов.
-const upload = multer({
-    storage: multerS3({
-        s3: s3,
-        bucket: process.env.R2_BUCKET_NAME,
-        acl: 'public-read', // Файлы будут доступны по прямой ссылке
-        metadata: function (req, file, cb) {
-            cb(null, { fieldName: file.fieldname });
-        },
-        key: function (req, file, cb) {
-            const safeFilename = file.originalname.replace(/\s+/g, '-');
-            cb(null, `submissions/${Date.now().toString()}-${safeFilename}`);
-        }
-    })
-});
+// Создаем хранилище для файлов, которые отправляются на модерацию.
+// Они будут помещены в папку 'submissions' на вашем Cloudinary.
+const submissionStorage = createStorage('submissions'); 
+const upload = multer({ storage: submissionStorage });
 
 // Все роуты в этом файле требуют только авторизации пользователя (не админа)
 router.use(authMiddleware);
 
 // 1. Создать заявку на нового артиста
+// Middleware upload.single('avatar') перехватывает файл из поля 'avatar'
 router.post('/artists', upload.single('avatar'), async (req, res) => {
     try {
         const { name, description, tags } = req.body;
@@ -55,7 +35,8 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
                 name,
                 description,
                 tags: tags ? tags.split(',').map(t => t.trim()) : [],
-                avatarUrl: req.file ? req.file.key : null // .key из multer-s3
+                // req.file.path содержит полный HTTPS URL от Cloudinary
+                avatarUrl: req.file ? req.file.path : null 
             }
         });
         await submission.save();
@@ -81,7 +62,7 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
             data: {
                 title,
                 artist: artistId,
-                coverArtUrl: req.file ? req.file.key : null
+                coverArtUrl: req.file ? req.file.path : null
             }
         });
         await submission.save();
@@ -113,7 +94,8 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
                 artist: artistId,
                 album: albumId || null,
                 durationMs: durationMs || 0,
-                storageKey: req.file.key // .key из multer-s3
+                // Для аудиофайлов Cloudinary также вернет URL в req.file.path
+                storageKey: req.file.path 
             }
         });
         await submission.save();

@@ -12,10 +12,9 @@ const createStorage = (folderName) => {
     return new CloudinaryStorage({
         cloudinary: cloudinary,
         params: {
-            folder: folderName,
-            allowed_formats: ['jpeg', 'png', 'jpg', 'webp'],
-            // Можно добавить трансформации, например, для аватаров
-            // transformation: [{ width: 500, height: 500, crop: 'limit' }]
+            folder: folderName, // Папка на Cloudinary, куда будут загружаться файлы
+            resource_type: 'auto', // Автоматически определять тип файла (image, video, raw для mp3)
+            allowed_formats: ['jpeg', 'png', 'jpg', 'webp', 'mp3', 'wav'],
         }
     });
 };
