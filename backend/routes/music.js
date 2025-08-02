@@ -11,7 +11,7 @@ const { isAllowedByPrivacy } = require('../utils/privacy');
 const UserMusicProfile = require('../models/UserMusicProfile');
 const Playlist = require('../models/Playlist');
 // --- ИЗМЕНЕНИЕ: Импортируем новую функцию из spotify.js (который заменяет youtube.js) ---
-const { searchSpotifyAndFindYouTube } = require('../utils/spotify'); 
+const { searchSpotifyAndFindYouTube, getSpotifyToken, findAndCacheYouTubeVideos } = require('../utils/spotify');
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const broadcastToUsers = (req, userIds, message) => {
@@ -357,93 +357,51 @@ router.get('/personalized-recommendations', authMiddleware, async (req, res) => 
         const userId = req.user.userId;
         const profile = await UserMusicProfile.findOne({ user: userId }).lean();
 
-        // Сценарий 1: У пользователя нет истории
         if (!profile || !profile.topArtists || profile.topArtists.length === 0) {
             const dailyTracks = await searchSpotifyAndFindYouTube({ daily: 'true' });
             return res.json(dailyTracks.tracks);
         }
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
-        let searchQueries = new Set();
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
         
-        // 1. Берем топ-5 исполнителей
-        const topArtists = profile.topArtists
-            .filter(a => a.name)
-            .slice(0, 5)
-            .map(a => a.name);
-
-        topArtists.forEach(artist => searchQueries.add(artist));
-
-        // 2. Ищем похожих на самого популярного исполнителя через Last.fm
-        if (topArtists.length > 0 && process.env.LASTFM_API_KEY) {
-            try {
-                const similarArtistsResponse = await axios.get('http://ws.audioscrobbler.com/2.0/', {
-                    params: { 
-                        method: 'artist.getsimilar', 
-                        artist: topArtists[0], 
-                        api_key: process.env.LASTFM_API_KEY, 
-                        format: 'json', 
-                        limit: 5 // Берем 5 похожих
-                    }
-                });
-                if (similarArtistsResponse.data.similarartists) {
-                    similarArtistsResponse.data.similarartists.artist.forEach(a => searchQueries.add(a.name));
-                }
-            } catch (lastfmError) {
-                console.warn(`Last.fm similar artists search failed for ${topArtists[0]}:`, lastfmError.message);
-            }
+        // 1. Собираем "семена" (seeds) для одного запроса к Spotify
+        const seed_artists = profile.topArtists.slice(0, 2).map(a => a.spotifyId).filter(Boolean);
+        const seed_genres = profile.topGenres.slice(0, 2).map(g => g.name.toLowerCase().replace(/\s+/g, '-')).filter(Boolean);
+        
+        // Убедимся, что у нас не больше 5 "семян" в сумме
+        const totalSeeds = seed_artists.length + seed_genres.length;
+        if (totalSeeds === 0) {
+            const dailyTracks = await searchSpotifyAndFindYouTube({ daily: 'true' });
+            return res.json(dailyTracks.tracks);
         }
-        
-        // 3. Берем топ-3 жанра
-        const topGenres = profile.topGenres
-            .filter(g => g.name)
-            .slice(0, 3)
-            .map(g => g.name);
 
-        topGenres.forEach(genre => searchQueries.add(`${genre} music`));
+        const token = await getSpotifyToken();
 
-        // 4. Запускаем параллельные поисковые запросы
-        const searchPromises = Array.from(searchQueries).map(q => 
-            searchSpotifyAndFindYouTube({ q }).catch(e => {
-                console.error(`Ошибка при поиске для рекомендаций (запрос: ${q}):`, e.message);
-                return { tracks: [] }; // Возвращаем пустой массив в случае ошибки
-            })
-        );
-
-        const results = await Promise.all(searchPromises);
-
-        let finalTracks = [];
-        results.forEach(result => {
-            if (result && result.tracks.length > 0) {
-                // Берем по 2-3 трека из каждого успешного результата
-                finalTracks.push(...result.tracks.slice(0, Math.ceil(12 / searchQueries.size) || 2));
-            }
+        // 2. Делаем ОДИН запрос к Spotify API за рекомендациями
+        const recommendationsResponse = await axios.get('https://api.spotify.com/v1/recommendations', {
+            params: {
+                limit: 20,
+                market: 'RU',
+                seed_artists: seed_artists.join(','),
+                seed_genres: seed_genres.join(','),
+            },
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        // 5. Убираем дубликаты
-        let uniqueTracks = Array.from(new Map(finalTracks.map(t => [t.spotifyId, t])).values());
+        // 3. Spotify вернул нам готовый список треков. Теперь ищем для них видео на YouTube.
+        const spotifyTracks = recommendationsResponse.data.tracks;
         
-        // 6. Если треков все равно мало, добавляем из "ежедневных"
-        if (uniqueTracks.length < 10) {
-            try {
-                const daily = await searchSpotifyAndFindYouTube({ daily: 'true' });
-                daily.tracks.forEach(track => {
-                    if (uniqueTracks.length < 20 && !uniqueTracks.some(t => t.spotifyId === track.spotifyId)) {
-                        uniqueTracks.push(track);
-                    }
-                });
-            } catch (fallbackError) {
-                console.error('Ошибка при получении fallback-треков:', fallbackError.message);
-            }
-        }
+        // 4. Используем оптимизированную функцию для параллельного поиска и кэширования
+        const finalTracks = await findAndCacheYouTubeVideos(spotifyTracks);
 
-        const shuffledTracks = uniqueTracks.sort(() => 0.5 - Math.random());
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+        
+        const shuffledTracks = finalTracks.sort(() => 0.5 - Math.random());
         res.json(shuffledTracks.slice(0, 12));
-        // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 
     } catch (error) {
         console.error('Ошибка генерации персональных рекомендаций:', error.message);
-        // Fallback на случай, если что-то пошло не так в самом начале
+        // Fallback на случай ошибки
         try {
             const fallbackResponse = await searchSpotifyAndFindYouTube({ daily: 'true' });
             res.json(fallbackResponse.tracks);
@@ -455,21 +413,21 @@ router.get('/personalized-recommendations', authMiddleware, async (req, res) => 
 
 router.get('/search-all', authMiddleware, async (req, res) => {
     try {
-        const { q, type = 'all' } = req.query;
+        // Принимаем 'page' из запроса
+        const { q, type = 'all', page = 1 } = req.query;
+        const limit = 25; 
+        const offset = (parseInt(page) - 1) * limit;
+
         if (!q) {
-            return res.json({ tracks: [], playlists: [] });
+            return res.json({ tracks: [], playlists: [], hasMore: false });
         }
 
         let tracks = [];
         let playlists = [];
+        let hasMoreTracks = false;
 
-        if (type === 'all' || type === 'tracks') {
-            // --- ИЗМЕНЕНИЕ: Используем новую функцию поиска ---
-            const searchResult = await searchSpotifyAndFindYouTube({ q });
-            tracks = searchResult.tracks;
-        }
-
-        if (type === 'all' || type === 'playlists') {
+        // Плейлисты ищем только на первой странице, чтобы не дублировать
+        if ((type === 'all' || type === 'playlists') && page == 1) { 
             playlists = await Playlist.find({
                 visibility: 'public',
                 $text: { $search: q }
@@ -479,7 +437,13 @@ router.get('/search-all', authMiddleware, async (req, res) => {
             .lean();
         }
 
-        res.json({ tracks, playlists });
+        if (type === 'all' || type === 'tracks') {
+            const searchResult = await searchSpotifyAndFindYouTube({ q, offset });
+            tracks = searchResult.tracks;
+            hasMoreTracks = searchResult.hasMore;
+        }
+
+        res.json({ tracks, playlists, hasMore: hasMoreTracks });
 
     } catch (error) {
         console.error("Ошибка в универсальном поиске музыки:", error);

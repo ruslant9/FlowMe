@@ -66,7 +66,7 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
     }
     
     const token = await getSpotifyToken();
-    let spotifyTracks = [];
+    let spotifyResponse;
 
     // Шаг 1: Получаем треки из Spotify
     try {
@@ -85,15 +85,24 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
             spotifyTracks = tracksResponse.data.items.map(item => item.track).filter(Boolean);
         } else {
             const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
-                params: { q, type: 'track', market: 'RU', limit: 20 },
+                // ИЗМЕНЕНИЕ: Используем 'offset' и увеличиваем 'limit'
+                params: { q, type: 'track', market: 'RU', limit: 25, offset },
                 headers: { 'Authorization': `Bearer ${token}` },
             });
-            spotifyTracks = searchResponse.data.tracks.items;
+            spotifyResponse = searchResponse.data.tracks;
         }
     } catch (error) {
         console.error("Ошибка при запросе к Spotify API:", error.response?.data || error.message);
         throw new Error("Ошибка при поиске треков в Spotify.");
     }
+
+    
+    if (!spotifyResponse || spotifyResponse.items.length === 0) {
+        // ИЗМЕНЕНИЕ: Возвращаем информацию о том, что больше треков нет
+        return { tracks: [], hasMore: false };
+    }
+
+    const spotifyTracks = spotifyResponse.items;
     
     if (spotifyTracks.length === 0) {
         return { tracks: [], nextPageToken: null };
@@ -145,7 +154,54 @@ async function searchSpotifyAndFindYouTube({ q, daily = false }) {
         return newlyFoundTracks.find(t => t.spotifyId === track.id);
     }).filter(Boolean);
 
-    return { tracks: finalTracks, nextPageToken: null };
+    const hasMore = (spotifyResponse.offset + spotifyResponse.items.length) < spotifyResponse.total;
+
+    return { tracks: finalTracks, hasMore }; // Возвращаем треки и флаг hasMore
 }
 
-module.exports = { searchSpotifyAndFindYouTube };
+async function findAndCacheYouTubeVideos(spotifyTracks) {
+    if (!spotifyTracks || spotifyTracks.length === 0) {
+        return [];
+    }
+    
+    const spotifyIds = spotifyTracks.map(track => track.id).filter(Boolean);
+    const cachedTracks = await Track.find({ spotifyId: { $in: spotifyIds }, type: 'search_cache' });
+    const cachedTracksMap = new Map(cachedTracks.map(track => [track.spotifyId, track]));
+
+    const tracksToSearchOnYouTube = spotifyTracks.filter(track => track && !cachedTracksMap.has(track.id));
+
+    // --- КЛЮЧЕВОЕ УЛУЧШЕНИЕ: ЗАПУСКАЕМ ПОИСК ПАРАЛЛЕЛЬНО ---
+    const youtubePromises = tracksToSearchOnYouTube.map(async (track) => {
+        if (!track || !track.name || !track.artists || track.artists.length === 0) return null;
+        const artistName = track.artists.map(a => a.name).join(', ');
+        const youtubeVideo = await findYouTubeVideoForTrack(track.name, artistName);
+        if (!youtubeVideo) return null;
+
+        return {
+            spotifyId: track.id,
+            youtubeId: youtubeVideo.id.videoId,
+            // ... (остальные поля трека)
+        };
+    });
+
+    const newlyFoundTracks = (await Promise.all(youtubePromises)).filter(Boolean);
+
+    if (newlyFoundTracks.length > 0) {
+        const tracksToCache = newlyFoundTracks.map(track => ({ ...track, type: 'search_cache' }));
+        Track.insertMany(tracksToCache, { ordered: false }).catch(err => {
+            if (err.code !== 11000) console.error("Ошибка кеширования:", err.message);
+        });
+    }
+
+    const finalTracks = spotifyTracks.map(track => {
+        if (!track) return null;
+        if (cachedTracksMap.has(track.id)) {
+            return cachedTracksMap.get(track.id);
+        }
+        return newlyFoundTracks.find(t => t.spotifyId === track.id);
+    }).filter(Boolean);
+
+    return finalTracks;
+}
+
+module.exports = { searchSpotifyAndFindYouTube, getSpotifyToken, findAndCacheYouTubeVideos };

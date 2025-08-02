@@ -68,6 +68,14 @@ const MusicPage = () => {
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [playlistToEdit, setPlaylistToEdit] = useState(null);
 
+    // --- НАЧАЛО ИЗМЕНЕНИЙ: Состояния для пагинации поиска ---
+    const [searchPage, setSearchPage] = useState(1);
+    const [hasMoreSearchResults, setHasMoreSearchResults] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const observer = useRef();
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+
     const handleEditPlaylist = (playlist) => {
         setPlaylistToEdit(playlist);
         setEditModalOpen(true);
@@ -176,28 +184,43 @@ const MusicPage = () => {
         }
     }, []);
 
-    const fetchDataForTab = useCallback(async (tab, query = '') => {
+    // --- НАЧАЛО ИЗМЕНЕНИЙ: Обновляем fetchDataForTab для обработки пагинации в поиске ---
+    const fetchDataForTab = useCallback(async (tab, query = '', page = 1) => {
         if (tab === 'playlists') { await fetchPlaylists(); return; }
         if (tab === 'recommendations') { await fetchRecommendationsData(); setData([]); setSearchQuery(''); return; }
         if (tab === 'my-music') { await fetchMyMusic(); return; }
 
         if (tab === 'search') {
             if (!query) {
-                setLoading(false);
                 setSearchResults({ tracks: [], playlists: [] });
+                setHasMoreSearchResults(true);
                 return;
             }
-            setLoading(true);
+            
+            if (page === 1) setLoading(true);
+            else setLoadingMore(true);
+
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get(`${API_URL}/api/music/search-all?q=${encodeURIComponent(query)}&type=${searchFilter}`, {
+                const res = await axios.get(`${API_URL}/api/music/search-all?q=${encodeURIComponent(query)}&type=${searchFilter}&page=${page}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setSearchResults(res.data);
+                
+                setSearchResults(prev => {
+                    if (page === 1) return res.data; // Для первой страницы просто заменяем данные
+                    return { // Для последующих страниц добавляем только треки
+                        ...prev,
+                        tracks: [...prev.tracks, ...res.data.tracks]
+                    };
+                });
+                setHasMoreSearchResults(res.data.hasMore);
+                setSearchPage(page);
+
             } catch (error) {
                 toast.error("Ошибка при поиске.");
             } finally {
                 setLoading(false);
+                setLoadingMore(false);
             }
             return;
         }
@@ -215,6 +238,7 @@ const MusicPage = () => {
             }
         }
     }, [fetchMyMusic, fetchRecommendationsData, fetchPlaylists, searchFilter]);
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const handleDeleteFromHistory = useCallback(async (trackId) => {
         const originalTracks = [...data];
@@ -231,11 +255,26 @@ const MusicPage = () => {
 
     useEffect(() => {
         const debounce = setTimeout(() => {
-             fetchDataForTab(activeTab, searchQuery);
+             // При любом изменении поискового запроса или фильтра, сбрасываем на первую страницу
+             setSearchPage(1);
+             fetchDataForTab(activeTab, searchQuery, 1);
         }, 300);
         return () => clearTimeout(debounce);
-    }, [activeTab, searchQuery, fetchDataForTab]);
+    }, [activeTab, searchQuery, searchFilter, fetchDataForTab]);
     
+    // --- НАЧАЛО ИЗМЕНЕНИЙ: Хук для Intersection Observer ---
+    const lastTrackElementRef = useCallback(node => {
+        if (loadingMore) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMoreSearchResults) {
+                fetchDataForTab('search', searchQuery, searchPage + 1);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [loadingMore, hasMoreSearchResults, fetchDataForTab, searchQuery, searchPage]);
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
     const handleArtistClick = (artistName) => {
         setActiveTab('search');
         setSearchQuery(artistName);
@@ -358,8 +397,16 @@ const MusicPage = () => {
                             <TabButton active={searchFilter === 'tracks'} onClick={() => setSearchFilter('tracks')}>Треки</TabButton>
                             <TabButton active={searchFilter === 'playlists'} onClick={() => setSearchFilter('playlists')}>Плейлисты</TabButton>
                         </div>
-                        {loading ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
+                        {loading && searchPage === 1 ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                             <div className="space-y-6">
+                                {searchResults.playlists.length > 0 && (
+                                    <div>
+                                        <h3 className="font-bold text-lg mb-2">Плейлисты</h3>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                            {searchResults.playlists.map(p => <PlaylistCard key={p._id} playlist={p} onClick={() => handleSelectPlaylist(p)} />)}
+                                        </div>
+                                    </div>
+                                )}
                                 {searchResults.tracks.length > 0 && (
                                     <div>
                                         <h3 className="font-bold text-lg mb-2">Треки</h3>
@@ -374,17 +421,17 @@ const MusicPage = () => {
                                             progress={progress} duration={duration} onSeek={seekTo} 
                                             loadingTrackId={loadingTrackId} buffered={buffered} onPlayPauseToggle={togglePlayPause} 
                                         />
-                                    </div>
-                                )}
-                                {searchResults.playlists.length > 0 && (
-                                    <div>
-                                        <h3 className="font-bold text-lg mb-2">Плейлисты</h3>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                            {searchResults.playlists.map(p => <PlaylistCard key={p._id} playlist={p} onClick={() => handleSelectPlaylist(p)} />)}
+                                        {/* --- НАЧАЛО ИЗМЕНЕНИЙ: Элемент для отслеживания и индикатор загрузки --- */}
+                                        <div ref={lastTrackElementRef} className="h-10 flex justify-center items-center">
+                                            {loadingMore && <Loader2 className="animate-spin text-slate-400" />}
+                                            {!hasMoreSearchResults && searchResults.tracks.length > 0 && (
+                                                <p className="text-sm text-slate-500">Это все результаты</p>
+                                            )}
                                         </div>
+                                        {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
                                     </div>
                                 )}
-                                {!loading && searchResults.tracks.length === 0 && searchResults.playlists.length === 0 && searchQuery && (
+                                {!loading && !loadingMore && searchResults.tracks.length === 0 && searchResults.playlists.length === 0 && searchQuery && (
                                     <p className="text-center py-10 text-slate-500">Ничего не найдено.</p>
                                 )}
                             </div>

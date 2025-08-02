@@ -138,62 +138,69 @@ export const MusicPlayerProvider = ({ children }) => {
     }, [currentTrack]);
     
     const playTrack = useCallback((trackData, playlistData = [], options = {}) => {
-        if (!trackData || !trackData.youtubeId) return;
+    if (!trackData || !trackData.youtubeId) return;
 
-        const { playlistId = null, startShuffled = false, startRepeat = false } = options;
+    const { playlistId = null, startShuffled = false, startRepeat = false } = options;
 
-        logMusicAction(trackData, 'listen');
+    logMusicAction(trackData, 'listen');
+    
+    setIsShuffle(startShuffled);
+    setIsRepeat(startRepeat);
+
+    if (playlistId && (!currentPlaylistId || currentPlaylistId !== playlistId)) {
+        setCurrentPlaylistId(playlistId);
+        const token = localStorage.getItem('token');
+        axios.post(`${API_URL}/api/playlists/${playlistId}/play`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        }).catch(e => console.error("Не удалось обновить счетчик прослушиваний плейлиста", e));
+    } else if (!playlistId) {
+        setCurrentPlaylistId(null);
+    }
+
+    setCurrentTrack(current => {
+        if (current && current.youtubeId === trackData.youtubeId) {
+            setIsPlaying(p => !p);
+            return current;
+        }
         
-        setIsShuffle(startShuffled);
-        setIsRepeat(startRepeat);
-
-        if (playlistId && (!currentPlaylistId || currentPlaylistId !== playlistId)) {
-            setCurrentPlaylistId(playlistId);
-            const token = localStorage.getItem('token');
-            axios.post(`${API_URL}/api/playlists/${playlistId}/play`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            }).catch(e => console.error("Не удалось обновить счетчик прослушиваний плейлиста", e));
-        } else if (!playlistId) {
-            setCurrentPlaylistId(null);
+        setLoadingTrackId(trackData.youtubeId);
+        setIsPlaying(true);
+        setProgress(0);
+        setBuffered(0);
+        setIsLiked(myMusicTrackIds.has(trackData.spotifyId));
+        
+        if (youtubePlayerRef.current) {
+            youtubePlayerRef.current.setVolume(volume);
         }
 
-        setCurrentTrack(current => {
-            if (current && current.youtubeId === trackData.youtubeId) {
-                setIsPlaying(p => !p);
-                return current;
-            }
-            
-            setLoadingTrackId(trackData.youtubeId);
-            setIsPlaying(true);
-            setProgress(0);
-            setBuffered(0);
-            // --- ИЗМЕНЕНИЕ: Проверяем лайк по spotifyId ---
-            setIsLiked(myMusicTrackIds.has(trackData.spotifyId));
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-            
-            if (youtubePlayerRef.current) {
-                youtubePlayerRef.current.setVolume(volume);
-            }
+        let finalPlaylist = playlistData.length > 0 ? [...playlistData] : [trackData];
+        
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        let trackIndex = finalPlaylist.findIndex(t => t.youtubeId === trackData.youtubeId);
+        if (trackIndex === -1) {
+            trackIndex = 0; // Если вдруг трек не найден в плейлисте, играем с начала
+        }
 
-            let finalPlaylist = playlistData.length > 0 ? [...playlistData] : [trackData];
+        if (startShuffled) {
+            // Перемешиваем плейлист, но оставляем выбранный трек первым
+            const firstTrack = finalPlaylist[trackIndex];
+            let restOfPlaylist = finalPlaylist.filter((t, i) => i !== trackIndex);
             
-            if (startShuffled) {
-                const firstTrack = finalPlaylist.find(t => t.youtubeId === trackData.youtubeId);
-                let restOfPlaylist = finalPlaylist.filter(t => t.youtubeId !== trackData.youtubeId);
-                
-                for (let i = restOfPlaylist.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [restOfPlaylist[i], restOfPlaylist[j]] = [restOfPlaylist[j], restOfPlaylist[i]];
-                }
-                finalPlaylist = [firstTrack, ...restOfPlaylist];
+            for (let i = restOfPlaylist.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [restOfPlaylist[i], restOfPlaylist[j]] = [restOfPlaylist[j], restOfPlaylist[i]];
             }
+            finalPlaylist = [firstTrack, ...restOfPlaylist];
+            trackIndex = 0; // Теперь наш трек точно на 0-й позиции
+        }
 
-            playlistRef.current = finalPlaylist;
-            currentTrackIndexRef.current = 0;
+        playlistRef.current = finalPlaylist;
+        currentTrackIndexRef.current = trackIndex; // Устанавливаем правильный индекс
 
-            return finalPlaylist[0];
-        });
-    }, [volume, logMusicAction, currentPlaylistId, myMusicTrackIds]);
+        return finalPlaylist[trackIndex]; // Возвращаем и проигрываем нужный трек
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    });
+}, [volume, logMusicAction, currentPlaylistId, myMusicTrackIds]);
 
     const handleSeek = useCallback((value) => {
         if (youtubePlayerRef.current) {
