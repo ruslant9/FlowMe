@@ -15,8 +15,8 @@ const TrackSchema = new Schema({
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
-
-    // Поля для пользовательских библиотек (как и раньше)
+    
+    playCount: { type: Number, default: 0, index: true }, // Индекс для быстрой сортировки
     user: { type: Schema.Types.ObjectId, ref: 'User' }, 
     type: { type: String, enum: ['saved', 'recent', 'library_track'], index: true },
     savedAt: { type: Date },

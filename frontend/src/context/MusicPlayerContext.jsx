@@ -105,6 +105,10 @@ export const MusicPlayerProvider = ({ children }) => {
             audio.volume = volume;
             await audio.play();
             
+            axios.post(`${API_URL}/api/music/track/${trackData._id}/log-play`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).catch(e => console.error("Не удалось залогировать прослушивание", e));
+            
             setIsPlaying(true);
             
             let finalPlaylist = playlistData.length > 0 ? [...playlistData] : [trackData];
