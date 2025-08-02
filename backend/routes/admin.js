@@ -131,8 +131,12 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
 
 // Загрузить трек напрямую
 router.post('/tracks', upload.single('trackFile'), async (req, res) => {
-    try {
-        const { title, artistId, albumId, durationMs } = req.body;
+     try {
+        // --- ИЗМЕНЕНИЕ: Парсим genres из JSON ---
+        const { title, artistId, albumId, durationMs, genres } = req.body;
+        const parsedGenres = genres ? JSON.parse(genres) : [];
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
         if (!req.file) {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });
         }
@@ -142,7 +146,7 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
             artist: artistId,
             album: albumId || null,
             durationMs,
-            // --- ИЗМЕНЕНИЕ 3: Используем req.file.path ---
+            genres: parsedGenres, // Сохраняем массив
             storageKey: req.file.path,
             status: 'approved',
             createdBy: req.user._id,

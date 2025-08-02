@@ -382,20 +382,24 @@ router.get('/search-all', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НОВЫЕ РОУТЫ ДЛЯ АДМИН-ПАНЕЛИ ---
-
+// Получить всех одобренных артистов для выпадающего списка
 router.get('/artists/all', authMiddleware, async (req, res) => {
     try {
         const artists = await Artist.find({ status: 'approved' }).select('name').sort({ name: 1 });
         res.json(artists);
-    } catch (error) { res.status(500).json({ message: "Ошибка загрузки артистов" }); }
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки артистов" });
+    }
 });
 
+// Получить все одобренные альбомы для выпадающего списка
 router.get('/albums/all', authMiddleware, async (req, res) => {
     try {
         const albums = await Album.find({ status: 'approved' }).select('title artist').sort({ title: 1 });
         res.json(albums);
-    } catch (error) { res.status(500).json({ message: "Ошибка загрузки альбомов" }); }
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки альбомов" });
+    }
 });
 
 // --- НОВЫЙ РОУТ ДЛЯ ПОДСЧЕТА ПРОСЛУШИВАНИЙ ---

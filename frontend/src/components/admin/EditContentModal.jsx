@@ -1,9 +1,10 @@
 // frontend/components/admin/EditContentModal.jsx
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import ReactDOM from 'react-dom'; // <-- 1. Импортируем ReactDOM
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2 } from 'lucide-react';
-import { CreateArtistForm } from './CreateArtistForm'; // Мы переиспользуем формы!
+import { X } from 'lucide-react';
+import { CreateArtistForm } from './CreateArtistForm';
 import { CreateAlbumForm } from './CreateAlbumForm';
 import { UploadTrackForm } from './UploadTrackForm';
 
@@ -22,7 +23,13 @@ const EditContentModal = ({ isOpen, onClose, item, itemType, artists, albums, on
         }
     };
 
-    return (
+    // 2. Если модальное окно не открыто, ничего не рендерим
+    if (!isOpen) {
+        return null;
+    }
+
+    // 3. Используем ReactDOM.createPortal для рендеринга в другой DOM-узел
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
@@ -32,7 +39,7 @@ const EditContentModal = ({ isOpen, onClose, item, itemType, artists, albums, on
                         className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
                         
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Редактировать {itemType.slice(0, -1)}</h2>
+                            <h2 className="text-xl font-bold">Редактирование: {item?.name || item?.title}</h2>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
                         </div>
 
@@ -42,7 +49,8 @@ const EditContentModal = ({ isOpen, onClose, item, itemType, artists, albums, on
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root') // 4. Указываем, куда "телепортировать"
     );
 };
 
