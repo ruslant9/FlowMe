@@ -33,6 +33,7 @@ import MusicPage from './pages/MusicPage';
 import PlaylistPage from './pages/PlaylistPage'; // <-- НОВЫЙ ИМПОРТ
 import axios from 'axios';
 import PremiumPage from './pages/PremiumPage';
+import AdminPage from './pages/AdminPage'; 
 
 // Импорт MusicPlayerProvider и MusicPlayerBar
 import { MusicPlayerProvider, useMusicPlayer } from './context/MusicPlayerContext';
@@ -214,10 +215,8 @@ function App() {
           {/* --- ОСНОВНЫЕ РОУТЫ ПРИЛОЖЕНИЯ --- */}
           <Route element={<ProtectedLayout />}>
             <Route path="/" element={<HomePage />} />
-            {/* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */}
             <Route path="/music" element={<MusicPage />} />
             <Route path="/music/playlist/:playlistId" element={<PlaylistPage />} />
-            {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
             <Route path="/profile" element={<MyProfilePage />} />
             <Route path="/profile/:userId" element={<UserProfilePage />} />
             <Route path="/friends" element={<FriendsPage />} />
@@ -229,6 +228,7 @@ function App() {
             <Route path="/communities/:communityId/manage" element={<CommunityManagementPage />} />
             <Route path="/communities/:communityId" element={<CommunityDetailPage />} />
             <Route path="/premium" element={<PremiumPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Route>
 
           {/* Роут для всех остальных путей, ведет на главную */}
@@ -239,5 +239,6 @@ function App() {
     </>
   );
 }
+
 
 export default App;
