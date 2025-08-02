@@ -97,7 +97,7 @@ return (
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-semibold truncate">{cleanTitle(track.title)}</p>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{cleanArtist(track.artist)}</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{Array.isArray(track.artist) ? track.artist.map(a => cleanArtist(a.name)).join(', ') : cleanArtist(track.artist)}</p>
                                 </div>
                             </div>
                         )})

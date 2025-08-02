@@ -50,7 +50,7 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
         const { title, artistId } = req.body;
-        if (!title || !artistId) {
+        if (!title || !parsedArtistIds || parsedArtistIds.length === 0) {
             return res.status(400).json({ message: 'Название альбома и артист обязательны.' });
         }
         
@@ -75,7 +75,8 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
 // 3. Создать заявку на новый трек
 router.post('/tracks', upload.single('trackFile'), async (req, res) => {
     try {
-        const { title, artistId, albumId, durationMs } = req.body;
+        const { title, artistIds, albumId, durationMs } = req.body;
+        const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
         
         if (!title || !artistId) {
             return res.status(400).json({ message: 'Название трека и артист обязательны.' });
@@ -90,11 +91,12 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
             submittedBy: req.user.userId,
             data: {
                 title,
-                artist: artistId,
+                artist: parsedArtistIds,
                 album: albumId || null,
                 durationMs: durationMs || 0,
                 // Для аудиофайлов Cloudinary также вернет URL в req.file.path
-                storageKey: req.file.path 
+                storageKey: req.files.trackFile[0].path,
+                albumArtUrl: albumId ? null : (req.files.coverArt?.[0]?.path || null)
             }
         });
         await submission.save();

@@ -83,7 +83,7 @@ const MusicPlayerBar = ({
                 <div className="flex flex-col min-w-0 flex-grow">
                     {/* --- ИЗМЕНЕНИЕ --- */}
                     <p className="font-bold truncate text-lg text-slate-900 dark:text-white">{cleanTitle(track.title)}</p>
-                    <p className="text-sm text-slate-700 dark:text-white/60 truncate">{cleanArtist(track.artist)}</p>
+                    <p className="text-sm text-slate-700 dark:text-white/60 truncate">{Array.isArray(track.artist) ? track.artist.map(a => cleanArtist(a.name)).join(', ') : cleanArtist(track.artist)}</p>
                     {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 </div>
             </div>

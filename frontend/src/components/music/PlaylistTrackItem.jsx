@@ -24,7 +24,7 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
     };
 
     const cleanedTitle = cleanTitle(track.title);
-    const cleanedArtist = cleanArtist(track.artist);
+    const cleanedArtist = Array.isArray(track.artist) ? track.artist.map(a => cleanArtist(a.name)).join(', ') : cleanArtist(track.artist?.name);
     // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const formatDuration = (ms) => {

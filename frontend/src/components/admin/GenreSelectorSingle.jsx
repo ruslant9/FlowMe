@@ -18,7 +18,7 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
     return (
         <div>
             <label className="text-sm font-semibold block mb-2">{label} *</label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg max-h-48 overflow-y-auto">
+            <div className="flex flex-wrap gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg">
                 {musicGenresRu.map(genre => {
                     const isSelected = selectedGenre === genre;
                     return (

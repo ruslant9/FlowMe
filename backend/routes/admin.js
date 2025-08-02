@@ -132,11 +132,9 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
 // Загрузить трек напрямую
 router.post('/tracks', upload.single('trackFile'), async (req, res) => {
      try {
-        // --- ИЗМЕНЕНИЕ: Парсим genres из JSON ---
-        const { title, artistId, albumId, durationMs, genres } = req.body;
+        const { title, artistIds, albumId, durationMs, genres } = req.body;
         const parsedGenres = genres ? JSON.parse(genres) : [];
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
+        const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
         if (!req.file) {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });
         }
@@ -144,9 +142,11 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
         const newTrack = new Track({
             title,
             artist: artistId,
+            artist: parsedArtistIds,
             album: albumId || null,
             durationMs,
             genres: parsedGenres, // Сохраняем массив
+            albumArtUrl: albumId ? null : (req.files?.coverArt?.[0]?.path || null),
             storageKey: req.file.path,
             status: 'approved',
             createdBy: req.user._id,
@@ -341,8 +341,14 @@ router.delete('/content/albums/:id', async (req, res) => {
 // --- ТРЕКИ ---
 router.put('/content/tracks/:id', async (req, res) => {
     try {
-        const { title, artistId, albumId, genres } = req.body;
-        const updateData = { title, artist: artistId, album: albumId || null, genres: genres || [] };
+        const { title, artistIds, albumId, genres } = req.body;
+        const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
+        const updateData = { 
+            title, 
+            artist: parsedArtistIds, 
+            album: albumId || null, 
+            genres: genres || [] 
+        };
 
         const updatedTrack = await Track.findByIdAndUpdate(req.params.id, updateData, { new: true });
         if (!updatedTrack) return res.status(404).json({ message: 'Трек не найден' });

@@ -384,7 +384,7 @@ router.get('/search-all', async (req, res) => {
 // Получить всех одобренных артистов для выпадающего списка
 router.get('/artists/all', async (req, res) => {
     try {
-        const artists = await Artist.find({ status: 'approved' }).select('name').sort({ name: 1 });
+        const artists = await Artist.find({ status: 'approved' }).select('name avatarUrl').sort({ name: 1 });
         res.json(artists);
     } catch (error) {
         res.status(500).json({ message: "Ошибка загрузки артистов" });

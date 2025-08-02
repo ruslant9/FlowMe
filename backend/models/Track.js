@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 
 const TrackSchema = new Schema({
     title: { type: String, required: true, index: true },
-    artist: { type: Schema.Types.ObjectId, ref: 'Artist', required: true },
+    artist: [{ type: Schema.Types.ObjectId, ref: 'Artist', required: true }],
     album: { type: Schema.Types.ObjectId, ref: 'Album' }, // Необязательно
     genres: [{ type: String, index: true }], // У трека может быть несколько жанров
     storageKey: { type: String, required: true }, // Ключ файла в Cloudflare R2

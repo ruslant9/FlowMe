@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelectorSingle from './GenreSelectorSingle'; // <-- 1. Импортируем новый компонент
+import ArtistSelector from './ArtistSelector';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -84,10 +85,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
-                <select value={artistId} onChange={e => setArtistId(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required>
-                    <option value="">-- Выберите --</option>
-                    {artists.map(artist => <option key={artist._id} value={artist._id}>{artist.name}</option>)}
-                </select>
+                <ArtistSelector artists={artists} value={artistId} onChange={setArtistId} />
             </div>
             
             <div>
