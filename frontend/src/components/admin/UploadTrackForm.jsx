@@ -3,88 +3,186 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
-import GenreSelector from './GenreSelector'; // <-- 1. Импортируем новый компонент
+import GenreSelector from './GenreSelector';
 import MultiArtistSelector from './MultiArtistSelector';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false, initialData = null }) => {
-    const { currentUser } = useUser();
-    const [title, setTitle] = useState(initialData?.title || '');
-    const [artistIds, setArtistIds] = useState(initialData?.artist?.map(a => a._id) || []);
-    const [albumId, setAlbumId] = useState(initialData?.album?._id || '');
-    const [selectedGenres, setSelectedGenres] = useState(initialData?.genres || []); // <-- Используем selectedGenres
-    const [trackFile, setTrackFile] = useState(null);
-    const [durationMs, setDurationMs] = useState(initialData?.durationMs || 0);
-    const [loading, setLoading] = useState(false);
-    const [coverArt, setCoverArt] = useState(null);
-    const [coverPreview, setCoverPreview] = useState(initialData?.albumArtUrl || '');
-    const filteredAlbums = useMemo(() => {
-        if (artistIds.length !== 1) return [];
-        return albums.filter(album => (album.artist._id || album.artist) === artistIds[0]);
-    }, [artistId, albums]);
+// Компонент для одного трека в списке пакетной загрузки
+const BatchTrackItem = ({ track, index, artists, onUpdate, onRemove }) => {
+    return (
+        <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3">
+            <div className="flex items-center justify-between">
+                <p className="font-semibold">{track.file.name}</p>
+                <button type="button" onClick={onRemove} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full">
+                    <Trash2 size={16} />
+                </button>
+            </div>
+            <input 
+                type="text" 
+                placeholder="Название трека" 
+                value={track.title}
+                onChange={(e) => onUpdate(index, 'title', e.target.value)}
+                className="w-full p-2 rounded bg-white dark:bg-slate-700"
+                required
+            />
+            <MultiArtistSelector 
+                artists={artists}
+                value={track.artistIds}
+                onChange={(ids) => onUpdate(index, 'artistIds', ids)}
+            />
+             <label className="flex items-center space-x-2 text-sm">
+                <input 
+                    type="checkbox" 
+                    checked={track.isExplicit}
+                    onChange={(e) => onUpdate(index, 'isExplicit', e.target.checked)}
+                    className="form-checkbox h-4 w-4 rounded bg-slate-300 dark:bg-slate-600 border-transparent focus:ring-blue-500"
+                />
+                <span>Explicit (ненормативная лексика)</span>
+            </label>
+        </div>
+    );
+};
 
-    const handleCoverChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setCoverArt(file);
-            setCoverPreview(URL.createObjectURL(file));
-        }
+
+export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
+    const { currentUser } = useUser();
+    const [albumId, setAlbumId] = useState('');
+    const [loading, setLoading] = useState(false);
+    
+    // Состояние для пакетной загрузки
+    const [trackList, setTrackList] = useState([]);
+
+    // Состояние для сингла
+    const [singleTrackData, setSingleTrackData] = useState({
+        title: '',
+        artistIds: [],
+        genres: [],
+        trackFile: null,
+        durationMs: 0,
+        coverArt: null,
+        coverPreview: '',
+        releaseYear: ''
+    });
+
+    const handleSingleTrackChange = (field, value) => {
+        setSingleTrackData(prev => ({ ...prev, [field]: value }));
     };
-    const handleFileChange = (e) => {
+
+    const handleSingleFileChange = (e, type) => {
         const file = e.target.files[0];
-        if (file) {
-            setTrackFile(file);
+        if (!file) return;
+
+        if (type === 'track') {
+            handleSingleTrackChange('trackFile', file);
             const audio = new Audio(URL.createObjectURL(file));
             audio.onloadedmetadata = () => {
-                setDurationMs(Math.round(audio.duration * 1000));
+                handleSingleTrackChange('durationMs', Math.round(audio.duration * 1000));
             };
+        } else if (type === 'cover') {
+            handleSingleTrackChange('coverArt', file);
+            handleSingleTrackChange('coverPreview', URL.createObjectURL(file));
         }
+    };
+    
+    const handleBatchFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        const newTracks = files.map(file => {
+             const audio = new Audio(URL.createObjectURL(file));
+             let duration = 0;
+             audio.onloadedmetadata = () => {
+                 duration = Math.round(audio.duration * 1000);
+                 // Обновляем состояние после получения метаданных
+                 setTrackList(currentList => currentList.map(t => t.file === file ? { ...t, durationMs: duration } : t));
+             };
+            return {
+                file,
+                title: file.name.replace(/\.[^/.]+$/, ""), // Убираем расширение файла
+                artistIds: [],
+                isExplicit: false,
+                durationMs: 0
+            };
+        });
+        setTrackList(prev => [...prev, ...newTracks]);
+    };
+
+    const updateTrackInList = (index, field, value) => {
+        setTrackList(currentList => {
+            const newList = [...currentList];
+            newList[index] = { ...newList[index], [field]: value };
+            return newList;
+        });
+    };
+    
+    const removeTrackFromList = (index) => {
+        setTrackList(currentList => currentList.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (artistIds.length === 0 || (!trackFile && !isEditMode)) {
-            toast.error("Артист и аудиофайл обязательны.");
-            return;
-        }
         setLoading(true);
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('artistIds', JSON.stringify(artistIds));
-        if (albumId) formData.append('albumId', albumId);
-        // Отправляем массив жанров как JSON-строку, чтобы бэкенд мог его распарсить
-        formData.append('genres', JSON.stringify(selectedGenres)); 
-        if (trackFile) formData.append('trackFile', trackFile);
-        if (coverArt) formData.append('coverArt', coverArt);
-        formData.append('durationMs', durationMs);
-
-        const isAdmin = currentUser.role === 'admin';
+        const toastId = toast.loading("Загрузка треков...");
         
-        // Логика для определения эндпоинта и метода
-        const endpoint = isEditMode
-            ? `${API_URL}/api/admin/content/tracks/${initialData._id}`
-            : isAdmin ? `${API_URL}/api/admin/tracks` : `${API_URL}/api/submissions/tracks`;
-        const method = isEditMode ? 'put' : 'post';
-        const successMessage = isEditMode ? 'Трек обновлен!' : (isAdmin ? 'Трек успешно загружен!' : 'Заявка отправлена на модерацию!');
-        
-        const toastId = toast.loading("Отправка данных...");
-
         try {
             const token = localStorage.getItem('token');
-            const res = await axios[method](endpoint, formData, {
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-            });
-            toast.success(res.data.message || successMessage, { id: toastId });
-            if (!isEditMode) {
-                setTitle(''); setArtistIds([]); setAlbumId(''); setSelectedGenres([]); setTrackFile(null); setDurationMs(0); setCoverArt(null); setCoverPreview('');
-                e.target.reset();
+            // Если выбран альбом - используем пакетную загрузку
+            if (albumId) {
+                if (trackList.length === 0) {
+                    toast.error("Выберите аудиофайлы для загрузки.", { id: toastId });
+                    setLoading(false);
+                    return;
+                }
+                
+                const formData = new FormData();
+                const metadata = trackList.map(t => ({
+                    title: t.title,
+                    artistIds: t.artistIds,
+                    isExplicit: t.isExplicit,
+                    durationMs: t.durationMs
+                }));
+                
+                formData.append('tracksMetadata', JSON.stringify(metadata));
+                trackList.forEach(t => {
+                    formData.append('trackFiles', t.file);
+                });
+
+                await axios.post(`${API_URL}/api/admin/albums/${albumId}/batch-upload-tracks`, formData, {
+                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                });
+
+            } else { // Иначе - загружаем сингл
+                if (!singleTrackData.trackFile) {
+                    toast.error("Аудиофайл обязателен.", { id: toastId });
+                    setLoading(false);
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('title', singleTrackData.title);
+                formData.append('artistIds', JSON.stringify(singleTrackData.artistIds));
+                formData.append('genres', JSON.stringify(singleTrackData.genres));
+                formData.append('trackFile', singleTrackData.trackFile);
+                if (singleTrackData.coverArt) formData.append('coverArt', singleTrackData.coverArt);
+                formData.append('durationMs', singleTrackData.durationMs);
+                formData.append('releaseYear', singleTrackData.releaseYear);
+
+                await axios.post(`${API_URL}/api/admin/tracks`, formData, {
+                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                });
             }
+
+            toast.success("Треки успешно загружены!", { id: toastId });
             onSuccess();
+            // Сброс всех форм
+            setAlbumId('');
+            setTrackList([]);
+            setSingleTrackData({ title: '', artistIds: [], genres: [], trackFile: null, durationMs: 0, coverArt: null, coverPreview: '', releaseYear: '' });
+            e.target.reset();
+
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при отправке.", { id: toastId });
+            toast.error(error.response?.data?.message || "Ошибка при загрузке.", { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -92,49 +190,71 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
 
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-4">
-            <h3 className="font-bold text-lg">
-                {isEditMode ? `Редактирование: ${initialData.title}` : (currentUser.role === 'admin' ? 'Загрузить трек' : 'Предложить трек')}
-            </h3>
-            {currentUser.role !== 'admin' && !isEditMode && <p className="text-xs text-slate-500 -mt-3">Трек будет отправлен на проверку администраторам.</p>}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div>
-                    <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
-                    <MultiArtistSelector artists={artists} value={artistIds} onChange={setArtistIds} />
-                </div>
-                <div>
-                    <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
-                    <select value={albumId} onChange={e => setAlbumId(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" disabled={artistIds.length !== 1}>
-                        <option value="">-- Сольный трек (сингл) --</option>
-                        {filteredAlbums.map(album => <option key={album._id} value={album._id}>{album.title}</option>)}
-                    </select>
-                </div>
-            </div>
+            <h3 className="font-bold text-lg">Загрузить трек</h3>
             
             <div>
-                <label className="text-sm font-semibold block mb-1">Название трека *</label>
-                <input type="text" placeholder="Название" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
+                <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
+                <select value={albumId} onChange={e => setAlbumId(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700">
+                    <option value="">-- Сольный трек (сингл) --</option>
+                    {albums.map(album => <option key={album._id} value={album._id}>{album.title}</option>)}
+                </select>
             </div>
 
-            {/* --- 2. Заменяем <select> на наш новый компонент --- */}
-            <GenreSelector selectedGenres={selectedGenres} onGenreChange={setSelectedGenres} />
-            {!albumId && (
-                 <div>
-                    <label className="text-sm font-semibold block mb-1">Обложка сингла</label>
-                    <input type="file" accept="image/*" onChange={handleCoverChange} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
-                    {coverPreview && <img src={coverPreview} alt="Предпросмотр обложки" className="mt-2 w-24 h-24 rounded object-cover"/>}
+            {albumId ? (
+                // --- ИНТЕРФЕЙС ПАКЕТНОЙ ЗАГРУЗКИ ---
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-sm font-semibold block mb-1">Аудиофайлы *</label>
+                        <input type="file" multiple accept="audio/mpeg, audio/wav, audio/mp3" onChange={handleBatchFileChange} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
+                    </div>
+                    {trackList.length > 0 && (
+                        <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                            {trackList.map((track, index) => (
+                                <BatchTrackItem 
+                                    key={index}
+                                    track={track}
+                                    index={index}
+                                    artists={artists}
+                                    onUpdate={updateTrackInList}
+                                    onRemove={() => removeTrackFromList(index)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            ) : (
+                // --- ИНТЕРФЕЙС ЗАГРУЗКИ СИНГЛА ---
+                <div className="space-y-4">
+                     <div>
+                        <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
+                        <MultiArtistSelector artists={artists} value={singleTrackData.artistIds} onChange={(ids) => handleSingleTrackChange('artistIds', ids)} />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-semibold block mb-1">Название трека *</label>
+                            <input type="text" placeholder="Название" value={singleTrackData.title} onChange={e => handleSingleTrackChange('title', e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
+                        </div>
+                        <div>
+                            <label className="text-sm font-semibold block mb-1">Год выпуска</label>
+                            <input type="number" placeholder="Например: 2024" value={singleTrackData.releaseYear} onChange={e => handleSingleTrackChange('releaseYear', e.target.value)} min="1900" max={new Date().getFullYear() + 1} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
+                        </div>
+                    </div>
+                    <GenreSelector selectedGenres={singleTrackData.genres} onGenreChange={(genres) => handleSingleTrackChange('genres', genres)} />
+                    <div>
+                        <label className="text-sm font-semibold block mb-1">Обложка сингла</label>
+                        <input type="file" accept="image/*" onChange={(e) => handleSingleFileChange(e, 'cover')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
+                        {singleTrackData.coverPreview && <img src={singleTrackData.coverPreview} alt="Предпросмотр обложки" className="mt-2 w-24 h-24 rounded object-cover"/>}
+                    </div>
+                     <div>
+                        <label className="text-sm font-semibold block mb-1">Аудиофайл *</label>
+                        <input type="file" accept="audio/mpeg, audio/wav, audio/mp3" onChange={(e) => handleSingleFileChange(e, 'track')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" required />
+                    </div>
                 </div>
             )}
 
-            <div>
-                <label className="text-sm font-semibold block mb-1">Аудиофайл *</label>
-                <input type="file" accept="audio/mpeg, audio/wav, audio/mp3" onChange={handleFileChange} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" required={!isEditMode} />
-                {isEditMode && <p className="text-xs text-slate-400 mt-1">Загрузите новый файл, только если хотите заменить существующий.</p>}
-            </div>
-
             <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
                 {loading && <Loader2 className="animate-spin mr-2"/>}
-                {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? 'Загрузить трек' : 'Отправить на проверку')}
+                Загрузить трек(и)
             </button>
         </form>
     );

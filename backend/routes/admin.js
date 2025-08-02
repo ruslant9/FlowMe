@@ -412,4 +412,41 @@ router.post('/users/:id/ban', async (req, res) => {
     }
 });
 
+router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 20), async (req, res) => {
+    try {
+        const { albumId } = req.params;
+        const { tracksMetadata } = req.body; // Это будет JSON-строка
+
+        const album = await Album.findById(albumId);
+        if (!album) {
+            return res.status(404).json({ message: 'Альбом не найден.' });
+        }
+
+        const parsedMetadata = JSON.parse(tracksMetadata);
+
+        const newTracks = await Promise.all(req.files.map(async (file, index) => {
+            const meta = parsedMetadata[index];
+            const newTrack = new Track({
+                title: meta.title,
+                artist: meta.artistIds, // Массив ID исполнителей
+                album: albumId,
+                durationMs: meta.durationMs,
+                isExplicit: meta.isExplicit,
+                storageKey: file.path,
+                status: 'approved',
+                createdBy: req.user._id,
+                reviewedBy: req.user._id,
+            });
+            return newTrack.save();
+        }));
+
+        const newTrackIds = newTracks.map(track => track._id);
+        await Album.updateOne({ _id: albumId }, { $addToSet: { tracks: { $each: newTrackIds } } });
+
+        res.status(201).json({ message: `${newTracks.length} треков успешно добавлены в альбом.` });
+    } catch (error) {
+        console.error("Ошибка при пакетной загрузке треков:", error);
+        res.status(500).json({ message: 'Ошибка сервера' });
+    }
+});
 module.exports = router;

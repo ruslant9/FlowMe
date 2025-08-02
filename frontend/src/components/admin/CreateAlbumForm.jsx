@@ -15,6 +15,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [title, setTitle] = useState('');
     const [artistId, setArtistId] = useState('');
     const [genre, setGenre] = useState('');
+    const [releaseYear, setReleaseYear] = useState('');
     const [coverArt, setCoverArt] = useState(null);
     const [loading, setLoading] = useState(false);
     const [coverPreview, setCoverPreview] = useState('');
@@ -24,6 +25,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setTitle(initialData.title || '');
             setArtistId(initialData.artist?._id || initialData.artist || '');
             setGenre(initialData.genre || '');
+            setReleaseYear(initialData.releaseYear || '');
             setCoverPreview(initialData.coverArtUrl ? `${API_URL}/${initialData.coverArtUrl}` : '');
         }
     }, [isEditMode, initialData]);
@@ -47,6 +49,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         formData.append('title', title);
         formData.append('artistId', artistId);
         formData.append('genre', genre);
+        if (releaseYear) formData.append('releaseYear', releaseYear);
         if (coverArt) formData.append('coverArt', coverArt);
 
         const isAdmin = currentUser.role === 'admin';
@@ -65,7 +68,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             });
             toast.success(res.data.message || successMessage, { id: toastId });
             if (!isEditMode) {
-                setTitle(''); setArtistId(''); setGenre(''); setCoverArt(null); setCoverPreview('');
+                setTitle(''); setArtistId(''); setGenre(''); setReleaseYear(''); setCoverArt(null); setCoverPreview('');
                 e.target.reset();
             }
             onSuccess();
@@ -88,10 +91,16 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 <ArtistSelector artists={artists} value={artistId} onChange={setArtistId} />
             </div>
             
-            <div>
-                <label className="text-sm font-semibold block mb-1">Название альбома *</label>
-                <input type="text" placeholder="Название" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
-            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="text-sm font-semibold block mb-1">Название альбома *</label>
+                    <input type="text" placeholder="Название" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
+                </div>
+                 <div>
+                    <label className="text-sm font-semibold block mb-1">Год выпуска</label>
+                    <input type="number" placeholder="Например: 2024" value={releaseYear} onChange={e => setReleaseYear(e.target.value)} min="1900" max={new Date().getFullYear() + 1} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
+                </div>
+             </div>
             
             {/* --- 2. Заменяем <select> на наш новый компонент --- */}
             <GenreSelectorSingle selectedGenre={genre} onGenreChange={setGenre} />

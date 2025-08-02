@@ -8,6 +8,8 @@ const TrackSchema = new Schema({
     artist: [{ type: Schema.Types.ObjectId, ref: 'Artist', required: true }],
     album: { type: Schema.Types.ObjectId, ref: 'Album' }, // Необязательно
     genres: [{ type: String, index: true }], // У трека может быть несколько жанров
+    isExplicit: { type: Boolean, default: false },
+    releaseYear: { type: Number },
     storageKey: { type: String, required: true }, // Ключ файла в Cloudflare R2
     albumArtUrl: { type: String }, // Обложка, если это сингл
     durationMs: { type: Number },  
