@@ -3,14 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Music, Edit } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
-import GenreSelectorSingle from './GenreSelectorSingle'; // <-- 1. Импортируем новый компонент
+import GenreSelectorSingle from './GenreSelectorSingle';
 import ArtistSelector from './ArtistSelector';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initialData = null }) => {
+const getImageUrl = (url) => {
+    if (!url || url.startsWith('http') || url.startsWith('blob:')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
+
+export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initialData = null, onEditTrack }) => {
     const { currentUser } = useUser();
     const [title, setTitle] = useState('');
     const [artistId, setArtistId] = useState('');
@@ -19,6 +26,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [coverArt, setCoverArt] = useState(null);
     const [loading, setLoading] = useState(false);
     const [coverPreview, setCoverPreview] = useState('');
+    const [albumTracks, setAlbumTracks] = useState([]);
 
     useEffect(() => {
         if (isEditMode && initialData) {
@@ -27,15 +35,22 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setGenre(initialData.genre || '');
             setReleaseYear(initialData.releaseYear || '');
             setCoverPreview(initialData.coverArtUrl ? getImageUrl(initialData.coverArtUrl) : '');
+
+            const fetchAlbumTracks = async () => {
+                try {
+                    const token = localStorage.getItem('token');
+                    const res = await axios.get(`${API_URL}/api/admin/albums/${initialData._id}/tracks`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setAlbumTracks(res.data);
+                } catch (error) {
+                    toast.error("Не удалось загрузить треки альбома.");
+                }
+            };
+            fetchAlbumTracks();
         }
     }, [isEditMode, initialData]);
 
-    const getImageUrl = (url) => {
-    if (!url || url.startsWith('http') || url.startsWith('blob:')) {
-        return url;
-    }
-    return `${API_URL}/${url}`;
-    };
 
     const handleCoverChange = (e) => {
         const file = e.target.files[0];
@@ -97,7 +112,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 <ArtistSelector artists={artists} value={artistId} onChange={setArtistId} />
             </div>
             
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label className="text-sm font-semibold block mb-1">Название альбома *</label>
                     <input type="text" placeholder="Название" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
@@ -106,16 +121,36 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                     <label className="text-sm font-semibold block mb-1">Год выпуска</label>
                     <input type="number" placeholder="Например: 2024" value={releaseYear} onChange={e => setReleaseYear(e.target.value)} min="1900" max={new Date().getFullYear() + 1} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
                 </div>
-             </div>
+            </div>
             
-            {/* --- 2. Заменяем <select> на наш новый компонент --- */}
             <GenreSelectorSingle selectedGenre={genre} onGenreChange={setGenre} />
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Обложка альбома</label>
-                <input type="file" accept="image/*" onChange={handleCoverChange} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
-                {coverPreview && <img src={coverPreview} alt="Предпросмотр" className="mt-2 w-24 h-24 rounded object-cover"/>}
+                <div className="flex items-center space-x-4">
+                    <input type="file" accept="image/*" onChange={handleCoverChange} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
+                    {coverPreview && <img src={coverPreview} alt="Предпросмотр" className="w-24 h-24 rounded object-cover flex-shrink-0"/>}
+                </div>
             </div>
+
+            {isEditMode && albumTracks.length > 0 && (
+                <div>
+                    <h4 className="font-bold text-md mb-2">Треки в альбоме ({albumTracks.length})</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                        {albumTracks.map(track => (
+                            <div key={track._id} className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                    <Music size={16} className="text-slate-500" />
+                                    <span className="font-semibold text-sm">{track.title}</span>
+                                </div>
+                                <button type="button" onClick={() => onEditTrack(track)} className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600" title="Редактировать трек">
+                                    <Edit size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
                 {loading && <Loader2 className="animate-spin mr-2"/>}

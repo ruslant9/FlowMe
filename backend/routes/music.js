@@ -394,7 +394,10 @@ router.get('/artists/all', async (req, res) => {
 // Получить все одобренные альбомы для выпадающего списка
 router.get('/albums/all', async (req, res) => {
     try {
-        const albums = await Album.find({ status: 'approved' }).select('title artist').sort({ title: 1 });
+        const albums = await Album.find({ status: 'approved' })
+            .populate('artist', 'name')
+            .select('title artist coverArtUrl')
+            .sort({ title: 1 });
         res.json(albums);
     } catch (error) {
         res.status(500).json({ message: "Ошибка загрузки альбомов" });

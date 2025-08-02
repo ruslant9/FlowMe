@@ -449,4 +449,15 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
+
+router.get('/albums/:albumId/tracks', async (req, res) => {
+    try {
+        const { albumId } = req.params;
+        const tracks = await Track.find({ album: albumId }).populate('artist', 'name').sort({ title: 1 });
+        res.json(tracks);
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при загрузке треков альбома.' });
+    }
+});
+
 module.exports = router;

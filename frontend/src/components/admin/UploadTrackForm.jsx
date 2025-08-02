@@ -1,6 +1,6 @@
 // frontend/components/admin/UploadTrackForm.jsx
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Trash2 } from 'lucide-react';
@@ -29,7 +29,7 @@ const ToggleSwitch = ({ checked, onChange, label }) => (
 );
 
 // Компонент для одного трека в списке пакетной загрузки
-const BatchTrackItem = ({ track, index, artists, onUpdate, onRemove }) => {
+const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemove }) => {
     return (
         <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3">
             <div className="flex items-center justify-end">
@@ -37,7 +37,6 @@ const BatchTrackItem = ({ track, index, artists, onUpdate, onRemove }) => {
                     <Trash2 size={16} />
                 </button>
             </div>
-            {/* ИЗМЕНЕНИЕ 1: Оставляем только одно редактируемое поле */}
             <input 
                 type="text" 
                 placeholder="Название трека" 
@@ -46,13 +45,17 @@ const BatchTrackItem = ({ track, index, artists, onUpdate, onRemove }) => {
                 className="w-full p-2 rounded bg-white dark:bg-slate-700 font-semibold"
                 required
             />
-            <MultiArtistSelector 
-                artists={artists}
-                value={track.artistIds}
-                onChange={(ids) => onUpdate(index, 'artistIds', ids)}
-            />
-            {/* ИЗМЕНЕНИЕ 2: Заменяем чекбокс на тумблер */}
-            <ToggleSwitch 
+            <div>
+                <label className="text-sm font-semibold block mb-1">Дополнительные исполнители (фит)</label>
+                 <MultiArtistSelector 
+                    artists={artists}
+                    value={track.artistIds}
+                    onChange={(ids) => onUpdate(index, 'artistIds', ids)}
+                    excludeIds={[mainArtistId]}
+                    required={false}
+                />
+            </div>
+             <ToggleSwitch 
                 checked={track.isExplicit}
                 onChange={(checked) => onUpdate(index, 'isExplicit', checked)}
                 label="Explicit (ненормативная лексика)"
@@ -82,6 +85,17 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
         releaseYear: ''
     });
 
+    const mainAlbumArtistId = useMemo(() => {
+        if (!albumId) return null;
+        const album = albums.find(a => a._id === albumId);
+        return album?.artist?._id || null;
+    }, [albumId, albums]);
+
+    useEffect(() => {
+        // При смене альбома сбрасываем список файлов
+        setTrackList([]);
+    }, [albumId]);
+
     const handleSingleTrackChange = (field, value) => {
         setSingleTrackData(prev => ({ ...prev, [field]: value }));
     };
@@ -109,13 +123,12 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
              let duration = 0;
              audio.onloadedmetadata = () => {
                  duration = Math.round(audio.duration * 1000);
-                 // Обновляем состояние после получения метаданных
                  setTrackList(currentList => currentList.map(t => t.file === file ? { ...t, durationMs: duration } : t));
              };
             return {
                 file,
-                title: file.name.replace(/\.[^/.]+$/, ""), // Убираем расширение файла
-                artistIds: [],
+                title: file.name.replace(/\.[^/.]+$/, ""),
+                artistIds: [], // Изначально пусто, так как основной артист уже есть
                 isExplicit: false,
                 durationMs: 0
             };
@@ -142,7 +155,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
         
         try {
             const token = localStorage.getItem('token');
-            // Если выбран альбом - используем пакетную загрузку
             if (albumId) {
                 if (trackList.length === 0) {
                     toast.error("Выберите аудиофайлы для загрузки.", { id: toastId });
@@ -153,7 +165,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                 const formData = new FormData();
                 const metadata = trackList.map(t => ({
                     title: t.title,
-                    artistIds: t.artistIds,
+                    artistIds: [mainAlbumArtistId, ...t.artistIds], // Основной артист + фиты
                     isExplicit: t.isExplicit,
                     durationMs: t.durationMs
                 }));
@@ -167,7 +179,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
 
-            } else { // Иначе - загружаем сингл
+            } else {
                 if (!singleTrackData.trackFile) {
                     toast.error("Аудиофайл обязателен.", { id: toastId });
                     setLoading(false);
@@ -190,7 +202,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
 
             toast.success("Треки успешно загружены!", { id: toastId });
             onSuccess();
-            // Сброс всех форм
             setAlbumId('');
             setTrackList([]);
             setSingleTrackData({ title: '', artistIds: [], genres: [], trackFile: null, durationMs: 0, coverArt: null, coverPreview: '', releaseYear: '' });
@@ -213,7 +224,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
             </div>
 
             {albumId ? (
-                // --- ИНТЕРФЕЙС ПАКЕТНОЙ ЗАГРУЗКИ ---
                 <div className="space-y-4">
                     <div>
                         <label className="text-sm font-semibold block mb-1">Аудиофайлы *</label>
@@ -226,7 +236,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                         </div>
                     </div>
                     {trackList.length > 0 && (
-                        // ИЗМЕНЕНИЕ 3: Удаляем max-h-96 и overflow-y-auto
                         <div className="space-y-3 pr-2">
                             {trackList.map((track, index) => (
                                 <BatchTrackItem 
@@ -234,6 +243,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                                     track={track}
                                     index={index}
                                     artists={artists}
+                                    mainArtistId={mainAlbumArtistId}
                                     onUpdate={updateTrackInList}
                                     onRemove={() => removeTrackFromList(index)}
                                 />
@@ -242,7 +252,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                     )}
                 </div>
             ) : (
-                // --- ИНТЕРФЕЙС ЗАГРУЗКИ СИНГЛА ---
                 <div className="space-y-4">
                      <div>
                         <label className="text-sm font-semibold block mb-1">Исполнитель *</label>

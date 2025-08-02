@@ -1,8 +1,8 @@
-// frontend/components/admin/AlbumSelector.jsx --- НОВЫЙ ФАЙЛ ---
+// frontend/components/admin/AlbumSelector.jsx
 
 import React, { useState, useMemo, Fragment } from 'react';
 import { Combobox, Transition } from '@headlessui/react';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Music } from 'lucide-react';
 
 const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
     const [query, setQuery] = useState('');
@@ -26,7 +26,7 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
             <div className="relative">
                 <div className="relative w-full cursor-default overflow-hidden rounded-lg bg-white dark:bg-slate-700 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
                     <Combobox.Input
-                        className="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-700 focus:ring-0 disabled:opacity-50"
+                        className="w-full border-none py-3 pl-4 pr-10 text-sm leading-5 text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-700 focus:ring-0 disabled:opacity-50"
                         displayValue={(album) => album?.title || ''}
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder="-- Сольный трек (сингл) --"
@@ -70,8 +70,22 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
                                 >
                                     {({ selected, active }) => (
                                         <>
-                                            <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                {album.title}
+                                            <span className="flex items-center">
+                                                <div className="w-8 h-8 rounded-md bg-slate-200 dark:bg-slate-600 mr-3 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                                                    {album.coverArtUrl ? (
+                                                        <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover"/>
+                                                    ) : (
+                                                        <Music size={16} />
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                        {album.title}
+                                                    </span>
+                                                    <span className={`text-xs ${active ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                        {album.artist.name}
+                                                    </span>
+                                                </div>
                                             </span>
                                             {selected ? (
                                                 <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`}>
