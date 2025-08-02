@@ -364,8 +364,15 @@ router.get('/personalized-recommendations', authMiddleware, async (req, res) => 
         }
 
         let searchQueries = new Set();
-        const topArtists = profile.topArtists.slice(0, 5).map(a => a.name);
-        const topGenres = profile.topGenres.slice(0, 4).map(g => g.name);
+        const topArtists = profile.topArtists
+    .filter(a => a.name) // <-- ДОБАВЛЕНО: Убираем исполнителей без имени
+    .slice(0, 5)
+    .map(a => a.name);
+
+const topGenres = profile.topGenres
+    .filter(g => g.name) // <-- ДОБАВЛЕНО: Убираем жанры без имени
+    .slice(0, 4)
+    .map(g => g.name);
 
         topArtists.forEach(artist => searchQueries.add(`${artist} official`));
         topGenres.forEach(genre => searchQueries.add(`${genre} music new`));
