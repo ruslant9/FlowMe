@@ -337,4 +337,33 @@ router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
     }
 });
 
+router.get('/main-page-data', authMiddleware, async (req, res) => {
+    try {
+        // Параллельно запрашиваем все необходимые данные
+        const [newReleases, popularHits, popularArtists] = await Promise.all([
+            // Новинки: последние добавленные треки
+            Track.find({ status: 'approved' })
+                 .sort({ createdAt: -1 })
+                 .limit(10)
+                 .populate('artist', 'name')
+                 .lean(),
+            // Хиты: треки с наибольшим количеством прослушиваний
+            Track.find({ status: 'approved' })
+                 .sort({ playCount: -1 })
+                 .limit(10)
+                 .populate('artist', 'name')
+                 .lean(),
+            // Популярные артисты (упрощенная логика, можно будет усложнить)
+            Artist.find({ status: 'approved' })
+                  .limit(6)
+                  .lean() 
+        ]);
+
+        res.json({ newReleases, popularHits, popularArtists });
+    } catch (error) {
+        console.error("Ошибка при загрузке данных для главной страницы музыки:", error);
+        res.status(500).json({ message: 'Не удалось загрузить рекомендации.' });
+    }
+});
+
 module.exports = router;

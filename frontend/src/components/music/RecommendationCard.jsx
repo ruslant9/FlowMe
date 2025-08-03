@@ -6,45 +6,53 @@ import { Play, Pause, Loader2 } from 'lucide-react';
 
 const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack }) => {
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем функции очистки ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем универсальные функции ---
     const cleanTitle = (title) => {
         if (!title) return '';
+        // Эта функция убирает из названия трека лишние приписки (official audio, music video и т.д.)
         return title.replace(
             /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
             ''
         ).trim();
     };
-    const cleanArtist = (artist) => {
-        if (!artist) return '';
-        if (artist.endsWith(' - Topic')) {
-            return artist.substring(0, artist.length - ' - Topic'.length).trim();
+
+    const formatArtistName = (artistData) => {
+        if (!artistData) return '';
+        // Если это массив объектов (новый формат из БД)
+        if (Array.isArray(artistData)) {
+            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
         }
-        return artist;
+        // Если это объект (может прийти в некоторых случаях)
+        if (typeof artistData === 'object' && artistData.name) {
+            return artistData.name.replace(' - Topic', '').trim();
+        }
+        // Если это просто строка (старый формат)
+        if (typeof artistData === 'string') {
+            return artistData.replace(' - Topic', '').trim();
+        }
+        return '';
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const handlePlayClick = (e) => {
         e.stopPropagation();
         if (isCurrent) {
             onPlayPause();
         } else {
-            onSelectTrack(track.youtubeId);
+            onSelectTrack(); // Функция onSelectTrack уже знает, какой трек выбрать
         }
     };
 
     return (
-        // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Меняем стили карточки ---
         <motion.div
-            className="flex-shrink-0 w-full rounded-2xl flex flex-col p-4 relative overflow-hidden group aspect-[4/5]" // Используем aspect-ratio и меньшее скругление
+            className="flex-shrink-0 w-full rounded-2xl flex flex-col p-4 relative overflow-hidden group aspect-[4/5]"
             whileHover={{ scale: 1.02, y: -5 }}
             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            onClick={() => onSelectTrack(track.youtubeId)} // Клик по всей карточке
+            onClick={onSelectTrack}
         >
-            {/* Background Image */}
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${track.albumArtUrl})` }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
             
-            {/* Play Button in the corner */}
             <div className="absolute top-4 right-4 z-20">
                  <button
                     onClick={handlePlayClick}
@@ -55,13 +63,11 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </div>
 
             <div className="relative z-10 text-white mt-auto">
-                {/* --- ИЗМЕНЕНИЕ 3: Применяем функции очистки --- */}
                 <h3 className="text-base font-bold truncate">{cleanTitle(track.title)}</h3>
-                <p className="text-xs opacity-80 truncate">{cleanArtist(track.artist)}</p>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
+                {/* Применяем новую универсальную функцию */}
+                <p className="text-xs opacity-80 truncate">{formatArtistName(track.artist)}</p>
             </div>
         </motion.div>
-        // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
     );
 };
 
