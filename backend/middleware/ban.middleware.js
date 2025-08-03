@@ -1,16 +1,16 @@
-// backend/middleware/ban.middleware.js --- НОВЫЙ ФАЙЛ ---
+// backend/middleware/ban.middleware.js
 
 const User = require('../models/User');
 
 module.exports = async (req, res, next) => {
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Упрощаем и исправляем проверку разрешенных путей ---
-    if (req.path === '/profile' && (req.method === 'GET' || req.method === 'PUT')) {
-        // Разрешаем GET для просмотра информации о бане и PUT для обновления статуса
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Используем полный путь (originalUrl) для надежности ---
+    // Разрешаем GET-запрос на /api/user/profile, чтобы забаненный пользователь мог загрузить информацию о своем бане.
+    if (req.originalUrl === '/api/user/profile' && req.method === 'GET') {
         return next();
     }
-    if (req.path === '/appeal' && req.method === 'POST') {
-        // Разрешаем отправку апелляции
+    // Разрешаем POST-запрос на /api/submissions/appeal для отправки жалобы.
+    if (req.originalUrl === '/api/submissions/appeal' && req.method === 'POST') {
         return next();
     }
     // --- КОНЕЦ ИЗМЕНЕНИЯ ---
@@ -21,7 +21,7 @@ module.exports = async (req, res, next) => {
             return res.status(401).json({ message: 'Пользователь не найден для проверки бана.' });
         }
 
-        const { isBanned, banExpires, banReason } = user.banInfo;
+        const { isBanned, banExpires } = user.banInfo;
 
         if (isBanned) {
             const now = new Date();

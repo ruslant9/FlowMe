@@ -143,7 +143,7 @@ const MainLayout = ({ children }) => {
         </div>
       )}
       
-      <div className={`flex relative z-10 h-full overflow-hidden ${currentTrack ? 'pb-[100px]' : ''}`}>
+      <div className={`flex relative z-10 h-full ${currentTrack ? 'pb-[100px]' : ''}`}>
         <Sidebar themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} />
         <div className="flex-1 relative overflow-y-auto">
           {children}
@@ -197,7 +197,7 @@ const BannedOverlay = ({ banInfo }) => {
                 >
                     <ShieldAlert size={64} className="mx-auto text-red-300 mb-4" />
                     <h1 className="text-3xl font-bold mb-2">Доступ ограничен</h1>
-                    <p className="text-lg mb-4 bg-red-500/10">
+                    <p className="text-lg mb-4 bg-red-500/10 p-2 rounded-md">
                         Вы были заблокированы. Блокировка истекает: <strong className="font-bold">{formattedDate}</strong>.
                     </p>
                     <p className="text-md bg-red-500/30 p-3 rounded-lg mb-8">
