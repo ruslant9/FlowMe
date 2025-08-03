@@ -4,13 +4,16 @@ const User = require('../models/User');
 
 module.exports = async (req, res, next) => {
     
-    const allowedPaths = ['/profile', '/appeal'];
-    if (req.method === 'GET' && req.path === '/profile') {
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Упрощаем и исправляем проверку разрешенных путей ---
+    if (req.path === '/profile' && (req.method === 'GET' || req.method === 'PUT')) {
+        // Разрешаем GET для просмотра информации о бане и PUT для обновления статуса
         return next();
     }
-    if (req.method === 'POST' && req.path.includes('/submissions/appeal')) {
+    if (req.path === '/appeal' && req.method === 'POST') {
+        // Разрешаем отправку апелляции
         return next();
     }
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     try {
         const user = await User.findById(req.user.userId).select('banInfo');
