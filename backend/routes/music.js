@@ -171,7 +171,17 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
         if (!album || album.status !== 'approved') {
             return res.status(404).json({ message: 'Альбом не найден.' });
         }
-        res.json(album);
+        const processedTracks = album.tracks.map(track => ({
+            ...track,
+            // Если у трека нет своей обложки, используем обложку альбома
+            albumArtUrl: track.albumArtUrl || album.coverArtUrl 
+        }));
+
+        // Создаем финальный объект с обработанным списком треков
+        const finalAlbumData = { ...album, tracks: processedTracks };
+        
+        res.json(finalAlbumData);
+        
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при загрузке альбома.' });
     }
@@ -260,9 +270,12 @@ router.get('/search-all', authMiddleware, async (req, res) => {
             Track.countDocuments(trackQuery)
         ]);
         
-        // 4. Обрабатываем треки, чтобы у них всегда была обложка
+        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        // 4. Обрабатываем треки, чтобы у них всегда была обложка альбома (если она есть)
         const processedTracks = tracks.map(track => {
-            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+            // Если трек принадлежит альбому и у этого альбома есть обложка,
+            // мы принудительно используем обложку альбома.
+            if (track.album && track.album.coverArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
             }
             return track;

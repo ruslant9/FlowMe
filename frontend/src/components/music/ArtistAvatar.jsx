@@ -4,16 +4,19 @@ import { motion } from 'framer-motion';
 import Avatar from '../Avatar';
 
 const ArtistAvatar = ({ artistName, onClick, avatarUrl }) => {
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    // --- ИСПРАВЛЕНИЕ ---
     const formatArtistName = (artist) => {
+        // 1. Проверяем, что данные существуют
         if (!artist) return '';
         
-        // Эта функция получает только строку, поэтому логика простая
+        // 2. Эта функция получает только строку, поэтому логика простая.
+        // Проверяем тип, чтобы избежать ошибки.
         if (typeof artist === 'string') {
             if (artist.endsWith(' - Topic')) {
                 return artist.substring(0, artist.length - ' - Topic'.length).trim();
             }
         }
+        // 3. Возвращаем как есть, если это не строка или не содержит " - Topic"
         return artist;
     };
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
