@@ -277,7 +277,7 @@ const MusicPage = () => {
                                         <TrackList
                                             tracks={searchResults.tracks}
                                             onSelectTrack={handleSelectTrack}
-                                            currentPlayingTrackId={currentTrack?.youtubeId}
+                                            currentPlayingTrackId={currentTrack ? currentTrack.youtubeId : null}
                                             isPlaying={isPlaying}
                                             onToggleSave={onToggleLike}
                                             myMusicTrackIds={myMusicTrackIds}

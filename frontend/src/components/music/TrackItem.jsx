@@ -16,7 +16,7 @@ const formatTime = (seconds) => {
 const TrackItem = ({ 
     track, 
     onSelectTrack, 
-    isCurrent, 
+    currentPlayingTrackId, // <<<--- ИЗМЕНЕНИЕ: Принимаем ID, а не булево значение
     isPlaying, 
     onToggleSave, 
     isSaved, 
@@ -32,6 +32,11 @@ const TrackItem = ({
     onRemoveFromPlaylist 
 }) => {
     const { showConfirmation } = useModal();
+    
+    // <<<--- НАЧАЛО ИСПРАВЛЕНИЯ 1: Усиленная проверка isCurrent ---
+    const isCurrent = currentPlayingTrackId && track.youtubeId === currentPlayingTrackId;
+    // <<<--- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
+    
     const duration_ms = track.durationMs;
     const minutes = duration_ms ? Math.floor(duration_ms / 60000) : 0;
     const seconds = duration_ms ? ((duration_ms % 60000) / 1000).toFixed(0) : 0;
@@ -39,7 +44,6 @@ const TrackItem = ({
 
     const isLoading = track.youtubeId === loadingTrackId;
     
-    // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -48,31 +52,22 @@ const TrackItem = ({
         ).trim();
     };
     
-    // Эта функция теперь обрабатывает все возможные форматы данных
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
-        
-        // Формат 1: Массив объектов (из нашей БД)
         if (Array.isArray(artistData)) {
             return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
         }
-        
-        // Формат 2: Просто строка (из кэша Spotify/YouTube)
         if (typeof artistData === 'string') {
             return artistData.replace(' - Topic', '').trim();
         }
-
-        // Формат 3: Один объект (на всякий случай)
         if (typeof artistData === 'object' && artistData.name) {
             return artistData.name.replace(' - Topic', '').trim();
         }
-        
         return '';
     };
 
     const cleanedTitle = cleanTitle(track.title);
     const cleanedArtist = formatArtistName(track.artist);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handlePlayButtonClick = (e) => {
         e.stopPropagation();
