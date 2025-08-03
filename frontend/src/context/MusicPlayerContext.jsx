@@ -84,14 +84,9 @@ export const MusicPlayerProvider = ({ children }) => {
     // --- НАЧАЛО ИСПРАВЛЕНИЯ: Полностью переработанная функция playTrack ---
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
-        
-        // Если уже идет загрузка другого трека, игнорируем новый вызов, чтобы предотвратить гонку состояний
         if (isLoadingPlayback) {
-            toast.error("Подождите, другой трек уже загружается.");
             return;
         }
-
-        // Отменяем любой предыдущий запрос на получение URL, если он еще не завершился
         if (abortControllerRef.current) {
             abortControllerRef.current.abort('New track selected');
         }

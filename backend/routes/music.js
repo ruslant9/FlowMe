@@ -512,13 +512,100 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
             popularHits.push(...generalPopular);
         }
 
-        const popularArtists = await Artist.find({ status: 'approved' }).limit(6).lean();
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // Заменяем статический запрос на динамическую агрегацию для определения популярных артистов
+        const popularArtists = await Track.aggregate([
+            // 1. Выбираем только одобренные треки из основной библиотеки
+            { $match: { status: 'approved', type: 'library_track' } },
+            // 2. "Разворачиваем" массив артистов, чтобы работать с каждым отдельно
+            { $unwind: "$artist" },
+            // 3. Группируем по ID артиста и суммируем все прослушивания их треков
+            {
+                $group: {
+                    _id: "$artist",
+                    totalPlayCount: { $sum: "$playCount" }
+                }
+            },
+            // 4. Сортируем по убыванию общего числа прослушиваний
+            { $sort: { totalPlayCount: -1 } },
+            // 5. Оставляем только топ-6
+            { $limit: 6 },
+            // 6. "Подтягиваем" полную информацию об артистах (имя, аватар и т.д.)
+            {
+                $lookup: {
+                    from: "artists", // Название коллекции в MongoDB
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "artistDetails"
+                }
+            },
+            // 7. "Разворачиваем" массив с деталями артиста (в нем всегда будет 1 элемент)
+            { $unwind: "$artistDetails" },
+            // 8. Заменяем корневой документ на детали артиста, чтобы получить чистый объект артиста
+            {
+                $replaceRoot: { newRoot: "$artistDetails" }
+            }
+        ]);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         res.json({ newReleases, popularHits, popularArtists });
 
     } catch (error) {
         console.error("Ошибка при загрузке рекомендаций:", error);
         res.status(500).json({ message: 'Не удалось загрузить рекомендации.' });
+    }
+});
+
+router.get('/user/:userId/saved', authMiddleware, async (req, res) => {
+    try {
+        const { userId: targetUserId } = req.params;
+        const requesterId = req.user.userId;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const targetUser = await User.findById(targetUserId).select('privacySettings friends blacklist');
+        if (!targetUser) {
+            return res.status(404).json({ message: "Пользователь не найден." });
+        }
+
+        if (targetUser.blacklist.includes(requesterId)) {
+            return res.status(403).json({ message: "Вы не можете просматривать музыку этого пользователя." });
+        }
+        
+        // Импортируем утилиту для проверки приватности
+        const { isAllowedByPrivacy } = require('../utils/privacy');
+        if (!isAllowedByPrivacy(targetUser.privacySettings?.viewMusic, requesterId, targetUser)) {
+            return res.status(403).json({ message: "Пользователь скрыл свою музыку." });
+        }
+
+        const query = { user: targetUserId, type: 'saved' };
+        
+        const totalCount = await Track.countDocuments(query);
+        const savedTracks = await Track.find(query)
+            .sort({ savedAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate('artist', 'name')
+            .populate('album', 'title coverArtUrl')
+            .lean();
+
+        const processedTracks = savedTracks.map(track => {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                return { ...track, albumArtUrl: track.album.coverArtUrl };
+            }
+            return track;
+        });
+        
+        res.json({
+            tracks: processedTracks,
+            totalCount,
+            hasMore: (skip + savedTracks.length) < totalCount
+        });
+
+    } catch (error) {
+        console.error("Ошибка при получении музыки пользователя:", error);
+        res.status(500).json({ message: "Ошибка сервера при получении музыки пользователя." });
     }
 });
 

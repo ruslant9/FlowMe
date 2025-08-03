@@ -1,11 +1,16 @@
 // frontend/src/pages/WorkshopPage.jsx --- НОВЫЙ ФАЙЛ ---
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
-import { Brush, Star, Library, Search } from 'lucide-react';
-// import MyPacks from '../components/workshop/MyPacks';
-// import AddedPacks from '../components/workshop/AddedPacks';
-// import SearchPacks from '../components/workshop/SearchPacks';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X } from 'lucide-react';
+import CreateEditPackModal from '../components/workshop/CreateEditPackModal';
+import PackCard from '../components/workshop/PackCard';
+import { useUser } from '../context/UserContext';
+import { useModal } from '../hooks/useModal';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
@@ -24,45 +29,212 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
 const WorkshopPage = () => {
     useTitle('Мастерская');
     const [activeTab, setActiveTab] = useState('my');
+    const { currentUser } = useUser();
+    const { showConfirmation } = useModal();
+    
+    // Состояния для данных
+    const [myPacks, setMyPacks] = useState([]);
+    const [addedPacks, setAddedPacks] = useState([]);
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchPage, setSearchPage] = useState(1);
+    const [searchTotalPages, setSearchTotalPages] = useState(1);
+    
+    // Состояния UI
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPack, setEditingPack] = useState(null);
 
+    const addedPackIds = useMemo(() => new Set(addedPacks.map(p => p._id)), [addedPacks]);
+
+    const fetchData = useCallback(async (tab, query = '', page = 1) => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const headers = { headers: { Authorization: `Bearer ${token}` } };
+            
+            if (tab === 'my') {
+                const res = await axios.get(`${API_URL}/api/workshop/packs/my`, headers);
+                setMyPacks(res.data);
+            } else if (tab === 'added') {
+                const res = await axios.get(`${API_URL}/api/workshop/packs/added`, headers);
+                setAddedPacks(res.data);
+            } else if (tab === 'search') {
+                const res = await axios.get(`${API_URL}/api/workshop/packs/search?q=${query}&page=${page}`, headers);
+                setSearchResults(res.data.packs);
+                setSearchTotalPages(res.data.totalPages);
+                setSearchPage(res.data.currentPage);
+            }
+        } catch (error) {
+            toast.error(`Не удалось загрузить данные для вкладки "${tab}"`);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+    
+    // Первоначальная загрузка и загрузка при смене вкладок
+    useEffect(() => {
+        fetchData(activeTab, searchQuery, 1);
+    }, [activeTab, fetchData]);
+
+    // Поиск с задержкой
+    useEffect(() => {
+        if (activeTab === 'search') {
+            const debounce = setTimeout(() => {
+                fetchData('search', searchQuery, 1);
+            }, 300);
+            return () => clearTimeout(debounce);
+        }
+    }, [searchQuery, activeTab, fetchData]);
+
+    const handleCreatePack = () => {
+        if (!currentUser?.premium?.isActive) {
+            toast.error('Создание паков доступно только Premium-пользователям.');
+            return;
+        }
+        setEditingPack(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEditPack = (pack) => {
+        setEditingPack(pack);
+        setIsModalOpen(true);
+    };
+
+    const handleDeletePack = (pack) => {
+        showConfirmation({
+            title: `Удалить пак "${pack.name}"?`,
+            message: "Это действие необратимо. Пак будет удален у всех пользователей, которые его добавили.",
+            onConfirm: async () => {
+                const toastId = toast.loading('Удаление...');
+                try {
+                    const token = localStorage.getItem('token');
+                    await axios.delete(`${API_URL}/api/workshop/packs/${pack._id}`, { headers: { Authorization: `Bearer ${token}` } });
+                    toast.success('Пак удален', { id: toastId });
+                    fetchData('my'); // Обновляем список своих паков
+                    if (activeTab === 'added') fetchData('added'); // И добавленных тоже
+                } catch (error) {
+                    toast.error('Ошибка удаления', { id: toastId });
+                }
+            }
+        });
+    };
+
+    const handleAddOrRemovePack = async (pack) => {
+        const isAdded = addedPackIds.has(pack._id);
+        const endpoint = `${API_URL}/api/workshop/packs/${pack._id}/add`;
+        const method = isAdded ? 'delete' : 'post';
+        
+        try {
+            const token = localStorage.getItem('token');
+            await axios[method](endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
+            toast.success(isAdded ? 'Пак удален из вашей библиотеки' : 'Пак добавлен в вашу библиотеку');
+            fetchData('added'); // Обновляем список добавленных
+        } catch (error) {
+            toast.error('Произошла ошибка');
+        }
+    };
+    
     const renderContent = () => {
-        // Здесь будут рендериться компоненты для каждой вкладки
-        // Для примера пока поставим заглушки
+        if (loading) {
+            return <div className="flex justify-center py-10"><Loader2 className="animate-spin w-8 h-8" /></div>;
+        }
+
+        let packs, emptyMessage, cardActions;
+        
         switch (activeTab) {
             case 'my':
-                return <div>Контент для "Мои паки"</div>; // <MyPacks />
+                packs = myPacks;
+                emptyMessage = 'Вы еще не создали ни одного пака.';
+                cardActions = (pack) => (
+                    <>
+                        <button onClick={() => handleEditPack(pack)} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"><Edit size={16} /></button>
+                        <button onClick={() => handleDeletePack(pack)} className="p-2 bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800"><Trash2 size={16} /></button>
+                    </>
+                );
+                break;
             case 'added':
-                return <div>Контент для "Добавленные"</div>; // <AddedPacks />
+                packs = addedPacks;
+                emptyMessage = 'Вы еще не добавили ни одного пака. Найдите их в поиске!';
+                cardActions = (pack) => (
+                    <button onClick={() => handleAddOrRemovePack(pack)} className="px-3 py-2 text-sm font-semibold bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 flex items-center space-x-2">
+                        <X size={16} /><span>Удалить</span>
+                    </button>
+                );
+                break;
             case 'search':
-                return <div>Контент для "Поиск"</div>; // <SearchPacks />
+                packs = searchResults;
+                emptyMessage = searchQuery ? 'По вашему запросу ничего не найдено.' : 'Найдите стикеры и эмодзи, созданные другими пользователями.';
+                cardActions = (pack) => {
+                    const isAdded = addedPackIds.has(pack._id);
+                    const isCreator = pack.creator._id === currentUser._id;
+                    if (isCreator) return <span className="text-xs font-semibold text-slate-500">Ваш пак</span>;
+                    return (
+                        <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
+                            {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
+                            <span>{isAdded ? 'Добавлено' : 'Добавить'}</span>
+                        </button>
+                    );
+                };
+                break;
             default:
                 return null;
         }
+
+        return (
+            <div>
+                {packs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {packs.map(pack => <PackCard key={pack._id} pack={pack}>{cardActions(pack)}</PackCard>)}
+                    </div>
+                ) : (
+                    <div className="text-center py-10 text-slate-500">{emptyMessage}</div>
+                )}
+                {activeTab === 'search' && searchTotalPages > 1 && (
+                     <div className="flex justify-center items-center space-x-2 mt-6">
+                        <button onClick={() => fetchData('search', searchQuery, searchPage - 1)} disabled={searchPage === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>
+                        <span>Стр. {searchPage} из {searchTotalPages}</span>
+                        <button onClick={() => fetchData('search', searchQuery, searchPage + 1)} disabled={searchPage === searchTotalPages} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Вперед</button>
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
         <main className="flex-1 p-4 md:p-8">
+            <CreateEditPackModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                isEditMode={!!editingPack}
+                initialData={editingPack}
+                onSave={() => fetchData('my')}
+            />
             <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold">Мастерская</h1>
-                    {/* Кнопка создания будет внутри компонента MyPacks */}
+                    {activeTab === 'my' && (
+                        <button onClick={handleCreatePack} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                            <PlusCircle size={18} /><span>Создать пак</span>
+                        </button>
+                    )}
                 </div>
                 
                 <div className="flex space-x-2 border-b border-slate-300 dark:border-slate-700 mb-6">
-                    <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>
-                        Мои паки
-                    </TabButton>
-                    <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>
-                        Добавленные
-                    </TabButton>
-                    <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>
-                        Поиск паков
-                    </TabButton>
+                    <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
+                    <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
+                    <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск паков</TabButton>
                 </div>
 
-                <div>
-                    {renderContent()}
-                </div>
+                {activeTab === 'search' && (
+                    <div className="relative mb-6">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
+                            className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg"/>
+                    </div>
+                )}
+
+                <div>{renderContent()}</div>
             </div>
         </main>
     );

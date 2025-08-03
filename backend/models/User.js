@@ -26,7 +26,6 @@ const premiumInfoSchema = new Schema({
     plan: { type: String, enum: ['1_month', '3_months', '6_months'], default: null },
 }, { _id: false });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Новые схемы для кастомизации акцентов ---
 const customAccentSchema = new Schema({
     _id: { type: Schema.Types.ObjectId, auto: true },
     name: { type: String, required: true },
@@ -44,20 +43,15 @@ const premiumCustomizationSchema = new Schema({
         id: { type: String, default: null },
         url: { type: String, default: null }
     },
-    // ID активного акцента. Может быть строкой (для готовых) или ObjectId (для кастомных)
     activeCardAccent: { type: Schema.Types.Mixed, default: null },
-    // Библиотека созданных пользователем акцентов
     customCardAccents: [customAccentSchema]
 }, { _id: false });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Новые поля для блокировки ---
 const banInfoSchema = new Schema({
     isBanned: { type: Boolean, default: false, index: true },
     banReason: { type: String, default: null },
     banExpires: { type: Date, default: null }
 }, { _id: false });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const UserSchema = new Schema({
     username: { type: String, required: true, unique: true, trim: true },
@@ -90,7 +84,9 @@ const UserSchema = new Schema({
     resetPasswordToken: String,
     resetPasswordExpires: Date,
     subscribedCommunities: [{ type: Schema.Types.ObjectId, ref: 'Community' }],
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     addedContentPacks: [{ type: Schema.Types.ObjectId, ref: 'ContentPack' }]
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 }, { timestamps: true });
 UserSchema.add({ banInfo: { type: banInfoSchema, default: () => ({}) } });
 
