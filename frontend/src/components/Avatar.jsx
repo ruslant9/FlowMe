@@ -50,8 +50,10 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
     const bgColor = avatarColors[colorIndex];
 
     const hasCustomBorder = customBorder && customBorder.type !== 'none';
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Определяем, используется ли псевдо-элемент для рамки ---
     const isPseudoElementBorder = hasCustomBorder && customBorder.pseudo;
     const borderClass = hasCustomBorder && customBorder.type.startsWith('animated') ? `premium-border-${customBorder.type}` : '';
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const borderStyle = hasCustomBorder && customBorder.type === 'static' ? { padding: '4px', backgroundColor: customBorder.value } : {};
     
     const defaultPremiumClass = isPremium && !customBorder ? 'p-1 premium-gradient-bg' : '';
@@ -85,7 +87,9 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
                     {firstLetter}
                 </div>
             )}
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Корректируем z-index, чтобы не перекрывать псевдо-элементы ---
             {(hasCustomBorder || defaultPremiumClass) && <div className={`absolute inset-1 rounded-full bg-slate-50 dark:bg-slate-900 ${isPseudoElementBorder ? '-z-20' : '-z-10'}`}></div>}
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             
             {onClick && children && (
                 <>

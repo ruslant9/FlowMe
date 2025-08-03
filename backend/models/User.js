@@ -36,7 +36,9 @@ const customAccentSchema = new Schema({
 const premiumCustomizationSchema = new Schema({
     avatarBorder: {
         id: { type: String, default: 'none' },
-        type: { type: String, enum: ['none', 'static', 'animated-1', 'animated-2'], default: 'none' },
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем новые типы рамок в список разрешенных ---
+        type: { type: String, enum: ['none', 'static', 'animated-1', 'animated-2', 'animated-hearts', 'animated-neon', 'animated-orbit'], default: 'none' },
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         value: { type: String, default: null } // for static color hex value
     },
     usernameEmoji: {

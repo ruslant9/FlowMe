@@ -13,79 +13,61 @@ const sharp = require('sharp');
 const ColorThief = require('colorthief');
 const { Readable } = require('stream');
 
-// Используем хранилище в памяти, чтобы сначала обработать файл
 const memoryStorage = multer.memoryStorage();
 const upload = multer({ storage: memoryStorage });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Обновленная функция обработки стикеров ---
 const processSticker = async (buffer) => {
     try {
         const image = sharp(buffer);
-
-        // Вписываем оригинальное изображение в новый холст, сохраняя пропорции
         const resizedImageBuffer = await image
             .resize({
                 width: 300,
                 height: 300,
-                fit: 'inside', // Вписывает, не растягивая
-                withoutEnlargement: true // Не увеличивает, если картинка меньше
+                fit: 'inside',
+                withoutEnlargement: true
             })
             .toBuffer();
 
-        // Создаем новый квадратный прозрачный фон
         const finalBuffer = await sharp({
             create: {
                 width: 300,
                 height: 300,
-                channels: 4, // 4 канала (RGBA) для поддержки прозрачности
-                background: { r: 0, g: 0, b: 0, alpha: 0 } // Полностью прозрачный фон
+                channels: 4,
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
             }
         })
-        .composite([{ input: resizedImageBuffer }]) // Накладываем наше изображение на прозрачный фон
-        .webp({ quality: 90 }) // Конвертируем в WebP с хорошим качеством
+        .composite([{ input: resizedImageBuffer }])
+        .webp({ quality: 90 })
         .toBuffer();
 
         return finalBuffer;
     } catch (error) {
         console.error("Ошибка обработки стикера:", error);
-        // В случае ошибки возвращаем оригинальный буфер, чтобы избежать падения
         return buffer;
     }
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-// Наш middleware для обработки и загрузки файлов
 const processAndUpload = (req, res, next) => {
     if (!req.files || req.files.length === 0) {
         return next();
     }
-
-    const type = req.body.type || 'sticker'; // По умолчанию считаем стикером
-    
+    const type = req.body.type || 'sticker';
     const uploadPromises = req.files.map(file => new Promise(async (resolve, reject) => {
         let bufferToUpload = file.buffer;
-
-        // Обрабатываем только стикеры
         if (type === 'sticker') {
             bufferToUpload = await processSticker(file.buffer);
         }
-
         const uploadStream = cloudinary.uploader.upload_stream(
             { folder: 'content_packs', resource_type: 'image' },
             (error, result) => {
-                if (error) {
-                    return reject(error);
-                }
-                // Добавляем результат загрузки в объект файла для следующего middleware
+                if (error) return reject(error);
                 file.path = result.secure_url;
                 file.filename = result.public_id;
                 resolve();
             }
         );
-
         Readable.from(bufferToUpload).pipe(uploadStream);
     }));
-
     Promise.all(uploadPromises)
         .then(() => next())
         .catch(err => {
@@ -94,7 +76,6 @@ const processAndUpload = (req, res, next) => {
         });
 };
 
-// Создать новый пак
 router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 20), processAndUpload, async (req, res) => {
     try {
         const { name, type } = req.body;
@@ -104,14 +85,12 @@ router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 2
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: 'Добавьте хотя бы один файл.' });
         }
-
         const newPack = new ContentPack({
             name,
             type,
             creator: req.user.userId,
             items: req.files.map(file => ({ imageUrl: file.path }))
         });
-
         await newPack.save();
         res.status(201).json(newPack);
     } catch (error) {
@@ -119,7 +98,6 @@ router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 2
     }
 });
 
-// Получить паки, созданные пользователем
 router.get('/packs/my', authMiddleware, async (req, res) => {
     try {
         const packs = await ContentPack.find({ creator: req.user.userId }).sort({ createdAt: -1 });
@@ -129,7 +107,6 @@ router.get('/packs/my', authMiddleware, async (req, res) => {
     }
 });
 
-// Получить паки, добавленные пользователем
 router.get('/packs/added', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.userId).populate({
@@ -142,12 +119,10 @@ router.get('/packs/added', authMiddleware, async (req, res) => {
     }
 });
 
-// Поиск паков
 router.get('/packs/search', authMiddleware, async (req, res) => {
     const { q = '', page = 1 } = req.query;
     const limit = 12;
     const skip = (page - 1) * limit;
-
     try {
         const query = { isPublic: true };
         if (q) {
@@ -158,7 +133,6 @@ router.get('/packs/search', authMiddleware, async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
-            
         const total = await ContentPack.countDocuments(query);
         res.json({
             packs,
@@ -170,30 +144,40 @@ router.get('/packs/search', authMiddleware, async (req, res) => {
     }
 });
 
-// Обновить пак (добавить/удалить элементы, переименовать)
-router.put('/packs/:packId', authMiddleware, premiumMiddleware, upload.array('newItems', 10), processAndUpload, async (req, res) => {
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем проверку на системного пользователя ---
+const canModifyPack = async (req, res, next) => {
+    try {
+        const pack = await ContentPack.findById(req.params.packId).populate('creator');
+        if (!pack) {
+            return res.status(404).json({ message: 'Пак не найден.' });
+        }
+        if (pack.creator.email === 'flowme.system@flowme.com') {
+            return res.status(403).json({ message: 'Стандартные паки нельзя редактировать или удалять.' });
+        }
+        if (pack.creator._id.toString() !== req.user.userId) {
+            return res.status(403).json({ message: 'Нет прав для управления этим паком.' });
+        }
+        req.pack = pack;
+        next();
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка проверки прав на пак.' });
+    }
+};
+
+router.put('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, upload.array('newItems', 10), processAndUpload, async (req, res) => {
     try {
         const { name, itemsToDelete } = req.body;
-        const pack = await ContentPack.findById(req.params.packId);
-
-        if (!pack || pack.creator.toString() !== req.user.userId) {
-            return res.status(403).json({ message: 'Нет прав для редактирования этого пака.' });
-        }
+        const pack = req.pack;
 
         if (name) pack.name = name;
-        
-        // Удаляем отмеченные элементы
         if (itemsToDelete) {
             const toDelete = JSON.parse(itemsToDelete);
             pack.items = pack.items.filter(item => !toDelete.includes(item._id.toString()));
         }
-
-        // Добавляем новые файлы
         if (req.files) {
             const newItems = req.files.map(file => ({ imageUrl: file.path }));
             pack.items.push(...newItems);
         }
-        
         await pack.save();
         res.json(pack);
     } catch (error) {
@@ -201,26 +185,17 @@ router.put('/packs/:packId', authMiddleware, premiumMiddleware, upload.array('ne
     }
 });
 
-// Удалить пак
-router.delete('/packs/:packId', authMiddleware, premiumMiddleware, async (req, res) => {
+router.delete('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, async (req, res) => {
     try {
-        const pack = await ContentPack.findOneAndDelete({
-            _id: req.params.packId,
-            creator: req.user.userId
-        });
-        if (!pack) return res.status(404).json({ message: 'Пак не найден.' });
-        
-        // TODO: Удалить файлы из Cloudinary
-        
-        await User.updateMany({}, { $pull: { addedContentPacks: pack._id } });
+        await req.pack.deleteOne();
+        await User.updateMany({}, { $pull: { addedContentPacks: req.pack._id } });
         res.json({ message: 'Пак успешно удален.' });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка удаления пака.' });
     }
 });
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-
-// Добавить пак в свою библиотеку
 router.post('/packs/:packId/add', authMiddleware, async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.user.userId, {
@@ -232,7 +207,6 @@ router.post('/packs/:packId/add', authMiddleware, async (req, res) => {
     }
 });
 
-// Удалить пак из своей библиотеки
 router.delete('/packs/:packId/add', authMiddleware, async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.user.userId, {
@@ -243,6 +217,5 @@ router.delete('/packs/:packId/add', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при удалении пака.' });
     }
 });
-
 
 module.exports = router;

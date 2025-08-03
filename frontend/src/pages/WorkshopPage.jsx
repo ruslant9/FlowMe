@@ -4,14 +4,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X } from 'lucide-react';
+import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown } from 'lucide-react';
 import CreateEditPackModal from '../components/workshop/CreateEditPackModal';
 import PackCard from '../components/workshop/PackCard';
 import { useUser } from '../context/UserContext';
 import { useModal } from '../hooks/useModal';
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Импортируем модальное окно предпросмотра ---
 import PackPreviewModal from '../components/workshop/PackPreviewModal';
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -35,7 +33,6 @@ const WorkshopPage = () => {
     const { currentUser, refetchPacks } = useUser();
     const { showConfirmation } = useModal();
     
-    // Состояния для данных
     const [myPacks, setMyPacks] = useState([]);
     const [addedPacks, setAddedPacks] = useState([]);
     const [searchResults, setSearchResults] = useState([]);
@@ -43,14 +40,10 @@ const WorkshopPage = () => {
     const [searchPage, setSearchPage] = useState(1);
     const [searchTotalPages, setSearchTotalPages] = useState(1);
     
-    // Состояния UI
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPack, setEditingPack] = useState(null);
-
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояние для модального окна предпросмотра ---
     const [previewingPack, setPreviewingPack] = useState(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const addedPackIds = useMemo(() => new Set(addedPacks.map(p => p._id)), [addedPacks]);
 
@@ -79,12 +72,10 @@ const WorkshopPage = () => {
         }
     }, []);
     
-    // Первоначальная загрузка и загрузка при смене вкладок
     useEffect(() => {
         fetchData(activeTab, searchQuery, 1);
     }, [activeTab, fetchData]);
 
-    // Поиск с задержкой
     useEffect(() => {
         if (activeTab === 'search') {
             const debounce = setTimeout(() => {
@@ -118,10 +109,10 @@ const WorkshopPage = () => {
                     const token = localStorage.getItem('token');
                     await axios.delete(`${API_URL}/api/workshop/packs/${pack._id}`, { headers: { Authorization: `Bearer ${token}` } });
                     toast.success('Пак удален', { id: toastId });
-                    fetchData('my'); // Обновляем список своих паков
-                    refetchPacks(); // Обновляем паки в контексте
+                    fetchData('my');
+                    refetchPacks();
                 } catch (error) {
-                    toast.error('Ошибка удаления', { id: toastId });
+                    toast.error(error.response?.data?.message || 'Ошибка удаления', { id: toastId });
                 }
             }
         });
@@ -136,8 +127,8 @@ const WorkshopPage = () => {
             const token = localStorage.getItem('token');
             await axios[method](endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
             toast.success(isAdded ? 'Пак удален из вашей библиотеки' : 'Пак добавлен в вашу библиотеку');
-            fetchData('added'); // Обновляем список добавленных
-            refetchPacks(); // Обновляем паки в контексте
+            fetchData('added');
+            refetchPacks();
         } catch (error) {
             toast.error('Произошла ошибка');
         }
@@ -164,19 +155,33 @@ const WorkshopPage = () => {
             case 'added':
                 packs = addedPacks;
                 emptyMessage = 'Вы еще не добавили ни одного пака. Найдите их в поиске!';
-                cardActions = (pack) => (
-                    <button onClick={() => handleAddOrRemovePack(pack)} className="px-3 py-2 text-sm font-semibold bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 flex items-center space-x-2">
-                        <X size={16} /><span>Удалить</span>
-                    </button>
-                );
+                cardActions = (pack) => {
+                    const isCreator = pack.creator._id === currentUser._id;
+                    if (isCreator) return null; // Не показываем кнопку для своих паков в этой вкладке
+                    return (
+                        <button onClick={() => handleAddOrRemovePack(pack)} className="px-3 py-2 text-sm font-semibold bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 flex items-center space-x-2">
+                            <X size={16} /><span>Удалить</span>
+                        </button>
+                    );
+                };
                 break;
             case 'search':
                 packs = searchResults;
                 emptyMessage = searchQuery ? 'По вашему запросу ничего не найдено.' : 'Найдите стикеры и эмодзи, созданные другими пользователями.';
                 cardActions = (pack) => {
-                    const isAdded = addedPackIds.has(pack._id);
                     const isCreator = pack.creator._id === currentUser._id;
                     if (isCreator) return <span className="text-xs font-semibold text-slate-500">Ваш пак</span>;
+                    
+                    if (pack.creator.username === 'Flow me') {
+                        return (
+                            <div className="flex items-center space-x-2 text-xs font-semibold text-yellow-500">
+                                <Crown size={14} />
+                                <span>Premium</span>
+                            </div>
+                        );
+                    }
+
+                    const isAdded = addedPackIds.has(pack._id);
                     return (
                         <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
                             {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
@@ -193,13 +198,11 @@ const WorkshopPage = () => {
             <div>
                 {packs.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Передаем onLongPress в PackCard --- */}
                         {packs.map(pack => 
                             <PackCard key={pack._id} pack={pack} onLongPress={setPreviewingPack}>
                                 {cardActions(pack)}
                             </PackCard>
                         )}
-                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     </div>
                 ) : (
                     <div className="text-center py-10 text-slate-500">{emptyMessage}</div>
@@ -227,13 +230,11 @@ const WorkshopPage = () => {
                     refetchPacks();
                 }}
             />
-            {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем модальное окно предпросмотра --- */}
             <PackPreviewModal
                 isOpen={!!previewingPack}
                 onClose={() => setPreviewingPack(null)}
                 pack={previewingPack}
             />
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
             <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold">Мастерская</h1>

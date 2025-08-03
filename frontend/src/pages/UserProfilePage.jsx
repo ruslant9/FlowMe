@@ -586,8 +586,8 @@ const UserProfilePage = () => {
             <div className="flex justify-center py-4"><Loader2 className="animate-spin" /></div>
         ) : musicTracks.length > 0 ? (
             <TrackList
-                tracks={musicTracks} 
-                onSelectTrack={(youtubeId) => playTrack(musicTracks.find(t => t.youtubeId === youtubeId), musicTracks)}
+                tracks={musicTracks}
+                onSelectTrack={(track) => playTrack(track, musicTracks)}
                 currentPlayingTrackId={currentTrack?.youtubeId}
                 isPlaying={isPlaying}
                 onToggleSave={onToggleLike}

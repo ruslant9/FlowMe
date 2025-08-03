@@ -14,6 +14,7 @@ import AnimatedAccent from '../AnimatedAccent';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем список рамок ---
 const avatarBorders = [
     { id: 'none', name: 'Без рамки', type: 'none', value: null, pseudo: false },
     { id: 'animated-1', name: 'Аврора', type: 'animated-1', value: null, pseudo: false },
@@ -22,6 +23,7 @@ const avatarBorders = [
     { id: 'animated-neon', name: 'Неон', type: 'animated-neon', value: null, pseudo: true },
     { id: 'animated-orbit', name: 'Орбита', type: 'animated-orbit', value: null, pseudo: true },
 ];
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const premadeAccents = [
     { name: "Неоновый дудл", url: "/wallpapers/templates/wallpaper-doodle-dark.svg" },

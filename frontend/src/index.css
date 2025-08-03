@@ -1,3 +1,4 @@
+
 /* frontend/src/index.css */
 
 /* 1. Импортируем базовые стили Tailwind */
@@ -403,7 +404,7 @@ html.dark .rc-slider-rail {
   100% { background-position: 0% 50%; }
 }
 
-/* --- НОВЫЕ СТИЛИ ДЛЯ РАМОК --- */
+/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Новые стили для сложных рамок --- */
 @keyframes premium-border-rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -479,6 +480,7 @@ html.dark .rc-slider-rail {
   animation-duration: 6s;
   filter: drop-shadow(0 0 3px #fde68a);
 }
+/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */
 
 
 .profile-card-accent {
@@ -525,4 +527,3 @@ html.dark .rc-slider-rail {
   opacity: 0.3; /* Уменьшаем интенсивность градиента */
   z-index: -1; /* Помещаем псевдоэлемент за контентом */
 }
-/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */
