@@ -39,7 +39,7 @@ const TrackItem = ({
 
     const isLoading = track.youtubeId === loadingTrackId;
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -47,21 +47,33 @@ const TrackItem = ({
             ''
         ).trim();
     };
-    const cleanArtist = (artist) => {
-        if (!artist) return '';
-        if (artist.endsWith(' - Topic')) {
-            return artist.substring(0, artist.length - ' - Topic'.length).trim();
+    
+    const formatArtistName = (artistData) => {
+        if (!artistData) return '';
+        
+        // Если это массив объектов (новый формат из БД)
+        if (Array.isArray(artistData)) {
+            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
         }
-        return artist;
+        
+        // Если это просто строка (старый формат из Spotify/YouTube)
+        if (typeof artistData === 'string') {
+            return artistData.replace(' - Topic', '').trim();
+        }
+        
+        return '';
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
+    const cleanedTitle = cleanTitle(track.title);
+    const cleanedArtist = formatArtistName(track.artist);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handlePlayButtonClick = (e) => {
         e.stopPropagation();
         if (isCurrent) {
             onPlayPauseToggle();
         } else {
-            onSelectTrack(track.youtubeId);
+            onSelectTrack(track); // Передаем весь объект трека
         }
     };
 
@@ -97,10 +109,8 @@ const TrackItem = ({
                     </button>
                 </div>
                 <div className="flex-1 min-w-0">
-                    {/* --- ИЗМЕНЕНИЕ --- */}
-                    <p className="font-bold truncate">{cleanTitle(track.title)}</p>
-                    <p className="text-sm text-slate-500 dark:text-white/60 truncate">{cleanArtist(track.artist)}</p>
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                    <p className="font-bold truncate">{cleanedTitle}</p>
+                    <p className="text-sm text-slate-500 dark:text-white/60 truncate">{cleanedArtist}</p>
                 </div>
                 <div className="flex items-center space-x-4 ml-4 text-slate-500 dark:text-white/60">
                     <span className="text-sm font-semibold w-10 text-right">

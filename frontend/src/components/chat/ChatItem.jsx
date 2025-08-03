@@ -225,6 +225,21 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
             ''
         ).trim();
     };
+
+    const formatArtistName = (artistData) => {
+        if (!artistData) return '';
+        if (Array.isArray(artistData)) {
+            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
+        }
+        if (typeof artistData === 'object' && artistData.name) {
+            return artistData.name.replace(' - Topic', '').trim();
+        }
+        if (typeof artistData === 'string') {
+            return artistData.replace(' - Topic', '').trim();
+        }
+        return '';
+    };
+
     const cleanArtist = (artist) => {
         if (!artist) return '';
         if (artist.endsWith(' - Topic')) {
@@ -253,15 +268,15 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
             );
         }
         
+        // --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННЫХ ФУНКЦИЙ ---
         const content = lastMessage.text || 
-                        (lastMessage.attachedTrack ? `Трек: ${cleanArtist(lastMessage.attachedTrack.artist)} - ${cleanTitle(lastMessage.attachedTrack.title)}` : "Нет сообщений");
+                        (lastMessage.attachedTrack ? `Трек: ${formatArtistName(lastMessage.attachedTrack.artist)} - ${cleanTitle(lastMessage.attachedTrack.title)}` : "Нет сообщений");
         return (
              <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                 {prefix}{content}
             </p>
         );
     };
-
 
    const UnreadIndicator = () => {
         if (conversation.unreadCount > 0) {
