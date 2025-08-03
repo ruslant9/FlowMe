@@ -27,11 +27,8 @@ const ArtistPage = () => {
     const [showAllSingles, setShowAllSingles] = useState(false);
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем состояние и ref для отслеживания скролла ---
     const [isScrolled, setIsScrolled] = useState(false);
     const mainRef = useRef(null);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
     const fetchArtistData = useCallback(async () => {
         setLoading(true);
@@ -51,13 +48,11 @@ const ArtistPage = () => {
         fetchArtistData();
     }, [fetchArtistData]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Эффект для добавления и удаления слушателя скролла ---
     useEffect(() => {
         const mainEl = mainRef.current;
         if (!mainEl) return;
 
         const handleScroll = () => {
-            // Устанавливаем true, если прокрутили больше чем на 10px
             setIsScrolled(mainEl.scrollTop > 10);
         };
 
@@ -66,7 +61,6 @@ const ArtistPage = () => {
             mainEl.removeEventListener('scroll', handleScroll);
         };
     }, []);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     useTitle(artistData ? artistData.artist.name : 'Артист');
 
@@ -97,9 +91,7 @@ const ArtistPage = () => {
                 isOpen={isInfoPanelOpen}
                 onClose={() => setIsInfoPanelOpen(false)}
             />
-            {/* --- ИСПРАВЛЕНИЕ: Добавляем ref к main элементу --- */}
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
-                {/* --- ИСПРАВЛЕНИЕ: Шапка становится sticky и меняет фон при скролле --- */}
                 <div className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300">
                     <div 
                         className="absolute inset-0 -z-20"
@@ -119,13 +111,12 @@ const ArtistPage = () => {
                                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
                             </div>
                             <div>
-                                <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{artist.name}</h1>
+                                <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{artist.name}</h1>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Основной контент страницы */}
                 <div className="p-6 md:p-8 relative bg-slate-100 dark:bg-slate-900">
                     <div className="flex items-center space-x-4 mb-8">
                         <button 

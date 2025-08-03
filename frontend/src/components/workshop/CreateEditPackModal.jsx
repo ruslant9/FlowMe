@@ -1,8 +1,8 @@
-// frontend/src/components/workshop/CreateEditPackModal.jsx --- НОВЫЙ ФАЙЛ ---
+// frontend/src/components/workshop/CreateEditPackModal.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Image as ImageIcon, Trash2, PlusCircle } from 'lucide-react';
+import { X, Loader2, Image as ImageIcon, Trash2, PlusCircle, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -33,10 +33,64 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
         }
     }, [isOpen, isEditMode, initialData]);
 
-    const handleFileChange = (e) => {
+    const validateStickerFile = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    if (img.width !== img.height) {
+                        return reject(`Файл "${file.name}" не является квадратным.`);
+                    }
+                    if (img.width < 100 || img.width > 200) {
+                        return reject(`Размер "${file.name}" (${img.width}x${img.height}) не входит в диапазон 100-200px.`);
+                    }
+                    resolve(file);
+                };
+                img.onerror = () => reject(`Не удалось прочитать файл "${file.name}".`);
+            };
+            reader.onerror = () => reject(`Ошибка чтения файла "${file.name}".`);
+        });
+    };
+
+    const handleFileChange = async (e) => {
         const files = Array.from(e.target.files);
-        if (files.length > 0) {
-            const preparedFiles = files.map(file => ({
+        if (files.length === 0) return;
+
+        let validFiles = files;
+        
+        if (type === 'sticker') {
+            const validationPromises = files.map(validateStickerFile);
+            const results = await Promise.allSettled(validationPromises);
+            
+            validFiles = results
+                .filter(r => r.status === 'fulfilled')
+                .map(r => r.value);
+            
+            const invalidReasons = results
+                .filter(r => r.status === 'rejected')
+                .map(r => r.reason);
+
+            if (invalidReasons.length > 0) {
+                toast.error(
+                    (t) => (
+                        <div className="flex flex-col">
+                            <b>Некоторые файлы не были добавлены:</b>
+                            <ul className="list-disc list-inside text-sm mt-1">
+                                {invalidReasons.slice(0, 3).map((reason, i) => <li key={i}>{reason}</li>)}
+                                {invalidReasons.length > 3 && <li>и еще {invalidReasons.length - 3}...</li>}
+                            </ul>
+                        </div>
+                    ),
+                    { duration: 6000 }
+                );
+            }
+        }
+
+        if (validFiles.length > 0) {
+            const preparedFiles = validFiles.map(file => ({
                 file,
                 preview: URL.createObjectURL(file)
             }));
@@ -65,13 +119,14 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
         if (isEditMode) {
             formData.append('itemsToDelete', JSON.stringify(itemsToDelete));
         }
-
+        
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // Используем правильное имя поля в зависимости от режима (создание/редактирование)
         newFiles.forEach(item => {
-            formData.append('newItems', item.file); // Используем 'newItems' для редактирования
-            if (!isEditMode) {
-                formData.append('items', item.file); // Используем 'items' для создания
-            }
+            const fieldName = isEditMode ? 'newItems' : 'items';
+            formData.append(fieldName, item.file);
         });
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         try {
             const token = localStorage.getItem('token');
@@ -125,6 +180,12 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
 
                             <div className="flex-1 overflow-y-auto -mr-2 pr-2 border-t border-b border-slate-200 dark:border-slate-700 py-4">
                                 <label className="block text-sm font-semibold mb-2">Изображения</label>
+                                {type === 'sticker' && (
+                                    <div className="flex items-center space-x-2 text-xs text-yellow-600 dark:text-yellow-400 p-2 bg-yellow-400/10 rounded-md mb-3">
+                                        <AlertTriangle size={16} />
+                                        <span>Стикеры должны быть квадратными, от 100x100 до 200x200 пикселей.</span>
+                                    </div>
+                                )}
                                 <div className={`grid gap-2 ${type === 'sticker' ? 'grid-cols-3' : 'grid-cols-5'}`}>
                                     {existingItems.map(item => (
                                         <div key={item._id} className="relative group aspect-square">

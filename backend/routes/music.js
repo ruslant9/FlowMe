@@ -9,6 +9,7 @@ const Playlist = require('../models/Playlist');
 const Artist = require('../models/Artist');
 const Album = require('../models/Album');
 const UserMusicProfile = require('../models/UserMusicProfile');
+const User = require('../models/User'); // <-- ИСПРАВЛЕНИЕ: Добавлен импорт User
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 
@@ -100,7 +101,7 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Трек не найден в библиотеке.' });
         }
         
-        const existingSavedTrack = await Track.findOne({ user: userId, spotifyId: existingLibraryTrack.spotifyId, type: 'saved' });
+        const existingSavedTrack = await Track.findOne({ user: userId, _id: existingLibraryTrack._id, type: 'saved' });
 
         if (existingSavedTrack) {
             await Track.deleteOne({ _id: existingSavedTrack._id });
@@ -393,8 +394,6 @@ router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
 });
 
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый маршрут для "Моей волны" и исправленный для рекомендаций ---
-
 const processAndPopulateTracks = async (trackQuery, limit) => {
     const tracks = await Track.find(trackQuery)
         .sort({ playCount: -1, createdAt: -1 })
@@ -511,42 +510,31 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
             const generalPopular = await processAndPopulateTracks({ status: 'approved' }, 10 - popularHits.length);
             popularHits.push(...generalPopular);
         }
-
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        // Заменяем статический запрос на динамическую агрегацию для определения популярных артистов
+        
         const popularArtists = await Track.aggregate([
-            // 1. Выбираем только одобренные треки из основной библиотеки
             { $match: { status: 'approved', type: 'library_track' } },
-            // 2. "Разворачиваем" массив артистов, чтобы работать с каждым отдельно
             { $unwind: "$artist" },
-            // 3. Группируем по ID артиста и суммируем все прослушивания их треков
             {
                 $group: {
                     _id: "$artist",
                     totalPlayCount: { $sum: "$playCount" }
                 }
             },
-            // 4. Сортируем по убыванию общего числа прослушиваний
             { $sort: { totalPlayCount: -1 } },
-            // 5. Оставляем только топ-6
             { $limit: 6 },
-            // 6. "Подтягиваем" полную информацию об артистах (имя, аватар и т.д.)
             {
                 $lookup: {
-                    from: "artists", // Название коллекции в MongoDB
+                    from: "artists",
                     localField: "_id",
                     foreignField: "_id",
                     as: "artistDetails"
                 }
             },
-            // 7. "Разворачиваем" массив с деталями артиста (в нем всегда будет 1 элемент)
             { $unwind: "$artistDetails" },
-            // 8. Заменяем корневой документ на детали артиста, чтобы получить чистый объект артиста
             {
                 $replaceRoot: { newRoot: "$artistDetails" }
             }
         ]);
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         res.json({ newReleases, popularHits, popularArtists });
 
@@ -573,8 +561,6 @@ router.get('/user/:userId/saved', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: "Вы не можете просматривать музыку этого пользователя." });
         }
         
-        // Импортируем утилиту для проверки приватности
-        const { isAllowedByPrivacy } = require('../utils/privacy');
         if (!isAllowedByPrivacy(targetUser.privacySettings?.viewMusic, requesterId, targetUser)) {
             return res.status(403).json({ message: "Пользователь скрыл свою музыку." });
         }

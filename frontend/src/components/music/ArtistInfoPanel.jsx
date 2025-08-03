@@ -3,8 +3,11 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Avatar from '../Avatar';
+import { useMusicPlayer } from '../../context/MusicPlayerContext'; // 1. Импортируем хук
 
 const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
+    const { currentTrack } = useMusicPlayer(); // 2. Получаем информацию о текущем треке
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -13,7 +16,7 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 bg-black/60 z-[60]"
+                    className="fixed inset-0 bg-black/60 z-[60]" // Увеличиваем z-index, чтобы быть выше всего
                 >
                     <motion.div
                         initial={{ x: '100%' }}
@@ -21,7 +24,10 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-0 right-0 h-full w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col"
+                        // 3. Динамически изменяем высоту, если плеер активен
+                        className={`absolute top-0 right-0 w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col transition-height duration-300 ${
+                            currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
+                        }`}
                     >
                         <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                             <h3 className="font-bold text-lg">Об исполнителе</h3>
