@@ -13,7 +13,8 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 bg-black/60 z-30"
+                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ: z-index увеличен с 30 до 50 ---
+                    className="fixed inset-0 bg-black/60 z-50"
                 >
                     <motion.div
                         initial={{ x: '100%' }}

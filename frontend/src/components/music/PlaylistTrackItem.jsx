@@ -3,7 +3,6 @@ import React from 'react';
 import { Play, Pause, Heart, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем `accentColor` в пропсы ---
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15' }) => {
     
     const cleanTitle = (title) => {
@@ -57,7 +56,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         >
             <div className="flex items-center justify-center w-8 text-slate-600 dark:text-slate-400">
                 {isCurrent ? (
-                    // --- ИСПРАВЛЕНИЕ: Применяем accentColor к иконке ---
                     <button onClick={onPlay} style={{ color: accentColor }}>
                         {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                     </button>
@@ -73,13 +71,24 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
             <div className="flex items-center space-x-4 min-w-0">
                 <img src={track.albumArtUrl} alt={cleanedTitle} className="w-10 h-10 rounded object-cover"/>
                 <div className="min-w-0">
-                    {/* --- ИСПРАВЛЕНИЕ: Применяем accentColor к названию трека --- */}
-                    <p 
-                        className="font-semibold truncate" 
-                        style={isCurrent ? { color: accentColor } : {}}
-                    >
-                        {cleanedTitle}
-                    </p>
+                    <div className="flex items-center space-x-2">
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем иконку Explicit --- */}
+                        {track.isExplicit && (
+                            <span 
+                                className="w-4 h-4 flex items-center justify-center bg-slate-400 dark:bg-slate-500 text-white text-[10px] font-bold rounded-sm flex-shrink-0" 
+                                title="Explicit"
+                            >
+                                E
+                            </span>
+                        )}
+                        <p 
+                            className="font-semibold truncate" 
+                            style={isCurrent ? { color: accentColor } : {}}
+                        >
+                            {cleanedTitle}
+                        </p>
+                    </div>
+                     {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                         {renderArtistLinks(track.artist)}
                     </p>

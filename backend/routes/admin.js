@@ -185,7 +185,7 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
         await newTrack.save();
 
         if (albumId) {
-            await Album.updateOne({ _id: albumId }, { $addToSet: { tracks: newTrack._id } });
+            await Album.updateOne({ _id: albumId }, { $push: { tracks: newTrack._id } }); // Используем $push для сохранения порядка
         }
         
         res.status(201).json({ message: 'Трек успешно загружен и опубликован.' });
@@ -195,8 +195,6 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
     }
 });
 
-
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 // Создать альбом напрямую
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
@@ -519,8 +517,17 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
 router.get('/albums/:albumId/tracks', async (req, res) => {
     try {
         const { albumId } = req.params;
-        const tracks = await Track.find({ album: albumId }).populate('artist', 'name').sort({ title: 1 });
-        res.json(tracks);
+        // --- ИСПРАВЛЕНИЕ: Используем `populate` с `path` для сохранения порядка ---
+        const album = await Album.findById(albumId)
+            .populate({
+                path: 'tracks',
+                populate: { path: 'artist', select: 'name' }
+            });
+        
+        if (!album) {
+            return res.status(404).json({ message: "Альбом не найден" });
+        }
+        res.json(album.tracks);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при загрузке треков альбома.' });
     }

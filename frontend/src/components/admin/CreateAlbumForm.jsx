@@ -3,11 +3,15 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, Music, Edit, ChevronDown, Trash2 } from 'lucide-react';
+import { Loader2, Music, Edit, ChevronDown, Trash2, GripVertical } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelectorSingle from './GenreSelectorSingle';
 import Avatar from '../Avatar';
 import { useModal } from '../../hooks/useModal';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -75,6 +79,47 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Компонент для перетаскиваемого трека ---
+const SortableTrackItem = ({ track, onEditTrack, onDeleteTrack }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: track._id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 'auto',
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow ${isDragging ? 'shadow-xl' : ''}`}>
+            <div className="flex items-center space-x-2 min-w-0">
+                <div {...attributes} {...listeners} className="cursor-grab touch-none p-1 text-slate-500">
+                    <GripVertical size={16} />
+                </div>
+                <Music size={16} className="text-slate-500 flex-shrink-0" />
+                <span className="font-semibold text-sm truncate">{track.title}</span>
+                {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full">E</span>}
+            </div>
+            <div className="flex items-center space-x-1 flex-shrink-0">
+                <button type="button" onClick={() => onEditTrack(track)} className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600" title="Редактировать трек">
+                    <Edit size={14} />
+                </button>
+                <button type="button" onClick={() => onDeleteTrack(track)} className="p-1.5 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50" title="Удалить трек">
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        </div>
+    );
+};
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+
 export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initialData = null, onEditTrack }) => {
     const { currentUser } = useUser();
     const { showConfirmation } = useModal();
@@ -88,6 +133,15 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [albumTracks, setAlbumTracks] = useState([]);
     
     const fileInputRef = useRef(null);
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Настройка сенсоров для dnd-kit ---
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const fetchAlbumTracks = useCallback(async () => {
         if (!isEditMode || !initialData?._id) return;
@@ -130,13 +184,40 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Трек удален!', { id: toastId });
-                    fetchAlbumTracks(); // Обновляем список треков после удаления
+                    fetchAlbumTracks();
                 } catch (error) {
                     toast.error('Ошибка удаления трека.', { id: toastId });
                 }
             }
         });
     };
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика для сохранения нового порядка треков ---
+    const handleDragEnd = async (event) => {
+        const { active, over } = event;
+        if (active.id !== over.id) {
+            const oldIndex = albumTracks.findIndex((t) => t._id === active.id);
+            const newIndex = albumTracks.findIndex((t) => t._id === over.id);
+            const reorderedTracks = arrayMove(albumTracks, oldIndex, newIndex);
+            setAlbumTracks(reorderedTracks);
+
+            const toastId = toast.loading('Сохранение порядка...');
+            try {
+                const token = localStorage.getItem('token');
+                const trackIds = reorderedTracks.map(t => t._id);
+                await axios.put(`${API_URL}/api/admin/content/albums/${initialData._id}/reorder-tracks`, 
+                    { trackIds }, 
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                toast.success('Порядок треков сохранен!', { id: toastId });
+            } catch (error) {
+                toast.error('Не удалось сохранить порядок.', { id: toastId });
+                fetchAlbumTracks(); // Возвращаем к исходному порядку в случае ошибки
+            }
+        }
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -211,26 +292,22 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             {isEditMode && albumTracks.length > 0 && (
                 <div>
                     <h4 className="font-bold text-md mb-2">Треки в альбоме ({albumTracks.length})</h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                        {albumTracks.map(track => (
-                            <div key={track._id} className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
-                                <div className="flex items-center space-x-2 min-w-0">
-                                    <Music size={16} className="text-slate-500 flex-shrink-0" />
-                                    <span className="font-semibold text-sm truncate">{track.title}</span>
-                                </div>
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
-                                <div className="flex items-center space-x-1 flex-shrink-0">
-                                    <button type="button" onClick={() => onEditTrack(track)} className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600" title="Редактировать трек">
-                                        <Edit size={14} />
-                                    </button>
-                                    <button type="button" onClick={() => handleDeleteTrack(track)} className="p-1.5 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50" title="Удалить трек">
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем список в DndContext --- */}
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={albumTracks} strategy={verticalListSortingStrategy}>
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                {albumTracks.map(track => (
+                                    <SortableTrackItem 
+                                        key={track._id} 
+                                        track={track} 
+                                        onEditTrack={onEditTrack} 
+                                        onDeleteTrack={handleDeleteTrack} 
+                                    />
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                        </SortableContext>
+                    </DndContext>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             )}
 

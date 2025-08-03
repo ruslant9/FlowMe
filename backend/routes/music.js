@@ -94,7 +94,6 @@ const logMusicAction = async (req, track, action) => {
     }
 };
 
-
 // --- МАРШРУТЫ ДЛЯ "МОЕЙ МУЗЫКИ" И ИСТОРИИ ---
 
 router.post('/toggle-save', authMiddleware, async (req, res) => {
@@ -194,43 +193,55 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
     }
 });
 
+
 router.get('/artist/:artistId', authMiddleware, async (req, res) => {
     try {
         const artistId = new mongoose.Types.ObjectId(req.params.artistId);
 
-        const [artist, topTracks, albums, featuredTracks, singles] = await Promise.all([
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Используем агрегацию для получения уникальных популярных треков ---
+        const topTracksPipeline = [
+            { $match: { artist: artistId, status: 'approved' } },
+            {
+                $group: {
+                    _id: { $toLower: "$title" }, // Группируем по названию трека в нижнем регистре
+                    totalPlayCount: { $sum: "$playCount" }, // Суммируем прослушивания всех версий
+                    doc: { $first: "$$ROOT" } // Берем первый документ из группы (самый релевантный)
+                }
+            },
+            { $sort: { totalPlayCount: -1 } },
+            { $limit: 5 },
+            { $replaceRoot: { newRoot: "$doc" } } // Возвращаем документ в исходный вид
+        ];
+
+        const [artist, topTracksAggregation, albums, featuredTracks, singles] = await Promise.all([
             Artist.findById(artistId).lean(),
-            
-            Track.find({ artist: artistId, status: 'approved' })
-                .sort({ playCount: -1 })
-                .limit(5)
-                .populate('artist', 'name _id')
-                .populate('album', 'title coverArtUrl')
-                .lean(),
-            
+            Track.aggregate(topTracksPipeline), // Выполняем агрегацию
             Album.find({ artist: artistId, status: 'approved' })
                 .populate('artist', 'name')
                 .sort({ releaseYear: -1, createdAt: -1 })
                 .lean(),
-
             Track.find({ artist: artistId, status: 'approved', album: { $ne: null } })
                  .populate({
                      path: 'album',
                      populate: { path: 'artist', select: 'name _id' }
                  })
                  .lean(),
-            
             Track.find({ artist: artistId, status: 'approved', album: null })
                  .populate('artist', 'name _id')
                  .sort({ releaseYear: -1, createdAt: -1 })
                  .lean()
         ]);
         
+        // Мануально "популируем" результаты агрегации
+        await Artist.populate(topTracksAggregation, { path: 'artist', select: 'name _id' });
+        await Album.populate(topTracksAggregation, { path: 'album', select: 'title coverArtUrl' });
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        
         if (!artist || artist.status !== 'approved') {
             return res.status(404).json({ message: 'Артист не найден.' });
         }
         
-        const processedTracks = topTracks.map(track => {
+        const processedTopTracks = topTracksAggregation.map(track => {
             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
             }
@@ -249,14 +260,13 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
         }, []);
 
 
-        res.json({ artist, topTracks: processedTracks, albums, featuredOn: featuredOnAlbums, singles });
+        res.json({ artist, topTracks: processedTopTracks, albums, featuredOn: featuredOnAlbums, singles });
 
     } catch (error) {
         console.error("Ошибка загрузки данных артиста:", error);
         res.status(500).json({ message: 'Ошибка сервера при загрузке данных артиста.' });
     }
 });
-
 
 // --- ПОЛНОСТЬЮ ПЕРЕРАБОТАННЫЙ МАРШРУТ ПОИСКА ---
 
@@ -293,7 +303,6 @@ router.get('/search-all', authMiddleware, async (req, res) => {
             page == 1 ? Album.find({ status: 'approved', $or: [{ title: searchQuery }, { artist: { $in: artistIds } }]}).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
             page == 1 ? Playlist.find({ name: searchQuery, visibility: 'public' }).populate('user', 'username').limit(6).lean() : Promise.resolve([]),
             Track.find(trackQuery)
-                // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок ---
                 .populate('artist', 'name _id')
                 .populate('album', 'title coverArtUrl')
                 .sort({ playCount: -1 })
@@ -394,12 +403,14 @@ router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый маршрут для персональных рекомендаций ---
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый маршрут для "Моей волны" и исправленный для рекомендаций ---
+
 const processAndPopulateTracks = async (trackQuery, limit) => {
     const tracks = await Track.find(trackQuery)
         .sort({ playCount: -1, createdAt: -1 })
         .limit(limit)
-        .populate('artist', 'name _id') // <-- Добавляем _id
+        .populate('artist', 'name _id')
         .populate('album', 'title coverArtUrl')
         .lean();
 
@@ -411,6 +422,53 @@ const processAndPopulateTracks = async (trackQuery, limit) => {
     });
 };
 
+router.get('/wave', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const profile = await UserMusicProfile.findOne({ user: userId });
+
+        if (!profile || (profile.topArtists.length === 0 && profile.topGenres.length === 0)) {
+            const popularTracks = await processAndPopulateTracks({ status: 'approved' }, 50);
+            popularTracks.sort(() => Math.random() - 0.5);
+            return res.json(popularTracks);
+        }
+
+        const topArtistIds = profile.topArtists.slice(0, 10).map(a => new mongoose.Types.ObjectId(a.name));
+        const topGenres = profile.topGenres.slice(0, 5).map(g => g.name);
+
+        const listenedTracks = await Track.find({ user: userId, type: 'recent' }).sort({ playedAt: -1 }).limit(100).distinct('_id');
+
+        const waveQuery = {
+            status: 'approved',
+            _id: { $nin: listenedTracks },
+            $or: [
+                { artist: { $in: topArtistIds } },
+                { genres: { $in: topGenres } }
+            ]
+        };
+        
+        const waveTracks = await processAndPopulateTracks(waveQuery, 50);
+
+        if (waveTracks.length < 50) {
+            const needed = 50 - waveTracks.length;
+            const existingIds = waveTracks.map(t => t._id);
+            const popularTracks = await processAndPopulateTracks({ 
+                status: 'approved', 
+                _id: { $nin: [...listenedTracks, ...existingIds] } 
+            }, needed);
+            waveTracks.push(...popularTracks);
+        }
+
+        waveTracks.sort(() => Math.random() - 0.5);
+
+        res.json(waveTracks);
+
+    } catch (error) {
+        console.error("Ошибка при генерации волны:", error);
+        res.status(500).json({ message: 'Не удалось сгенерировать вашу волну.' });
+    }
+});
+
 router.get('/recommendations', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -421,15 +479,15 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
         let popularHits = [];
         
         if (profile && (profile.topArtists.length > 0 || profile.topGenres.length > 0)) {
-            const topArtistIds = profile.topArtists.slice(0, 10).map(a => a.name); // Предполагаем, что name это ID
+            const topArtistIds = profile.topArtists.slice(0, 10).map(a => new mongoose.Types.ObjectId(a.name));
             const topGenres = profile.topGenres.slice(0, 5).map(g => g.name);
 
-            const listenedTracks = await Track.find({ user: userId, type: { $in: ['saved', 'recent'] } }).distinct('spotifyId');
+            const listenedTracks = await Track.find({ user: userId, type: { $in: ['saved', 'recent'] } }).distinct('_id');
 
             const newReleasesQuery = {
                 status: 'approved',
                 releaseYear: currentYear,
-                spotifyId: { $nin: listenedTracks },
+                _id: { $nin: listenedTracks },
                 $or: [
                     { artist: { $in: topArtistIds } },
                     { genres: { $in: topGenres } }
@@ -439,7 +497,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
 
             const popularHitsQuery = {
                 status: 'approved',
-                spotifyId: { $nin: listenedTracks },
+                _id: { $nin: listenedTracks },
                  $or: [
                     { artist: { $in: topArtistIds } },
                     { genres: { $in: topGenres } }
@@ -448,7 +506,6 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
             popularHits = await processAndPopulateTracks(popularHitsQuery, 10);
         }
         
-        // Если персональных рекомендаций мало, дополняем общими
         if (newReleases.length < 10) {
             const generalNew = await processAndPopulateTracks({ status: 'approved', releaseYear: currentYear }, 10 - newReleases.length);
             newReleases.push(...generalNew);

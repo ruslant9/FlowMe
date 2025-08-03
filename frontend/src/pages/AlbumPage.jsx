@@ -71,11 +71,11 @@ const AlbumPage = () => {
                     </button>
 
                     <div className="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                        {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
                         <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl md:ml-8">
                             <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
                         </div>
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
                             <span className="text-sm font-bold">Альбом</span>
                             <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{album.title}</h1>

@@ -1,40 +1,58 @@
-// frontend/components/admin/GenreSelector.jsx
+// frontend/components/admin/GenreSelectorSingle.jsx
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { musicGenresRu } from '../../data/genres'; // Используем наш централизованный список жанров
-import toast from 'react-hot-toast';
+import { musicGenresRu } from '../../data/genres';
+import { Search } from 'lucide-react';
 
-const GenreSelector = ({ selectedGenres, onGenreChange }) => {
-    const MAX_GENRES = 3;
+const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" }) => {
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем состояние для поиска ---
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const handleToggleGenre = (genre) => {
-        const isSelected = selectedGenres.includes(genre);
+    const filteredGenres = useMemo(() => {
+        if (!searchQuery) {
+            return musicGenresRu;
+        }
+        return musicGenresRu.filter(genre =>
+            genre.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [searchQuery]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-        if (isSelected) {
-            // Удаляем жанр из списка
-            onGenreChange(selectedGenres.filter(g => g !== genre));
+    const handleSelectGenre = (genre) => {
+        if (selectedGenre === genre) {
+            onGenreChange('');
         } else {
-            // Добавляем жанр, если лимит не превышен
-            if (selectedGenres.length >= MAX_GENRES) {
-                toast.error(`Можно выбрать не более ${MAX_GENRES} жанров.`);
-                return;
-            }
-            onGenreChange([...selectedGenres, genre]);
+            onGenreChange(genre);
         }
     };
 
     return (
         <div>
-            <label className="text-sm font-semibold block mb-2">Жанры (до {MAX_GENRES})</label>
-            <div className="flex flex-wrap gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg">
-                {musicGenresRu.map(genre => {
-                    const isSelected = selectedGenres.includes(genre);
+            <label className="text-sm font-semibold block mb-2">{label} *</label>
+
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем поле поиска --- */}
+            <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                    type="text"
+                    placeholder="Поиск жанра..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-sm rounded-lg bg-slate-200 dark:bg-slate-700/50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+            </div>
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
+            <div className="flex flex-wrap gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg max-h-48 overflow-y-auto">
+                {/* --- ИСПРАВЛЕНИЕ: Используем отфильтрованный список --- */}
+                {filteredGenres.map(genre => {
+                    const isSelected = selectedGenre === genre;
                     return (
                         <motion.button
                             key={genre}
                             type="button"
-                            onClick={() => handleToggleGenre(genre)}
+                            onClick={() => handleSelectGenre(genre)}
                             className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-center
                                 ${isSelected 
                                     ? 'bg-blue-600 text-white ring-2 ring-blue-400' 
@@ -52,4 +70,4 @@ const GenreSelector = ({ selectedGenres, onGenreChange }) => {
     );
 };
 
-export default GenreSelector;
+export default GenreSelectorSingle;
