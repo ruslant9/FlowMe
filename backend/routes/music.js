@@ -198,20 +198,39 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
 
 router.get('/artist/:artistId', authMiddleware, async (req, res) => {
     try {
-        const artistId = req.params.artistId;
+        const artistId = new mongoose.Types.ObjectId(req.params.artistId);
 
-        const [artist, topTracks, albums] = await Promise.all([
+        const [artist, topTracks, albums, featuredTracks, singles] = await Promise.all([
+            // 1. Получаем информацию о самом артисте
             Artist.findById(artistId).lean(),
+            
+            // 2. Получаем топ-5 популярных сольных треков
             Track.find({ artist: artistId, status: 'approved' })
                 .sort({ playCount: -1 })
-                .limit(10)
+                .limit(5)
                 .populate('artist', 'name')
                 .populate('album', 'title coverArtUrl')
                 .lean(),
+            
+            // 3. Получаем сольные альбомы артиста
             Album.find({ artist: artistId, status: 'approved' })
                 .populate('artist', 'name')
                 .sort({ releaseYear: -1 })
-                .lean()
+                .lean(),
+
+            // 4. НОВЫЙ ЗАПРОС: Ищем треки, где артист является гостем (фит)
+            Track.find({ artist: artistId, status: 'approved', 'album.artist': { $ne: artistId } })
+                 .populate({
+                     path: 'album',
+                     populate: { path: 'artist', select: 'name' }
+                 })
+                 .lean(),
+            
+            // 5. НОВЫЙ ЗАПРОС: Ищем сольные треки (синглы), у которых нет альбома
+            Track.find({ artist: artistId, status: 'approved', album: null })
+                 .populate('artist', 'name')
+                 .sort({ createdAt: -1 })
+                 .lean()
         ]);
         
         if (!artist || artist.status !== 'approved') {
@@ -225,8 +244,18 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             return track;
         });
 
-        res.json({ artist, topTracks: processedTracks, albums });
+        // 6. НОВЫЙ БЛОК: Обрабатываем найденные "фиты", чтобы получить уникальные альбомы
+        const featuredOnAlbums = featuredTracks.reduce((acc, track) => {
+            if (track.album && !acc.some(a => a._id.toString() === track.album._id.toString())) {
+                acc.push(track.album);
+            }
+            return acc;
+        }, []);
+
+        res.json({ artist, topTracks: processedTracks, albums, featuredOn: featuredOnAlbums, singles });
+
     } catch (error) {
+        console.error("Ошибка загрузки данных артиста:", error);
         res.status(500).json({ message: 'Ошибка сервера при загрузке данных артиста.' });
     }
 });

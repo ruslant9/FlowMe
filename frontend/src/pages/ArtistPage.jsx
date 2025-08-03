@@ -9,7 +9,7 @@ import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import AlbumCard from '../components/music/AlbumCard';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
-import toast from 'react-hot-toast'; // Добавлен импорт toast
+import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -54,11 +54,12 @@ const ArtistPage = () => {
         return <div className="flex-1 p-8 flex items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-slate-400" /></div>;
     }
 
-    const { artist, topTracks, albums } = artistData;
+    // <<<--- НАЧАЛО ИЗМЕНЕНИЯ 1: Извлекаем новые данные ---
+    const { artist, topTracks, albums, featuredOn, singles } = artistData;
+    // <<<--- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
     return (
         <main className="flex-1 overflow-y-auto">
-            {/* --- НАЧАЛО ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
             <div 
                 className="p-6 md:p-8 pt-20 relative text-white transition-all duration-500 min-h-[300px] flex flex-col justify-end"
                 style={{ backgroundImage: accentGradient }}
@@ -69,7 +70,6 @@ const ArtistPage = () => {
                 </button>
                 <div className="flex items-center space-x-6">
                     <div className="flex-shrink-0">
-                        {/* ВОТ ДОБАВЛЕННЫЙ АВАТАР */}
                         <Avatar size="xl" username={artist.name} avatarUrl={artist.avatarUrl} />
                     </div>
                     <div>
@@ -77,7 +77,6 @@ const ArtistPage = () => {
                     </div>
                 </div>
             </div>
-            {/* --- КОНЕЦ ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
 
             <div className="p-6 md:p-8">
                 <div className="flex items-center space-x-4 mb-8">
@@ -111,15 +110,52 @@ const ArtistPage = () => {
                 )}
 
                 {albums.length > 0 && (
-                     <div>
+                     <div className="mb-12">
                         <h2 className="text-2xl font-bold mb-4">Альбомы</h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {/* <<<--- НАЧАЛО ИЗМЕНЕНИЯ 2: Уменьшаем размер карточек --- */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {/* <<<--- КОНЕЦ ИЗМЕНЕНИЯ 2 --- */}
                             {albums.map(album => (
                                 <AlbumCard key={album._id} album={album} />
                             ))}
                         </div>
                     </div>
                 )}
+                
+                {/* <<<--- НАЧАЛО ИЗМЕНЕНИЯ 3: Новый блок для синглов --- */}
+                {singles && singles.length > 0 && (
+                    <div className="mb-12">
+                        <h2 className="text-2xl font-bold mb-4">Сольные треки (синглы)</h2>
+                        <div className="space-y-1">
+                            {singles.map((track, index) => (
+                                <PlaylistTrackItem
+                                    key={track._id}
+                                    track={track}
+                                    index={index + 1}
+                                    onPlay={() => playTrack(track, singles)}
+                                    isCurrent={track._id === currentTrack?._id}
+                                    isPlaying={isPlaying}
+                                    isSaved={myMusicTrackIds?.has(track._id)}
+                                    onToggleSave={onToggleLike}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {/* <<<--- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
+
+                {/* <<<--- НАЧАЛО ИЗМЕНЕНИЯ 4: Новый блок для участия в релизах --- */}
+                {featuredOn && featuredOn.length > 0 && (
+                     <div className="mb-12">
+                        <h2 className="text-2xl font-bold mb-4">Участие в других релизах</h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {featuredOn.map(album => (
+                                <AlbumCard key={album._id} album={album} />
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {/* <<<--- КОНЕЦ ИЗМЕНЕНИЯ 4 --- */}
             </div>
         </main>
     );
