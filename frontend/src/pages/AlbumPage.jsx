@@ -9,7 +9,7 @@ import { useUser } from '../context/UserContext';
 import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
-import toast from 'react-hot-toast'; // Добавлен импорт toast
+import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -58,9 +58,10 @@ const AlbumPage = () => {
     const totalMinutes = Math.floor(totalDurationMs / 60000);
 
     return (
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-slate-900">
             {/* --- НАЧАЛО ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
             <div className="relative">
+                {/* Блок с динамическим градиентом */}
                 <div 
                     className="p-6 md:p-8 pt-20 text-white transition-all duration-500"
                     style={{ backgroundImage: accentGradient }}
@@ -70,6 +71,7 @@ const AlbumPage = () => {
                         <span>Назад</span>
                     </button>
 
+                    {/* Контейнер для контента шапки с выравниванием по низу */}
                     <div className="flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
                         <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">
                             <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
@@ -87,11 +89,14 @@ const AlbumPage = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Новый блок для создания плавного перехода */}
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none" />
             </div>
             {/* --- КОНЕЦ ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
 
 
-            <div className="p-6 md:p-8">
+            <div className="p-6 md:p-8 relative z-[1]"> {/* Добавлен z-index, чтобы контент был выше градиента */}
                 <div className="flex items-center space-x-4 mb-8">
                     <button onClick={() => handlePlayAlbum(false)} className="px-8 py-3 bg-yellow-400 text-black font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
                         <Play size={24} fill="currentColor" />
