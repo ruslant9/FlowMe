@@ -197,10 +197,10 @@ const BannedOverlay = ({ banInfo }) => {
                 >
                     <ShieldAlert size={64} className="mx-auto text-red-400 mb-4" />
                     <h1 className="text-3xl font-bold mb-2 text-red-300">Доступ ограничен</h1>
-                    <p className="text-lg mb-4 text-white/80">
-                        Вы были заблокированы. Блокировка истекает: <strong className="font-bold text-white">{formattedDate}</strong>.
+                    <p className="text-lg mb-4">
+                        Вы были заблокированы. Блокировка истекает: <strong className="font-bold">{formattedDate}</strong>.
                     </p>
-                    <p className="text-md p-3 rounded-lg mb-8 text-white/80">
+                    <p className="text-md p-3 rounded-lg mb-8">
                         <strong>Причина:</strong> {banInfo.banReason || 'Не указана'}
                     </p>
 
