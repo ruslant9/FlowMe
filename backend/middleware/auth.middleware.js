@@ -7,10 +7,18 @@ module.exports = async (req, res, next) => {
         return next();
     }
     try {
-        // --- ИЗМЕНЕНИЕ: Читаем токен из HttpOnly cookie ---
-        const token = req.cookies.token;
+        // --- НАЧАЛО ИЗМЕНЕНИЯ: Проверяем и cookie, и заголовок Authorization ---
+        let token = req.cookies.token;
+
+        // Если токен не найден в cookie, ищем его в заголовке Authorization
+        if (!token && req.headers.authorization) {
+            const authHeader = req.headers.authorization;
+            if (authHeader.startsWith('Bearer ')) {
+                token = authHeader.split(' ')[1];
+            }
+        }
+
         if (!token) {
-            // Удаляем заголовок Authorization из проверки, он больше не нужен
             return res.status(401).json({ message: 'Нет авторизации' });
         }
         // --- КОНЕЦ ИЗМЕНЕНИЯ ---

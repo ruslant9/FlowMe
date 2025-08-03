@@ -108,7 +108,7 @@ const MainLayout = ({ children }) => {
   };
 
   return (
-    <div style={{ height: 'calc(var(--vh, 1vh) * 100)' }} className={`w-full font-sans transition-colors duration-300 overflow-hidden relative ${
+    <div style={{ height: 'calc(var(--vh, 1vh) * 100)' }} className={`w-full font-sans transition-colors duration-300 relative ${
       theme === 'dark' ? 'bg-liquid-background text-white' : 'bg-slate-100 text-slate-900'
     }`}>
       {theme === 'dark' && (
@@ -143,7 +143,7 @@ const MainLayout = ({ children }) => {
         </div>
       )}
       
-      <div className={`flex relative z-10 h-full ${currentTrack ? 'pb-[100px]' : ''}`}>
+      <div className={`flex relative z-10 h-full overflow-hidden ${currentTrack ? 'pb-[100px]' : ''}`}>
         <Sidebar themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} />
         <div className="flex-1 relative overflow-y-auto">
           {children}
@@ -187,25 +187,25 @@ const BannedOverlay = ({ banInfo }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-red-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4"> 
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
             <AnimatePresence>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="ios-glass-final bg-red-500/10 border border-red-400/20 max-w-lg w-full p-8 rounded-3xl text-center"
+                    className="ios-glass-final bg-slate-800/60 border border-red-500/30 max-w-lg w-full p-8 rounded-3xl text-center"
                 >
-                    <ShieldAlert size={64} className="mx-auto text-red-300 mb-4" />
-                    <h1 className="text-3xl font-bold mb-2">Доступ ограничен</h1>
-                    <p className="text-lg mb-4 bg-red-500/10 p-2 rounded-md">
-                        Вы были заблокированы. Блокировка истекает: <strong className="font-bold">{formattedDate}</strong>.
+                    <ShieldAlert size={64} className="mx-auto text-red-400 mb-4" />
+                    <h1 className="text-3xl font-bold mb-2 text-red-300">Доступ ограничен</h1>
+                    <p className="text-lg mb-4 text-white/80">
+                        Вы были заблокированы. Блокировка истекает: <strong className="font-bold text-white">{formattedDate}</strong>.
                     </p>
-                    <p className="text-md bg-red-500/30 p-3 rounded-lg mb-8">
+                    <p className="text-md p-3 rounded-lg mb-8 text-white/80">
                         <strong>Причина:</strong> {banInfo.banReason || 'Не указана'}
                     </p>
 
                     {showAppealForm ? (
-                        <motion.form 
+                        <motion.form
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             onSubmit={handleAppealSubmit}
@@ -215,12 +215,12 @@ const BannedOverlay = ({ banInfo }) => {
                                 value={appealText}
                                 onChange={(e) => setAppealText(e.target.value)}
                                 placeholder="Опишите, почему вы считаете блокировку ошибочной..."
-                                className="w-full h-32 p-3 bg-slate-900/50 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-red-300 focus:outline-none resize-none"
+                                className="w-full h-32 p-3 bg-slate-700/50 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-red-400 focus:outline-none resize-none"
                                 minLength="10"
                                 required
                             />
                             <div className="flex gap-4">
-                                <button type="button" onClick={() => setShowAppealForm(false)} className="w-full px-6 py-3 bg-slate-500/50 font-semibold rounded-lg hover:bg-slate-500/80 transition-colors">
+                                <button type="button" onClick={() => setShowAppealForm(false)} className="w-full px-6 py-3 bg-slate-600/80 font-semibold rounded-lg hover:bg-slate-600 transition-colors">
                                     Отмена
                                 </button>
                                 <button type="submit" disabled={isSubmitting} className="w-full px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50">
@@ -230,7 +230,7 @@ const BannedOverlay = ({ banInfo }) => {
                         </motion.form>
                     ) : (
                          <div className="flex flex-col sm:flex-row gap-4">
-                            <button onClick={logout} className="w-full sm:w-auto flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-slate-500/50 font-semibold rounded-lg hover:bg-slate-500/80 transition-colors">
+                            <button onClick={logout} className="w-full sm:w-auto flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-slate-600/80 font-semibold rounded-lg hover:bg-slate-600 transition-colors">
                                 <LogOut size={18}/>
                                 <span>Выйти</span>
                             </button>
