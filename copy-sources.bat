@@ -52,7 +52,9 @@ echo ==================================================
 echo.
 echo ✨ Готово! Все исходные файлы собраны в %DEST_DIR%
 echo.
+echo Окно закроется через 5 секунд...
 echo ==================================================
+timeout /t 5 >nul
 EXIT /B
 
 :: --- Функция проверки — исключение ненужных файлов ---
@@ -73,7 +75,7 @@ FOR %%N IN (favicon.svg vite.svg react.svg README.md .gitignore package-lock.jso
     IF /I "!name!"=="%%N" EXIT /B
 )
 
-:: Пропуск по папкам и конкретным путям
+:: Пропуск по путям/папкам
 ECHO !file! | findstr /I /C:"node_modules" >nul && EXIT /B
 ECHO !file! | findstr /I /C:"uploads" >nul && EXIT /B
 ECHO !file! | findstr /I /C:"src\assets" >nul && EXIT /B
@@ -82,7 +84,7 @@ ECHO !file! | findstr /I /C:"AnimatedSphere.scss" >nul && EXIT /B
 :: Пропуск .env
 IF /I "!name!"==".env" EXIT /B
 
-:: Иначе копировать
+:: Копировать, если не исключён
 CALL :copyFile "!file!"
 EXIT /B
 
