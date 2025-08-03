@@ -39,7 +39,7 @@ const TrackItem = ({
 
     const isLoading = track.youtubeId === loadingTrackId;
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -48,17 +48,23 @@ const TrackItem = ({
         ).trim();
     };
     
+    // Эта функция теперь обрабатывает все возможные форматы данных
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         
-        // Если это массив объектов (новый формат из БД)
+        // Формат 1: Массив объектов (из нашей БД)
         if (Array.isArray(artistData)) {
             return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
         }
         
-        // Если это просто строка (старый формат из Spotify/YouTube)
+        // Формат 2: Просто строка (из кэша Spotify/YouTube)
         if (typeof artistData === 'string') {
             return artistData.replace(' - Topic', '').trim();
+        }
+
+        // Формат 3: Один объект (на всякий случай)
+        if (typeof artistData === 'object' && artistData.name) {
+            return artistData.name.replace(' - Topic', '').trim();
         }
         
         return '';
@@ -73,7 +79,7 @@ const TrackItem = ({
         if (isCurrent) {
             onPlayPauseToggle();
         } else {
-            onSelectTrack(track); // Передаем весь объект трека
+            onSelectTrack(track);
         }
     };
 
