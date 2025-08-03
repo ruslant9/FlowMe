@@ -74,7 +74,6 @@ const processAndUpload = (req, res, next) => {
         });
 };
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ ---
 router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 20), processAndUpload, async (req, res) => {
     try {
         const { name, type, isPremiumOnly } = req.body;
@@ -84,22 +83,19 @@ router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 2
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: 'Добавьте хотя бы один файл.' });
         }
-
         const newPack = new ContentPack({
             name,
             type,
             creator: req.user.userId,
-            isPremiumOnly: type === 'emoji' ? (isPremiumOnly === 'true') : false, // Только для эмодзи-паков
+            isPremiumOnly: type === 'emoji' ? (isPremiumOnly === 'true') : false,
             items: req.files.map(file => ({ imageUrl: file.path }))
         });
-
         await newPack.save();
         res.status(201).json(newPack);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка создания пака.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 router.get('/packs/my', authMiddleware, async (req, res) => {
     try {
@@ -115,23 +111,46 @@ router.get('/packs/my', authMiddleware, async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ ---
 router.get('/packs/added', authMiddleware, async (req, res) => {
     try {
         const { type } = req.query;
-        const user = await User.findById(req.user.userId).populate({
+        const userId = req.user.userId;
+
+        // 1. Находим паки, которые пользователь добавил
+        const user = await User.findById(userId).populate({
             path: 'addedContentPacks',
             populate: { path: 'creator', select: 'username fullName' }
         });
+        const addedPacks = user.addedContentPacks;
 
-        let addedPacks = user.addedContentPacks;
+        // 2. Находим паки, которые пользователь создал
+        const createdPacks = await ContentPack.find({ creator: userId })
+            .populate('creator', 'username fullName');
+
+        // 3. Объединяем их и убираем дубликаты
+        const allPacksMap = new Map();
+        [...addedPacks, ...createdPacks].forEach(pack => {
+            allPacksMap.set(pack._id.toString(), pack);
+        });
+
+        let finalPacks = Array.from(allPacksMap.values());
+
+        // 4. Применяем фильтр по типу, если он есть
         if (type && ['sticker', 'emoji'].includes(type)) {
-            addedPacks = addedPacks.filter(pack => pack.type === type);
+            finalPacks = finalPacks.filter(pack => pack.type === type);
         }
-        res.json(addedPacks);
+
+        // 5. Сортируем (например, по дате создания)
+        finalPacks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        res.json(finalPacks);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка загрузки добавленных паков.' });
     }
 });
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 
 router.get('/packs/search', authMiddleware, async (req, res) => {
     const { q = '', page = 1, type } = req.query;
@@ -180,7 +199,6 @@ const canModifyPack = async (req, res, next) => {
     }
 };
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ ---
 router.put('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, upload.array('newItems', 10), processAndUpload, async (req, res) => {
     try {
         const { name, itemsToDelete, isPremiumOnly } = req.body;
@@ -195,19 +213,15 @@ router.put('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, u
             const newItems = req.files.map(file => ({ imageUrl: file.path }));
             pack.items.push(...newItems);
         }
-        
-        // Обновляем флаг только если он пришел и тип пака - эмодзи
         if (isPremiumOnly !== undefined && pack.type === 'emoji') {
             pack.isPremiumOnly = isPremiumOnly === 'true';
         }
-        
         await pack.save();
         res.json(pack);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка обновления пака.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 router.delete('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, async (req, res) => {
     try {

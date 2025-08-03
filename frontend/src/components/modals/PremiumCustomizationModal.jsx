@@ -14,22 +14,20 @@ import AnimatedAccent from '../AnimatedAccent';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем список рамок ---
-const avatarBorders = [
-    { id: 'none', name: 'Без рамки', type: 'none', value: null, pseudo: false },
-    { id: 'animated-1', name: 'Аврора', type: 'animated-1', value: null, pseudo: false },
-    { id: 'animated-2', name: 'Инста', type: 'animated-2', value: null, pseudo: false },
-    { id: 'animated-hearts', name: 'Сердца', type: 'animated-hearts', value: null, pseudo: true },
-    { id: 'animated-neon', name: 'Неон', type: 'animated-neon', value: null, pseudo: true },
-    { id: 'animated-orbit', name: 'Орбита', type: 'animated-orbit', value: null, pseudo: true },
-    { id: 'animated-fire', name: 'Огонь', type: 'animated-fire', value: null, pseudo: true },
-    { id: 'animated-glitch', name: 'Глитч', type: 'animated-glitch', value: null, pseudo: true },
-    { id: 'animated-tech', name: 'Техно', type: 'animated-tech', value: null, pseudo: true },
-    { id: 'animated-pulse', name: 'Пульс', type: 'animated-pulse', value: null, pseudo: false },
-    { id: 'animated-runes', name: 'Руны', type: 'animated-runes', value: null, pseudo: true },
-    { id: 'animated-sparkle', name: 'Искры', type: 'animated-sparkle', value: null, pseudo: true },
+const avatarBorders = [ // ИЗМЕНЕНИЕ: Полностью обновленный список рамок
+    { id: 'none', name: 'Без рамки', type: 'none', value: null },
+    { id: 'animated-1', name: 'Аврора', type: 'animated-1', value: null },
+    { id: 'animated-2', name: 'Инста', type: 'animated-2', value: null },
+    { id: 'hearts', name: 'Сердца', type: 'static', value: '#ef4444' },
+    { id: 'neon', name: 'Неон', type: 'static', value: '#22c55e' },
+    { id: 'orbit', name: 'Орбита', type: 'static', value: '#8b5cf6' },
+    { id: 'fire', name: 'Огонь', type: 'static', value: '#f97316' },
+    { id: 'glitch', name: 'Глитч', type: 'static', value: '#06b6d4' },
+    { id: 'techno', name: 'Техно', type: 'static', value: '#64748b' },
+    { id: 'pulse', name: 'Пульс', type: 'static', value: '#ec4899' },
+    { id: 'runes', name: 'Руны', type: 'static', value: '#eab308' },
+    { id: 'sparks', name: 'Искры', type: 'static', value: '#f1f5f9' },
 ];
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const premadeAccents = [
     { name: "Неоновый дудл", url: "/wallpapers/templates/wallpaper-doodle-dark.svg" },
@@ -71,7 +69,6 @@ const AvatarBorderPreview = ({ border, isSelected, onClick, user }) => (
     >
         <Avatar
             username={user.username}
-            fullName={user.fullName}
             avatarUrl={user.avatar ? `${API_URL}/${user.avatar}` : ''}
             customBorder={border}
             size="md"
@@ -350,7 +347,7 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                                     </button>
                                                 ))}
                                             </div>
-                                            <div className="flex-1 overflow-y-auto grid grid-cols-4 sm:grid-cols-6 gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg min-h-[120px]">
+                                            <div className="flex-1 overflow-y-auto grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg min-h-[120px]">
                                                 {activeEmojis.map((emoji) => {
                                                     const isSelected = customizationData.usernameEmoji?.id === emoji.id;
                                                     return (

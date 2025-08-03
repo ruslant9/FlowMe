@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Image as ImageIcon, Loader2, Lock, Unlock, Smile, Pencil, BookOpen, Music, XCircle, BarChart2 as PollIcon, Calendar as CalendarIcon } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import ImageAttachmentModal from '../chat/ImageAttachmentModal';
+import ImageAttachmentModal from '../chat/ImageAttachmentModal'; // Re-use existing image editor
 import { Listbox, Transition } from '@headlessui/react';
 import { Check, ChevronDown } from 'lucide-react';
 import AttachTrackModal from '../music/AttachTrackModal'; 
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { ru } from 'date-fns/locale';
 import { setHours, setMinutes, isToday } from 'date-fns';
+import AttachedTrack from '../music/AttachedTrack';
 
 registerLocale('ru', ru);
 const Picker = React.lazy(() => import('emoji-picker-react'));
@@ -356,16 +357,14 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                             )}
 
                             {attachedTrack && (
-                                <div className="flex items-center space-x-3 p-3 mt-3 rounded-lg bg-slate-100 dark:bg-slate-800/50 relative">
-                                    <img src={attachedTrack.albumArtUrl} alt={attachedTrack.title} className="w-12 h-12 rounded-md object-cover"/>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold truncate">{attachedTrack.title}</p>
-                                        <p className="text-sm text-slate-500 dark:text-white/60 truncate">{attachedTrack.artist}</p>
+                                <div className="mt-3 relative">
+                                    <div className="p-2 bg-slate-100 dark:bg-slate-800/50 rounded-lg">
+                                        <AttachedTrack track={attachedTrack} />
                                     </div>
-                                    <button 
+                                    <button
                                         type="button" 
                                         onClick={() => setAttachedTrack(null)} 
-                                        className="p-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-500/10"
+                                        className="absolute top-2 right-2 p-1 bg-white/50 dark:bg-slate-900/50 rounded-full text-slate-500 hover:text-red-500"
                                     >
                                         <XCircle size={18}/>
                                     </button>

@@ -28,7 +28,6 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
     </button>
 );
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Компонент для под-вкладок ---
 const SubTabButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
@@ -41,7 +40,6 @@ const SubTabButton = ({ active, onClick, children }) => (
         {children}
     </button>
 );
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const WorkshopPage = () => {
     useTitle('Мастерская');
@@ -49,10 +47,8 @@ const WorkshopPage = () => {
     const { currentUser, refetchPacks } = useUser();
     const { showConfirmation } = useModal();
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояние для фильтра по типу ---
-    const [activeTypeFilter, setActiveTypeFilter] = useState('all'); // 'all', 'sticker', 'emoji'
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
+    const [activeTypeFilter, setActiveTypeFilter] = useState('all');
+    
     const [myPacks, setMyPacks] = useState([]);
     const [addedPacks, setAddedPacks] = useState([]);
     const [searchResults, setSearchResults] = useState([]);
@@ -68,7 +64,6 @@ const WorkshopPage = () => {
 
     const addedPackIds = useMemo(() => new Set(addedPacks.map(p => p._id)), [addedPacks]);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Модифицируем fetchData для поддержки фильтра ---
     const fetchData = useCallback(async (tab, query = '', page = 1, type = 'all') => {
         setLoading(true);
         try {
@@ -98,7 +93,6 @@ const WorkshopPage = () => {
             setLoading(false);
         }
     }, []);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     useEffect(() => {
         fetchData(activeTab, searchQuery, 1, activeTypeFilter);
@@ -155,7 +149,6 @@ const WorkshopPage = () => {
             const token = localStorage.getItem('token');
             await axios[method](endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
             toast.success(isAdded ? 'Пак удален из вашей библиотеки' : 'Пак добавлен в вашу библиотеку');
-            // Обновляем список добавленных паков, чтобы кнопка сразу изменилась
             const addedRes = await axios.get(`${API_URL}/api/workshop/packs/added`, { headers: { Authorization: `Bearer ${token}` } });
             setAddedPacks(addedRes.data);
             refetchPacks();
@@ -212,6 +205,7 @@ const WorkshopPage = () => {
                         );
                     }
 
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Возвращаем кнопку "Добавить" для пользовательских паков ---
                     const isAdded = addedPackIds.has(pack._id);
                     return (
                         <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
@@ -219,6 +213,7 @@ const WorkshopPage = () => {
                             <span>{isAdded ? 'Добавлено' : 'Добавить'}</span>
                         </button>
                     );
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 };
                 break;
             default:
@@ -228,13 +223,16 @@ const WorkshopPage = () => {
         return (
             <div>
                 {packs.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {packs.map(pack => 
-                            <PackCard key={pack._id} pack={pack} onLongPress={setPreviewingPack}>
-                                {cardActions(pack)}
-                            </PackCard>
-                        )}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {packs.map(pack => 
+                                <PackCard key={pack._id} pack={pack} onLongPress={setPreviewingPack}>
+                                    {cardActions(pack)}
+                                </PackCard>
+                            )}
+                        </div>
+                        <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-4">Удерживайте пак для предпросмотра</p>
+                    </>
                 ) : (
                     <div className="text-center py-10 text-slate-500">{emptyMessage}</div>
                 )}
@@ -283,13 +281,11 @@ const WorkshopPage = () => {
                     <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск паков</TabButton>
                 </div>
 
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Панель с под-вкладками --- */}
                 <div className="flex items-center space-x-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
                     <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
                     <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
                     <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
                 </div>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
                 {activeTab === 'search' && (
                     <div className="relative mb-6">

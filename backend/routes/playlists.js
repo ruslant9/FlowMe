@@ -7,6 +7,23 @@ const Track = require('../models/Track');
 const User = require('../models/User');
 const { sanitize } = require('../utils/sanitize');
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Хелпер-функция для обновления обложки ---
+async function updatePlaylistCover(playlist) {
+    if (playlist.tracks.length > 0) {
+        const coverTracks = await Track.find({ '_id': { $in: playlist.tracks } })
+            .populate('album', 'coverArtUrl') // Важно, чтобы получить обложку альбома
+            .select('albumArtUrl album')
+            .limit(4)
+            .lean(); // .lean() для производительности
+        // Приоритет обложке сингла, иначе берем обложку альбома
+        playlist.coverImageUrls = coverTracks.map(t => t.albumArtUrl || t.album?.coverArtUrl).filter(Boolean);
+    } else {
+        playlist.coverImageUrls = [];
+    }
+    return playlist;
+}
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const playlists = await Playlist.find({ user: req.user.userId })
@@ -151,8 +168,12 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
         }
         const tracksToAdd = trackIds.filter(id => !playlist.tracks.some(trackId => trackId.equals(id)));
         playlist.tracks.push(...tracksToAdd);
+
+        // --- ИСПРАВЛЕНИЕ: Вызываем хелпер перед сохранением ---
+        await updatePlaylistCover(playlist);
         await playlist.save();
-        const updatedPlaylist = await Playlist.findById(playlist._id).populate('tracks').populate('user', 'username fullName avatar');
+
+        const updatedPlaylist = await Playlist.findById(playlist._id).populate({ path: 'tracks', populate: { path: 'artist album' } }).populate('user', 'username fullName avatar');
         res.json(updatedPlaylist);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при добавлении треков в плейлист.' });
@@ -173,9 +194,12 @@ router.delete('/:playlistId/tracks/:trackId', authMiddleware, async (req, res) =
         }
 
         playlist.tracks.pull(trackId);
+        
+        // --- ИСПРАВЛЕНИЕ: Вызываем хелпер перед сохранением ---
+        await updatePlaylistCover(playlist);
         await playlist.save();
         
-        const updatedPlaylist = await Playlist.findById(playlist._id).populate('tracks').populate('user', 'username fullName avatar');
+        const updatedPlaylist = await Playlist.findById(playlist._id).populate({ path: 'tracks', populate: { path: 'artist album' } }).populate('user', 'username fullName avatar');
         res.json(updatedPlaylist);
 
     } catch (error) {
