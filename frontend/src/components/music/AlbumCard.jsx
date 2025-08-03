@@ -6,9 +6,11 @@ import { Link } from 'react-router-dom';
 import { Music } from 'lucide-react';
 
 const AlbumCard = ({ album }) => {
-    // --- ИЗМЕНЕНИЕ: Оборачиваем карточку в Link ---
+    // --- ИСПРАВЛЕНИЕ: Динамически определяем URL в зависимости от того, сингл это или альбом ---
+    const linkTo = album.isSingle ? `/single/${album._id}` : `/album/${album._id}`;
+    
     return (
-        <Link to={`/album/${album._id}`}>
+        <Link to={linkTo}>
             <motion.div
                 className="flex-shrink-0 w-full group cursor-pointer"
                 whileHover={{ y: -5 }}
@@ -25,7 +27,6 @@ const AlbumCard = ({ album }) => {
                 </div>
                 <div className="mt-2">
                     <p className="font-semibold text-sm truncate group-hover:text-blue-400 transition-colors">{album.title}</p>
-                    {/* --- ИСПРАВЛЕНИЕ: Добавляем год релиза к имени артиста --- */}
                     <p className="text-xs text-slate-500 truncate">
                         {album.artist.name}{album.releaseYear && ` • ${album.releaseYear}`}
                     </p>
@@ -33,7 +34,6 @@ const AlbumCard = ({ album }) => {
             </motion.div>
         </Link>
     );
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 };
 
 export default AlbumCard;

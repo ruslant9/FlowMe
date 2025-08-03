@@ -33,8 +33,9 @@ import MusicPage from './pages/MusicPage';
 import PlaylistPage from './pages/PlaylistPage';
 import PremiumPage from './pages/PremiumPage';
 import AdminPage from './pages/AdminPage'; 
-import ArtistPage from './pages/ArtistPage'; // Пример импорта
-import AlbumPage from './pages/AlbumPage';   // Пример импорта
+import ArtistPage from './pages/ArtistPage';
+import AlbumPage from './pages/AlbumPage';
+import SinglePage from './pages/SinglePage'; // --- НОВЫЙ ИМПОРТ ---
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -325,6 +326,8 @@ function App() {
             <Route path="/music/playlist/:playlistId" element={<PlaylistPage />} />
             <Route path="/artist/:artistId" element={<ArtistPage />} />
             <Route path="/album/:albumId" element={<AlbumPage />} />
+            {/* --- НОВЫЙ МАРШРУТ --- */}
+            <Route path="/single/:trackId" element={<SinglePage />} />
             <Route path="/profile" element={<MyProfilePage />} />
             <Route path="/profile/:userId" element={<UserProfilePage />} />
             <Route path="/friends" element={<FriendsPage />} />

@@ -135,19 +135,17 @@ router.get('/saved', authMiddleware, async (req, res) => {
         const savedTracks = await Track.find({ user: req.user.userId, type: 'saved' })
             .sort({ savedAt: -1 })
             .populate('artist', 'name')
-            .populate('album', 'title coverArtUrl') // <<<--- ИЗМЕНЕНИЕ: Добавляем populate для обложки альбома
-            .lean(); // <<<--- ИЗМЕНЕНИЕ: Используем .lean() для производительности
+            .populate('album', 'title coverArtUrl')
+            .lean();
 
-        // <<<--- НАЧАЛО ИСПРАВЛЕНИЯ: Обрабатываем треки, чтобы добавить обложку альбома, если нужно ---
         const processedTracks = savedTracks.map(track => {
             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
             }
             return track;
         });
-        // <<<--- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-        res.status(200).json(processedTracks); // <<<--- ИЗМЕНЕНИЕ: Отправляем обработанные треки
+        res.status(200).json(processedTracks);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при получении треков.' });
     }
@@ -201,10 +199,8 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
         const artistId = new mongoose.Types.ObjectId(req.params.artistId);
 
         const [artist, topTracks, albums, featuredTracks, singles] = await Promise.all([
-            // 1. Получаем информацию о самом артисте
             Artist.findById(artistId).lean(),
             
-            // 2. Получаем топ-5 популярных сольных треков
             Track.find({ artist: artistId, status: 'approved' })
                 .sort({ playCount: -1 })
                 .limit(5)
@@ -212,21 +208,18 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
                 .populate('album', 'title coverArtUrl')
                 .lean(),
             
-            // 3. Получаем сольные альбомы артиста
             Album.find({ artist: artistId, status: 'approved' })
                 .populate('artist', 'name')
                 .sort({ releaseYear: -1 })
                 .lean(),
 
-            // 4. ИСПРАВЛЕНИЕ: Ищем ВСЕ треки артиста в альбомах, чтобы потом отфильтровать фиты
             Track.find({ artist: artistId, status: 'approved', album: { $ne: null } })
                  .populate({
                      path: 'album',
-                     populate: { path: 'artist', select: 'name _id' } // Добавляем _id для корректного сравнения
+                     populate: { path: 'artist', select: 'name _id' }
                  })
                  .lean(),
             
-            // 5. НОВЫЙ ЗАПРОС: Ищем сольные треки (синглы), у которых нет альбома
             Track.find({ artist: artistId, status: 'approved', album: null })
                  .populate('artist', 'name')
                  .sort({ createdAt: -1 })
@@ -244,7 +237,6 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             return track;
         });
 
-        // 6. ИСПРАВЛЕНИЕ: Фильтруем треки, чтобы найти только те, где артист - гость
         const actualFeaturedTracks = featuredTracks.filter(track => 
             track.album && track.album.artist && track.album.artist._id.toString() !== artistId.toString()
         );
@@ -362,6 +354,24 @@ router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
         res.sendStatus(500);
     }
 });
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый маршрут для получения данных одного трека ---
+router.get('/track/:trackId', authMiddleware, async (req, res) => {
+    try {
+        const track = await Track.findById(req.params.trackId)
+            .populate('artist', 'name avatarUrl')
+            .lean();
+
+        if (!track || track.status !== 'approved') {
+            return res.status(404).json({ message: 'Трек не найден.' });
+        }
+        res.json(track);
+    } catch(error) {
+        res.status(500).json({ message: 'Ошибка сервера при загрузке трека.' });
+    }
+});
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
 router.post('/log-action', authMiddleware, async (req, res) => {
     try {

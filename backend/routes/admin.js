@@ -24,20 +24,35 @@ const upload = multer({ storage: adminStorage });
 // Защищаем все роуты в этом файле - только для авторизованных админов
 router.use(authMiddleware, adminMiddleware);
 
-// --- РОУТЫ ДЛЯ МОДЕРАЦИИ (остаются без изменений) ---
+// --- РОУТЫ ДЛЯ МОДЕРАЦИИ ---
 
-// Получить список всех заявок на проверку
 router.get('/submissions', async (req, res) => {
     try {
         const submissions = await Submission.find({ status: 'pending' })
             .populate('submittedBy', 'username fullName avatar')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean(); 
+
+        for (const sub of submissions) {
+            if (sub.entityType === 'Track' && sub.data.artist && Array.isArray(sub.data.artist)) {
+                try {
+                    const artistIds = sub.data.artist.map(id => new mongoose.Types.ObjectId(id));
+                    const artists = await Artist.find({ '_id': { $in: artistIds } }).select('name').lean();
+                    sub.data.populatedArtists = artists;
+                } catch (e) {
+                    console.error("Ошибка при ручной популяции артистов в заявке:", e);
+                    sub.data.populatedArtists = [];
+                }
+            }
+        }
+
         res.json(submissions);
     } catch (error) {
         console.error("Ошибка загрузки заявок:", error);
         res.status(500).json({ message: 'Ошибка загрузки заявок' });
     }
 });
+
 
 // Одобрить заявку
 router.post('/submissions/:id/approve', async (req, res) => {
@@ -140,11 +155,10 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Загрузка сингла ---
 // Загрузить трек напрямую
 router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name: 'coverArt', maxCount: 1 }]), async (req, res) => {
      try {
-        const { title, artistIds, albumId, durationMs, genres, releaseYear } = req.body;
+        const { title, artistIds, albumId, durationMs, genres, releaseYear, isExplicit } = req.body;
         
         const parsedGenres = genres ? JSON.parse(genres) : [];
         const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
@@ -159,6 +173,7 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
             album: albumId || null,
             durationMs,
             genres: parsedGenres,
+            isExplicit: isExplicit === 'true',
             releaseYear: releaseYear || null,
             albumArtUrl: albumId ? null : (req.files.coverArt?.[0]?.path || null),
             storageKey: req.files.trackFile[0].path,
@@ -179,17 +194,19 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 // Создать альбом напрямую
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
-        const { title, artistId } = req.body;
+        const { title, artistId, genre, releaseYear } = req.body;
         
         const newAlbum = new Album({
             title,
             artist: artistId,
+            genre,
+            releaseYear: releaseYear || null,
             coverArtUrl: req.file ? req.file.path : null,
             status: 'approved',
             createdBy: req.user._id,
@@ -202,6 +219,8 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
 // 1. Получить список всех артистов с фильтрацией и сортировкой
 router.get('/content/artists', async (req, res) => {
@@ -353,13 +372,14 @@ router.delete('/content/albums/:id', async (req, res) => {
 // --- ТРЕКИ ---
 router.put('/content/tracks/:id', async (req, res) => {
     try {
-        const { title, artistIds, albumId, genres } = req.body;
+        const { title, artistIds, albumId, genres, isExplicit } = req.body;
         const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
         const updateData = { 
             title, 
             artist: parsedArtistIds, 
             album: albumId || null, 
-            genres: genres || [] 
+            genres: genres || [],
+            isExplicit: isExplicit || false,
         };
 
         const updatedTrack = await Track.findByIdAndUpdate(req.params.id, updateData, { new: true });

@@ -54,9 +54,7 @@ const ArtistPage = () => {
         return <div className="flex-1 p-8 flex items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-slate-400" /></div>;
     }
 
-    // <<<--- НАЧАЛО ИЗМЕНЕНИЯ 1: Извлекаем новые данные ---
     const { artist, topTracks, albums, featuredOn, singles } = artistData;
-    // <<<--- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
     return (
         <main className="flex-1 overflow-y-auto">
@@ -112,9 +110,7 @@ const ArtistPage = () => {
                 {albums.length > 0 && (
                      <div className="mb-12">
                         <h2 className="text-2xl font-bold mb-4">Альбомы</h2>
-                        {/* <<<--- НАЧАЛО ИЗМЕНЕНИЯ 2: Уменьшаем размер карточек --- */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {/* <<<--- КОНЕЦ ИЗМЕНЕНИЯ 2 --- */}
                             {albums.map(album => (
                                 <AlbumCard key={album._id} album={album} />
                             ))}
@@ -122,29 +118,29 @@ const ArtistPage = () => {
                     </div>
                 )}
                 
-                {/* <<<--- НАЧАЛО ИЗМЕНЕНИЯ 3: Новый блок для синглов --- */}
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Отображаем синглы как карточки альбомов --- */}
                 {singles && singles.length > 0 && (
                     <div className="mb-12">
                         <h2 className="text-2xl font-bold mb-4">Сольные треки (синглы)</h2>
-                        <div className="space-y-1">
-                            {singles.map((track, index) => (
-                                <PlaylistTrackItem
-                                    key={track._id}
-                                    track={track}
-                                    index={index + 1}
-                                    onPlay={() => playTrack(track, singles)}
-                                    isCurrent={track._id === currentTrack?._id}
-                                    isPlaying={isPlaying}
-                                    isSaved={myMusicTrackIds?.has(track._id)}
-                                    onToggleSave={onToggleLike}
-                                />
-                            ))}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {singles.map(single => {
+                                // Создаем "фальшивый" объект альбома из данных сингла
+                                const singleAsAlbum = {
+                                    _id: single._id, // ID нужен для ключа и ссылки
+                                    title: single.title,
+                                    coverArtUrl: single.albumArtUrl,
+                                    artist: single.artist[0], // Берем первого исполнителя для отображения
+                                    releaseYear: single.releaseYear,
+                                    // Указываем, что это сингл, для новой страницы
+                                    isSingle: true 
+                                };
+                                return <AlbumCard key={single._id} album={singleAsAlbum} />;
+                            })}
                         </div>
                     </div>
                 )}
-                {/* <<<--- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
-                {/* <<<--- НАЧАЛО ИЗМЕНЕНИЯ 4: Новый блок для участия в релизах --- */}
                 {featuredOn && featuredOn.length > 0 && (
                      <div className="mb-12">
                         <h2 className="text-2xl font-bold mb-4">Участие в других релизах</h2>
@@ -155,7 +151,6 @@ const ArtistPage = () => {
                         </div>
                     </div>
                 )}
-                {/* <<<--- КОНЕЦ ИЗМЕНЕНИЯ 4 --- */}
             </div>
         </main>
     );

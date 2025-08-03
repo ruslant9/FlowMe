@@ -175,7 +175,6 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
                     <GripVertical size={20}/>
                 </div>
             </div>
-
             <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3 w-full">
                 <div className="relative">
                     <input
@@ -195,7 +194,6 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
                         <Trash2 size={16} />
                     </button>
                 </div>
-
                 <div>
                     <label className="text-sm font-semibold block mb-1">Дополнительные исполнители (фит)</label>
                     <MultiArtistAutocomplete artists={artists} selectedIds={track.artistIds}
@@ -213,10 +211,13 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
     const [loading, setLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [trackList, setTrackList] = useState([]);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем isExplicit в состояние сингла ---
     const [singleTrackData, setSingleTrackData] = useState({
-        title: '', artistIds: [], genres: [], trackFile: null,
+        title: '', artistIds: [], genres: [], trackFile: null, isExplicit: false,
         durationMs: 0, coverArt: null, coverPreview: '', releaseYear: ''
     });
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    const abortControllerRef = useRef(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -232,6 +233,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 title: initialData.title || '',
                 artistIds: (initialData.artist || []).map(a => a._id),
                 genres: initialData.genres || [],
+                isExplicit: initialData.isExplicit || false, // --- ИСПРАВЛЕНИЕ: Загружаем статус Explicit
                 releaseYear: initialData.releaseYear || '',
                 trackFile: null, coverArt: null,
                 coverPreview: initialData.albumArtUrl || '',
@@ -300,17 +302,33 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         }
     };
 
+    const handleCancelUpload = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setUploadProgress(0);
+        abortControllerRef.current = new AbortController();
         const toastId = toast.loading('Подготовка к загрузке...');
         const axiosConfig = {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
+            signal: abortControllerRef.current.signal,
             onUploadProgress: (progressEvent) => {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                 setUploadProgress(percentCompleted);
-                toast.loading(`Загрузка... ${percentCompleted}%`, { id: toastId });
+                toast.loading(
+                    (t) => (
+                        <div className="flex items-center">
+                            <span>Загрузка... {percentCompleted}%</span>
+                            <button onClick={() => { handleCancelUpload(); toast.dismiss(t.id); }} className="ml-2 text-red-400 font-bold text-xs">Отмена</button>
+                        </div>
+                    ),
+                    { id: toastId }
+                );
             }
         };
 
@@ -322,13 +340,14 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('artistIds', JSON.stringify(singleTrackData.artistIds));
                 formData.append('albumId', albumId || '');
                 formData.append('genres', JSON.stringify(singleTrackData.genres || []));
+                formData.append('isExplicit', singleTrackData.isExplicit); // --- ИСПРАВЛЕНИЕ: Отправляем статус Explicit при редактировании
                 await axios.put(`${API_URL}/api/admin/content/tracks/${initialData._id}`, formData, { headers: axiosConfig.headers });
                 toast.success("Трек успешно обновлен!", { id: toastId });
                 onSuccess();
                 return;
             }
 
-            if (albumId) { // Логика для загрузки в альбом (только админ)
+            if (albumId) {
                 if (trackList.length === 0) throw new Error("Выберите аудиофайлы для загрузки.");
                 const formData = new FormData();
                 const metadata = trackList.map(t => ({
@@ -338,12 +357,13 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('tracksMetadata', JSON.stringify(metadata));
                 trackList.forEach(t => formData.append('trackFiles', t.file));
                 await axios.post(`${API_URL}/api/admin/albums/${albumId}/batch-upload-tracks`, formData, axiosConfig);
-            } else { // Логика для сингла (и админ, и пользователь)
+            } else {
                 if (!singleTrackData.trackFile || singleTrackData.artistIds.length === 0) throw new Error("Исполнитель и аудиофайл обязательны.");
                 const formData = new FormData();
                 formData.append('title', singleTrackData.title);
                 formData.append('artistIds', JSON.stringify(singleTrackData.artistIds));
                 formData.append('genres', JSON.stringify(singleTrackData.genres));
+                formData.append('isExplicit', singleTrackData.isExplicit); // --- ИСПРАВЛЕНИЕ: Отправляем статус Explicit при создании
                 formData.append('trackFile', singleTrackData.trackFile);
                 if (singleTrackData.coverArt) formData.append('coverArt', singleTrackData.coverArt);
                 formData.append('durationMs', singleTrackData.durationMs);
@@ -355,16 +375,23 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
             onSuccess();
             setAlbumId('');
             setTrackList([]);
-            setSingleTrackData({ title: '', artistIds: [], genres: [], trackFile: null, durationMs: 0, coverArt: null, coverPreview: '', releaseYear: '' });
+            setSingleTrackData({ title: '', artistIds: [], genres: [], trackFile: null, isExplicit: false, durationMs: 0, coverArt: null, coverPreview: '', releaseYear: '' });
             e.target.reset();
         } catch (error) {
-            toast.error(error.message || error.response?.data?.message || "Ошибка при загрузке.", { id: toastId });
-        } finally { setLoading(false); setUploadProgress(0); }
+            if (axios.isCancel(error)) {
+                 toast.success('Загрузка отменена.', { id: toastId });
+            } else {
+                toast.error(error.message || error.response?.data?.message || "Ошибка при загрузке.", { id: toastId });
+            }
+        } finally { 
+            setLoading(false); 
+            setUploadProgress(0); 
+            abortControllerRef.current = null;
+        }
     };
 
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-4">
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Динамический заголовок и подзаголовок --- */}
             <h3 className="font-bold text-lg">
                 {isEditMode ? `Редактирование: ${initialData.title}` : 
                  (currentUser.role === 'admin' ? 'Загрузить трек' : 'Предложить новый трек')}
@@ -372,7 +399,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
             {currentUser.role !== 'admin' && !isEditMode && (
                 <p className="text-xs text-slate-500 -mt-3">Ваша заявка будет рассмотрена администратором.</p>
             )}
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
@@ -380,7 +406,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
             </div>
 
             {albumId && !isEditMode ? (
-                <div className="space-y-4">
+                 <div className="space-y-4">
                     <div>
                         <label className="text-sm font-semibold block mb-1">Аудиофайлы *</label>
                         <div className="flex items-center space-x-4">
@@ -427,6 +453,15 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                         </div>
                     </div>
                     <GenreSelector selectedGenres={singleTrackData.genres} onGenreChange={(genres) => handleSingleTrackChange('genres', genres)} />
+                    
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем ToggleSwitch для сингла --- */}
+                    <ToggleSwitch 
+                        checked={singleTrackData.isExplicit} 
+                        onChange={(checked) => handleSingleTrackChange('isExplicit', checked)} 
+                        label="Explicit (ненормативная лексика)" 
+                    />
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
                     {!isEditMode && (
                         <>
                             <div>
@@ -443,16 +478,19 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 </div>
             )}
             {loading && (
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
-                    <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                <div className="flex items-center space-x-4">
+                    <div className="flex-grow bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                    </div>
+                    <button type="button" onClick={handleCancelUpload} className="text-sm font-semibold text-red-500 hover:underline">
+                        Отмена
+                    </button>
                 </div>
             )}
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Динамический текст кнопки --- */}
             <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
-                {loading && <Loader2 className="animate-spin mr-2"/>}
+                {loading ? <Loader2 className="animate-spin mr-2"/> : null}
                 {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? `Загрузить трек(и)` : 'Отправить на проверку')}
             </button>
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
         </form>
     );
 };

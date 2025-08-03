@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, CheckCircle, XCircle, Tag, FileText, Image as ImageIcon } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Tag, FileText, Image as ImageIcon, MicVocal, Calendar, Music } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import Avatar from '../Avatar';
@@ -90,7 +90,7 @@ const AdminSubmissionsList = () => {
                 }
 
                 const { data } = sub;
-                const imageUrl = data.avatarUrl || data.coverArtUrl;
+                const imageUrl = data.avatarUrl || data.coverArtUrl || data.albumArtUrl;
 
                 return (
                     <div key={sub._id} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 flex flex-col sm:flex-row gap-4">
@@ -103,8 +103,31 @@ const AdminSubmissionsList = () => {
                         </div>
                         
                         <div className="flex-grow min-w-0">
-                            <p className="font-bold text-lg">{sub.entityType}: <span className="text-blue-500">{data.name || data.title}</span></p>
+                            <p className="font-bold text-lg">{data.name || data.title}
+                                <span className="ml-2 text-base font-normal text-slate-500 dark:text-slate-400">({sub.entityType})</span>
+                            </p>
                             
+                            {sub.entityType === 'Track' && (
+                                <div className="space-y-1 mt-1 text-sm text-slate-600 dark:text-slate-300">
+                                    <div className="flex items-center space-x-2">
+                                        <MicVocal size={14} className="flex-shrink-0 text-slate-500"/>
+                                        <span>{data.populatedArtists?.map(a => a.name).join(', ') || 'Неизвестный исполнитель'}</span>
+                                    </div>
+                                    {data.releaseYear && (
+                                        <div className="flex items-center space-x-2">
+                                            <Calendar size={14} className="flex-shrink-0 text-slate-500"/>
+                                            <span>{data.releaseYear}</span>
+                                        </div>
+                                    )}
+                                    {data.genres && data.genres.length > 0 && (
+                                        <div className="flex items-center space-x-2">
+                                            <Music size={14} className="flex-shrink-0 text-slate-500"/>
+                                            <span>{data.genres.join(', ')}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {data.description && (
                                 <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 flex items-start space-x-2">
                                     <FileText size={14} className="flex-shrink-0 mt-0.5"/> 
