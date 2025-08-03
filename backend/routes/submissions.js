@@ -10,7 +10,6 @@ const submissionStorage = createStorage('submissions');
 const upload = multer({ storage: submissionStorage });
 const Artist = require('../models/Artist');
 const { sanitize } = require('../utils/sanitize');
-router.use(authMiddleware);
 
 // 1. Создать заявку на нового артиста
 router.post('/artists', upload.single('avatar'), async (req, res) => {
