@@ -4,24 +4,18 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/auth.middleware');
-
-// Модели
 const Track = require('../models/Track');
-const User = require('../models/User');
 const Playlist = require('../models/Playlist');
 const Artist = require('../models/Artist');
 const Album = require('../models/Album');
 const UserMusicProfile = require('../models/UserMusicProfile');
-
-// Утилиты
-const { isAllowedByPrivacy } = require('../utils/privacy');
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 
 const broadcastToUsers = (req, userIds, message) => {
     userIds.forEach(userId => {
         const userSocket = req.clients.get(userId.toString());
-        if (userSocket && userSocket.readyState === 1) { // 1 === WebSocket.OPEN
+        if (userSocket && userSocket.readyState === 1) { 
             userSocket.send(JSON.stringify(message));
         }
     });
@@ -197,20 +191,18 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
 router.get('/artist/:artistId', authMiddleware, async (req, res) => {
     try {
         const artistId = new mongoose.Types.ObjectId(req.params.artistId);
-
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Используем агрегацию для получения уникальных популярных треков ---
         const topTracksPipeline = [
             { $match: { artist: artistId, status: 'approved' } },
             {
                 $group: {
-                    _id: { $toLower: "$title" }, // Группируем по названию трека в нижнем регистре
-                    totalPlayCount: { $sum: "$playCount" }, // Суммируем прослушивания всех версий
-                    doc: { $first: "$$ROOT" } // Берем первый документ из группы (самый релевантный)
+                    _id: { $toLower: "$title" },
+                    totalPlayCount: { $sum: "$playCount" },
+                    doc: { $first: "$$ROOT" } 
                 }
             },
             { $sort: { totalPlayCount: -1 } },
             { $limit: 5 },
-            { $replaceRoot: { newRoot: "$doc" } } // Возвращаем документ в исходный вид
+            { $replaceRoot: { newRoot: "$doc" } }
         ];
 
         const [artist, topTracksAggregation, albums, featuredTracks, singles] = await Promise.all([
@@ -231,12 +223,9 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
                  .sort({ releaseYear: -1, createdAt: -1 })
                  .lean()
         ]);
-        
-        // Мануально "популируем" результаты агрегации
+
         await Artist.populate(topTracksAggregation, { path: 'artist', select: 'name _id' });
         await Album.populate(topTracksAggregation, { path: 'album', select: 'title coverArtUrl' });
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-        
         if (!artist || artist.status !== 'approved') {
             return res.status(404).json({ message: 'Артист не найден.' });
         }
@@ -433,7 +422,11 @@ router.get('/wave', authMiddleware, async (req, res) => {
             return res.json(popularTracks);
         }
 
-        const topArtistIds = profile.topArtists.slice(0, 10).map(a => new mongoose.Types.ObjectId(a.name));
+        const topArtistIds = profile.topArtists
+            .slice(0, 10)
+            .map(a => a.name)
+            .filter(id => mongoose.Types.ObjectId.isValid(id))
+            .map(id => new mongoose.Types.ObjectId(id));
         const topGenres = profile.topGenres.slice(0, 5).map(g => g.name);
 
         const listenedTracks = await Track.find({ user: userId, type: 'recent' }).sort({ playedAt: -1 }).limit(100).distinct('_id');
@@ -479,7 +472,11 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
         let popularHits = [];
         
         if (profile && (profile.topArtists.length > 0 || profile.topGenres.length > 0)) {
-            const topArtistIds = profile.topArtists.slice(0, 10).map(a => new mongoose.Types.ObjectId(a.name));
+            const topArtistIds = profile.topArtists
+                .slice(0, 10)
+                .map(a => a.name)
+                .filter(id => mongoose.Types.ObjectId.isValid(id))
+                .map(id => new mongoose.Types.ObjectId(id));
             const topGenres = profile.topGenres.slice(0, 5).map(g => g.name);
 
             const listenedTracks = await Track.find({ user: userId, type: { $in: ['saved', 'recent'] } }).distinct('_id');
@@ -524,7 +521,5 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Не удалось загрузить рекомендации.' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
 module.exports = router;

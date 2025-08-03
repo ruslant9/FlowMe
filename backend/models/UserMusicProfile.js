@@ -22,12 +22,13 @@ const UserMusicProfileSchema = new Schema({
     // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 }, { timestamps: true });
 
-UserMusicProfileSchema.methods.updateArtistScore = function(artistName, points) {
-    const artist = this.topArtists.find(a => a.name === artistName);
+UserMusicProfileSchema.methods.updateArtistScore = function(artistId, points) {
+    const artistIdString = artistId.toString();
+    const artist = this.topArtists.find(a => a.name === artistIdString);
     if (artist) {
         artist.score += points;
     } else {
-        this.topArtists.push({ name: artistName, score: points });
+        this.topArtists.push({ name: artistIdString, score: points });
     }
     this.topArtists.sort((a, b) => b.score - a.score);
     if (this.topArtists.length > 50) {

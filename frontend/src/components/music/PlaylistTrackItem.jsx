@@ -2,6 +2,9 @@
 import React from 'react';
 import { Play, Pause, Heart, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем Tippy ---
+import Tippy from '@tippyjs/react/headless';
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15' }) => {
     
@@ -72,15 +75,28 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                 <img src={track.albumArtUrl} alt={cleanedTitle} className="w-10 h-10 rounded object-cover"/>
                 <div className="min-w-0">
                     <div className="flex items-center space-x-2">
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем иконку Explicit --- */}
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем значок в Tippy --- */}
                         {track.isExplicit && (
-                            <span 
-                                className="w-4 h-4 flex items-center justify-center bg-slate-400 dark:bg-slate-500 text-white text-[10px] font-bold rounded-sm flex-shrink-0" 
-                                title="Explicit"
+                             <Tippy
+                                placement="top"
+                                render={attrs => (
+                                    <div 
+                                        className="ios-glass-popover px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-800 dark:text-white"
+                                        {...attrs}
+                                    >
+                                        Трек содержит ненормативную лексику
+                                        <div className="tippy-arrow" data-popper-arrow></div>
+                                    </div>
+                                )}
                             >
-                                E
-                            </span>
+                                <span 
+                                    className="w-4 h-4 flex items-center justify-center bg-slate-400 dark:bg-slate-500 text-white text-[10px] font-bold rounded-sm flex-shrink-0 cursor-help" 
+                                >
+                                    E
+                                </span>
+                            </Tippy>
                         )}
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <p 
                             className="font-semibold truncate" 
                             style={isCurrent ? { color: accentColor } : {}}
@@ -88,7 +104,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                             {cleanedTitle}
                         </p>
                     </div>
-                     {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                         {renderArtistLinks(track.artist)}
                     </p>

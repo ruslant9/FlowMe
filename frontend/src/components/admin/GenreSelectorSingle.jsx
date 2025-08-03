@@ -1,13 +1,27 @@
 // frontend/components/admin/GenreSelectorSingle.jsx
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { musicGenresRu } from '../../data/genres';
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем иконку поиска ---
+import { Search } from 'lucide-react';
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" }) => {
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем состояние для поискового запроса ---
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredGenres = useMemo(() => {
+        if (!searchQuery) {
+            return musicGenresRu;
+        }
+        return musicGenresRu.filter(genre =>
+            genre.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [searchQuery]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handleSelectGenre = (genre) => {
-        // Если кликнули по уже выбранному, снимаем выбор
         if (selectedGenre === genre) {
             onGenreChange('');
         } else {
@@ -18,8 +32,23 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
     return (
         <div>
             <label className="text-sm font-semibold block mb-2">{label} *</label>
-            <div className="flex flex-wrap gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg">
-                {musicGenresRu.map(genre => {
+
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем поле для поиска --- */}
+            <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                    type="text"
+                    placeholder="Поиск жанра..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-sm rounded-lg bg-slate-200 dark:bg-slate-700/50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+            </div>
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
+            <div className="flex flex-wrap gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg max-h-48 overflow-y-auto">
+                {/* --- ИСПРАВЛЕНИЕ: Используем отфильтрованный список жанров --- */}
+                {filteredGenres.map(genre => {
                     const isSelected = selectedGenre === genre;
                     return (
                         <motion.button

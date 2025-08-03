@@ -211,12 +211,10 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
     const [loading, setLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [trackList, setTrackList] = useState([]);
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем isExplicit в состояние сингла ---
     const [singleTrackData, setSingleTrackData] = useState({
         title: '', artistIds: [], genres: [], trackFile: null, isExplicit: false,
         durationMs: 0, coverArt: null, coverPreview: '', releaseYear: ''
     });
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const abortControllerRef = useRef(null);
 
     const sensors = useSensors(
@@ -233,7 +231,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 title: initialData.title || '',
                 artistIds: (initialData.artist || []).map(a => a._id),
                 genres: initialData.genres || [],
-                isExplicit: initialData.isExplicit || false, // --- ИСПРАВЛЕНИЕ: Загружаем статус Explicit
+                isExplicit: initialData.isExplicit || false,
                 releaseYear: initialData.releaseYear || '',
                 trackFile: null, coverArt: null,
                 coverPreview: initialData.albumArtUrl || '',
@@ -340,7 +338,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('artistIds', JSON.stringify(singleTrackData.artistIds));
                 formData.append('albumId', albumId || '');
                 formData.append('genres', JSON.stringify(singleTrackData.genres || []));
-                formData.append('isExplicit', singleTrackData.isExplicit); // --- ИСПРАВЛЕНИЕ: Отправляем статус Explicit при редактировании
+                formData.append('isExplicit', singleTrackData.isExplicit);
                 await axios.put(`${API_URL}/api/admin/content/tracks/${initialData._id}`, formData, { headers: axiosConfig.headers });
                 toast.success("Трек успешно обновлен!", { id: toastId });
                 onSuccess();
@@ -363,7 +361,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('title', singleTrackData.title);
                 formData.append('artistIds', JSON.stringify(singleTrackData.artistIds));
                 formData.append('genres', JSON.stringify(singleTrackData.genres));
-                formData.append('isExplicit', singleTrackData.isExplicit); // --- ИСПРАВЛЕНИЕ: Отправляем статус Explicit при создании
+                formData.append('isExplicit', singleTrackData.isExplicit);
                 formData.append('trackFile', singleTrackData.trackFile);
                 if (singleTrackData.coverArt) formData.append('coverArt', singleTrackData.coverArt);
                 formData.append('durationMs', singleTrackData.durationMs);
@@ -452,16 +450,17 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                             <input type="number" placeholder="Например: 2024" value={singleTrackData.releaseYear} onChange={e => handleSingleTrackChange('releaseYear', e.target.value)} min="1900" max={new Date().getFullYear() + 1} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
                         </div>
                     </div>
-                    <GenreSelector selectedGenres={singleTrackData.genres} onGenreChange={(genres) => handleSingleTrackChange('genres', genres)} />
-                    
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем ToggleSwitch для сингла --- */}
-                    <ToggleSwitch 
-                        checked={singleTrackData.isExplicit} 
-                        onChange={(checked) => handleSingleTrackChange('isExplicit', checked)} 
-                        label="Explicit (ненормативная лексика)" 
-                    />
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
+                    {/* --- ИЗМЕНЕНИЕ: Группируем жанры и Explicit --- */}
+                    <div className="p-4 rounded-lg bg-slate-200 dark:bg-slate-900/50 space-y-4">
+                        <GenreSelector selectedGenres={singleTrackData.genres} onGenreChange={(genres) => handleSingleTrackChange('genres', genres)} />
+                        <ToggleSwitch 
+                            checked={singleTrackData.isExplicit} 
+                            onChange={(checked) => handleSingleTrackChange('isExplicit', checked)} 
+                            label="Explicit (ненормативная лексика)" 
+                        />
+                    </div>
+                    
                     {!isEditMode && (
                         <>
                             <div>
