@@ -18,7 +18,6 @@ const { isAllowedByPrivacy } = require('../utils/privacy');
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 
-// Функция для отправки WebSocket-сообщений
 const broadcastToUsers = (req, userIds, message) => {
     userIds.forEach(userId => {
         const userSocket = req.clients.get(userId.toString());
@@ -28,7 +27,6 @@ const broadcastToUsers = (req, userIds, message) => {
     });
 };
 
-// Функция для форматирования имени артиста (для анализа жанров)
 const formatArtistName = (artistData) => {
     if (!artistData) return '';
     if (Array.isArray(artistData)) {
@@ -40,7 +38,6 @@ const formatArtistName = (artistData) => {
     return artistData.toString();
 };
 
-// Функция для анализа жанров трека по ключевым словам
 const analyzeTrackForGenres = (track) => {
     const GENRE_MOOD_KEYWORDS = {
         'Chill': ['chill', 'lofi', 'relax', 'acoustic', 'slowed', 'reverb'],
@@ -65,7 +62,6 @@ const analyzeTrackForGenres = (track) => {
     return Array.from(foundGenres);
 };
 
-// Функция для логирования действий пользователя для системы рекомендаций
 const logMusicAction = async (req, track, action) => {
     try {
         const userId = req.user.userId;
@@ -78,7 +74,7 @@ const logMusicAction = async (req, track, action) => {
             case 'skip': points = -2; break;
         }
 
-        const artists = Array.isArray(track.artist) ? track.artist.map(a => a._id) : [];
+        const artists = Array.isArray(track.artist) ? track.artist.map(a => a._id || a) : [];
         const genres = track.genres || [];
 
         if (artists.length === 0 && genres.length === 0) return;
@@ -101,7 +97,6 @@ const logMusicAction = async (req, track, action) => {
 
 // --- МАРШРУТЫ ДЛЯ "МОЕЙ МУЗЫКИ" И ИСТОРИИ ---
 
-// Добавить/удалить трек из "Моей музыки"
 router.post('/toggle-save', authMiddleware, async (req, res) => {
     try {
         const { _id: trackId } = req.body;
@@ -111,7 +106,7 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
         if (!existingLibraryTrack || existingLibraryTrack.type !== 'library_track') {
             return res.status(404).json({ message: 'Трек не найден в библиотеке.' });
         }
-
+        
         const existingSavedTrack = await Track.findOne({ user: userId, spotifyId: existingLibraryTrack.spotifyId, type: 'saved' });
 
         if (existingSavedTrack) {
@@ -129,12 +124,12 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
             res.status(201).json({ message: 'Трек добавлен в Мою музыку.', saved: true });
         }
         broadcastToUsers(req, [userId], { type: 'MUSIC_UPDATED' });
+        logMusicAction(req, existingLibraryTrack, 'like');
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при обновлении трека.' });
     }
 });
 
-// Получить список сохраненных треков
 router.get('/saved', authMiddleware, async (req, res) => {
     try {
         const savedTracks = await Track.find({ user: req.user.userId, type: 'saved' })
@@ -147,7 +142,6 @@ router.get('/saved', authMiddleware, async (req, res) => {
     }
 });
 
-// Получить историю прослушиваний
 router.get('/history', authMiddleware, async (req, res) => {
     try {
         const history = await Track.find({ user: req.user.userId, type: 'recent' })
@@ -161,9 +155,9 @@ router.get('/history', authMiddleware, async (req, res) => {
     }
 });
 
+
 // --- МАРШРУТЫ ДЛЯ СТРАНИЦ АРТИСТОВ И АЛЬБОМОВ ---
 
-// Получить данные для страницы альбома
 router.get('/album/:albumId', authMiddleware, async (req, res) => {
     try {
         const album = await Album.findById(req.params.albumId)
@@ -183,7 +177,6 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
     }
 });
 
-// Получить данные для страницы артиста
 router.get('/artist/:artistId', authMiddleware, async (req, res) => {
     try {
         const artistId = req.params.artistId;
@@ -206,7 +199,6 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Артист не найден.' });
         }
         
-        // Исправление обложек для популярных треков
         const processedTracks = topTracks.map(track => {
             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
@@ -221,9 +213,8 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
 });
 
 
-// --- МАРШРУТЫ ДЛЯ ПОИСКА И РЕКОМЕНДАЦИЙ ---
+// --- ПОЛНОСТЬЮ ПЕРЕРАБОТАННЫЙ МАРШРУТ ПОИСКА ---
 
-// Поиск по всей музыкальной библиотеке (треки, артисты, альбомы, плейлисты)
 router.get('/search-all', authMiddleware, async (req, res) => {
     try {
         const { q, page = 1 } = req.query;
@@ -235,24 +226,41 @@ router.get('/search-all', authMiddleware, async (req, res) => {
         }
 
         const searchQuery = { $regex: q, $options: 'i' };
-        const matchingArtists = await Artist.find({ name: searchQuery, status: 'approved' }).select('_id').lean();
-        const artistIds = matchingArtists.map(a => a._id);
 
+        // 1. Находим ID подходящих артистов и альбомов
+        const [matchingArtists, matchingAlbums] = await Promise.all([
+            Artist.find({ name: searchQuery, status: 'approved' }).select('_id').lean(),
+            Album.find({ title: searchQuery, status: 'approved' }).select('_id').lean()
+        ]);
+        const artistIds = matchingArtists.map(a => a._id);
+        const albumIds = matchingAlbums.map(a => a._id);
+
+        // 2. Формируем комплексный запрос для треков
+        const trackQuery = {
+            status: 'approved',
+            $or: [
+                { title: searchQuery },
+                { artist: { $in: artistIds } },
+                { album: { $in: albumIds } }
+            ]
+        };
+        
+        // 3. Выполняем все запросы параллельно
         const [artists, albums, playlists, tracks, totalTracks] = await Promise.all([
             page == 1 ? Artist.find({ name: searchQuery, status: 'approved' }).limit(6).lean() : Promise.resolve([]),
             page == 1 ? Album.find({ status: 'approved', $or: [{ title: searchQuery }, { artist: { $in: artistIds } }]}).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
             page == 1 ? Playlist.find({ name: searchQuery, visibility: 'public' }).populate('user', 'username').limit(6).lean() : Promise.resolve([]),
-            Track.find({ status: 'approved', $or: [{ title: searchQuery }, { artist: { $in: artistIds } }]})
+            Track.find(trackQuery)
                 .populate('artist', 'name')
                 .populate('album', 'title coverArtUrl')
                 .sort({ playCount: -1 })
                 .skip(skip)
                 .limit(limit)
                 .lean(),
-            Track.countDocuments({ status: 'approved', $or: [{ title: searchQuery }, { artist: { $in: artistIds } }]})
+            Track.countDocuments(trackQuery)
         ]);
-
-        // **ИСПРАВЛЕНИЕ ОБЛОЖЕК**
+        
+        // 4. Обрабатываем треки, чтобы у них всегда была обложка
         const processedTracks = tracks.map(track => {
             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
@@ -269,9 +277,9 @@ router.get('/search-all', authMiddleware, async (req, res) => {
     }
 });
 
+
 // --- СЛУЖЕБНЫЕ МАРШРУТЫ ---
 
-// Получить всех артистов (для форм)
 router.get('/artists/all', authMiddleware, async (req, res) => {
     try {
         const artists = await Artist.find({ status: 'approved' }).select('name avatarUrl').sort({ name: 1 });
@@ -281,7 +289,6 @@ router.get('/artists/all', authMiddleware, async (req, res) => {
     }
 });
 
-// Получить все альбомы (для форм)
 router.get('/albums/all', authMiddleware, async (req, res) => {
     try {
         const albums = await Album.find({ status: 'approved' })
@@ -294,48 +301,39 @@ router.get('/albums/all', authMiddleware, async (req, res) => {
     }
 });
 
-// Залогировать прослушивание трека
 router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
     try {
-        // Увеличиваем счетчик асинхронно, не дожидаясь ответа
         Track.updateOne({ _id: req.params.id }, { $inc: { playCount: 1 } }).exec();
-        
-        // Также асинхронно обновляем профиль рекомендаций
         const track = await Track.findById(req.params.id).populate('artist').lean();
         if (track) {
             logMusicAction(req, track, 'listen');
         }
-        
-        res.sendStatus(202); // Accepted
+        res.sendStatus(202);
     } catch (error) {
-        console.error("Ошибка при логировании прослушивания:", error);
         res.sendStatus(500);
-    }
-});
-
-// Получить URL для стриминга
-router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
-    try {
-        const track = await Track.findById(req.params.id).select('storageKey');
-        if (!track) {
-            return res.status(404).json({ message: 'Трек не найден.' });
-        }
-        // В нашем случае, storageKey уже является полным URL
-        res.json({ url: track.storageKey });
-    } catch (error) {
-        res.status(500).json({ message: 'Ошибка получения URL для стриминга.' });
     }
 });
 
 router.post('/log-action', authMiddleware, async (req, res) => {
     try {
         const { track, action } = req.body;
-        // Передаем req, чтобы получить доступ к req.user.userId внутри функции
         await logMusicAction(req, track, action);
-        res.sendStatus(202); // Accepted
+        res.sendStatus(202);
     } catch (error) {
         console.error("Ошибка логирования действия:", error);
         res.sendStatus(500);
+    }
+});
+
+router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
+    try {
+        const track = await Track.findById(req.params.id).select('storageKey');
+        if (!track) {
+            return res.status(404).json({ message: 'Трек не найден.' });
+        }
+        res.json({ url: track.storageKey });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка получения URL для стриминга.' });
     }
 });
 

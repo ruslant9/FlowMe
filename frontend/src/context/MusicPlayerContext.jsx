@@ -88,7 +88,6 @@ export const MusicPlayerProvider = ({ children }) => {
 
         logMusicAction(trackData, 'listen');
         
-        setIsLoading(true);
         setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
         setIsPlaying(false); // Сначала ставим на паузу, пока грузится URL
@@ -135,7 +134,6 @@ export const MusicPlayerProvider = ({ children }) => {
             toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
             setCurrentTrack(null);
         } finally {
-            setIsLoading(false);
             setLoadingTrackId(null);
         }
     }, [volume, logMusicAction]);
