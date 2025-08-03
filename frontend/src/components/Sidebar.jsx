@@ -3,8 +3,7 @@
 import React, { useState, useEffect, forwardRef } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import Avatar from './Avatar';
-// --- ИСПРАВЛЕНИЕ ЗДЕСЬ: Добавляем иконку "Shield" в импорт ---
-import { LogOut, Settings, Users, Newspaper, Menu, MessageSquare, Bell, Globe, Music, Sparkles, Crown, Shield } from 'lucide-react';
+import { LogOut, Settings, Users, Newspaper, Menu, MessageSquare, Bell, Globe, Music, Sparkles, Crown, Shield, Brush } from 'lucide-react';
 import { useWebSocket } from '../context/WebSocketContext';
 import { useUser } from '../context/UserContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -109,6 +108,7 @@ const Sidebar = ({ themeSwitcher }) => {
         { name: "Сообщества", path: "/communities", icon: Globe, count: 0 },
         { name: "Сообщения", path: "/messages", icon: MessageSquare, count: summary.unreadConversationsCount },
         { name: "Музыка", path: "/music", icon: Music, count: 0 },
+        { name: "Мастерская", path: "/workshop", icon: Brush, count: 0 },
     ];
     
     const getActiveStylesProfile = (isActive) => isActive 

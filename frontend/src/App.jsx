@@ -38,6 +38,7 @@ import { useMusicPlayer } from './context/MusicPlayerContext';
 import MusicPlayerBar from './components/music/MusicPlayerBar';
 import FullScreenPlayer from './components/music/FullScreenPlayer'; // --- НОВЫЙ ИМПОРТ ---
 import { useWebSocket } from './context/WebSocketContext';
+import WorkshopPage from './pages/WorkshopPage';
 
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
   <div className="flex items-center justify-center space-x-2 p-2 rounded-lg">
@@ -346,6 +347,7 @@ function App() {
             <Route path="/communities/:communityId/manage" element={<CommunityManagementPage />} />
             <Route path="/communities/:communityId" element={<CommunityDetailPage />} />
             <Route path="/premium" element={<PremiumPage />} />
+            <Route path="/workshop" element={<WorkshopPage />} />
             <Route element={<AdminProtectedLayout />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>

@@ -3,12 +3,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { musicGenresRu } from '../../data/genres';
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем иконку поиска ---
 import { Search } from 'lucide-react';
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" }) => {
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем состояние для поискового запроса ---
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredGenres = useMemo(() => {
@@ -19,7 +16,6 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
             genre.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [searchQuery]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handleSelectGenre = (genre) => {
         if (selectedGenre === genre) {
@@ -32,8 +28,6 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
     return (
         <div>
             <label className="text-sm font-semibold block mb-2">{label} *</label>
-
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем поле для поиска --- */}
             <div className="relative mb-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
@@ -44,10 +38,8 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
                     className="w-full pl-9 pr-4 py-2 text-sm rounded-lg bg-slate-200 dark:bg-slate-700/50 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
             </div>
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-
-            <div className="flex flex-wrap gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg max-h-48 overflow-y-auto">
-                {/* --- ИСПРАВЛЕНИЕ: Используем отфильтрованный список жанров --- */}
+            {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: убраны классы max-h-48 и overflow-y-auto --- */}
+            <div className="flex flex-wrap gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg">
                 {filteredGenres.map(genre => {
                     const isSelected = selectedGenre === genre;
                     return (

@@ -161,7 +161,7 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
         const { title, artistIds, albumId, durationMs, genres, releaseYear, isExplicit } = req.body;
         
         const parsedGenres = genres ? JSON.parse(genres) : [];
-        const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
+        const parsedArtistIds = artistIds || [];
 
         if (!req.files || !req.files.trackFile) {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });

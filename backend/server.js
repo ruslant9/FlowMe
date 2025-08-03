@@ -35,7 +35,9 @@ const musicRoutes = require('./routes/music');
 const wallpaperRoutes = require('./routes/wallpapers');
 const playlistRoutes = require('./routes/playlists');
 const submissionsRoutes = require('./routes/submissions'); // <-- Этот роут для обычных пользователей
-const adminRoutes = require('./routes/admin'); // <-- А этот для админов
+const adminRoutes = require('./routes/admin'); 
+const workshopRoutes = require('./routes/workshop'); 
+
 const app = express();
 const server = http.createServer(app);
 
@@ -215,6 +217,7 @@ app.use('/api/premium', authMiddleware, banMiddleware, premiumRoutes(wss, client
 app.use('/api/playlists', authMiddleware, banMiddleware, playlistRoutes);
 app.use('/api/submissions', authMiddleware, banMiddleware, submissionsRoutes); 
 app.use('/api/admin', adminRoutes); // Админ-роуты защищены своим middleware
+app.use('/api/workshop', workshopRoutes);
 
 const PORT = process.env.PORT || 5000;
 

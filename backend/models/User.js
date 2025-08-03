@@ -90,6 +90,7 @@ const UserSchema = new Schema({
     resetPasswordToken: String,
     resetPasswordExpires: Date,
     subscribedCommunities: [{ type: Schema.Types.ObjectId, ref: 'Community' }],
+    addedContentPacks: [{ type: Schema.Types.ObjectId, ref: 'ContentPack' }]
 }, { timestamps: true });
 UserSchema.add({ banInfo: { type: banInfoSchema, default: () => ({}) } });
 

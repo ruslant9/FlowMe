@@ -1,5 +1,3 @@
-// frontend/src/context/MusicPlayerContext.jsx
-
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -31,20 +29,19 @@ export const MusicPlayerProvider = ({ children }) => {
     const [myMusicTrackIds, setMyMusicTrackIds] = useState(new Set());
     const [loadingTrackId, setLoadingTrackId] = useState(null);
     const [buffered, setBuffered] = useState(0);
-
     const [playerNotification, setPlayerNotification] = useState(null);
-    const notificationTimeoutRef = useRef(null);
-
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояние для полноэкранного плеера ---
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новые состояния и ref для стабильности ---
+    const [isLoadingPlayback, setIsLoadingPlayback] = useState(false); // Флаг-замок для предотвращения гонки состояний
+    const abortControllerRef = useRef(null); // Ref для отмены предыдущих запросов
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
+    const notificationTimeoutRef = useRef(null);
 
-    
     const logMusicAction = useCallback(async (track, action) => {
         try {
             const token = localStorage.getItem('token');
@@ -83,33 +80,54 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsLiked(false);
         }
     }, [currentTrack, myMusicTrackIds]);
-
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Полностью переработанная функция playTrack ---
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
-        const safePlaylistData = Array.isArray(playlistData) ? playlistData : [];
-        if (!trackData?._id) return;      
+        if (!trackData?._id) return;
+        
+        // Если уже идет загрузка другого трека, игнорируем новый вызов, чтобы предотвратить гонку состояний
+        if (isLoadingPlayback) {
+            toast.error("Подождите, другой трек уже загружается.");
+            return;
+        }
+
+        // Отменяем любой предыдущий запрос на получение URL, если он еще не завершился
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort('New track selected');
+        }
+        abortControllerRef.current = new AbortController();
+
+        setIsLoadingPlayback(true); // "Закрываем замок"
         setLoadingTrackId(trackData._id);
-        const { playlistId = null, startShuffled = false, startRepeat = false } = options;
-        logMusicAction(trackData, 'listen');       
         setCurrentTrack(trackData);
         setIsPlaying(false);
+
         try {
+            const { startShuffled = false, startRepeat = false } = options;
+            logMusicAction(trackData, 'listen');
+            
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
+                signal: abortControllerRef.current.signal // Привязываем сигнал отмены к запросу
             });
 
             const streamUrl = res.data.url;
             const audio = audioRef.current;
             audio.src = streamUrl;
             audio.volume = volume;
-            await audio.play();           
+            await audio.play();
+            setIsPlaying(true);
+            
             axios.post(`${API_URL}/api/music/track/${trackData._id}/log-play`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
-            }).catch(e => console.error("Не удалось залогировать прослушивание", e));    
-            setIsPlaying(true);
+            }).catch(e => console.error("Не удалось залогировать прослушивание", e));
+
+            const safePlaylistData = Array.isArray(playlistData) ? playlistData : [];
             let finalPlaylist = safePlaylistData.length > 0 ? [...safePlaylistData] : [trackData];
             let trackIndex = finalPlaylist.findIndex(t => t._id === trackData._id);
             if (trackIndex === -1) trackIndex = 0;
+            
             if (startShuffled) {
                 const firstTrack = finalPlaylist[trackIndex];
                 let rest = finalPlaylist.filter((_, i) => i !== trackIndex);
@@ -125,12 +143,20 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsShuffle(startShuffled);
             setIsRepeat(startRepeat);
         } catch (error) {
-            toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
-            setCurrentTrack(null);
+            if (axios.isCancel(error)) {
+                console.log("Загрузка предыдущего трека отменена.");
+            } else {
+                toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
+                setCurrentTrack(null);
+            }
         } finally {
+            setIsLoadingPlayback(false); // "Открываем замок"
             setLoadingTrackId(null);
+            abortControllerRef.current = null;
         }
-    }, [volume, logMusicAction]);
+    }, [volume, logMusicAction, isLoadingPlayback]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const handleNextTrack = useCallback(() => {
         if (currentTrack && progress > 0 && duration > 0 && progress < duration * 0.9) {
@@ -310,11 +336,9 @@ export const MusicPlayerProvider = ({ children }) => {
         prevTrack,
         onToggleLike,
         stopAndClearPlayer,
-        // --- НАЧАЛО ИЗМЕНЕНИЯ: Экспортируем состояние и функции для полноэкранного плеера ---
         isFullScreenPlayerOpen,
         openFullScreenPlayer: () => setIsFullScreenPlayerOpen(true),
         closeFullScreenPlayer: () => setIsFullScreenPlayerOpen(false),
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     };
 
     return (
