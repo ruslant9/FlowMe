@@ -10,8 +10,8 @@ const Artist = require('../models/Artist');
 const Album = require('../models/Album');
 const UserMusicProfile = require('../models/UserMusicProfile');
 const User = require('../models/User'); // <-- ИСПРАВЛЕНИЕ: Добавлен импорт User
-
-// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+const { isAllowedByPrivacy } = require('../utils/privacy');
+const { generateSearchQueries } = require('../utils/searchUtils');
 
 const broadcastToUsers = (req, userIds, message) => {
     userIds.forEach(userId => {
@@ -270,11 +270,17 @@ router.get('/search-all', authMiddleware, async (req, res) => {
             return res.json({ tracks: [], playlists: [], artists: [], albums: [], hasMore: false });
         }
 
-        const searchQuery = { $regex: q, $options: 'i' };
+        const searchPatterns = generateSearchQueries(q);
+        if (searchPatterns.length === 0) {
+            return res.json({ tracks: [], playlists: [], artists: [], albums: [], hasMore: false });
+        }
+        const searchOrCondition = (field) => ({
+            $or: searchPatterns.map(pattern => ({ [field]: { $regex: pattern } }))
+        });
 
         const [matchingArtists, matchingAlbums] = await Promise.all([
-            Artist.find({ name: searchQuery, status: 'approved' }).select('_id').lean(),
-            Album.find({ title: searchQuery, status: 'approved' }).select('_id').lean()
+            Artist.find({ ...searchOrCondition('name'), status: 'approved' }).select('_id').lean(),
+            Album.find({ ...searchOrCondition('title'), status: 'approved' }).select('_id').lean()
         ]);
         const artistIds = matchingArtists.map(a => a._id);
         const albumIds = matchingAlbums.map(a => a._id);
@@ -282,16 +288,16 @@ router.get('/search-all', authMiddleware, async (req, res) => {
         const trackQuery = {
             status: 'approved',
             $or: [
-                { title: searchQuery },
+                searchOrCondition('title'),
                 { artist: { $in: artistIds } },
                 { album: { $in: albumIds } }
             ]
         };
         
         const [artists, albums, playlists, tracks, totalTracks] = await Promise.all([
-            page == 1 ? Artist.find({ name: searchQuery, status: 'approved' }).limit(6).lean() : Promise.resolve([]),
-            page == 1 ? Album.find({ status: 'approved', $or: [{ title: searchQuery }, { artist: { $in: artistIds } }]}).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
-            page == 1 ? Playlist.find({ name: searchQuery, visibility: 'public' }).populate('user', 'username').limit(6).lean() : Promise.resolve([]),
+            page == 1 ? Artist.find({ ...searchOrCondition('name'), status: 'approved' }).limit(6).lean() : Promise.resolve([]),
+            page == 1 ? Album.find({ status: 'approved', $or: [searchOrCondition('title'), { artist: { $in: artistIds } }]}).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
+            page == 1 ? Playlist.find({ ...searchOrCondition('name'), visibility: 'public' }).populate('user', 'username').limit(6).lean() : Promise.resolve([]),
             Track.find(trackQuery)
                 .populate('artist', 'name _id')
                 .populate('album', 'title coverArtUrl')

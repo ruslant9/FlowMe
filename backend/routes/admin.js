@@ -161,7 +161,7 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
         const { title, artistIds, albumId, durationMs, genres, releaseYear, isExplicit } = req.body;
         
         const parsedGenres = genres ? JSON.parse(genres) : [];
-        const parsedArtistIds = artistIds || [];
+        const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
 
         if (!req.files || !req.files.trackFile) {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });
@@ -185,7 +185,7 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
         await newTrack.save();
 
         if (albumId) {
-            await Album.updateOne({ _id: albumId }, { $push: { tracks: newTrack._id } }); // Используем $push для сохранения порядка
+            await Album.updateOne({ _id: albumId }, { $push: { tracks: newTrack._id } });
         }
         
         res.status(201).json({ message: 'Трек успешно загружен и опубликован.' });
@@ -217,7 +217,6 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 // 1. Получить список всех артистов с фильтрацией и сортировкой
@@ -357,6 +356,17 @@ router.put('/content/albums/:id', upload.single('coverArt'), async (req, res) =>
     }
 });
 
+router.put('/content/albums/:id/reorder-tracks', async (req, res) => {
+    try {
+        const { trackIds } = req.body;
+        await Album.findByIdAndUpdate(req.params.id, { tracks: trackIds });
+        res.json({ message: 'Порядок треков обновлен.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при обновлении порядка треков.' });
+    }
+});
+
+
 router.delete('/content/albums/:id', async (req, res) => {
     try {
         await Album.findByIdAndDelete(req.params.id);
@@ -368,16 +378,24 @@ router.delete('/content/albums/:id', async (req, res) => {
 
 
 // --- ТРЕКИ ---
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.put('/content/tracks/:id', async (req, res) => {
     try {
         const { title, artistIds, albumId, genres, isExplicit } = req.body;
-        const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
+        
+        // Проверяем, является ли artistIds строкой, и парсим, если это так
+        const parsedArtistIds = typeof artistIds === 'string' ? JSON.parse(artistIds) : (artistIds || []);
+        
+        // Проверяем, является ли genres строкой, и парсим, если это так
+        const parsedGenres = typeof genres === 'string' ? JSON.parse(genres) : (genres || []);
+
         const updateData = { 
             title, 
             artist: parsedArtistIds, 
             album: albumId || null, 
-            genres: genres || [],
-            isExplicit: isExplicit || false,
+            genres: parsedGenres,
+            // Преобразуем строковое значение 'true'/'false' в булево
+            isExplicit: isExplicit === 'true',
         };
 
         const updatedTrack = await Track.findByIdAndUpdate(req.params.id, updateData, { new: true });
@@ -385,9 +403,12 @@ router.put('/content/tracks/:id', async (req, res) => {
         
         res.json(updatedTrack);
     } catch (error) {
+        console.error("Ошибка при обновлении трека:", error);
         res.status(500).json({ message: 'Ошибка при обновлении трека' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
 router.delete('/content/tracks/:id', async (req, res) => {
     try {
@@ -517,7 +538,6 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
 router.get('/albums/:albumId/tracks', async (req, res) => {
     try {
         const { albumId } = req.params;
-        // --- ИСПРАВЛЕНИЕ: Используем `populate` с `path` для сохранения порядка ---
         const album = await Album.findById(albumId)
             .populate({
                 path: 'tracks',

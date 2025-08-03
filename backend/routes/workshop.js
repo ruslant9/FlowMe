@@ -1,4 +1,4 @@
-// backend/routes/workshop.js --- НОВЫЙ ФАЙЛ ---
+// backend/routes/workshop.js
 
 const express = require('express');
 const router = express.Router();
@@ -9,14 +9,100 @@ const ContentPack = require('../models/ContentPack');
 const User = require('../models/User');
 const { createStorage, cloudinary } = require('../config/cloudinary');
 const multer = require('multer');
+const sharp = require('sharp');
+// --- ИЗМЕНЕНИЕ: Исправлено название пакета ---
+const ColorThief = require('colorthief');
+const { Readable } = require('stream');
 
-const packStorage = createStorage('content_packs');
-const upload = multer({ storage: packStorage });
+// Используем хранилище в памяти, чтобы сначала обработать файл
+const memoryStorage = multer.memoryStorage();
+const upload = multer({ storage: memoryStorage });
 
-// --- Роуты для управления паками ---
+// Функция-обработчик для стикеров
+const processSticker = async (buffer) => {
+    try {
+        const dominantColor = await ColorThief.getColor(buffer);
+        const [r, g, b] = dominantColor;
+
+        const image = sharp(buffer);
+        const metadata = await image.metadata();
+
+        // Создаем новый квадратный фон с доминирующим цветом
+        const background = sharp({
+            create: {
+                width: 300,
+                height: 300,
+                channels: 3,
+                background: { r, g, b }
+            }
+        });
+
+        // Вписываем оригинальное изображение в фон, сохраняя пропорции
+        const resizedImageBuffer = await image
+            .resize({
+                width: 300,
+                height: 300,
+                fit: 'inside', // Вписывает, не растягивая
+                withoutEnlargement: true // Не увеличивает, если картинка меньше
+            })
+            .toBuffer();
+
+        const finalBuffer = await background
+            .composite([{ input: resizedImageBuffer }])
+            .webp() // Конвертируем в WebP для оптимизации
+            .toBuffer();
+
+        return finalBuffer;
+    } catch (error) {
+        console.error("Ошибка обработки стикера:", error);
+        // Если что-то пошло не так, возвращаем оригинальный буфер
+        return buffer;
+    }
+};
+
+
+// Наш middleware для обработки и загрузки файлов
+const processAndUpload = (req, res, next) => {
+    if (!req.files || req.files.length === 0) {
+        return next();
+    }
+
+    const type = req.body.type || 'sticker'; // По умолчанию считаем стикером
+    
+    const uploadPromises = req.files.map(file => new Promise(async (resolve, reject) => {
+        let bufferToUpload = file.buffer;
+
+        // Обрабатываем только стикеры
+        if (type === 'sticker') {
+            bufferToUpload = await processSticker(file.buffer);
+        }
+
+        const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: 'content_packs', resource_type: 'image' },
+            (error, result) => {
+                if (error) {
+                    return reject(error);
+                }
+                // Добавляем результат загрузки в объект файла для следующего middleware
+                file.path = result.secure_url;
+                file.filename = result.public_id;
+                resolve();
+            }
+        );
+
+        Readable.from(bufferToUpload).pipe(uploadStream);
+    }));
+
+    Promise.all(uploadPromises)
+        .then(() => next())
+        .catch(err => {
+            console.error("Ошибка загрузки в Cloudinary:", err);
+            res.status(500).json({ message: "Ошибка загрузки файлов." });
+        });
+};
 
 // Создать новый пак
-router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 20), async (req, res) => {
+router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 20), processAndUpload, async (req, res) => {
     try {
         const { name, type } = req.body;
         if (!name || !type || !['emoji', 'sticker'].includes(type)) {
@@ -92,7 +178,7 @@ router.get('/packs/search', authMiddleware, async (req, res) => {
 });
 
 // Обновить пак (добавить/удалить элементы, переименовать)
-router.put('/packs/:packId', authMiddleware, premiumMiddleware, upload.array('newItems', 10), async (req, res) => {
+router.put('/packs/:packId', authMiddleware, premiumMiddleware, upload.array('newItems', 10), processAndUpload, async (req, res) => {
     try {
         const { name, itemsToDelete } = req.body;
         const pack = await ContentPack.findById(req.params.packId);
