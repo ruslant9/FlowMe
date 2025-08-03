@@ -39,6 +39,7 @@ export const MusicPlayerProvider = ({ children }) => {
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
 
+    
     const logMusicAction = useCallback(async (track, action) => {
         try {
             const token = localStorage.getItem('token');

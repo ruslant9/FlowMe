@@ -10,6 +10,7 @@ import { useUser } from '../context/UserContext';
 import { useNotifications } from '../context/NotificationContext';
 import Tippy from '@tippyjs/react/headless';
 import { motion, LayoutGroup } from 'framer-motion';
+import { useMusicPlayer } from '../context/MusicPlayerContext';
 
 const Tooltip = ({ text, attrs }) => (
     <div 
@@ -92,6 +93,7 @@ const Sidebar = ({ themeSwitcher }) => {
     const { summary } = useNotifications();
 
     const handleLogout = () => {
+        stopAndClearPlayer();
         logout();
         navigate('/login');
     };

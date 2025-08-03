@@ -37,6 +37,7 @@ import ArtistPage from './pages/ArtistPage'; // Пример импорта
 import AlbumPage from './pages/AlbumPage';   // Пример импорта
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useMusicPlayer } from './context/MusicPlayerContext'; // <<<--- ИМПОРТ
 
 // Импорт MusicPlayerProvider и MusicPlayerBar
 import { MusicPlayerProvider, useMusicPlayer } from './context/MusicPlayerContext';
@@ -145,6 +146,7 @@ const MainLayout = ({ children }) => {
         </div>
       )}
       
+      
       <div className={`flex relative z-10 h-full overflow-hidden ${currentTrack ? 'pb-[100px]' : ''}`}>
         <Sidebar themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} />
         <div className="flex-1 relative overflow-y-auto">
@@ -157,6 +159,7 @@ const MainLayout = ({ children }) => {
 
 const BannedOverlay = ({ banInfo }) => {
     const { logout } = useWebSocket();
+    const { stopAndClearPlayer } = useMusicPlayer();
     const [showAppealForm, setShowAppealForm] = useState(false);
     const [appealText, setAppealText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -168,6 +171,10 @@ const BannedOverlay = ({ banInfo }) => {
     const formattedDate = banExpiresDate 
         ? new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(banExpiresDate)
         : 'навсегда';
+
+    useEffect(() => {
+        stopAndClearPlayer();
+    }, []);
 
     const handleAppealSubmit = async (e) => {
         e.preventDefault();
