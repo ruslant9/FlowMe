@@ -6,7 +6,8 @@ import toast from 'react-hot-toast';
 import { Loader2, Music, Edit } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelectorSingle from './GenreSelectorSingle';
-import ArtistSelector from './ArtistSelector';
+// --- ИЗМЕНЕНИЕ: Убираем импорт ArtistSelector ---
+// import ArtistSelector from './ArtistSelector';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -16,6 +17,59 @@ const getImageUrl = (url) => {
     }
     return `${API_URL}/${url}`;
 };
+
+// --- ИЗМЕНЕНИЕ: Новый компонент автодополнения ---
+const ArtistAutocomplete = ({ artists, onSelect }) => {
+    const [query, setQuery] = useState('');
+    const [filteredArtists, setFilteredArtists] = useState([]);
+    const [isFocused, setIsFocused] = useState(false);
+
+    useEffect(() => {
+        if (query) {
+            setFilteredArtists(
+                artists.filter(artist =>
+                    artist.name.toLowerCase().includes(query.toLowerCase())
+                ).slice(0, 5) // Показываем до 5 совпадений
+            );
+        } else {
+            setFilteredArtists([]);
+        }
+    }, [query, artists]);
+
+    const handleSelect = (artist) => {
+        setQuery(artist.name);
+        onSelect(artist._id);
+        setIsFocused(false);
+    };
+    
+    return (
+        <div className="relative" onBlur={() => setTimeout(() => setIsFocused(false), 200)}>
+            <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                placeholder="Начните вводить имя артиста..."
+                className="w-full p-2 rounded bg-white dark:bg-slate-700"
+                required
+            />
+            {isFocused && filteredArtists.length > 0 && (
+                <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-auto">
+                    {filteredArtists.map(artist => (
+                        <li
+                            key={artist._id}
+                            onMouseDown={() => handleSelect(artist)} // onMouseDown, чтобы сработал до onBlur
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                        >
+                            {artist.name}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
+// --- КОНЕЦ НОВОГО КОМПОНЕНТА ---
 
 export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initialData = null, onEditTrack }) => {
     const { currentUser } = useUser();
@@ -28,7 +82,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [coverPreview, setCoverPreview] = useState('');
     const [albumTracks, setAlbumTracks] = useState([]);
     
-    // --- ИЗМЕНЕНИЕ 1: Создаем ref для инпута файла ---
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -53,7 +106,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             fetchAlbumTracks();
         }
     }, [isEditMode, initialData]);
-
 
     const handleCoverChange = (e) => {
         const file = e.target.files[0];
@@ -112,7 +164,8 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
-                <ArtistSelector artists={artists} value={artistId} onChange={setArtistId} />
+                {/* --- ИЗМЕНЕНИЕ: Используем новый компонент --- */}
+                <ArtistAutocomplete artists={artists} onSelect={setArtistId} />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -130,13 +183,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Обложка альбома</label>
-                {/* --- ИЗМЕНЕНИЕ 2: Обновляем верстку блока загрузки --- */}
                 <div className="flex items-center space-x-4">
-                    <button 
-                        type="button" 
-                        onClick={() => fileInputRef.current.click()}
-                        className="px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-                    >
+                    <button type="button" onClick={() => fileInputRef.current.click()}
+                        className="px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">
                         Выберите файл
                     </button>
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />

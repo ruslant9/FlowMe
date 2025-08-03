@@ -4,19 +4,30 @@ const User = require('../models/User');
 
 module.exports = async (req, res, next) => {
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Используем полный путь (originalUrl) для надежности ---
-    // Разрешаем GET-запрос на /api/user/profile, чтобы забаненный пользователь мог загрузить информацию о своем бане.
+    // ИСПРАВЛЕНИЕ: Проверяем, был ли пользователь успешно аутентифицирован.
+    // Если `req.user` не установлен, это значит, что `auth.middleware` уже отправил
+    // ответ с ошибкой (например, 401 Unauthorized из-за невалидной сессии).
+    // Мы должны прекратить дальнейшую обработку, чтобы не пытаться отправить второй ответ.
+    if (!req.user || !req.user.userId) {
+        return; 
+    }
+    
+    // Исключение: Разрешаем забаненному пользователю запрашивать свой профиль,
+    // чтобы получить актуальную информацию о бане (причину, срок).
     if (req.originalUrl === '/api/user/profile' && req.method === 'GET') {
         return next();
     }
-    // Разрешаем POST-запрос на /api/submissions/appeal для отправки жалобы.
+    
+    // Исключение: Разрешаем забаненному пользователю отправлять жалобу.
     if (req.originalUrl === '/api/submissions/appeal' && req.method === 'POST') {
         return next();
     }
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     try {
+        // Мы уже уверены, что req.user.userId существует благодаря проверке выше.
         const user = await User.findById(req.user.userId).select('banInfo');
+        
+        // Эта проверка остается для дополнительной надежности.
         if (!user) {
             return res.status(401).json({ message: 'Пользователь не найден для проверки бана.' });
         }
@@ -26,20 +37,23 @@ module.exports = async (req, res, next) => {
         if (isBanned) {
             const now = new Date();
 
-            // Если бан истек, снимаем его
+            // Если бан истек, автоматически снимаем его и разрешаем доступ.
             if (banExpires && banExpires < now) {
                 user.banInfo.isBanned = false;
                 user.banInfo.banExpires = null;
                 user.banInfo.banReason = null;
                 await user.save();
-                return next(); // Разрешаем доступ
+                return next();
             } else {
-                // Если бан активен, блокируем доступ
+                // Если бан все еще активен, блокируем доступ.
                 return res.status(403).json({ message: 'Доступ заблокирован.', banInfo: user.banInfo });
             }
         }
+        
+        // Если пользователь не забанен, разрешаем доступ.
         next();
     } catch (e) {
+        console.error('Ошибка в ban.middleware.js:', e);
         res.status(500).json({ message: 'Ошибка сервера при проверке статуса блокировки.' });
     }
 };
