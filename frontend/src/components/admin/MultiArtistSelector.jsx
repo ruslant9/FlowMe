@@ -85,11 +85,14 @@ const MultiArtistSelector = ({ artists, value, onChange, required = true, exclud
 
     return (
         <>
-            <div onClick={() => {
-                 e.stopPropagation(); 
-                 setIsModalOpen(true);
-               }} 
-            className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 cursor-pointer"
+            <div
+                // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsModalOpen(true);
+                }}
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 cursor-pointer"
             >
                 <div className="flex flex-wrap gap-2 p-2 items-center min-h-[44px] relative">
                     {selectedArtists.map(artist => (

@@ -99,10 +99,12 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
         <>
             <button
                 type="button"
+                // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
                 onClick={(e) => {
-        e.stopPropagation(); // <-- ДОБАВИТЬ ЭТУ СТРОКУ
-        if (!disabled) setIsModalOpen(true);
-    }}
+                    e.stopPropagation();
+                    if (!disabled) setIsModalOpen(true);
+                }}
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 disabled={disabled}
                 className="w-full h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-slate-700 text-left flex items-center justify-between shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
             >

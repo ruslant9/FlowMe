@@ -79,10 +79,12 @@ const ArtistSelector = ({ artists, value, onChange, required = true }) => {
         <>
             <button
                 type="button"
-                onClick={() => {
-        e.stopPropagation(); // <-- ДОБАВИТЬ ЭТУ СТРОКУ
-        setIsModalOpen(true);
-    }}
+                // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsModalOpen(true);
+                }}
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 className="w-full h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-slate-700 text-left flex items-center justify-between shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
                 <span className="truncate">{selectedArtist?.name || 'Выберите исполнителя...'}</span>
