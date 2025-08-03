@@ -1,6 +1,6 @@
 @echo off
 CHCP 65001 >nul
-SETLOCAL ENABLEDELAYEDEXPANSION
+SETLOCAL
 
 :: --- КОНФИГУРАЦИЯ ---
 SET "FRONTEND_DIR=frontend"
@@ -26,81 +26,55 @@ echo.
 
 :: 2. Копирование файлов из FRONTEND
 echo 📦 Поиск и копирование файлов из %FRONTEND_DIR%...
-FOR /R "%FRONTEND_DIR%" %%F IN (*) DO (
-    CALL :shouldCopy "%%F"
+:: Добавлены в исключения: .env, README.md, .gitignore, react.svg, vite.svg, *.png, *.jpg, *.jpeg, *.gif, *.ico, *.svg (ВСЕ КАРТИНКИ) + src\assets, AnimatedSphere.scss
+FOR /F "delims=" %%F in ('dir /s /b /a-d "%FRONTEND_DIR%" ^| findstr /v /i ".env node_modules public package-lock.json README.md .gitignore react.svg vite.svg *.png *.jpg *.jpeg *.gif *.ico *.svg frontend\\src\\assets AnimatedSphere.scss"') DO (
+    ECHO "FRONTEND: %%F"
+    CALL :copyFile "%%F"
 )
 echo ✅ Файлы из Frontend скопированы.
 echo.
 
-:: 3. Копирование файлов из PUBLIC
+:: 3. Копирование файлов из папки PUBLIC
 echo 📦 Копирование файлов из %PUBLIC_DIR%...
-FOR %%F IN ("%PUBLIC_DIR%\*") DO (
-    CALL :shouldCopy "%%F"
+:: Добавлены в исключения: react.svg, vite.svg, *.png, *.jpg, *.jpeg, *.gif, *.ico, *.svg (ВСЕ КАРТИНКИ), favicon.svg
+FOR /F "delims=" %%F in ('dir /b /a-d "%PUBLIC_DIR%" ^| findstr /v /i "favicon.svg react.svg vite.svg *.png *.jpg *.jpeg *.gif *.ico *.svg"') DO (
+    ECHO "PUBLIC: %%F"
+    CALL :copyFile "%PUBLIC_DIR%\%%F"
 )
 echo ✅ Файлы из Public скопированы.
 echo.
 
+
 :: 4. Копирование файлов из BACKEND
 echo 📦 Поиск и копирование файлов из %BACKEND_DIR%...
-FOR /R "%BACKEND_DIR%" %%F IN (*) DO (
-    CALL :shouldCopy "%%F"
+:: Добавлены в исключения: .env, README.md, .gitignore, *.png, *.jpg, *.jpeg, *.gif, *.ico, *.svg (ВСЕ КАРТИНКИ), uploads
+FOR /F "delims=" %%F in ('dir /s /b /a-d "%BACKEND_DIR%" ^| findstr /v /i ".env node_modules package-lock.json README.md .gitignore *.png *.jpg *.jpeg *.gif *.ico *.svg backend\\uploads"') DO (
+    ECHO "BACKEND: %%F"
+    CALL :copyFile "%%F"
 )
 echo ✅ Файлы из Backend скопированы.
 echo.
+
 
 echo ==================================================
 echo.
 echo ✨ Готово! Все исходные файлы собраны в %DEST_DIR%
 echo.
-echo Окно закроется через 5 секунд...
 echo ==================================================
-timeout /t 5 >nul
-EXIT /B
+:: pause  - Убрано, чтобы консоль закрывалась автоматически
+EXIT
 
-:: --- Функция проверки — исключение ненужных файлов ---
-:shouldCopy
-SET "file=%~1"
-SET "name=%~nx1"
-SET "ext=%~x1"
-SET "lowerext=!ext:.=!"
-SET "path=%~dp1"
-
-:: Пропуск по расширениям изображений
-FOR %%E IN (png jpg jpeg gif ico svg) DO (
-    IF /I "!lowerext!"=="%%E" EXIT /B
-)
-
-:: Пропуск по названиям
-FOR %%N IN (favicon.svg vite.svg react.svg README.md .gitignore package-lock.json) DO (
-    IF /I "!name!"=="%%N" EXIT /B
-)
-
-:: Пропуск по путям/папкам
-ECHO !file! | findstr /I /C:"node_modules" >nul && EXIT /B
-ECHO !file! | findstr /I /C:"uploads" >nul && EXIT /B
-ECHO !file! | findstr /I /C:"src\assets" >nul && EXIT /B
-ECHO !file! | findstr /I /C:"AnimatedSphere.scss" >nul && EXIT /B
-
-:: Пропуск .env
-IF /I "!name!"==".env" EXIT /B
-
-:: Копировать, если не исключён
-CALL :copyFile "!file!"
-EXIT /B
-
-:: --- Копирование файла с защитой от перезаписи ---
 :copyFile
 SET "sourceFile=%~1"
-SET "destFile=%DEST_DIR%\%~nx1"
-SET /A counter=0
-
+SET "destFile=%DEST_DIR%\%~nx1"  :: Append counter if needed
+SET "counter="
 :checkFile
-IF EXIST "!destFile!" (
+IF EXIST "%destFile%" (
     SET /A counter+=1
-    SET "destFile=%DEST_DIR%\%~n1_!counter!%~x1"
+    SET "destFile=%DEST_DIR%\%~n1_%counter%%~x1"
     GOTO :checkFile
 )
 
-echo    Копируется: "!sourceFile!" → "!destFile!"
-copy "!sourceFile!" "!destFile!" /Y >nul
+echo    Копируется: "%sourceFile%" в "%destFile%"
+copy "%sourceFile%" "%destFile%" /Y >nul
 EXIT /B
