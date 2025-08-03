@@ -135,8 +135,18 @@ router.get('/saved', authMiddleware, async (req, res) => {
         const savedTracks = await Track.find({ user: req.user.userId, type: 'saved' })
             .sort({ savedAt: -1 })
             .populate('artist', 'name')
-            .populate('album', 'title');
-        res.status(200).json(savedTracks);
+            .populate('album', 'title coverArtUrl') // Убеждаемся, что получаем coverArtUrl альбома
+            .lean(); // .lean() для более быстрой обработки
+
+        // Обрабатываем треки, чтобы добавить обложку альбома, если нужно
+        const processedTracks = savedTracks.map(track => {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                return { ...track, albumArtUrl: track.album.coverArtUrl };
+            }
+            return track;
+        });
+
+        res.status(200).json(processedTracks);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при получении треков.' });
     }
@@ -171,17 +181,7 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
         if (!album || album.status !== 'approved') {
             return res.status(404).json({ message: 'Альбом не найден.' });
         }
-        const processedTracks = album.tracks.map(track => ({
-            ...track,
-            // Если у трека нет своей обложки, используем обложку альбома
-            albumArtUrl: track.albumArtUrl || album.coverArtUrl 
-        }));
-
-        // Создаем финальный объект с обработанным списком треков
-        const finalAlbumData = { ...album, tracks: processedTracks };
-        
-        res.json(finalAlbumData);
-        
+        res.json(album);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при загрузке альбома.' });
     }
@@ -210,7 +210,7 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
         }
         
         const processedTracks = topTracks.map(track => {
-            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+            if (track.album && track.album.coverArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
             }
             return track;
@@ -237,7 +237,6 @@ router.get('/search-all', authMiddleware, async (req, res) => {
 
         const searchQuery = { $regex: q, $options: 'i' };
 
-        // 1. Находим ID подходящих артистов и альбомов
         const [matchingArtists, matchingAlbums] = await Promise.all([
             Artist.find({ name: searchQuery, status: 'approved' }).select('_id').lean(),
             Album.find({ title: searchQuery, status: 'approved' }).select('_id').lean()
@@ -245,7 +244,6 @@ router.get('/search-all', authMiddleware, async (req, res) => {
         const artistIds = matchingArtists.map(a => a._id);
         const albumIds = matchingAlbums.map(a => a._id);
 
-        // 2. Формируем комплексный запрос для треков
         const trackQuery = {
             status: 'approved',
             $or: [
@@ -255,7 +253,6 @@ router.get('/search-all', authMiddleware, async (req, res) => {
             ]
         };
         
-        // 3. Выполняем все запросы параллельно
         const [artists, albums, playlists, tracks, totalTracks] = await Promise.all([
             page == 1 ? Artist.find({ name: searchQuery, status: 'approved' }).limit(6).lean() : Promise.resolve([]),
             page == 1 ? Album.find({ status: 'approved', $or: [{ title: searchQuery }, { artist: { $in: artistIds } }]}).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
@@ -270,11 +267,7 @@ router.get('/search-all', authMiddleware, async (req, res) => {
             Track.countDocuments(trackQuery)
         ]);
         
-        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-        // 4. Обрабатываем треки, чтобы у них всегда была обложка альбома (если она есть)
         const processedTracks = tracks.map(track => {
-            // Если трек принадлежит альбому и у этого альбома есть обложка,
-            // мы принудительно используем обложку альбома.
             if (track.album && track.album.coverArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
             }
@@ -352,27 +345,26 @@ router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
 
 router.get('/main-page-data', authMiddleware, async (req, res) => {
     try {
-        // Параллельно запрашиваем все необходимые данные
         const [newReleases, popularHits, popularArtists] = await Promise.all([
-            // Новинки: последние добавленные треки
             Track.find({ status: 'approved' })
                  .sort({ createdAt: -1 })
                  .limit(10)
                  .populate('artist', 'name')
                  .lean(),
-            // Хиты: треки с наибольшим количеством прослушиваний
             Track.find({ status: 'approved' })
                  .sort({ playCount: -1 })
                  .limit(10)
                  .populate('artist', 'name')
                  .lean(),
-            // Популярные артисты (упрощенная логика, можно будет усложнить)
             Artist.find({ status: 'approved' })
                   .limit(6)
                   .lean() 
         ]);
 
-        res.json({ newReleases, popularHits, popularArtists });
+        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        // Ключ 'popularArtists' изменен на 'similarArtists', чтобы соответствовать frontend
+        res.json({ newReleases, popularHits, similarArtists: popularArtists });
+
     } catch (error) {
         console.error("Ошибка при загрузке данных для главной страницы музыки:", error);
         res.status(500).json({ message: 'Не удалось загрузить рекомендации.' });

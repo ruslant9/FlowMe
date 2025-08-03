@@ -60,26 +60,28 @@ const AlbumPage = () => {
     return (
         <main className="flex-1 overflow-y-auto bg-slate-900">
             {/* --- НАЧАЛО ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
-            <div className="relative">
-                {/* Блок с динамическим градиентом */}
-                <div 
-                    className="p-6 md:p-8 pt-20 text-white transition-all duration-500"
+            <div className="relative mb-[-8rem] h-[500px]"> {/* Отрицательный margin для наложения */}
+                {/* Слой 1: Цветной фон с градиентом */}
+                <div
+                    className="absolute inset-0 h-[450px] transition-all duration-500 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-48 after:bg-gradient-to-t after:from-slate-900 after:to-transparent"
                     style={{ backgroundImage: accentGradient }}
-                >
-                    <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
+                />
+                
+                {/* Слой 2: Контент (кнопка, обложка, текст) */}
+                <div className="relative z-10 p-6 md:p-8 h-full flex flex-col justify-between">
+                    <button onClick={() => navigate(-1)} className="flex items-center space-x-2 text-sm text-white/80 hover:text-white transition-colors self-start">
                         <ArrowLeft size={16}/>
                         <span>Назад</span>
                     </button>
 
-                    {/* Контейнер для контента шапки с выравниванием по низу */}
                     <div className="flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
                         <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">
                             <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                            <span className="text-sm font-bold">Альбом</span>
-                            <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{album.title}</h1>
-                            <div className="flex items-center space-x-2 mt-4 text-sm">
+                            <span className="text-sm font-bold text-white">Альбом</span>
+                            <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1 text-white" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{album.title}</h1>
+                            <div className="flex items-center space-x-2 mt-4 text-sm text-white">
                                 <Link to={`/artist/${album.artist._id}`}>
                                     <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
                                 </Link>
@@ -89,14 +91,11 @@ const AlbumPage = () => {
                         </div>
                     </div>
                 </div>
-
-                {/* Новый блок для создания плавного перехода */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none" />
             </div>
             {/* --- КОНЕЦ ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
 
 
-            <div className="p-6 md:p-8 relative z-[1]"> {/* Добавлен z-index, чтобы контент был выше градиента */}
+            <div className="p-6 md:p-8 relative z-[1] bg-slate-900">
                 <div className="flex items-center space-x-4 mb-8">
                     <button onClick={() => handlePlayAlbum(false)} className="px-8 py-3 bg-yellow-400 text-black font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
                         <Play size={24} fill="currentColor" />
