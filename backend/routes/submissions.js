@@ -107,8 +107,44 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Новый роут для жалобы на бан ---
+router.post('/appeal', async (req, res) => {
+    try {
+        const { appealText } = req.body;
+        if (!appealText || appealText.trim().length < 10) {
+            return res.status(400).json({ message: 'Текст жалобы должен содержать не менее 10 символов.' });
+        }
 
-// TODO: В будущем можно добавить роуты для заявок на редактирование
-// router.post('/artists/:id/edit', upload.single('avatar'), async (req, res) => { ... });
+        const userId = req.user.userId;
+
+        // Проверяем, нет ли уже активной жалобы от этого пользователя
+        const existingAppeal = await Submission.findOne({
+            submittedBy: userId,
+            entityType: 'BanAppeal',
+            status: 'pending'
+        });
+
+        if (existingAppeal) {
+            return res.status(400).json({ message: 'Вы уже подали жалобу. Ожидайте решения администратора.' });
+        }
+
+        const submission = new Submission({
+            entityType: 'BanAppeal',
+            action: 'appeal',
+            submittedBy: userId,
+            data: {
+                appealText: appealText, // Сохраняем текст жалобы
+            }
+        });
+
+        await submission.save();
+        res.status(201).json({ message: 'Ваша жалоба отправлена на рассмотрение.' });
+
+    } catch (error) {
+        console.error("Ошибка при подаче жалобы:", error);
+        res.status(500).json({ message: 'Ошибка сервера при отправке жалобы.' });
+    }
+});
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 module.exports = router;

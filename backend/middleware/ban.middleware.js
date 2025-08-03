@@ -3,11 +3,15 @@
 const User = require('../models/User');
 
 module.exports = async (req, res, next) => {
-    // Пропускаем проверку для GET запроса на профиль, чтобы забаненный пользователь мог получить инфо о своем бане
+    
+    const allowedPaths = ['/profile', '/appeal'];
     if (req.method === 'GET' && req.path === '/profile') {
         return next();
     }
-
+    if (req.method === 'POST' && req.path.includes('/submissions/appeal')) {
+        return next();
+    }
+    
     try {
         const user = await User.findById(req.user.userId).select('banInfo');
         if (!user) {
