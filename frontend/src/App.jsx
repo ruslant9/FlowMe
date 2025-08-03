@@ -6,11 +6,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { Sun, Moon, Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { useUser } from './context/UserContext';
-
-// Ленивая загрузка нашего тяжелого компонента с шейдерами
 const LiquidGlassBackground = React.lazy(() => import('./components/LiquidGlassBackground'));
-
-// Импортируем наши страницы и обертку
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
@@ -35,16 +31,14 @@ import PremiumPage from './pages/PremiumPage';
 import AdminPage from './pages/AdminPage'; 
 import ArtistPage from './pages/ArtistPage';
 import AlbumPage from './pages/AlbumPage';
-import SinglePage from './pages/SinglePage'; // --- НОВЫЙ ИМПОРТ ---
+import SinglePage from './pages/SinglePage';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-
-// Импорт MusicPlayerProvider и MusicPlayerBar
 import { useMusicPlayer } from './context/MusicPlayerContext';
 import MusicPlayerBar from './components/music/MusicPlayerBar';
+import FullScreenPlayer from './components/music/FullScreenPlayer'; // --- НОВЫЙ ИМПОРТ ---
 import { useWebSocket } from './context/WebSocketContext';
 
-// Компонент переключения темы
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
   <div className="flex items-center justify-center space-x-2 p-2 rounded-lg">
     <Sun size={18} className="text-yellow-400" />
@@ -83,7 +77,11 @@ const MainLayout = ({ children }) => {
     onToggleLike,
     buffered,
     stopAndClearPlayer,
-    playerNotification
+    playerNotification,
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Получаем состояние и функцию для полноэкранного плеера ---
+    isFullScreenPlayerOpen,
+    openFullScreenPlayer,
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
   } = useMusicPlayer();
 
   useEffect(() => {
@@ -120,6 +118,13 @@ const MainLayout = ({ children }) => {
         </Suspense>
       )}
 
+      {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Рендерим полноэкранный плеер --- */}
+      <AnimatePresence>
+          {isFullScreenPlayerOpen && <FullScreenPlayer />}
+      </AnimatePresence>
+      {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+
+
       {currentTrack && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80"> 
           <MusicPlayerBar
@@ -142,6 +147,9 @@ const MainLayout = ({ children }) => {
             onToggleLike={() => onToggleLike(currentTrack)}
             stopAndClearPlayer={stopAndClearPlayer}
             playerNotification={playerNotification}
+            // --- НАЧАЛО ИЗМЕНЕНИЯ: Передаем функцию для открытия ---
+            openFullScreenPlayer={openFullScreenPlayer}
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
           />
         </div>
       )}
@@ -326,7 +334,6 @@ function App() {
             <Route path="/music/playlist/:playlistId" element={<PlaylistPage />} />
             <Route path="/artist/:artistId" element={<ArtistPage />} />
             <Route path="/album/:albumId" element={<AlbumPage />} />
-            {/* --- НОВЫЙ МАРШРУТ --- */}
             <Route path="/single/:trackId" element={<SinglePage />} />
             <Route path="/profile" element={<MyProfilePage />} />
             <Route path="/profile/:userId" element={<UserProfilePage />} />

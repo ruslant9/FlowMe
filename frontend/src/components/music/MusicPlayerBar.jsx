@@ -25,7 +25,9 @@ const NotificationToast = ({ message }) => (
         )}
     </AnimatePresence>
 );
-const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification }) => {
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем openFullScreenPlayer в пропсы ---
+const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification, openFullScreenPlayer }) => {
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
     if (!track) {
         return null;
     }
@@ -54,7 +56,14 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
     return (
         <div className="w-full p-4 flex items-center space-x-4">
             <div className="flex items-center space-x-4 w-1/4 flex-shrink-0">
-                <img src={track.albumArtUrl} alt={track.title} className="w-16 h-16 rounded-md object-cover shadow-md"/>
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем onClick и cursor-pointer --- */}
+                <img 
+                    src={track.albumArtUrl} 
+                    alt={track.title} 
+                    className="w-16 h-16 rounded-md object-cover shadow-md cursor-pointer"
+                    onClick={openFullScreenPlayer}
+                />
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 <div className="flex flex-col min-w-0 flex-grow">
                     <p className="font-bold truncate text-lg text-slate-900 dark:text-white">{cleanTitle(track.title)}</p>
                     <p className="text-sm text-slate-700 dark:text-white/60 truncate">{formatArtistName(track.artist)}</p>

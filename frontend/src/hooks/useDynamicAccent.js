@@ -1,48 +1,59 @@
 // frontend/src/hooks/useDynamicAccent.js
 import { useState, useEffect } from 'react';
 import ColorThief from 'colorthief';
-
 export const useDynamicAccent = (imageUrl) => {
-    const [gradient, setGradient] = useState('linear-gradient(to bottom, #1f2937, #111827)'); // Default gradient
+const [accent, setAccent] = useState({
+gradient: 'linear-gradient(to bottom, #1f2937, #111827)',
+dominantColor: '#facc15' // Дефолтный желтый цвет
+});
 
-    useEffect(() => {
-        if (!imageUrl) {
-            // Если URL нет, возвращаем дефолтный градиент
-            setGradient('linear-gradient(to bottom, #1f2937, #111827)');
-            return;
+useEffect(() => {
+    if (!imageUrl) {
+        setAccent({
+            gradient: 'linear-gradient(to bottom, #1f2937, #111827)',
+            dominantColor: '#facc15'
+        });
+        return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = "Anonymous"; 
+    
+    img.onload = () => {
+        try {
+            const colorThief = new ColorThief();
+            const dominantColor = colorThief.getColor(img);
+            const [r, g, b] = dominantColor;
+
+            const darkerR = Math.max(0, r - 40);
+            const darkerG = Math.max(0, g - 40);
+            const darkerB = Math.max(0, b - 40);
+
+            setAccent({
+                gradient: `linear-gradient(to bottom, rgb(${r}, ${g}, ${b}), rgb(${darkerR}, ${darkerG}, ${darkerB}))`,
+                dominantColor: `rgb(${r}, ${g}, ${b})`
+            });
+        } catch (e) {
+            console.error('Ошибка при извлечении цвета:', e);
+             setAccent({
+                gradient: 'linear-gradient(to bottom, #1f2937, #111827)',
+                dominantColor: '#facc15'
+            });
         }
+    };
 
-        const img = new Image();
-        // Важно для работы с изображениями с других доменов (например, Cloudinary)
-        img.crossOrigin = "Anonymous"; 
-        
-        img.onload = () => {
-            try {
-                const colorThief = new ColorThief();
-                const dominantColor = colorThief.getColor(img);
-                const [r, g, b] = dominantColor;
+    img.onerror = () => {
+        console.error('Не удалось загрузить изображение для извлечения цвета.');
+        setAccent({
+            gradient: 'linear-gradient(to bottom, #1f2937, #111827)',
+            dominantColor: '#facc15'
+        });
+    }
 
-                // Создаем более темный оттенок для второй части градиента
-                const darkerR = Math.max(0, r - 40);
-                const darkerG = Math.max(0, g - 40);
-                const darkerB = Math.max(0, b - 40);
+    img.src = imageUrl;
 
-                const newGradient = `linear-gradient(to bottom, rgb(${r}, ${g}, ${b}), rgb(${darkerR}, ${darkerG}, ${darkerB}))`;
-                setGradient(newGradient);
-            } catch (e) {
-                console.error('Ошибка при извлечении цвета:', e);
-                setGradient('linear-gradient(to bottom, #1f2937, #111827)'); // Fallback
-            }
-        };
+}, [imageUrl]);
 
-        img.onerror = () => {
-            console.error('Не удалось загрузить изображение для извлечения цвета.');
-            setGradient('linear-gradient(to bottom, #1f2937, #111827)'); // Fallback
-        }
+return accent;
 
-        img.src = imageUrl;
-
-    }, [imageUrl]);
-
-    return gradient;
 };

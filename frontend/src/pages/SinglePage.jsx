@@ -41,7 +41,7 @@ const SinglePage = () => {
 
     useTitle(track ? `${track.title} - ${primaryArtist?.name}` : 'Сингл');
 
-    const accentGradient = useDynamicAccent(track?.albumArtUrl);
+    const { gradient, dominantColor } = useDynamicAccent(track?.albumArtUrl);
 
     const handlePlaySingle = () => {
         if (track) {
@@ -60,7 +60,7 @@ const SinglePage = () => {
             <div className="relative">
                 <div 
                     className="p-6 md:p-8 pt-32 pb-16 text-white transition-all duration-500"
-                    style={{ backgroundImage: accentGradient }}
+                    style={{ backgroundImage: gradient }}
                 >
                     <button onClick={() => navigate(-1)} className="absolute top-10 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
                         <ArrowLeft size={16}/>
@@ -68,11 +68,11 @@ const SinglePage = () => {
                     </button>
 
                     <div className="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                         <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl md:ml-8">
                             <img src={track.albumArtUrl} alt={track.title} className="w-full h-full object-cover" />
                         </div>
-                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
                             <span className="text-sm font-bold">Сольный трек (сингл)</span>
                             <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{track.title}</h1>
@@ -91,7 +91,11 @@ const SinglePage = () => {
 
             <div className="p-6 md:p-8 relative z-[1]">
                 <div className="flex items-center space-x-4 mb-8">
-                    <button onClick={handlePlaySingle} className="px-8 py-3 bg-yellow-400 text-black font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
+                    <button 
+                        onClick={handlePlaySingle} 
+                        className="px-8 py-3 text-black font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform"
+                        style={{ backgroundColor: dominantColor }}
+                    >
                         <Play size={24} fill="currentColor" />
                         <span>Слушать</span>
                     </button>
@@ -112,6 +116,7 @@ const SinglePage = () => {
                         isPlaying={isPlaying}
                         isSaved={myMusicTrackIds?.has(track._id)}
                         onToggleSave={onToggleLike}
+                        accentColor={dominantColor}
                     />
                 </div>
             </div>

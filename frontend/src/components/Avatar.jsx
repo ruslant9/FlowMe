@@ -32,12 +32,16 @@ const getHash = (str) => {
 const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium = false, customBorder, children }) => {
     if (!username && !fullName) return null;
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем новый размер 2xl ---
     const sizeClasses = {
         sm: 'w-8 h-8 text-sm',
         md: 'w-10 h-10 text-lg',
         lg: 'w-12 h-12 text-xl',
         xl: 'w-24 h-24 text-4xl',
+        '2xl': 'w-32 h-32 text-5xl',
     };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const nameForInitial = fullName || username;
     const firstLetter = nameForInitial.charAt(0).toUpperCase();

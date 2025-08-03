@@ -3,7 +3,8 @@ import React from 'react';
 import { Play, Pause, Heart, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist }) => {
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем `accentColor` в пропсы ---
+const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15' }) => {
     
     const cleanTitle = (title) => {
         if (!title) return '';
@@ -13,18 +14,13 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         ).trim();
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новая функция для рендеринга ссылок на артистов ---
     const renderArtistLinks = (artistData) => {
         if (!artistData) return null;
-
         const artists = Array.isArray(artistData) ? artistData : [artistData];
-
         return (
             <>
                 {artists.map((artist, idx) => {
-                    // Проверяем, что у нас есть объект с ID и именем
                     if (!artist || !artist._id || !artist.name) {
-                        // Если данные некорректны, просто отображаем то, что есть
                         return <span key={idx}>{artist.name || artist}</span>;
                     }
                     return (
@@ -32,7 +28,7 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                             <Link 
                                 to={`/artist/${artist._id}`}
                                 className="hover:underline hover:text-slate-700 dark:hover:text-white"
-                                onClick={(e) => e.stopPropagation()} // Предотвращаем срабатывание onDoubleClick на всей строке
+                                onClick={(e) => e.stopPropagation()}
                             >
                                 {artist.name.replace(' - Topic', '').trim()}
                             </Link>
@@ -43,8 +39,7 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
             </>
         );
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
+    
     const cleanedTitle = cleanTitle(track.title);
 
     const formatDuration = (ms) => {
@@ -58,11 +53,12 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
     return (
         <div 
             onDoubleClick={onPlay} 
-            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 px-4 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-blue-500/10 dark:bg-blue-500/20' : ''}`}
+            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 px-4 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
         >
             <div className="flex items-center justify-center w-8 text-slate-600 dark:text-slate-400">
                 {isCurrent ? (
-                    <button onClick={onPlay} className="text-yellow-400">
+                    // --- ИСПРАВЛЕНИЕ: Применяем accentColor к иконке ---
+                    <button onClick={onPlay} style={{ color: accentColor }}>
                         {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                     </button>
                 ) : (
@@ -77,8 +73,13 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
             <div className="flex items-center space-x-4 min-w-0">
                 <img src={track.albumArtUrl} alt={cleanedTitle} className="w-10 h-10 rounded object-cover"/>
                 <div className="min-w-0">
-                    <p className={`font-semibold truncate ${isCurrent ? 'text-yellow-400' : 'text-slate-800 dark:text-white'}`}>{cleanedTitle}</p>
-                    {/* --- ИСПРАВЛЕНИЕ: Используем новую функцию для отображения артистов --- */}
+                    {/* --- ИСПРАВЛЕНИЕ: Применяем accentColor к названию трека --- */}
+                    <p 
+                        className="font-semibold truncate" 
+                        style={isCurrent ? { color: accentColor } : {}}
+                    >
+                        {cleanedTitle}
+                    </p>
                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                         {renderArtistLinks(track.artist)}
                     </p>

@@ -35,6 +35,11 @@ export const MusicPlayerProvider = ({ children }) => {
     const [playerNotification, setPlayerNotification] = useState(null);
     const notificationTimeoutRef = useRef(null);
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояние для полноэкранного плеера ---
+    const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
+
     const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
@@ -305,6 +310,11 @@ export const MusicPlayerProvider = ({ children }) => {
         prevTrack,
         onToggleLike,
         stopAndClearPlayer,
+        // --- НАЧАЛО ИЗМЕНЕНИЯ: Экспортируем состояние и функции для полноэкранного плеера ---
+        isFullScreenPlayerOpen,
+        openFullScreenPlayer: () => setIsFullScreenPlayerOpen(true),
+        closeFullScreenPlayer: () => setIsFullScreenPlayerOpen(false),
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     };
 
     return (
