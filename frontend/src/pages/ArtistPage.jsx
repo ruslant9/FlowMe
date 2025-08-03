@@ -1,5 +1,5 @@
 // frontend/src/pages/ArtistPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useTitle from '../hooks/useTitle';
@@ -27,6 +27,12 @@ const ArtistPage = () => {
     const [showAllSingles, setShowAllSingles] = useState(false);
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем состояние и ref для отслеживания скролла ---
+    const [isScrolled, setIsScrolled] = useState(false);
+    const mainRef = useRef(null);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+
     const fetchArtistData = useCallback(async () => {
         setLoading(true);
         try {
@@ -45,11 +51,26 @@ const ArtistPage = () => {
         fetchArtistData();
     }, [fetchArtistData]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Эффект для добавления и удаления слушателя скролла ---
+    useEffect(() => {
+        const mainEl = mainRef.current;
+        if (!mainEl) return;
+
+        const handleScroll = () => {
+            // Устанавливаем true, если прокрутили больше чем на 10px
+            setIsScrolled(mainEl.scrollTop > 10);
+        };
+
+        mainEl.addEventListener('scroll', handleScroll);
+        return () => {
+            mainEl.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     useTitle(artistData ? artistData.artist.name : 'Артист');
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Получаем объект с цветами из хука ---
-    const { gradient, dominantColor } = useDynamicAccent(artistData?.artist.avatarUrl);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    const { gradient, dominantColor, textColor } = useDynamicAccent(artistData?.artist.avatarUrl);
 
     const handlePlayTopTracks = (startShuffled = false) => {
         if (artistData && artistData.topTracks.length > 0) {
@@ -76,33 +97,41 @@ const ArtistPage = () => {
                 isOpen={isInfoPanelOpen}
                 onClose={() => setIsInfoPanelOpen(false)}
             />
-            <main className="flex-1 overflow-y-auto">
-                <div 
-                    className="p-6 md:p-8 pt-20 relative text-white transition-all duration-500 min-h-[300px] flex flex-col justify-end"
-                    // --- ИСПРАВЛЕНИЕ: Используем `gradient` ---
-                    style={{ backgroundImage: gradient }}
-                >
-                    <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
-                        <ArrowLeft size={16}/>
-                        <span>Назад</span>
-                    </button>
-                    <div className="flex items-center space-x-6">
-                        <div className="flex-shrink-0">
-                            <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
-                        </div>
-                        <div>
-                            <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{artist.name}</h1>
+            {/* --- ИСПРАВЛЕНИЕ: Добавляем ref к main элементу --- */}
+            <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
+                {/* --- ИСПРАВЛЕНИЕ: Шапка становится sticky и меняет фон при скролле --- */}
+                <div className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300">
+                    <div 
+                        className="absolute inset-0 -z-20"
+                        style={{ backgroundImage: gradient }}
+                    />
+                    <div 
+                        className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
+                    />
+
+                    <div className="relative">
+                        <button onClick={() => navigate(-1)} className="absolute -top-14 left-0 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
+                            <ArrowLeft size={16}/>
+                            <span>Назад</span>
+                        </button>
+                        <div className="flex items-center space-x-6">
+                            <div className="flex-shrink-0">
+                                <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
+                            </div>
+                            <div>
+                                <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{artist.name}</h1>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="p-6 md:p-8">
+                {/* Основной контент страницы */}
+                <div className="p-6 md:p-8 relative bg-slate-100 dark:bg-slate-900">
                     <div className="flex items-center space-x-4 mb-8">
-                        {/* --- ИСПРАВЛЕНИЕ: Применяем динамический цвет к кнопке --- */}
                         <button 
                             onClick={() => handlePlayTopTracks(false)} 
-                            className="px-8 py-3 text-black font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform"
-                            style={{ backgroundColor: dominantColor }}
+                            className="px-8 py-3 font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform"
+                            style={{ backgroundColor: dominantColor, color: textColor }}
                         >
                             <Play size={24} fill="currentColor" />
                             <span>Слушать</span>
@@ -129,7 +158,6 @@ const ArtistPage = () => {
                                         isPlaying={isPlaying}
                                         isSaved={myMusicTrackIds?.has(track._id)}
                                         onToggleSave={onToggleLike}
-                                        // --- ИСПРАВЛЕНИЕ: Передаем цвет в компонент трека ---
                                         accentColor={dominantColor}
                                     />
                                 ))}

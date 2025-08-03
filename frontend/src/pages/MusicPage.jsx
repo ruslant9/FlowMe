@@ -63,7 +63,6 @@ const MusicPage = () => {
     const [searchPage, setSearchPage] = useState(1);
     const [hasMoreSearchResults, setHasMoreSearchResults] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-    const observer = useRef();
     
     const [isUploadModalOpen, setUploadModalOpen] = useState(false);
     const [isCreatePlaylistModalOpen, setCreatePlaylistModalOpen] = useState(false);
@@ -85,13 +84,12 @@ const MusicPage = () => {
                 setLoadingRecommendations(true);
                 resetSearchState();
                 try {
-                    // --- ИСПРАВЛЕНИЕ: Используем новый эндпоинт для рекомендаций ---
                     const res = await axios.get(`${API_URL}/api/music/recommendations`, headers);
                     setMainPageData(res.data);
                 } catch (e) { toast.error("Не удалось загрузить рекомендации."); }
                 setLoadingRecommendations(false);
                 break;
-            // ... (остальные case без изменений)
+
             case 'my-music':
                 setLoadingTabData(true);
                 resetSearchState();
@@ -134,7 +132,18 @@ const MusicPage = () => {
 
                 try {
                     const res = await axios.get(`${API_URL}/api/music/search-all?q=${encodeURIComponent(query)}&page=${page}`, headers);
-                    setSearchResults(prev => page === 1 ? res.data : { ...prev, tracks: [...prev.tracks, ...res.data.tracks] });
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика обновления результатов поиска ---
+                    setSearchResults(prev => {
+                        if (page === 1) {
+                            return res.data; // Первая страница, заменяем все
+                        }
+                        // Последующие страницы, добавляем только треки
+                        return {
+                            ...prev,
+                            tracks: [...prev.tracks, ...res.data.tracks]
+                        };
+                    });
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                     setHasMoreSearchResults(res.data.hasMore);
                     setSearchPage(page);
                 } catch (error) { toast.error("Ошибка при поиске."); }
@@ -165,17 +174,6 @@ const MusicPage = () => {
         }, 300);
         return () => clearTimeout(debounce);
     }, [searchQuery, activeTab, fetchDataForTab]);
-
-    const lastTrackElementRef = useCallback(node => {
-        if (loadingMore) return;
-        if (observer.current) observer.current.disconnect();
-        observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMoreSearchResults) {
-                fetchDataForTab('search', searchQuery, searchPage + 1);
-            }
-        });
-        if (node) observer.current.observe(node);
-    }, [loadingMore, hasMoreSearchResults, fetchDataForTab, searchQuery, searchPage]);
     
     const handleSelectTrack = useCallback((track) => {
         let currentPlaylist = [];
@@ -246,7 +244,6 @@ const MusicPage = () => {
                                 <div>
                                     <h2 className="text-2xl font-bold mb-4">Популярные артисты</h2>
                                     <div className="flex justify-around items-start">
-                                        {/* --- ИСПРАВЛЕНИЕ: Передаем весь объект artist --- */}
                                         {mainPageData.popularArtists.map(artist => <ArtistAvatar key={artist._id} artist={artist} />)}
                                     </div>
                                 </div>
@@ -266,7 +263,38 @@ const MusicPage = () => {
                             !searchQuery.trim() ? <div className="text-center py-10 text-slate-500">Начните вводить что-нибудь для поиска.</div> :
                             (searchResults.artists.length === 0 && searchResults.albums.length === 0 && searchResults.tracks.length === 0 && searchResults.playlists.length === 0) ? 
                             <p className="text-center py-10 text-slate-500">Ничего не найдено.</p> :
+                            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Меняем порядок секций и добавляем кнопку ---
                             <div className="space-y-8">
+                                {searchResults.tracks.length > 0 && (
+                                    <div>
+                                        <h3 className="text-xl font-bold mb-3">Треки</h3>
+                                        <TrackList
+                                            tracks={searchResults.tracks}
+                                            onSelectTrack={handleSelectTrack}
+                                            currentPlayingTrackId={currentTrack?._id}
+                                            isPlaying={isPlaying}
+                                            onToggleSave={onToggleLike}
+                                            myMusicTrackIds={myMusicTrackIds}
+                                            progress={progress}
+                                            duration={duration}
+                                            onSeek={onSeek}
+                                            loadingTrackId={loadingTrackId}
+                                            buffered={buffered}
+                                            onPlayPauseToggle={togglePlayPause}
+                                        />
+                                    </div>
+                                )}
+                                {hasMoreSearchResults && (
+                                    <div className="text-center">
+                                        <button
+                                            onClick={() => fetchDataForTab('search', searchQuery, searchPage + 1)}
+                                            disabled={loadingMore}
+                                            className="px-6 py-2 bg-slate-200 dark:bg-white/10 text-sm font-semibold rounded-full hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
+                                        >
+                                            {loadingMore ? <Loader2 className="animate-spin" /> : 'Показать еще'}
+                                        </button>
+                                    </div>
+                                )}
                                 {searchResults.artists.length > 0 && (
                                     <div>
                                         <h3 className="text-xl font-bold mb-3">Артисты</h3>
@@ -291,29 +319,8 @@ const MusicPage = () => {
                                         </div>
                                     </div>
                                 )}
-                                {searchResults.tracks.length > 0 && (
-                                    <div>
-                                        <h3 className="text-xl font-bold mb-3">Треки</h3>
-                                        <TrackList
-                                            tracks={searchResults.tracks}
-                                            onSelectTrack={handleSelectTrack}
-                                            currentPlayingTrackId={currentTrack?._id}
-                                            isPlaying={isPlaying}
-                                            onToggleSave={onToggleLike}
-                                            myMusicTrackIds={myMusicTrackIds}
-                                            progress={progress}
-                                            duration={duration}
-                                            onSeek={onSeek}
-                                            loadingTrackId={loadingTrackId}
-                                            buffered={buffered}
-                                            onPlayPauseToggle={togglePlayPause}
-                                        />
-                                    </div>
-                                )}
-                                <div ref={lastTrackElementRef} className="h-10 flex justify-center items-center">
-                                    {loadingMore && <Loader2 className="animate-spin text-slate-400" />}
-                                </div>
                             </div>
+                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                         )}
                     </div>
                 )}
