@@ -5,33 +5,25 @@ import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, ChevronDown, Music } from 'lucide-react';
 
-const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+// --- Модальное окно вынесено в отдельный компонент ---
+const AlbumSelectorModal = ({ isOpen, onClose, albums, onSelect }) => {
     const [query, setQuery] = useState('');
 
-    const selectedAlbum = useMemo(() =>
-        albums.find(a => a._id === value) || null
-    , [albums, value]);
-
-    const handleSelectAndClose = (album) => {
-        onChange(album ? album._id : '');
-        setIsModalOpen(false);
-    };
-
-    const filteredAlbums =
+    const filteredAlbums = useMemo(() => 
         query === ''
             ? albums
             : albums.filter((album) =>
                 album.title.toLowerCase().includes(query.toLowerCase()) ||
                 album.artist.name.toLowerCase().includes(query.toLowerCase())
-            );
+            )
+    , [albums, query]);
 
-    const ModalContent = () => (
+    return (
         <AnimatePresence>
-            {isModalOpen && ReactDOM.createPortal(
+            {isOpen && ReactDOM.createPortal(
                 <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={onClose}
                     className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
                 >
                     <motion.div
@@ -41,7 +33,7 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
                     >
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">Выбрать альбом</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
+                            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
                         </div>
                         <div className="relative mb-4">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -56,7 +48,7 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
                         </div>
                         <div className="flex-1 overflow-y-auto -mr-2 pr-2 space-y-2">
                             <div
-                                onClick={() => handleSelectAndClose(null)}
+                                onClick={() => onSelect(null)}
                                 className="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
                             >
                                 <div className="w-12 h-12 flex-shrink-0 bg-slate-200 dark:bg-slate-700 rounded-md flex items-center justify-center">
@@ -69,7 +61,7 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
                             {filteredAlbums.map(album => (
                                 <div
                                     key={album._id}
-                                    onClick={() => handleSelectAndClose(album)}
+                                    onClick={() => onSelect(album)}
                                     className="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
                                 >
                                     <div className="relative w-12 h-12 flex-shrink-0">
@@ -88,6 +80,20 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
             )}
         </AnimatePresence>
     );
+};
+
+
+const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const selectedAlbum = useMemo(() =>
+        albums.find(a => a._id === value) || null
+    , [albums, value]);
+
+    const handleSelect = (album) => {
+        onChange(album ? album._id : '');
+        setIsModalOpen(false);
+    };
 
     return (
         <>
@@ -100,7 +106,12 @@ const AlbumSelector = ({ albums, value, onChange, disabled = false }) => {
                 <span className="truncate">{selectedAlbum?.title || '-- Сольный трек (сингл) --'}</span>
                 <ChevronDown className="h-5 w-5 text-gray-400" />
             </button>
-            <ModalContent />
+            <AlbumSelectorModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                albums={albums}
+                onSelect={handleSelect}
+            />
         </>
     );
 };
