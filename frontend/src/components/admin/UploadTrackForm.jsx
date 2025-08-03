@@ -3,14 +3,17 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, Trash2, X } from 'lucide-react';
+import { Loader2, Trash2, X, GripVertical } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelector from './GenreSelector';
 import Avatar from '../Avatar';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ АЛЬБОМОВ ---
+// --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ АЛЬБОМОВ (без изменений) ---
 const AlbumAutocomplete = ({ albums, onSelect, initialAlbumId }) => {
     const [query, setQuery] = useState('');
     const [filteredAlbums, setFilteredAlbums] = useState([]);
@@ -76,7 +79,7 @@ const AlbumAutocomplete = ({ albums, onSelect, initialAlbumId }) => {
     );
 };
 
-// --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ МНОЖЕСТВЕННОГО ВЫБОРА АРТИСТОВ ---
+// --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ МНОЖЕСТВЕННОГО ВЫБОРА АРТИСТОВ (без изменений) ---
 const MultiArtistAutocomplete = ({ artists, selectedIds, onSelectionChange, excludeIds = [] }) => {
     const [query, setQuery] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -150,20 +153,47 @@ const ToggleSwitch = ({ checked, onChange, label }) => (
     </label>
 );
 
+// --- ИСПРАВЛЕНИЕ 1: Перерабатываем компонент трека для Drag-and-Drop ---
 const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemove }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: track.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 'auto',
+    };
+    
     return (
-        <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3 relative">
-            <button type="button" onClick={onRemove} className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full z-10">
-                <Trash2 size={16} />
-            </button>
-            <input type="text" placeholder="Название трека" value={track.title} onChange={(e) => onUpdate(index, 'title', e.target.value)}
-                className="w-full p-2 rounded bg-white dark:bg-slate-700 font-semibold" required />
-            <div>
-                <label className="text-sm font-semibold block mb-1">Дополнительные исполнители (фит)</label>
-                 <MultiArtistAutocomplete artists={artists} selectedIds={track.artistIds}
-                    onSelectionChange={(ids) => onUpdate(index, 'artistIds', ids)} excludeIds={[mainArtistId]} />
+        <div ref={setNodeRef} style={style} className={`flex items-start space-x-3 transition-shadow ${isDragging ? 'shadow-lg' : ''}`}>
+            {/* Ручка для перетаскивания и порядковый номер */}
+            <div className="flex flex-col items-center pt-3 flex-shrink-0">
+                <span className="font-bold text-lg text-slate-500 dark:text-slate-400 select-none">{index + 1}</span>
+                <div {...attributes} {...listeners} className="cursor-grab touch-none p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white">
+                    <GripVertical size={20}/>
+                </div>
             </div>
-             <ToggleSwitch checked={track.isExplicit} onChange={(checked) => onUpdate(index, 'isExplicit', checked)} label="Explicit (ненормативная лексика)" />
+
+            {/* Основное содержимое карточки */}
+            <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3 relative w-full">
+                <button type="button" onClick={onRemove} className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full z-10">
+                    <Trash2 size={16} />
+                </button>
+                <input type="text" placeholder="Название трека" value={track.title} onChange={(e) => onUpdate(index, 'title', e.target.value)}
+                    className="w-full p-2 rounded bg-white dark:bg-slate-700 font-semibold" required />
+                <div>
+                    <label className="text-sm font-semibold block mb-1">Дополнительные исполнители (фит)</label>
+                    <MultiArtistAutocomplete artists={artists} selectedIds={track.artistIds}
+                        onSelectionChange={(ids) => onUpdate(index, 'artistIds', ids)} excludeIds={[mainArtistId]} />
+                </div>
+                <ToggleSwitch checked={track.isExplicit} onChange={(checked) => onUpdate(index, 'isExplicit', checked)} label="Explicit (ненормативная лексика)" />
+            </div>
         </div>
     );
 };
@@ -178,6 +208,14 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         title: '', artistIds: [], genres: [], trackFile: null,
         durationMs: 0, coverArt: null, coverPreview: '', releaseYear: ''
     });
+
+    // --- ИСПРАВЛЕНИЕ 2: Настройка сенсоров для dnd-kit ---
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     useEffect(() => {
         if (isEditMode && initialData) {
@@ -217,15 +255,17 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         }
     };
     
+    // --- ИСПРАВЛЕНИЕ 3: Добавляем уникальный ID к каждому треку при загрузке ---
     const handleBatchFileChange = (e) => {
         const files = Array.from(e.target.files);
         const newTracks = files.map(file => {
+            const trackId = crypto.randomUUID(); // Уникальный ID для dnd-kit
             const audio = new Audio(URL.createObjectURL(file));
             audio.onloadedmetadata = () => {
                 const duration = Math.round(audio.duration * 1000);
-                setTrackList(currentList => currentList.map(t => t.file.name === file.name ? { ...t, durationMs: duration } : t));
+                setTrackList(currentList => currentList.map(t => t.id === trackId ? { ...t, durationMs: duration } : t));
             };
-            return { file, title: file.name.replace(/\.[^/.]+$/, ""), artistIds: [], isExplicit: false, durationMs: 0 };
+            return { id: trackId, file, title: file.name.replace(/\.[^/.]+$/, ""), artistIds: [], isExplicit: false, durationMs: 0 };
         });
         setTrackList(prev => [...prev, ...newTracks]);
     };
@@ -238,8 +278,20 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         });
     };
     
-    const removeTrackFromList = (index) => {
-        setTrackList(currentList => currentList.filter((_, i) => i !== index));
+    const removeTrackFromList = (indexToRemove) => {
+        setTrackList(currentList => currentList.filter((_, i) => i !== indexToRemove));
+    };
+
+    // --- ИСПРАВЛЕНИЕ 4: Обработчик завершения перетаскивания ---
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        if (active.id !== over.id) {
+            setTrackList((items) => {
+                const oldIndex = items.findIndex((item) => item.id === active.id);
+                const newIndex = items.findIndex((item) => item.id === over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -322,12 +374,25 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                         </div>
                     </div>
                     {trackList.length > 0 && (
-                        <div className="space-y-3 pr-2 max-h-96 overflow-y-auto">
-                            {trackList.map((track, index) => (
-                                <BatchTrackItem key={index} track={track} index={index} artists={artists}
-                                    mainArtistId={mainAlbumArtistId} onUpdate={updateTrackInList} onRemove={() => removeTrackFromList(index)} />
-                            ))}
-                        </div>
+                        // --- ИСПРАВЛЕНИЕ 5: Оборачиваем список в DndContext и убираем скролл ---
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                            <SortableContext items={trackList.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                                <div className="space-y-3">
+                                    {trackList.map((track, index) => (
+                                        <BatchTrackItem 
+                                            key={track.id} 
+                                            id={track.id}
+                                            track={track} 
+                                            index={index} 
+                                            artists={artists}
+                                            mainArtistId={mainAlbumArtistId} 
+                                            onUpdate={updateTrackInList} 
+                                            onRemove={() => removeTrackFromList(index)} 
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
                     )}
                 </div>
             ) : (

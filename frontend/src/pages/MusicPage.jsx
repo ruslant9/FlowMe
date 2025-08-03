@@ -273,11 +273,10 @@ const MusicPage = () => {
                                 {searchResults.tracks.length > 0 && (
                                     <div>
                                         <h3 className="text-xl font-bold mb-3">Треки</h3>
-                                        {/* <<<--- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                         <TrackList
                                             tracks={searchResults.tracks}
                                             onSelectTrack={handleSelectTrack}
-                                            currentPlayingTrackId={currentTrack ? currentTrack.youtubeId : null}
+                                            currentPlayingTrackId={currentTrack?._id}
                                             isPlaying={isPlaying}
                                             onToggleSave={onToggleLike}
                                             myMusicTrackIds={myMusicTrackIds}
@@ -287,8 +286,8 @@ const MusicPage = () => {
                                             loadingTrackId={loadingTrackId}
                                             buffered={buffered}
                                             onPlayPauseToggle={togglePlayPause}
+                                            useSpotifyIdForSaving={true}
                                         />
-                                        {/* <<<--- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     </div>
                                 )}
                                 {searchResults.artists.length > 0 && (
@@ -326,8 +325,8 @@ const MusicPage = () => {
                 {['my-music', 'recently-played', 'playlists'].includes(activeTab) && (
                     loadingTabData ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                         <div>
-                            {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
-                            {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
+                            {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} currentPlayingTrackId={currentTrack?._id} {...{isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
+                            {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} currentPlayingTrackId={currentTrack?._id} {...{isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
                             {activeTab === 'playlists' && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                     <div className="relative group aspect-square">

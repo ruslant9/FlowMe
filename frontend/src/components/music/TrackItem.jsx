@@ -16,7 +16,7 @@ const formatTime = (seconds) => {
 const TrackItem = ({ 
     track, 
     onSelectTrack, 
-    currentPlayingTrackId, // <<<--- ИЗМЕНЕНИЕ: Принимаем ID, а не булево значение
+    currentPlayingTrackId,
     isPlaying, 
     onToggleSave, 
     isSaved, 
@@ -33,16 +33,15 @@ const TrackItem = ({
 }) => {
     const { showConfirmation } = useModal();
     
-    // <<<--- НАЧАЛО ИСПРАВЛЕНИЯ 1: Усиленная проверка isCurrent ---
-    const isCurrent = currentPlayingTrackId && track.youtubeId === currentPlayingTrackId;
-    // <<<--- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
+    // <<<--- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const isCurrent = currentPlayingTrackId && track._id === currentPlayingTrackId;
+    const isLoading = track._id === loadingTrackId;
+    // <<<--- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const duration_ms = track.durationMs;
     const minutes = duration_ms ? Math.floor(duration_ms / 60000) : 0;
     const seconds = duration_ms ? ((duration_ms % 60000) / 1000).toFixed(0) : 0;
     const formattedDuration = duration_ms ? `${minutes}:${seconds < 10 ? '0' : ''}${seconds}` : '?:??';
-
-    const isLoading = track.youtubeId === loadingTrackId;
     
     const cleanTitle = (title) => {
         if (!title) return '';

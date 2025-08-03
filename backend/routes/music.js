@@ -218,11 +218,11 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
                 .sort({ releaseYear: -1 })
                 .lean(),
 
-            // 4. НОВЫЙ ЗАПРОС: Ищем треки, где артист является гостем (фит)
-            Track.find({ artist: artistId, status: 'approved', 'album.artist': { $ne: artistId } })
+            // 4. ИСПРАВЛЕНИЕ: Ищем ВСЕ треки артиста в альбомах, чтобы потом отфильтровать фиты
+            Track.find({ artist: artistId, status: 'approved', album: { $ne: null } })
                  .populate({
                      path: 'album',
-                     populate: { path: 'artist', select: 'name' }
+                     populate: { path: 'artist', select: 'name _id' } // Добавляем _id для корректного сравнения
                  })
                  .lean(),
             
@@ -244,13 +244,18 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             return track;
         });
 
-        // 6. НОВЫЙ БЛОК: Обрабатываем найденные "фиты", чтобы получить уникальные альбомы
-        const featuredOnAlbums = featuredTracks.reduce((acc, track) => {
+        // 6. ИСПРАВЛЕНИЕ: Фильтруем треки, чтобы найти только те, где артист - гость
+        const actualFeaturedTracks = featuredTracks.filter(track => 
+            track.album && track.album.artist && track.album.artist._id.toString() !== artistId.toString()
+        );
+
+        const featuredOnAlbums = actualFeaturedTracks.reduce((acc, track) => {
             if (track.album && !acc.some(a => a._id.toString() === track.album._id.toString())) {
                 acc.push(track.album);
             }
             return acc;
         }, []);
+
 
         res.json({ artist, topTracks: processedTracks, albums, featuredOn: featuredOnAlbums, singles });
 

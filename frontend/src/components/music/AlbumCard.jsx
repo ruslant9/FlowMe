@@ -25,7 +25,10 @@ const AlbumCard = ({ album }) => {
                 </div>
                 <div className="mt-2">
                     <p className="font-semibold text-sm truncate group-hover:text-blue-400 transition-colors">{album.title}</p>
-                    <p className="text-xs text-slate-500 truncate">{album.artist.name}</p>
+                    {/* --- ИСПРАВЛЕНИЕ: Добавляем год релиза к имени артиста --- */}
+                    <p className="text-xs text-slate-500 truncate">
+                        {album.artist.name}{album.releaseYear && ` • ${album.releaseYear}`}
+                    </p>
                 </div>
             </motion.div>
         </Link>
