@@ -45,7 +45,9 @@ const MusicPage = () => {
     };
 
     const [activeTab, setActiveTab] = useState(getInitialTab);
-    const [mainPageData, setMainPageData] = useState({ newReleases: [], popularHits: [], similarArtists: [] });
+    // <<<--- НАЧАЛО ИСПРАВЛЕНИЯ 1: Меняем similarArtists на popularArtists ---
+    const [mainPageData, setMainPageData] = useState({ newReleases: [], popularHits: [], popularArtists: [] });
+    // <<<--- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
     const [loadingRecommendations, setLoadingRecommendations] = useState(true);
     const [myMusicTracks, setMyMusicTracks] = useState([]);
     const [recentlyPlayed, setRecentlyPlayed] = useState([]);
@@ -243,14 +245,16 @@ const MusicPage = () => {
                                     </div>
                                 </div>
                             )}
-                             {mainPageData.similarArtists.length > 0 && (
+                            {/* <<<--- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем `popularArtists` --- */}
+                             {mainPageData.popularArtists.length > 0 && (
                                 <div>
                                     <h2 className="text-2xl font-bold mb-4">Популярные артисты</h2>
                                     <div className="flex justify-around items-start">
-                                        {mainPageData.similarArtists.map(artist => <ArtistAvatar key={artist.name} artistName={artist.name} onClick={() => handleArtistClick(artist.name)} avatarUrl={artist.imageUrl} />)}
+                                        {mainPageData.popularArtists.map(artist => <ArtistAvatar key={artist.name} artistName={artist.name} onClick={() => handleArtistClick(artist.name)} avatarUrl={artist.avatarUrl} />)}
                                     </div>
                                 </div>
                             )}
+                             {/* <<<--- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                         </div>
                     )
                 )}
@@ -270,7 +274,6 @@ const MusicPage = () => {
                                 {searchResults.tracks.length > 0 && (
                                     <div>
                                         <h3 className="text-xl font-bold mb-3">Треки</h3>
-                                        {/* --- ИСПРАВЛЕНИЕ ЗДЕСЬ: onToggleLike заменено на onToggleSave --- */}
                                         <TrackList
                                             tracks={searchResults.tracks}
                                             onSelectTrack={handleSelectTrack}

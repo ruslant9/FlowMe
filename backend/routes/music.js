@@ -135,18 +135,19 @@ router.get('/saved', authMiddleware, async (req, res) => {
         const savedTracks = await Track.find({ user: req.user.userId, type: 'saved' })
             .sort({ savedAt: -1 })
             .populate('artist', 'name')
-            .populate('album', 'title coverArtUrl') // Убеждаемся, что получаем coverArtUrl альбома
-            .lean(); // .lean() для более быстрой обработки
+            .populate('album', 'title coverArtUrl') // <<<--- ИЗМЕНЕНИЕ: Добавляем populate для обложки альбома
+            .lean(); // <<<--- ИЗМЕНЕНИЕ: Используем .lean() для производительности
 
-        // Обрабатываем треки, чтобы добавить обложку альбома, если нужно
+        // <<<--- НАЧАЛО ИСПРАВЛЕНИЯ: Обрабатываем треки, чтобы добавить обложку альбома, если нужно ---
         const processedTracks = savedTracks.map(track => {
             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
             }
             return track;
         });
+        // <<<--- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-        res.status(200).json(processedTracks);
+        res.status(200).json(processedTracks); // <<<--- ИЗМЕНЕНИЕ: Отправляем обработанные треки
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при получении треков.' });
     }
@@ -181,7 +182,15 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
         if (!album || album.status !== 'approved') {
             return res.status(404).json({ message: 'Альбом не найден.' });
         }
-        res.json(album);
+        const processedTracks = album.tracks.map(track => ({
+            ...track,
+            albumArtUrl: track.albumArtUrl || album.coverArtUrl 
+        }));
+
+        const finalAlbumData = { ...album, tracks: processedTracks };
+        
+        res.json(finalAlbumData);
+        
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера при загрузке альбома.' });
     }
@@ -210,7 +219,7 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
         }
         
         const processedTracks = topTracks.map(track => {
-            if (track.album && track.album.coverArtUrl) {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
             }
             return track;
@@ -361,10 +370,7 @@ router.get('/main-page-data', authMiddleware, async (req, res) => {
                   .lean() 
         ]);
 
-        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-        // Ключ 'popularArtists' изменен на 'similarArtists', чтобы соответствовать frontend
-        res.json({ newReleases, popularHits, similarArtists: popularArtists });
-
+        res.json({ newReleases, popularHits, popularArtists });
     } catch (error) {
         console.error("Ошибка при загрузке данных для главной страницы музыки:", error);
         res.status(500).json({ message: 'Не удалось загрузить рекомендации.' });
