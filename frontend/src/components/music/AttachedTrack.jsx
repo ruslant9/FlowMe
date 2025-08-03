@@ -12,18 +12,11 @@ const formatTime = (seconds) => {
 
 const AttachedTrack = ({ track }) => {
     const {
-        playTrack,
-        currentTrack,
-        isPlaying,
-        loadingTrackId,
-        togglePlayPause,
-        progress,
-        duration,
-        seekTo,
-        buffered
+        playTrack, currentTrack, isPlaying, loadingTrackId, togglePlayPause,
+        progress, duration, seekTo, buffered
     } = useMusicPlayer();
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -31,14 +24,21 @@ const AttachedTrack = ({ track }) => {
             ''
         ).trim();
     };
-    const cleanArtist = (artist) => {
-        if (!artist) return '';
-        if (artist.endsWith(' - Topic')) {
-            return artist.substring(0, artist.length - ' - Topic'.length).trim();
+
+    const formatArtistName = (artistData) => {
+        if (!artistData) return '';
+        if (Array.isArray(artistData)) {
+            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
         }
-        return artist;
+        if (typeof artistData === 'object' && artistData.name) {
+            return artistData.name.replace(' - Topic', '').trim();
+        }
+        if (typeof artistData === 'string') {
+            return artistData.replace(' - Topic', '').trim();
+        }
+        return '';
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     if (!track) return null;
 
@@ -50,7 +50,7 @@ const AttachedTrack = ({ track }) => {
         if (isCurrent) {
             togglePlayPause();
         } else {
-            playTrack(track, [track]); // Play this single track as a playlist of one
+            playTrack(track, [track]);
         }
     };
 
@@ -65,26 +65,17 @@ const AttachedTrack = ({ track }) => {
                             <Music size={24} className="text-slate-400"/>
                         </div>
                     )}
-                    <button
-                        onClick={handlePlayClick}
+                    <button onClick={handlePlayClick}
                         className={`absolute inset-0 bg-black/50 flex items-center justify-center text-white 
                             ${isCurrent || isLoading ? 'opacity-100' : 'opacity-0 hover:opacity-100'} 
-                            transition-opacity`}
-                    >
-                        {isLoading ? (
-                            <Loader2 className="animate-spin" />
-                        ) : isCurrent && isPlaying ? (
-                            <Pause size={28} />
-                        ) : (
-                            <Play size={28} />
-                        )}
+                            transition-opacity`}>
+                        {isLoading ? <Loader2 className="animate-spin" /> : isCurrent && isPlaying ? <Pause size={28} /> : <Play size={28} />}
                     </button>
                 </div>
                 <div className="flex-1 min-w-0">
-                    {/* --- ИЗМЕНЕНИЕ --- */}
                     <p className="font-bold truncate">{cleanTitle(track.title)}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{Array.isArray(track.artist) ? track.artist.map(a => cleanArtist(a.name)).join(', ') : cleanArtist(track.artist)}</p>
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                    {/* --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННОЙ ФУНКЦИИ --- */}
+                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{formatArtistName(track.artist)}</p>
                 </div>
             </div>
             {isCurrent && (
@@ -92,17 +83,8 @@ const AttachedTrack = ({ track }) => {
                     <span className="text-xs text-slate-500 dark:text-white/60 w-10 text-center">{formatTime(progress)}</span>
                     <div className="relative flex-grow flex items-center">
                         <div className="absolute h-[4px] w-full bg-slate-200 dark:bg-white/10 rounded-full"></div>
-                        <div 
-                            className="absolute h-[4px] bg-slate-300 dark:bg-slate-600 rounded-full"
-                            style={{ width: `${buffered * 100}%`}}
-                        />
-                        <Slider
-                            min={0}
-                            max={duration}
-                            value={progress}
-                            onChange={seekTo}
-                            step={0.1}
-                        />
+                        <div className="absolute h-[4px] bg-slate-300 dark:bg-slate-600 rounded-full" style={{ width: `${buffered * 100}%`}}/>
+                        <Slider min={0} max={duration} value={progress} onChange={seekTo} step={0.1} />
                     </div>
                     <span className="text-xs text-slate-500 dark:text-white/60 w-10 text-center">{formatTime(duration)}</span>
                 </div>

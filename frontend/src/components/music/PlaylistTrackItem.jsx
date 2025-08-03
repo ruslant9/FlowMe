@@ -4,28 +4,32 @@ import { Play, Pause, Heart, Trash2 } from 'lucide-react';
 
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist }) => {
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Внедряем новую, улучшенную функцию очистки ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
-        // Эта версия удаляет текст как в круглых (), так и в квадратных [] скобках, а также множество других "мусорных" слов.
         return title.replace(
             /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
             ''
         ).trim();
     };
 
-    const cleanArtist = (artist) => {
-        if (!artist) return '';
-        // Удаляет " - Topic" в конце строки
-        if (artist.endsWith(' - Topic')) {
-            return artist.substring(0, artist.length - ' - Topic'.length).trim();
+    const formatArtistName = (artistData) => {
+        if (!artistData) return '';
+        if (Array.isArray(artistData)) {
+            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
         }
-        return artist;
+        if (typeof artistData === 'object' && artistData.name) {
+            return artistData.name.replace(' - Topic', '').trim();
+        }
+        if (typeof artistData === 'string') {
+            return artistData.replace(' - Topic', '').trim();
+        }
+        return '';
     };
-
+    
     const cleanedTitle = cleanTitle(track.title);
-    const cleanedArtist = Array.isArray(track.artist) ? track.artist.map(a => cleanArtist(a.name)).join(', ') : cleanArtist(track.artist?.name);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    const cleanedArtist = formatArtistName(track.artist);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const formatDuration = (ms) => {
         if (!ms) return '?:??';

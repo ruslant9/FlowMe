@@ -1,25 +1,36 @@
-// frontend/src/components/music/ArtistCard.jsx
+// frontend/src/components/music/AlbumCard.jsx
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import Avatar from '../Avatar';
+import { Music } from 'lucide-react';
 
-const ArtistCard = ({ artist }) => {
-    // В будущем здесь можно добавить ссылку на страницу артиста
-    // <Link to={`/artist/${artist._id}`}>
+const AlbumCard = ({ album }) => {
+    // --- ИЗМЕНЕНИЕ: Оборачиваем карточку в Link ---
     return (
-        <motion.div
-            className="flex-shrink-0 w-full flex flex-col items-center text-center group cursor-pointer"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-        >
-            <Avatar username={artist.name} avatarUrl={artist.avatarUrl} size="xl" />
-            <p className="mt-2 font-semibold text-sm truncate w-full group-hover:text-blue-400 transition-colors">
-                {artist.name}
-            </p>
-        </motion.div>
+        <Link to={`/album/${album._id}`}>
+            <motion.div
+                className="flex-shrink-0 w-full group cursor-pointer"
+                whileHover={{ y: -5 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            >
+                <div className="relative aspect-square rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800">
+                    {album.coverArtUrl ? (
+                        <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400">
+                            <Music size={48} />
+                        </div>
+                    )}
+                </div>
+                <div className="mt-2">
+                    <p className="font-semibold text-sm truncate group-hover:text-blue-400 transition-colors">{album.title}</p>
+                    <p className="text-xs text-slate-500 truncate">{album.artist.name}</p>
+                </div>
+            </motion.div>
+        </Link>
     );
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 };
 
-export default ArtistCard;
+export default AlbumCard;

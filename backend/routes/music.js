@@ -259,7 +259,7 @@ router.get('/main-page-data', async (req, res) => {
 router.get('/search-all', async (req, res) => {
     try {
         const { q, page = 1 } = req.query;
-        const limit = 20; // Количество треков на страницу
+        const limit = 20;
         const skip = (parseInt(page) - 1) * limit;
 
         if (!q || q.trim() === '') {
@@ -268,28 +268,50 @@ router.get('/search-all', async (req, res) => {
 
         const searchQuery = { $regex: q, $options: 'i' };
 
-        // Параллельно выполняем все поисковые запросы
+        // 1. Находим ID всех артистов, подходящих под запрос
+        const matchingArtists = await Artist.find({ name: searchQuery, status: 'approved' }).select('_id').lean();
+        const artistIds = matchingArtists.map(a => a._id);
+
+        // 2. Параллельно выполняем все поисковые запросы
         const [artists, albums, playlists, tracks, totalTracks] = await Promise.all([
-            // Ищем до 6 артистов (только на первой странице)
+            // Ищем артистов (только на первой странице)
             page == 1 ? Artist.find({ name: searchQuery, status: 'approved' }).limit(6).lean() : Promise.resolve([]),
             
-            // Ищем до 6 альбомов (только на первой странице)
-            page == 1 ? Album.find({ title: searchQuery, status: 'approved' }).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
+            // Ищем альбомы: либо по названию, либо по ID найденных артистов (только на первой странице)
+            page == 1 ? Album.find({ 
+                status: 'approved',
+                $or: [
+                    { title: searchQuery },
+                    { artist: { $in: artistIds } }
+                ]
+            }).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
 
-            // Ищем до 6 плейлистов (только на первой странице)
+            // Ищем плейлисты (только на первой странице)
             page == 1 ? Playlist.find({ name: searchQuery, visibility: 'public' }).populate('user', 'username').limit(6).lean() : Promise.resolve([]),
 
-            // Ищем треки с пагинацией
-            Track.find({ title: searchQuery, status: 'approved' })
-                .populate('artist', 'name')
-                .populate('album', 'title')
-                .sort({ playCount: -1 }) // Сортируем по популярности
-                .skip(skip)
-                .limit(limit)
-                .lean(),
+            // Ищем треки: либо по названию, либо по ID найденных артистов (с пагинацией)
+            Track.find({
+                status: 'approved',
+                $or: [
+                    { title: searchQuery },
+                    { artist: { $in: artistIds } }
+                ]
+            })
+            .populate('artist', 'name')
+            .populate('album', 'title')
+            .sort({ playCount: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
 
             // Считаем общее количество треков для пагинации
-            Track.countDocuments({ title: searchQuery, status: 'approved' })
+            Track.countDocuments({
+                 status: 'approved',
+                 $or: [
+                    { title: searchQuery },
+                    { artist: { $in: artistIds } }
+                ]
+            })
         ]);
 
         const hasMore = (skip + tracks.length) < totalTracks;
