@@ -149,11 +149,25 @@ const MusicListModal = ({ isOpen, onClose, user }) => {
         navigate(`/music/playlist/${playlist._id}`);
     };
 
+    const formatArtistName = (artistData) => {
+        if (!artistData) return '';
+        if (Array.isArray(artistData)) {
+            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
+        }
+        if (typeof artistData === 'object' && artistData.name) {
+            return artistData.name.replace(' - Topic', '').trim();
+        }
+        if (typeof artistData === 'string') {
+            return artistData.replace(' - Topic', '').trim();
+        }
+        return '';
+    };
+
     const filteredTracks = useMemo(() => {
         if (!searchQuery) return tracks;
         return tracks.filter(t => 
             t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            t.artist.toLowerCase().includes(searchQuery.toLowerCase())
+            formatArtistName(t.artist).toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [tracks, searchQuery]);
 

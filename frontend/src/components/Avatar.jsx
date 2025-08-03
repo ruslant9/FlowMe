@@ -87,10 +87,7 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
                     {firstLetter}
                 </div>
             )}
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Корректируем z-index, чтобы не перекрывать псевдо-элементы ---
             {(hasCustomBorder || defaultPremiumClass) && <div className={`absolute inset-1 rounded-full bg-slate-50 dark:bg-slate-900 ${isPseudoElementBorder ? '-z-20' : '-z-10'}`}></div>}
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-            
             {onClick && children && (
                 <>
                     <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
