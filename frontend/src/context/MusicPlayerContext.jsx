@@ -79,22 +79,13 @@ export const MusicPlayerProvider = ({ children }) => {
     }, [currentTrack, myMusicTrackIds]);
 
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        // Добавляем проверку, чтобы playlistData всегда был массивом
         const safePlaylistData = Array.isArray(playlistData) ? playlistData : [];
-
-        if (!trackData?._id) return;
-        
+        if (!trackData?._id) return;      
         setLoadingTrackId(trackData._id);
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
         const { playlistId = null, startShuffled = false, startRepeat = false } = options;
-
-        logMusicAction(trackData, 'listen');
-        
+        logMusicAction(trackData, 'listen');       
         setCurrentTrack(trackData);
         setIsPlaying(false);
-
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
@@ -105,22 +96,14 @@ export const MusicPlayerProvider = ({ children }) => {
             const audio = audioRef.current;
             audio.src = streamUrl;
             audio.volume = volume;
-            await audio.play();
-            
+            await audio.play();           
             axios.post(`${API_URL}/api/music/track/${trackData._id}/log-play`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
-            }).catch(e => console.error("Не удалось залогировать прослушивание", e));
-            
+            }).catch(e => console.error("Не удалось залогировать прослушивание", e));    
             setIsPlaying(true);
-            
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-            // Используем безопасный массив safePlaylistData
             let finalPlaylist = safePlaylistData.length > 0 ? [...safePlaylistData] : [trackData];
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-            
             let trackIndex = finalPlaylist.findIndex(t => t._id === trackData._id);
             if (trackIndex === -1) trackIndex = 0;
-
             if (startShuffled) {
                 const firstTrack = finalPlaylist[trackIndex];
                 let rest = finalPlaylist.filter((_, i) => i !== trackIndex);
@@ -131,12 +114,10 @@ export const MusicPlayerProvider = ({ children }) => {
                 finalPlaylist = [firstTrack, ...rest];
                 trackIndex = 0;
             }
-
             playlistRef.current = finalPlaylist;
             currentTrackIndexRef.current = trackIndex;
             setIsShuffle(startShuffled);
             setIsRepeat(startRepeat);
-
         } catch (error) {
             toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
             setCurrentTrack(null);

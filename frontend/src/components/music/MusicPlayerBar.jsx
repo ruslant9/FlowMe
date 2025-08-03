@@ -11,7 +11,6 @@ const formatTime = (seconds) => {
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
-
 const NotificationToast = ({ message }) => (
     <AnimatePresence>
         {message && (
@@ -26,21 +25,17 @@ const NotificationToast = ({ message }) => (
         )}
     </AnimatePresence>
 );
-
 const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification }) => {
     if (!track) {
         return null;
     }
-
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
             /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
             ''
         ).trim();
-    };
-    
+    };    
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
@@ -54,18 +49,14 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
         }
         return '';
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
     const currentProgress = progress || 0;
     const totalDuration = duration || 1;
-
     return (
         <div className="w-full p-4 flex items-center space-x-4">
             <div className="flex items-center space-x-4 w-1/4 flex-shrink-0">
                 <img src={track.albumArtUrl} alt={track.title} className="w-16 h-16 rounded-md object-cover shadow-md"/>
                 <div className="flex flex-col min-w-0 flex-grow">
                     <p className="font-bold truncate text-lg text-slate-900 dark:text-white">{cleanTitle(track.title)}</p>
-                    {/* --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННОЙ ФУНКЦИИ --- */}
                     <p className="text-sm text-slate-700 dark:text-white/60 truncate">{formatArtistName(track.artist)}</p>
                 </div>
             </div>

@@ -15,8 +15,6 @@ const AttachedTrack = ({ track }) => {
         playTrack, currentTrack, isPlaying, loadingTrackId, togglePlayPause,
         progress, duration, seekTo, buffered
     } = useMusicPlayer();
-
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -37,14 +35,10 @@ const AttachedTrack = ({ track }) => {
             return artistData.replace(' - Topic', '').trim();
         }
         return '';
-    };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-    
+    }; 
     if (!track) return null;
-
     const isCurrent = currentTrack?.youtubeId === track.youtubeId;
     const isLoading = loadingTrackId === track.youtubeId;
-
     const handlePlayClick = (e) => {
         e.stopPropagation();
         if (isCurrent) {
@@ -53,7 +47,6 @@ const AttachedTrack = ({ track }) => {
             playTrack(track, [track]);
         }
     };
-
     return (
         <div className="flex flex-col space-y-2">
             <div className="flex items-start space-x-3">
@@ -74,7 +67,6 @@ const AttachedTrack = ({ track }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="font-bold truncate">{cleanTitle(track.title)}</p>
-                    {/* --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННОЙ ФУНКЦИИ --- */}
                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{formatArtistName(track.artist)}</p>
                 </div>
             </div>
