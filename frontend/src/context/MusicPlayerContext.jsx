@@ -1,3 +1,5 @@
+// frontend/src/context/MusicPlayerContext.jsx
+
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -37,7 +39,6 @@ export const MusicPlayerProvider = ({ children }) => {
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
 
-    // Логирование действий для системы рекомендаций
     const logMusicAction = useCallback(async (track, action) => {
         try {
             const token = localStorage.getItem('token');
@@ -49,7 +50,6 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, []);
 
-    // Получение списка ID сохраненных треков
     const fetchMyMusicIds = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
@@ -58,7 +58,6 @@ export const MusicPlayerProvider = ({ children }) => {
                 return;
             }
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-            // Теперь используем ID трека из вашей БД как уникальный идентификатор
             setMyMusicTrackIds(new Set(res.data.map(track => track._id)));
         } catch (error) {
             console.error("Не удалось обновить список сохраненной музыки");
@@ -71,7 +70,6 @@ export const MusicPlayerProvider = ({ children }) => {
         return () => window.removeEventListener('myMusicUpdated', fetchMyMusicIds);
     }, [fetchMyMusicIds]);
 
-    // Синхронизация статуса "лайка" при смене трека
     useEffect(() => {
         if (currentTrack) {
             setIsLiked(myMusicTrackIds.has(currentTrack._id));
@@ -80,17 +78,22 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [currentTrack, myMusicTrackIds]);
 
-    // Основная функция воспроизведения трека
-    const playTrack = useCallback(async (trackData, playlistData = [], options = {}) => {
+    const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // Добавляем проверку, чтобы playlistData всегда был массивом
+        const safePlaylistData = Array.isArray(playlistData) ? playlistData : [];
+
         if (!trackData?._id) return;
+        
+        setLoadingTrackId(trackData._id);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         const { playlistId = null, startShuffled = false, startRepeat = false } = options;
 
         logMusicAction(trackData, 'listen');
         
-        setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
-        setIsPlaying(false); // Сначала ставим на паузу, пока грузится URL
+        setIsPlaying(false);
 
         try {
             const token = localStorage.getItem('token');
@@ -110,7 +113,11 @@ export const MusicPlayerProvider = ({ children }) => {
             
             setIsPlaying(true);
             
-            let finalPlaylist = playlistData.length > 0 ? [...playlistData] : [trackData];
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            // Используем безопасный массив safePlaylistData
+            let finalPlaylist = safePlaylistData.length > 0 ? [...safePlaylistData] : [trackData];
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+            
             let trackIndex = finalPlaylist.findIndex(t => t._id === trackData._id);
             if (trackIndex === -1) trackIndex = 0;
 
@@ -138,7 +145,6 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [volume, logMusicAction]);
 
-    // Обработчик следующего трека
     const handleNextTrack = useCallback(() => {
         if (currentTrack && progress > 0 && duration > 0 && progress < duration * 0.9) {
             logMusicAction(currentTrack, 'skip');
@@ -158,7 +164,6 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [isShuffle, playTrack, currentTrack, progress, duration, logMusicAction]);
 
-    // Управление событиями элемента <audio>
     useEffect(() => {
         const audio = audioRef.current;
         
@@ -214,7 +219,7 @@ export const MusicPlayerProvider = ({ children }) => {
     }, []);
 
     const prevTrack = useCallback(() => {
-        if (progress > 3) { // Если прошло больше 3 секунд, начинаем трек заново
+        if (progress > 3) {
             seekTo(0);
         } else {
             if (playlistRef.current.length === 0) return;
@@ -290,7 +295,7 @@ export const MusicPlayerProvider = ({ children }) => {
             if (!wasLiked) logMusicAction(trackData, 'like');
             window.dispatchEvent(new CustomEvent('myMusicUpdated'));
         } catch (error) {
-            fetchMyMusicIds(); // Восстанавливаем актуальное состояние в случае ошибки
+            fetchMyMusicIds();
             toast.error('Ошибка при изменении статуса трека.');
         }
     }, [myMusicTrackIds, currentTrack, logMusicAction, fetchMyMusicIds]);
