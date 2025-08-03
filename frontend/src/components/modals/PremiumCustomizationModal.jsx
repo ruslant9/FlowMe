@@ -22,6 +22,12 @@ const avatarBorders = [
     { id: 'animated-hearts', name: 'Сердца', type: 'animated-hearts', value: null, pseudo: true },
     { id: 'animated-neon', name: 'Неон', type: 'animated-neon', value: null, pseudo: true },
     { id: 'animated-orbit', name: 'Орбита', type: 'animated-orbit', value: null, pseudo: true },
+    { id: 'animated-fire', name: 'Огонь', type: 'animated-fire', value: null, pseudo: true },
+    { id: 'animated-glitch', name: 'Глитч', type: 'animated-glitch', value: null, pseudo: true },
+    { id: 'animated-tech', name: 'Техно', type: 'animated-tech', value: null, pseudo: true },
+    { id: 'animated-pulse', name: 'Пульс', type: 'animated-pulse', value: null, pseudo: true },
+    { id: 'animated-runes', name: 'Руны', type: 'animated-runes', value: null, pseudo: true },
+    { id: 'animated-sparkle', name: 'Искры', type: 'animated-sparkle', value: null, pseudo: true },
 ];
 // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
@@ -65,6 +71,7 @@ const AvatarBorderPreview = ({ border, isSelected, onClick, user }) => (
     >
         <Avatar
             username={user.username}
+            fullName={user.fullName}
             avatarUrl={user.avatar ? `${API_URL}/${user.avatar}` : ''}
             customBorder={border}
             size="md"

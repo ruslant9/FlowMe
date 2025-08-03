@@ -1,4 +1,3 @@
-
 /* frontend/src/index.css */
 
 /* 1. Импортируем базовые стили Tailwind */
@@ -404,7 +403,7 @@ html.dark .rc-slider-rail {
   100% { background-position: 0% 50%; }
 }
 
-/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Новые стили для сложных рамок --- */
+/* --- НОВЫЕ СТИЛИ ДЛЯ РАМОК --- */
 @keyframes premium-border-rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -480,6 +479,113 @@ html.dark .rc-slider-rail {
   animation-duration: 6s;
   filter: drop-shadow(0 0 3px #fde68a);
 }
+
+/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Новые стили для новых рамок --- */
+/* Рамка "Огонь" */
+.premium-border-animated-fire {
+  padding: 4px;
+  position: relative;
+}
+.premium-border-animated-fire::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: conic-gradient(from 180deg at 50% 50%, #ffc107, #ff6f00, #e65100, #ffc107);
+  animation: premium-border-rotate 2s linear infinite;
+  filter: blur(10px);
+  z-index: -10;
+}
+
+/* Рамка "Глитч" */
+@keyframes premium-border-glitch {
+  0% { clip-path: inset(30% 0 60% 0); } 20% { clip-path: inset(80% 0 10% 0); }
+  40% { clip-path: inset(10% 0 80% 0); } 60% { clip-path: inset(70% 0 15% 0); }
+  80% { clip-path: inset(40% 0 45% 0); } 100% { clip-path: inset(30% 0 60% 0); }
+}
+.premium-border-animated-glitch {
+  padding: 4px;
+  position: relative;
+}
+.premium-border-animated-glitch::before, .premium-border-animated-glitch::after {
+  content: '';
+  position: absolute;
+  inset: 0px;
+  background: conic-gradient(#f0f, #0ff, #f0f);
+  border-radius: inherit;
+  animation: premium-border-rotate 2s linear infinite;
+  z-index: -10;
+}
+.premium-border-animated-glitch::after {
+  animation: premium-border-glitch 0.5s linear infinite, premium-border-rotate 2s -0.5s linear infinite;
+}
+
+/* Рамка "Техно" */
+.premium-border-animated-tech {
+  padding: 4px;
+  position: relative;
+  background-color: #0d1a2b;
+}
+.premium-border-animated-tech::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px dashed #00ffff;
+  animation: premium-border-rotate 10s linear infinite;
+  z-index: -10;
+}
+
+/* Рамка "Пульс" */
+@keyframes premium-border-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+.premium-border-animated-pulse {
+  padding: 4px;
+  animation: premium-border-pulse 2s infinite;
+}
+
+/* Рамка "Руны" */
+.premium-border-animated-runes {
+  padding: 4px;
+  position: relative;
+}
+.premium-border-animated-runes::before {
+  content: 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  letter-spacing: 0.8em;
+  color: #a78bfa;
+  text-shadow: 0 0 5px #a78bfa;
+  animation: premium-border-rotate 20s linear infinite;
+  z-index: -10;
+}
+
+/* Рамка "Искры" */
+@keyframes premium-border-sparkle {
+  0%, 100% { box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00f; }
+  50% { box-shadow: 0 0 10px #fff, 0 0 20px #f0f, 0 0 30px #f0f; }
+}
+.premium-border-animated-sparkle {
+  padding: 4px;
+  position: relative;
+}
+.premium-border-animated-sparkle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid white;
+  animation: premium-border-sparkle 3s ease-in-out infinite;
+  z-index: -10;
+}
 /* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */
 
 
@@ -527,3 +633,4 @@ html.dark .rc-slider-rail {
   opacity: 0.3; /* Уменьшаем интенсивность градиента */
   z-index: -1; /* Помещаем псевдоэлемент за контентом */
 }
+/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */

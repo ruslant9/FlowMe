@@ -4,12 +4,13 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown } from 'lucide-react';
+import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown, Sticker, Smile } from 'lucide-react';
 import CreateEditPackModal from '../components/workshop/CreateEditPackModal';
 import PackCard from '../components/workshop/PackCard';
 import { useUser } from '../context/UserContext';
 import { useModal } from '../hooks/useModal';
 import PackPreviewModal from '../components/workshop/PackPreviewModal';
+import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -27,12 +28,31 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
     </button>
 );
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Компонент для под-вкладок ---
+const SubTabButton = ({ active, onClick, children }) => (
+    <button
+        onClick={onClick}
+        className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+            active 
+            ? 'bg-slate-200 dark:bg-white/20 text-slate-800 dark:text-white' 
+            : 'text-slate-500 dark:text-white/60 hover:bg-slate-200/50 dark:hover:bg-white/10'
+        }`}
+    >
+        {children}
+    </button>
+);
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 const WorkshopPage = () => {
     useTitle('Мастерская');
     const [activeTab, setActiveTab] = useState('my');
     const { currentUser, refetchPacks } = useUser();
     const { showConfirmation } = useModal();
     
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояние для фильтра по типу ---
+    const [activeTypeFilter, setActiveTypeFilter] = useState('all'); // 'all', 'sticker', 'emoji'
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
     const [myPacks, setMyPacks] = useState([]);
     const [addedPacks, setAddedPacks] = useState([]);
     const [searchResults, setSearchResults] = useState([]);
@@ -44,23 +64,30 @@ const WorkshopPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPack, setEditingPack] = useState(null);
     const [previewingPack, setPreviewingPack] = useState(null);
+    const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
     const addedPackIds = useMemo(() => new Set(addedPacks.map(p => p._id)), [addedPacks]);
 
-    const fetchData = useCallback(async (tab, query = '', page = 1) => {
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Модифицируем fetchData для поддержки фильтра ---
+    const fetchData = useCallback(async (tab, query = '', page = 1, type = 'all') => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
             const headers = { headers: { Authorization: `Bearer ${token}` } };
+            const typeParam = type === 'all' ? '' : `?type=${type}`;
             
             if (tab === 'my') {
-                const res = await axios.get(`${API_URL}/api/workshop/packs/my`, headers);
+                const res = await axios.get(`${API_URL}/api/workshop/packs/my${typeParam}`, headers);
                 setMyPacks(res.data);
             } else if (tab === 'added') {
-                const res = await axios.get(`${API_URL}/api/workshop/packs/added`, headers);
+                const res = await axios.get(`${API_URL}/api/workshop/packs/added${typeParam}`, headers);
                 setAddedPacks(res.data);
             } else if (tab === 'search') {
-                const res = await axios.get(`${API_URL}/api/workshop/packs/search?q=${query}&page=${page}`, headers);
+                const searchParams = new URLSearchParams({ q: query, page });
+                if (type !== 'all') {
+                    searchParams.append('type', type);
+                }
+                const res = await axios.get(`${API_URL}/api/workshop/packs/search?${searchParams.toString()}`, headers);
                 setSearchResults(res.data.packs);
                 setSearchTotalPages(res.data.totalPages);
                 setSearchPage(res.data.currentPage);
@@ -71,23 +98,24 @@ const WorkshopPage = () => {
             setLoading(false);
         }
     }, []);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     useEffect(() => {
-        fetchData(activeTab, searchQuery, 1);
-    }, [activeTab, fetchData]);
+        fetchData(activeTab, searchQuery, 1, activeTypeFilter);
+    }, [activeTab, activeTypeFilter, fetchData]);
 
     useEffect(() => {
         if (activeTab === 'search') {
             const debounce = setTimeout(() => {
-                fetchData('search', searchQuery, 1);
+                fetchData('search', searchQuery, 1, activeTypeFilter);
             }, 300);
             return () => clearTimeout(debounce);
         }
-    }, [searchQuery, activeTab, fetchData]);
+    }, [searchQuery, activeTab, activeTypeFilter, fetchData]);
 
     const handleCreatePack = () => {
         if (!currentUser?.premium?.isActive) {
-            toast.error('Создание паков доступно только Premium-пользователям.');
+            setIsPremiumModalOpen(true);
             return;
         }
         setEditingPack(null);
@@ -109,7 +137,7 @@ const WorkshopPage = () => {
                     const token = localStorage.getItem('token');
                     await axios.delete(`${API_URL}/api/workshop/packs/${pack._id}`, { headers: { Authorization: `Bearer ${token}` } });
                     toast.success('Пак удален', { id: toastId });
-                    fetchData('my');
+                    fetchData(activeTab, searchQuery, 1, activeTypeFilter);
                     refetchPacks();
                 } catch (error) {
                     toast.error(error.response?.data?.message || 'Ошибка удаления', { id: toastId });
@@ -127,7 +155,9 @@ const WorkshopPage = () => {
             const token = localStorage.getItem('token');
             await axios[method](endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
             toast.success(isAdded ? 'Пак удален из вашей библиотеки' : 'Пак добавлен в вашу библиотеку');
-            fetchData('added');
+            // Обновляем список добавленных паков, чтобы кнопка сразу изменилась
+            const addedRes = await axios.get(`${API_URL}/api/workshop/packs/added`, { headers: { Authorization: `Bearer ${token}` } });
+            setAddedPacks(addedRes.data);
             refetchPacks();
         } catch (error) {
             toast.error('Произошла ошибка');
@@ -157,7 +187,7 @@ const WorkshopPage = () => {
                 emptyMessage = 'Вы еще не добавили ни одного пака. Найдите их в поиске!';
                 cardActions = (pack) => {
                     const isCreator = pack.creator._id === currentUser._id;
-                    if (isCreator) return null; // Не показываем кнопку для своих паков в этой вкладке
+                    if (isCreator) return null;
                     return (
                         <button onClick={() => handleAddOrRemovePack(pack)} className="px-3 py-2 text-sm font-semibold bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 flex items-center space-x-2">
                             <X size={16} /><span>Удалить</span>
@@ -172,12 +202,13 @@ const WorkshopPage = () => {
                     const isCreator = pack.creator._id === currentUser._id;
                     if (isCreator) return <span className="text-xs font-semibold text-slate-500">Ваш пак</span>;
                     
-                    if (pack.creator.username === 'Flow me') {
+                    const isPremade = pack.creator.username === 'Flow me';
+                    if (isPremade) {
                         return (
-                            <div className="flex items-center space-x-2 text-xs font-semibold text-yellow-500">
+                            <button onClick={() => !currentUser?.premium?.isActive && setIsPremiumModalOpen(true)} className="flex items-center space-x-2 text-xs font-semibold text-yellow-500">
                                 <Crown size={14} />
                                 <span>Premium</span>
-                            </div>
+                            </button>
                         );
                     }
 
@@ -209,9 +240,9 @@ const WorkshopPage = () => {
                 )}
                 {activeTab === 'search' && searchTotalPages > 1 && (
                      <div className="flex justify-center items-center space-x-2 mt-6">
-                        <button onClick={() => fetchData('search', searchQuery, searchPage - 1)} disabled={searchPage === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>
+                        <button onClick={() => fetchData('search', searchQuery, searchPage - 1, activeTypeFilter)} disabled={searchPage === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>
                         <span>Стр. {searchPage} из {searchTotalPages}</span>
-                        <button onClick={() => fetchData('search', searchQuery, searchPage + 1)} disabled={searchPage === searchTotalPages} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Вперед</button>
+                        <button onClick={() => fetchData('search', searchQuery, searchPage + 1, activeTypeFilter)} disabled={searchPage === searchTotalPages} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Вперед</button>
                     </div>
                 )}
             </div>
@@ -220,13 +251,14 @@ const WorkshopPage = () => {
 
     return (
         <main className="flex-1 p-4 md:p-8">
+            <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
             <CreateEditPackModal 
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 isEditMode={!!editingPack}
                 initialData={editingPack}
                 onSave={() => {
-                    fetchData('my');
+                    fetchData('my', '', 1, activeTypeFilter);
                     refetchPacks();
                 }}
             />
@@ -250,6 +282,14 @@ const WorkshopPage = () => {
                     <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
                     <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск паков</TabButton>
                 </div>
+
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Панель с под-вкладками --- */}
+                <div className="flex items-center space-x-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
+                    <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
+                    <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
+                </div>
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
                 {activeTab === 'search' && (
                     <div className="relative mb-6">

@@ -530,12 +530,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                         <span>Будет опубликовано: {format(new Date(currentPost.scheduledFor), 'd MMMM yyyy в HH:mm', { locale: ru })}</span>
                     </div>
                 )}
-                <div className="relative rounded-t-3xl overflow-hidden">
-                     {userAccent && typeof userAccent === 'object' ? (
-                        <AnimatedAccent backgroundUrl={userAccent.backgroundUrl} emojis={userAccent.emojis} />
-                    ) : userAccent && typeof userAccent === 'string' ? (
-                        <div className="absolute inset-0 opacity-30 pointer-events-none -z-10 profile-card-accent" style={{ backgroundImage: `url(${userAccent})` }}></div>
-                    ) : null}
+                <div className="relative rounded-t-3xl overflow-hidden">                  
                     <div className="relative z-10 p-6 pb-0">
                         <div className="flex items-center justify-between">
                             <div onClick={handleOpenPostInModal} className="flex items-center space-x-3 cursor-pointer">

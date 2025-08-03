@@ -98,9 +98,15 @@ router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 2
     }
 });
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем фильтр по типу ---
 router.get('/packs/my', authMiddleware, async (req, res) => {
     try {
-        const packs = await ContentPack.find({ creator: req.user.userId }).sort({ createdAt: -1 });
+        const { type } = req.query; // 'sticker', 'emoji'
+        const query = { creator: req.user.userId };
+        if (type && ['sticker', 'emoji'].includes(type)) {
+            query.type = type;
+        }
+        const packs = await ContentPack.find(query).sort({ createdAt: -1 });
         res.json(packs);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка загрузки созданных паков.' });
@@ -109,30 +115,42 @@ router.get('/packs/my', authMiddleware, async (req, res) => {
 
 router.get('/packs/added', authMiddleware, async (req, res) => {
     try {
+        const { type } = req.query; // 'sticker', 'emoji'
         const user = await User.findById(req.user.userId).populate({
             path: 'addedContentPacks',
             populate: { path: 'creator', select: 'username fullName' }
         });
-        res.json(user.addedContentPacks);
+
+        let addedPacks = user.addedContentPacks;
+        if (type && ['sticker', 'emoji'].includes(type)) {
+            addedPacks = addedPacks.filter(pack => pack.type === type);
+        }
+        res.json(addedPacks);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка загрузки добавленных паков.' });
     }
 });
 
 router.get('/packs/search', authMiddleware, async (req, res) => {
-    const { q = '', page = 1 } = req.query;
+    const { q = '', page = 1, type } = req.query;
     const limit = 12;
     const skip = (page - 1) * limit;
+
     try {
         const query = { isPublic: true };
         if (q) {
             query.name = { $regex: q, $options: 'i' };
         }
+        if (type && ['sticker', 'emoji'].includes(type)) {
+            query.type = type;
+        }
+
         const packs = await ContentPack.find(query)
             .populate('creator', 'username fullName')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
+            
         const total = await ContentPack.countDocuments(query);
         res.json({
             packs,
@@ -143,8 +161,9 @@ router.get('/packs/search', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при поиске паков.' });
     }
 });
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем проверку на системного пользователя ---
+
 const canModifyPack = async (req, res, next) => {
     try {
         const pack = await ContentPack.findById(req.params.packId).populate('creator');
@@ -194,7 +213,6 @@ router.delete('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack
         res.status(500).json({ message: 'Ошибка удаления пака.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 router.post('/packs/:packId/add', authMiddleware, async (req, res) => {
     try {
@@ -217,5 +235,6 @@ router.delete('/packs/:packId/add', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при удалении пака.' });
     }
 });
+
 
 module.exports = router;
