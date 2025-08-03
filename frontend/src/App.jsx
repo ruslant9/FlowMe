@@ -37,10 +37,9 @@ import ArtistPage from './pages/ArtistPage'; // Пример импорта
 import AlbumPage from './pages/AlbumPage';   // Пример импорта
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useMusicPlayer } from './context/MusicPlayerContext'; // <<<--- ИМПОРТ
 
 // Импорт MusicPlayerProvider и MusicPlayerBar
-import { MusicPlayerProvider, useMusicPlayer } from './context/MusicPlayerContext';
+import { useMusicPlayer } from './context/MusicPlayerContext';
 import MusicPlayerBar from './components/music/MusicPlayerBar';
 import { useWebSocket } from './context/WebSocketContext';
 
