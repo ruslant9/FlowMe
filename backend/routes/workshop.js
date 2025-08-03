@@ -10,7 +10,6 @@ const User = require('../models/User');
 const { createStorage, cloudinary } = require('../config/cloudinary');
 const multer = require('multer');
 const sharp = require('sharp');
-// --- ИЗМЕНЕНИЕ: Исправлено название пакета ---
 const ColorThief = require('colorthief');
 const { Readable } = require('stream');
 
@@ -18,26 +17,12 @@ const { Readable } = require('stream');
 const memoryStorage = multer.memoryStorage();
 const upload = multer({ storage: memoryStorage });
 
-// Функция-обработчик для стикеров
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Обновленная функция обработки стикеров ---
 const processSticker = async (buffer) => {
     try {
-        const dominantColor = await ColorThief.getColor(buffer);
-        const [r, g, b] = dominantColor;
-
         const image = sharp(buffer);
-        const metadata = await image.metadata();
 
-        // Создаем новый квадратный фон с доминирующим цветом
-        const background = sharp({
-            create: {
-                width: 300,
-                height: 300,
-                channels: 3,
-                background: { r, g, b }
-            }
-        });
-
-        // Вписываем оригинальное изображение в фон, сохраняя пропорции
+        // Вписываем оригинальное изображение в новый холст, сохраняя пропорции
         const resizedImageBuffer = await image
             .resize({
                 width: 300,
@@ -47,19 +32,27 @@ const processSticker = async (buffer) => {
             })
             .toBuffer();
 
-        const finalBuffer = await background
-            .composite([{ input: resizedImageBuffer }])
-            .webp() // Конвертируем в WebP для оптимизации
-            .toBuffer();
+        // Создаем новый квадратный прозрачный фон
+        const finalBuffer = await sharp({
+            create: {
+                width: 300,
+                height: 300,
+                channels: 4, // 4 канала (RGBA) для поддержки прозрачности
+                background: { r: 0, g: 0, b: 0, alpha: 0 } // Полностью прозрачный фон
+            }
+        })
+        .composite([{ input: resizedImageBuffer }]) // Накладываем наше изображение на прозрачный фон
+        .webp({ quality: 90 }) // Конвертируем в WebP с хорошим качеством
+        .toBuffer();
 
         return finalBuffer;
     } catch (error) {
         console.error("Ошибка обработки стикера:", error);
-        // Если что-то пошло не так, возвращаем оригинальный буфер
+        // В случае ошибки возвращаем оригинальный буфер, чтобы избежать падения
         return buffer;
     }
 };
-
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 // Наш middleware для обработки и загрузки файлов
 const processAndUpload = (req, res, next) => {

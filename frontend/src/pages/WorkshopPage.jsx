@@ -1,4 +1,4 @@
-// frontend/src/pages/WorkshopPage.jsx --- НОВЫЙ ФАЙЛ ---
+// frontend/src/pages/WorkshopPage.jsx
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -9,6 +9,9 @@ import CreateEditPackModal from '../components/workshop/CreateEditPackModal';
 import PackCard from '../components/workshop/PackCard';
 import { useUser } from '../context/UserContext';
 import { useModal } from '../hooks/useModal';
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Импортируем модальное окно предпросмотра ---
+import PackPreviewModal from '../components/workshop/PackPreviewModal';
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -29,7 +32,7 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
 const WorkshopPage = () => {
     useTitle('Мастерская');
     const [activeTab, setActiveTab] = useState('my');
-    const { currentUser } = useUser();
+    const { currentUser, refetchPacks } = useUser();
     const { showConfirmation } = useModal();
     
     // Состояния для данных
@@ -44,6 +47,10 @@ const WorkshopPage = () => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPack, setEditingPack] = useState(null);
+
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояние для модального окна предпросмотра ---
+    const [previewingPack, setPreviewingPack] = useState(null);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const addedPackIds = useMemo(() => new Set(addedPacks.map(p => p._id)), [addedPacks]);
 
@@ -112,7 +119,7 @@ const WorkshopPage = () => {
                     await axios.delete(`${API_URL}/api/workshop/packs/${pack._id}`, { headers: { Authorization: `Bearer ${token}` } });
                     toast.success('Пак удален', { id: toastId });
                     fetchData('my'); // Обновляем список своих паков
-                    if (activeTab === 'added') fetchData('added'); // И добавленных тоже
+                    refetchPacks(); // Обновляем паки в контексте
                 } catch (error) {
                     toast.error('Ошибка удаления', { id: toastId });
                 }
@@ -130,6 +137,7 @@ const WorkshopPage = () => {
             await axios[method](endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
             toast.success(isAdded ? 'Пак удален из вашей библиотеки' : 'Пак добавлен в вашу библиотеку');
             fetchData('added'); // Обновляем список добавленных
+            refetchPacks(); // Обновляем паки в контексте
         } catch (error) {
             toast.error('Произошла ошибка');
         }
@@ -185,7 +193,13 @@ const WorkshopPage = () => {
             <div>
                 {packs.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {packs.map(pack => <PackCard key={pack._id} pack={pack}>{cardActions(pack)}</PackCard>)}
+                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Передаем onLongPress в PackCard --- */}
+                        {packs.map(pack => 
+                            <PackCard key={pack._id} pack={pack} onLongPress={setPreviewingPack}>
+                                {cardActions(pack)}
+                            </PackCard>
+                        )}
+                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     </div>
                 ) : (
                     <div className="text-center py-10 text-slate-500">{emptyMessage}</div>
@@ -208,8 +222,18 @@ const WorkshopPage = () => {
                 onClose={() => setIsModalOpen(false)}
                 isEditMode={!!editingPack}
                 initialData={editingPack}
-                onSave={() => fetchData('my')}
+                onSave={() => {
+                    fetchData('my');
+                    refetchPacks();
+                }}
             />
+            {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем модальное окно предпросмотра --- */}
+            <PackPreviewModal
+                isOpen={!!previewingPack}
+                onClose={() => setPreviewingPack(null)}
+                pack={previewingPack}
+            />
+            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
             <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold">Мастерская</h1>

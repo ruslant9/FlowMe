@@ -50,6 +50,7 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
     const bgColor = avatarColors[colorIndex];
 
     const hasCustomBorder = customBorder && customBorder.type !== 'none';
+    const isPseudoElementBorder = hasCustomBorder && customBorder.pseudo;
     const borderClass = hasCustomBorder && customBorder.type.startsWith('animated') ? `premium-border-${customBorder.type}` : '';
     const borderStyle = hasCustomBorder && customBorder.type === 'static' ? { padding: '4px', backgroundColor: customBorder.value } : {};
     
@@ -84,7 +85,7 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
                     {firstLetter}
                 </div>
             )}
-            {(hasCustomBorder || defaultPremiumClass) && <div className="absolute inset-1 rounded-full bg-slate-50 dark:bg-slate-900 -z-10"></div>}
+            {(hasCustomBorder || defaultPremiumClass) && <div className={`absolute inset-1 rounded-full bg-slate-50 dark:bg-slate-900 ${isPseudoElementBorder ? '-z-20' : '-z-10'}`}></div>}
             
             {onClick && children && (
                 <>

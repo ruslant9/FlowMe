@@ -44,17 +44,18 @@ router.post('/', authMiddleware, async (req, res) => {
 
 router.get('/:playlistId', authMiddleware, async (req, res) => {
     try {
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем _id в populate для artist ---
         const playlist = await Playlist.findById(req.params.playlistId)
             .populate({
                 path: 'tracks',
-                populate: {
-                    path: 'artist',
-                    select: 'name _id' // <-- ВОТ ЗДЕСЬ
-                }
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Популируем и артиста, и альбом для получения обложки ---
+                populate: [
+                    { path: 'artist', select: 'name _id' },
+                    { path: 'album', select: 'coverArtUrl' }
+                ]
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             })
-            .populate('user', 'username fullName avatar');
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+            .populate('user', 'username fullName avatar')
+            .lean(); // Используем .lean() для получения простого объекта JS
 
         if (!playlist) {
             return res.status(404).json({ message: 'Плейлист не найден.' });
@@ -64,6 +65,15 @@ router.get('/:playlistId', authMiddleware, async (req, res) => {
         if (playlist.visibility === 'private' && !isOwner) {
             return res.status(403).json({ message: 'Это приватный плейлист.' });
         }
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проставляем обложку альбома для треков, у которых ее нет ---
+        playlist.tracks = playlist.tracks.map(track => {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                return { ...track, albumArtUrl: track.album.coverArtUrl };
+            }
+            return track;
+        });
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         res.json(playlist);
     } catch (error) {

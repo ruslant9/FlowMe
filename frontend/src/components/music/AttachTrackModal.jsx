@@ -1,3 +1,5 @@
+// frontend/src/components/modals/AttachTrackModal.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, Loader2 } from 'lucide-react';
@@ -27,6 +29,22 @@ useEffect(() => {
     fetchMyMusic();
 }, [fetchMyMusic]);
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+const formatArtistName = (artistData) => {
+    if (!artistData) return '';
+    if (Array.isArray(artistData)) {
+        return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
+    }
+    if (typeof artistData === 'object' && artistData.name) {
+        return artistData.name.replace(' - Topic', '').trim();
+    }
+    if (typeof artistData === 'string') {
+        return artistData.replace(' - Topic', '').trim();
+    }
+    return '';
+};
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 const handleSelect = (track) => {
     onSelectTrack(track);
     onClose();
@@ -34,7 +52,7 @@ const handleSelect = (track) => {
 
 const filteredMusic = myMusic.filter(track =>
     track.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    track.artist.toLowerCase().includes(searchTerm.toLowerCase())
+    formatArtistName(track.artist).toLowerCase().includes(searchTerm.toLowerCase())
 );
 
 return (
@@ -76,14 +94,15 @@ return (
                         ) : filteredMusic.length > 0 ? (
                             filteredMusic.map(track => (
                                 <div 
-                                    key={track.spotifyId} 
+                                    key={track._id} 
                                     onClick={() => handleSelect(track)} 
                                     className="flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
                                 >
                                     <img src={track.albumArtUrl} alt={track.title} className="w-12 h-12 rounded-md object-cover"/>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-semibold truncate">{track.title}</p>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{track.artist}</p>
+                                        {/* --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННОЙ ФУНКЦИИ --- */}
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{formatArtistName(track.artist)}</p>
                                     </div>
                                 </div>
                             ))

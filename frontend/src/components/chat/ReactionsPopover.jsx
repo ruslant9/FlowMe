@@ -1,6 +1,6 @@
 // frontend/src/components/chat/ReactionsPopover.jsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Tippy from '@tippyjs/react/headless';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../../context/UserContext';
@@ -17,13 +17,35 @@ const preloadImages = (urls) => {
 
 const ReactionsPopover = ({ onSelect, children }) => {
     const [activeTab, setActiveTab] = useState('regular');
-    const [activePack, setActivePack] = useState(emojiPacks[1].name);
-    const { currentUser } = useUser();
+    // --- ИЗМЕНЕНИЕ: Начальная вкладка - первый пользовательский пак или первый из emojiPacks ---
+    const [activePackName, setActivePackName] = useState(''); 
+    const { currentUser, addedPacks } = useUser();
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
     const hasPreloaded = useRef(false);
     const [previewingEmoji, setPreviewingEmoji] = useState(null);
     const longPressTimerRef = useRef(null);
     const longPressTriggeredRef = useRef(false);
+
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Объединяем стандартные паки и пользовательские ---
+    const userEmojiPacks = useMemo(() => {
+        return addedPacks.filter(pack => pack.type === 'emoji');
+    }, [addedPacks]);
+
+    const allAvailableEmojiPacks = useMemo(() => {
+        const premadePacks = emojiPacks.slice(1); // Пропускаем "Классику"
+        return [...premadePacks, ...userEmojiPacks];
+    }, [userEmojiPacks]);
+
+    useEffect(() => {
+        // Устанавливаем активный пак при инициализации или изменении паков
+        if (allAvailableEmojiPacks.length > 0) {
+            setActivePackName(allAvailableEmojiPacks[0].name);
+        } else {
+            setActivePackName('');
+        }
+    }, [allAvailableEmojiPacks]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 
     useEffect(() => {
         if (!hasPreloaded.current) {
@@ -40,24 +62,24 @@ const ReactionsPopover = ({ onSelect, children }) => {
         }
     };
 
-    const handleReactionSelect = (reaction) => {
-        onSelect(reaction);
+    const handleReactionSelect = (reactionUrl) => {
+        onSelect(reactionUrl);
     };
 
-    const handleMouseDown = (emoji) => {
+    const handleMouseDown = (item) => {
         longPressTriggeredRef.current = false;
         longPressTimerRef.current = setTimeout(() => {
-            if (emoji.url) {
-                setPreviewingEmoji(emoji.url);
+            if (item.imageUrl) {
+                setPreviewingEmoji(item.imageUrl);
                 longPressTriggeredRef.current = true;
             }
         }, 400);
     };
 
-    const handleMouseUp = (emoji) => {
+    const handleMouseUp = (item) => {
         clearTimeout(longPressTimerRef.current);
         if (!longPressTriggeredRef.current) {
-            handleReactionSelect(emoji.url);
+            handleReactionSelect(item.imageUrl);
         }
     };
     
@@ -65,7 +87,12 @@ const ReactionsPopover = ({ onSelect, children }) => {
         clearTimeout(longPressTimerRef.current);
     };
     
-    const activeEmojis = emojiPacks.find(p => p.name === activePack)?.emojis || [];
+    // --- ИЗМЕНЕНИЕ: Логика получения активных эмодзи ---
+    const activeEmojis = useMemo(() => {
+        const pack = allAvailableEmojiPacks.find(p => p.name === activePackName);
+        return pack?.items || pack?.emojis || []; // Поддерживаем оба формата
+    }, [activePackName, allAvailableEmojiPacks]);
+
 
     return (
         <>
@@ -75,18 +102,13 @@ const ReactionsPopover = ({ onSelect, children }) => {
                 interactive
                 placement="top"
                 delay={[100, 100]}
-                // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем onClickOutside ---
                 onClickOutside={(instance, event) => {
-                    // Проверяем, был ли клик по оверлею нашего модального окна
                     const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
                     if (isClickOnPreviewOverlay) {
-                        // Если да, то НЕ закрываем Tippy
                         return false; 
                     }
-                    // В противном случае, позволяем Tippy закрыться
                     instance.hide();
                 }}
-                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                 render={attrs => (
                     <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.9 }}
@@ -116,7 +138,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                         {regularReactions.map(emoji => (
                                             <button
                                                 key={emoji}
-                                                onClick={() => handleReactionSelect(emoji)}
+                                                onClick={() => onSelect(emoji)}
                                                 className="p-1.5 rounded-full text-2xl transition-transform duration-100 hover:scale-125"
                                             >
                                                 {emoji}
@@ -126,21 +148,23 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                 )}
                                 {activeTab === 'premium' && (
                                     <div>
+                                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Рендерим все доступные паки --- */}
                                         <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto">
-                                            {emojiPacks.slice(1).map(pack => (
+                                            {allAvailableEmojiPacks.map(pack => (
                                                 <button
                                                     key={pack.name}
-                                                    onClick={() => setActivePack(pack.name)}
-                                                    className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors flex-shrink-0 ${activePack === pack.name ? 'bg-blue-500 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                                                    onClick={() => setActivePackName(pack.name)}
+                                                    className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors flex-shrink-0 ${activePackName === pack.name ? 'bg-blue-500 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                                                 >
                                                     {pack.name}
                                                 </button>
                                             ))}
                                         </div>
+                                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                         <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
                                             {activeEmojis.map(emoji => (
                                                 <button
-                                                    key={emoji.id}
+                                                    key={emoji.id || emoji._id}
                                                     onMouseDown={() => handleMouseDown(emoji)}
                                                     onMouseUp={() => handleMouseUp(emoji)}
                                                     onMouseLeave={handleMouseLeave}
@@ -149,7 +173,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                     className="p-1 rounded-full transition-transform duration-100 hover:scale-125"
                                                     title={emoji.name}
                                                 >
-                                                    <img src={emoji.url} alt={emoji.name} className="w-8 h-8 object-contain"/>
+                                                    <img src={emoji.imageUrl || emoji.url} alt={emoji.name} className="w-8 h-8 object-contain"/>
                                                 </button>
                                             ))}
                                         </div>

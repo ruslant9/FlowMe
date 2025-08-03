@@ -15,12 +15,12 @@ import AnimatedAccent from '../AnimatedAccent';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const avatarBorders = [
-    { id: 'none', name: 'Без рамки', type: 'none', value: null },
-    { id: 'static-blue', name: 'Синяя', type: 'static', value: '#3b82f6' },
-    { id: 'static-purple', name: 'Фиолетовая', type: 'static', value: '#8b5cf6' },
-    { id: 'static-green', name: 'Зеленая', type: 'static', value: '#22c55e' },
-    { id: 'animated-1', name: 'Аврора', type: 'animated-1', value: null },
-    { id: 'animated-2', name: 'Инста', type: 'animated-2', value: null },
+    { id: 'none', name: 'Без рамки', type: 'none', value: null, pseudo: false },
+    { id: 'animated-1', name: 'Аврора', type: 'animated-1', value: null, pseudo: false },
+    { id: 'animated-2', name: 'Инста', type: 'animated-2', value: null, pseudo: false },
+    { id: 'animated-hearts', name: 'Сердца', type: 'animated-hearts', value: null, pseudo: true },
+    { id: 'animated-neon', name: 'Неон', type: 'animated-neon', value: null, pseudo: true },
+    { id: 'animated-orbit', name: 'Орбита', type: 'animated-orbit', value: null, pseudo: true },
 ];
 
 const premadeAccents = [

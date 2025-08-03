@@ -147,6 +147,12 @@ export const WebSocketProvider = ({ children }) => {
                             window.dispatchEvent(new CustomEvent('myProfileDataUpdated'));
                         }
                         window.dispatchEvent(new CustomEvent('userDataUpdated', { detail: { userId: message.userId } }));
+                        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+                        // Обновляем паки, если обновился текущий пользователь
+                        if (currentUserRef.current && message.userId === currentUserRef.current._id) {
+                             window.dispatchEvent(new CustomEvent('packsUpdated'));
+                        }
+                        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                         break;
                     case 'POST_UPDATED':
                         if (message.payload) {
@@ -199,7 +205,6 @@ export const WebSocketProvider = ({ children }) => {
                         toast.success('Ваш Premium-статус был обновлен!');
                         refetchUser();
                         break;
-                    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
                     case 'ACCOUNT_STATUS_CHANGED':
                         toast('Ваш статус аккаунта был изменен администратором.', {
                             icon: '️️️⚠️',
@@ -207,9 +212,7 @@ export const WebSocketProvider = ({ children }) => {
                         });
                         refetchUser();
                         break;
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                     default:
-                        // console.warn('WebSocket: Получено неизвестное событие:', message.type);
                         break;
                 }
             } catch(e) {

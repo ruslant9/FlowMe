@@ -382,7 +382,7 @@ html.dark .rc-slider-rail {
   }
 }
 
-/* --- НАЧАЛО ИЗМЕНЕНИЯ: Стили для кастомных рамок аватара --- */
+/* --- Стили для кастомных рамок аватара --- */
 .premium-border-animated-1 {
   padding: 4px;
   background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
@@ -402,6 +402,84 @@ html.dark .rc-slider-rail {
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+/* --- НОВЫЕ СТИЛИ ДЛЯ РАМОК --- */
+@keyframes premium-border-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Рамка "Сердца" */
+.premium-border-animated-hearts {
+  padding: 4px;
+  position: relative;
+}
+.premium-border-animated-hearts::before,
+.premium-border-animated-hearts::after {
+  content: '❤ ♥ ❤';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  letter-spacing: 2em;
+  color: #f472b6;
+  text-shadow: 0 0 5px #f472b6;
+  animation: premium-border-rotate 10s linear infinite;
+  z-index: -10;
+}
+.premium-border-animated-hearts::after {
+  animation-direction: reverse;
+  animation-duration: 12s;
+  color: #f9a8d4;
+}
+
+/* Рамка "Неон" */
+.premium-border-animated-neon {
+  padding: 4px;
+  position: relative;
+}
+.premium-border-animated-neon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, #8b5cf6, #ec4899, #3b82f6, #8b5cf6);
+  animation: premium-border-rotate 4s linear infinite;
+  filter: blur(8px);
+  z-index: -10;
+}
+
+/* Рамка "Орбита" */
+.premium-border-animated-orbit {
+  padding: 4px;
+  position: relative;
+}
+.premium-border-animated-orbit::before,
+.premium-border-animated-orbit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  animation: premium-border-rotate 4s linear infinite;
+  z-index: -10;
+}
+.premium-border-animated-orbit::before {
+  border-top-color: #ffd700;
+  border-right-color: #ffd700;
+  filter: drop-shadow(0 0 3px #ffd700);
+}
+.premium-border-animated-orbit::after {
+  border-bottom-color: #fde68a;
+  border-left-color: #fde68a;
+  animation-direction: reverse;
+  animation-duration: 6s;
+  filter: drop-shadow(0 0 3px #fde68a);
+}
+
 
 .profile-card-accent {
   background-size: 400px;

@@ -2,8 +2,16 @@
 import React from 'react';
 import { Play, Pause, Heart, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем Tippy ---
 import Tippy from '@tippyjs/react/headless';
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем хелпер для URL изображений ---
+const API_URL = import.meta.env.VITE_API_URL;
+
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return `${API_URL}/${url}`;
+};
 // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15' }) => {
@@ -72,10 +80,13 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                 )}
             </div>
             <div className="flex items-center space-x-4 min-w-0">
-                <img src={track.albumArtUrl} alt={cleanedTitle} className="w-10 h-10 rounded object-cover"/>
+                {/* --- ИСПОЛЬЗУЕМ ХЕЛПЕР --- */}
+                <img 
+                    src={getImageUrl(track.albumArtUrl)} 
+                    alt={cleanedTitle} className="w-10 h-10 rounded object-cover"
+                />
                 <div className="min-w-0">
                     <div className="flex items-center space-x-2">
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем значок в Tippy --- */}
                         {track.isExplicit && (
                              <Tippy
                                 placement="top"
@@ -96,7 +107,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                                 </span>
                             </Tippy>
                         )}
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <p 
                             className="font-semibold truncate" 
                             style={isCurrent ? { color: accentColor } : {}}
