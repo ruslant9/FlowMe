@@ -149,7 +149,6 @@ const MusicPage = () => {
     }, [activeTab, location, navigate]);
     
     useEffect(() => {
-        // Загружаем данные только для текущей активной вкладки
         fetchDataForTab(activeTab);
     }, [activeTab, fetchDataForTab]);
 
@@ -268,14 +267,17 @@ const MusicPage = () => {
                             (searchResults.artists.length === 0 && searchResults.albums.length === 0 && searchResults.tracks.length === 0 && searchResults.playlists.length === 0) ? 
                             <p className="text-center py-10 text-slate-500">Ничего не найдено.</p> :
                             <div className="space-y-8">
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЙ: Меняем порядок рендеринга --- */}
                                 {searchResults.tracks.length > 0 && (
                                     <div>
                                         <h3 className="text-xl font-bold mb-3">Треки</h3>
+                                        {/* --- ИСПРАВЛЕНИЕ ЗДЕСЬ: onToggleLike заменено на onToggleSave --- */}
                                         <TrackList
                                             tracks={searchResults.tracks}
                                             onSelectTrack={handleSelectTrack}
-                                            {...{ currentTrack, isPlaying, onToggleLike, myMusicTrackIds }}
+                                            currentPlayingTrackId={currentTrack?._id}
+                                            isPlaying={isPlaying}
+                                            onToggleSave={onToggleLike}
+                                            myMusicTrackIds={myMusicTrackIds}
                                         />
                                     </div>
                                 )}
@@ -303,8 +305,6 @@ const MusicPage = () => {
                                         </div>
                                     </div>
                                 )}
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
-
                                 <div ref={lastTrackElementRef} className="h-10 flex justify-center items-center">
                                     {loadingMore && <Loader2 className="animate-spin text-slate-400" />}
                                 </div>
@@ -316,8 +316,8 @@ const MusicPage = () => {
                 {['my-music', 'recently-played', 'playlists'].includes(activeTab) && (
                     loadingTabData ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                         <div>
-                            {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
-                            {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
+                            {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
+                            {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
                             {activeTab === 'playlists' && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                     <div className="relative group aspect-square">
