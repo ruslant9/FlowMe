@@ -61,7 +61,7 @@ const AlbumPage = () => {
         <main className="flex-1 overflow-y-auto">
             <div className="relative">
                 <div 
-    className="p-6 md:p-8 pt-28 text-white transition-all duration-500"
+    className="p-6 md:p-8 pt-32 pb-16 text-white transition-all duration-500"
     style={{ backgroundImage: accentGradient }}
 >
                     <button onClick={() => navigate(-1)} className="absolute top-10 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">

@@ -52,10 +52,9 @@ const MusicPage = () => {
     const [playlists, setPlaylists] = useState([]);
     const [loadingTabData, setLoadingTabData] = useState(false);
     
-    // Получаем ВСЕ необходимые данные из контекста плеера
     const { 
         playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds,
-        progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause
+        progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause 
     } = useMusicPlayer(); 
     
     const [searchQuery, setSearchQuery] = useState('');
