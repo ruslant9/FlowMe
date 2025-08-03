@@ -5,7 +5,6 @@ const authMiddleware = require('../middleware/auth.middleware');
 const Playlist = require('../models/Playlist');
 const Track = require('../models/Track');
 const User = require('../models/User');
-// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
 const { sanitize } = require('../utils/sanitize');
 
 router.get('/', authMiddleware, async (req, res) => {
@@ -23,7 +22,6 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
     try {
         const { name, description, visibility } = req.body;
-        // --- ИЗМЕНЕНИЕ: Очищаем поля ---
         const sanitizedName = sanitize(name);
         const sanitizedDescription = sanitize(description);
         if (!sanitizedName) {
@@ -43,12 +41,20 @@ router.post('/', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при создании плейлиста.' });
     }
 });
-// ... (GET /:playlistId и POST /:playlistId/play без изменений)
+
 router.get('/:playlistId', authMiddleware, async (req, res) => {
     try {
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем _id в populate для artist ---
         const playlist = await Playlist.findById(req.params.playlistId)
-            .populate('tracks')
-            .populate('user', 'username fullName avatar'); 
+            .populate({
+                path: 'tracks',
+                populate: {
+                    path: 'artist',
+                    select: 'name _id' // <-- ВОТ ЗДЕСЬ
+                }
+            })
+            .populate('user', 'username fullName avatar');
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         if (!playlist) {
             return res.status(404).json({ message: 'Плейлист не найден.' });
@@ -78,7 +84,6 @@ router.post('/:playlistId/play', authMiddleware, async (req, res) => {
 router.put('/:playlistId', authMiddleware, async (req, res) => {
     try {
         const { name, description, visibility } = req.body;
-        // --- ИЗМЕНЕНИЕ: Очищаем поля ---
         const sanitizedName = sanitize(name);
         const sanitizedDescription = sanitize(description);
         if (!sanitizedName) {
@@ -105,7 +110,7 @@ router.put('/:playlistId', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка при обновлении плейлиста.' });
     }
 });
-// ... (остальные роуты без изменений)
+
 router.delete('/:playlistId', authMiddleware, async (req, res) => {
     try {
         const playlist = await Playlist.findOneAndDelete({

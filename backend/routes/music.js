@@ -173,7 +173,8 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
             .populate('artist', 'name avatarUrl')
             .populate({
                 path: 'tracks',
-                populate: { path: 'artist', select: 'name' }
+                // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок на артистов в треках альбома ---
+                populate: { path: 'artist', select: 'name _id' }
             })
             .lean();
 
@@ -204,13 +205,14 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             Track.find({ artist: artistId, status: 'approved' })
                 .sort({ playCount: -1 })
                 .limit(5)
-                .populate('artist', 'name')
+                 // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок ---
+                .populate('artist', 'name _id')
                 .populate('album', 'title coverArtUrl')
                 .lean(),
             
             Album.find({ artist: artistId, status: 'approved' })
                 .populate('artist', 'name')
-                .sort({ releaseYear: -1 })
+                .sort({ releaseYear: -1, createdAt: -1 })
                 .lean(),
 
             Track.find({ artist: artistId, status: 'approved', album: { $ne: null } })
@@ -221,8 +223,9 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
                  .lean(),
             
             Track.find({ artist: artistId, status: 'approved', album: null })
-                 .populate('artist', 'name')
-                 .sort({ createdAt: -1 })
+                 // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок ---
+                 .populate('artist', 'name _id')
+                 .sort({ releaseYear: -1, createdAt: -1 })
                  .lean()
         ]);
         
@@ -354,12 +357,11 @@ router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
         res.sendStatus(500);
     }
 });
-
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый маршрут для получения данных одного трека ---
 router.get('/track/:trackId', authMiddleware, async (req, res) => {
     try {
         const track = await Track.findById(req.params.trackId)
-            .populate('artist', 'name avatarUrl')
+            // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок ---
+            .populate('artist', 'name _id avatarUrl')
             .lean();
 
         if (!track || track.status !== 'approved') {
@@ -370,7 +372,6 @@ router.get('/track/:trackId', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера при загрузке трека.' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 router.post('/log-action', authMiddleware, async (req, res) => {

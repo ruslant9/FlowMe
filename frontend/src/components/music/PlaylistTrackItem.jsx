@@ -1,10 +1,10 @@
 // frontend/src/components/music/PlaylistTrackItem.jsx
 import React from 'react';
 import { Play, Pause, Heart, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist }) => {
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -13,23 +13,39 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         ).trim();
     };
 
-    const formatArtistName = (artistData) => {
-        if (!artistData) return '';
-        if (Array.isArray(artistData)) {
-            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
-        }
-        if (typeof artistData === 'object' && artistData.name) {
-            return artistData.name.replace(' - Topic', '').trim();
-        }
-        if (typeof artistData === 'string') {
-            return artistData.replace(' - Topic', '').trim();
-        }
-        return '';
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новая функция для рендеринга ссылок на артистов ---
+    const renderArtistLinks = (artistData) => {
+        if (!artistData) return null;
+
+        const artists = Array.isArray(artistData) ? artistData : [artistData];
+
+        return (
+            <>
+                {artists.map((artist, idx) => {
+                    // Проверяем, что у нас есть объект с ID и именем
+                    if (!artist || !artist._id || !artist.name) {
+                        // Если данные некорректны, просто отображаем то, что есть
+                        return <span key={idx}>{artist.name || artist}</span>;
+                    }
+                    return (
+                        <React.Fragment key={artist._id}>
+                            <Link 
+                                to={`/artist/${artist._id}`}
+                                className="hover:underline hover:text-slate-700 dark:hover:text-white"
+                                onClick={(e) => e.stopPropagation()} // Предотвращаем срабатывание onDoubleClick на всей строке
+                            >
+                                {artist.name.replace(' - Topic', '').trim()}
+                            </Link>
+                            {idx < artists.length - 1 && ', '}
+                        </React.Fragment>
+                    );
+                })}
+            </>
+        );
     };
-    
-    const cleanedTitle = cleanTitle(track.title);
-    const cleanedArtist = formatArtistName(track.artist);
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+    const cleanedTitle = cleanTitle(track.title);
 
     const formatDuration = (ms) => {
         if (!ms) return '?:??';
@@ -62,7 +78,10 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                 <img src={track.albumArtUrl} alt={cleanedTitle} className="w-10 h-10 rounded object-cover"/>
                 <div className="min-w-0">
                     <p className={`font-semibold truncate ${isCurrent ? 'text-yellow-400' : 'text-slate-800 dark:text-white'}`}>{cleanedTitle}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{cleanedArtist}</p>
+                    {/* --- ИСПРАВЛЕНИЕ: Используем новую функцию для отображения артистов --- */}
+                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                        {renderArtistLinks(track.artist)}
+                    </p>
                 </div>
             </div>
             <div className="flex items-center space-x-4 text-slate-600 dark:text-slate-400">
