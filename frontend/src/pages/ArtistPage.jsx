@@ -9,6 +9,7 @@ import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import AlbumCard from '../components/music/AlbumCard';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
+import toast from 'react-hot-toast'; // Добавлен импорт toast
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -57,6 +58,7 @@ const ArtistPage = () => {
 
     return (
         <main className="flex-1 overflow-y-auto">
+            {/* --- НАЧАЛО ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
             <div 
                 className="p-6 md:p-8 pt-20 relative text-white transition-all duration-500 min-h-[300px] flex flex-col justify-end"
                 style={{ backgroundImage: accentGradient }}
@@ -65,10 +67,17 @@ const ArtistPage = () => {
                     <ArrowLeft size={16}/>
                     <span>Назад</span>
                 </button>
-                <div>
-                    <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{artist.name}</h1>
+                <div className="flex items-center space-x-6">
+                    <div className="flex-shrink-0">
+                        {/* ВОТ ДОБАВЛЕННЫЙ АВАТАР */}
+                        <Avatar size="xl" username={artist.name} avatarUrl={artist.avatarUrl} />
+                    </div>
+                    <div>
+                        <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{artist.name}</h1>
+                    </div>
                 </div>
             </div>
+            {/* --- КОНЕЦ ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
 
             <div className="p-6 md:p-8">
                 <div className="flex items-center space-x-4 mb-8">

@@ -9,6 +9,7 @@ import { useUser } from '../context/UserContext';
 import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
+import toast from 'react-hot-toast'; // Добавлен импорт toast
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -17,7 +18,6 @@ const AlbumPage = () => {
     const navigate = useNavigate();
     const [album, setAlbum] = useState(null);
     const [loading, setLoading] = useState(true);
-    const { currentUser } = useUser();
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds } = useMusicPlayer();
 
     const fetchAlbum = useCallback(async () => {
@@ -59,32 +59,37 @@ const AlbumPage = () => {
 
     return (
         <main className="flex-1 overflow-y-auto">
-            <div 
-                className="p-6 md:p-8 pt-20 relative text-white transition-all duration-500"
-                style={{ backgroundImage: accentGradient }}
-            >
-                <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
-                    <ArrowLeft size={16}/>
-                    <span>Назад</span>
-                </button>
+            {/* --- НАЧАЛО ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
+            <div className="relative">
+                <div 
+                    className="p-6 md:p-8 pt-20 text-white transition-all duration-500"
+                    style={{ backgroundImage: accentGradient }}
+                >
+                    <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
+                        <ArrowLeft size={16}/>
+                        <span>Назад</span>
+                    </button>
 
-                <div className="flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
-                    <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">
-                        <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                        <span className="text-sm font-bold">Альбом</span>
-                        <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{album.title}</h1>
-                        <div className="flex items-center space-x-2 mt-4 text-sm">
-                            <Link to={`/artist/${album.artist._id}`}>
-                                <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
-                            </Link>
-                            <Link to={`/artist/${album.artist._id}`} className="font-bold hover:underline">{album.artist.name}</Link>
-                            <span className="opacity-70">• {album.releaseYear} • {album.tracks.length} треков, {totalMinutes} мин.</span>
+                    <div className="flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
+                        <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">
+                            <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                            <span className="text-sm font-bold">Альбом</span>
+                            <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{album.title}</h1>
+                            <div className="flex items-center space-x-2 mt-4 text-sm">
+                                <Link to={`/artist/${album.artist._id}`}>
+                                    <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
+                                </Link>
+                                <Link to={`/artist/${album.artist._id}`} className="font-bold hover:underline">{album.artist.name}</Link>
+                                <span className="opacity-70">• {album.releaseYear} • {album.tracks.length} треков, {totalMinutes} мин.</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            {/* --- КОНЕЦ ИЗМЕНЕНИЙ ВЕРСТКИ --- */}
+
 
             <div className="p-6 md:p-8">
                 <div className="flex items-center space-x-4 mb-8">

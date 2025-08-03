@@ -327,4 +327,16 @@ router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
     }
 });
 
+router.post('/log-action', authMiddleware, async (req, res) => {
+    try {
+        const { track, action } = req.body;
+        // Передаем req, чтобы получить доступ к req.user.userId внутри функции
+        await logMusicAction(req, track, action);
+        res.sendStatus(202); // Accepted
+    } catch (error) {
+        console.error("Ошибка логирования действия:", error);
+        res.sendStatus(500);
+    }
+});
+
 module.exports = router;
