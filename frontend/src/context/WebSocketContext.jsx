@@ -199,6 +199,15 @@ export const WebSocketProvider = ({ children }) => {
                         toast.success('Ваш Premium-статус был обновлен!');
                         refetchUser();
                         break;
+                    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+                    case 'ACCOUNT_STATUS_CHANGED':
+                        toast('Ваш статус аккаунта был изменен администратором.', {
+                            icon: '️️️⚠️',
+                            duration: 5000,
+                        });
+                        refetchUser();
+                        break;
+                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                     default:
                         // console.warn('WebSocket: Получено неизвестное событие:', message.type);
                         break;

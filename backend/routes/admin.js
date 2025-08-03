@@ -405,7 +405,26 @@ router.get('/users', async (req, res) => {
 router.post('/users/:id/ban', async (req, res) => {
     try {
         const { isBanned, banReason, banExpires } = req.body;
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, { $set: { 'banInfo.isBanned': isBanned, 'banInfo.banReason': banReason, 'banInfo.banExpires': banExpires } }, { new: true });
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id, 
+            { $set: { 
+                'banInfo.isBanned': isBanned, 
+                'banInfo.banReason': banReason, 
+                'banInfo.banExpires': banExpires 
+            }}, 
+            { new: true }
+        );
+        
+        // --- НАЧАЛО ИЗМЕНЕНИЯ: Отправляем WebSocket-уведомление пользователю ---
+        if (updatedUser) {
+            // Отправляем сообщение только пользователю, чей статус изменился
+            req.broadcastToUsers([updatedUser._id.toString()], {
+                type: 'ACCOUNT_STATUS_CHANGED',
+                payload: { banInfo: updatedUser.banInfo }
+            });
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
         res.json(updatedUser);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при обновлении статуса пользователя' });
