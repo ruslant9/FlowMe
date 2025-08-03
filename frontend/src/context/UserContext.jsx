@@ -16,10 +16,8 @@ export const UserProvider = ({ children }) => {
     const [loadingUser, setLoadingUser] = useState(true);
     const [token, setToken] = useState(() => localStorage.getItem('token'));
 
-    // ИЗМЕНЕНИЕ: Добавлен параметр showLoader, по умолчанию true.
     const fetchUser = useCallback(async (showLoader = true) => {
         if (token) {
-            // Устанавливаем флаг загрузки, только если это требуется.
             if (showLoader) {
                 setLoadingUser(true);
             }
@@ -27,24 +25,28 @@ export const UserProvider = ({ children }) => {
                 const res = await axios.get(`${API_URL}/api/user/profile`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                 // --- НОВОЕ: Проверка на бан ---
                 const userData = res.data;
                 const isBanned = userData.banInfo?.isBanned;
                 const banExpires = userData.banInfo?.banExpires ? new Date(userData.banInfo.banExpires) : null;
-                if (isBanned && (!banExpires || banExpires > new Date())) {
-                    // Если пользователь забанен, мы все равно сохраняем его данные, чтобы показать оверлей
-                    setCurrentUser(userData);
-                } else {
-                    setCurrentUser(userData);
-                }
+                
+                // Мы всегда сохраняем данные пользователя, даже если он забанен,
+                // чтобы BannedOverlay мог отобразить информацию о бане.
+                setCurrentUser(userData);
+
             } catch (error) {
-                // Если 403 Forbidden из-за бана, ошибку не показываем, так как это ожидаемое поведение
-                if (error.response?.status !== 403) {
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                // Логируем ошибку, только если это не ожидаемый 403 (бан) или 401 (неавторизован).
+                if (error.response?.status !== 403 && error.response?.status !== 401) {
                     console.error("Failed to fetch user in context", error);
                 }
-                setCurrentUser(null);
+                
+                // Сбрасываем пользователя (разлогиниваем на клиенте) только при ошибке 401 (неверный токен).
+                // При ошибке 403 (бан) мы НЕ сбрасываем пользователя, чтобы он мог видеть оверлей бана.
+                if (error.response?.status === 401) {
+                    setCurrentUser(null);
+                }
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             } finally {
-                // Снимаем флаг загрузки, только если мы его устанавливали.
                 if (showLoader) {
                     setLoadingUser(false);
                 }
@@ -56,10 +58,8 @@ export const UserProvider = ({ children }) => {
     }, [token]);
 
     useEffect(() => {
-        // Первая, начальная загрузка всегда должна показывать спиннер.
         fetchUser(true);
         
-        // Все последующие обновления, инициированные событием, - фоновые.
         const handleProfileUpdate = () => {
             fetchUser(false); 
         };
@@ -72,7 +72,6 @@ export const UserProvider = ({ children }) => {
 
     }, [fetchUser]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const updateUserToken = useCallback((newToken) => {
         setToken(newToken);
         if (newToken) {
@@ -82,8 +81,7 @@ export const UserProvider = ({ children }) => {
             localStorage.removeItem('user');
             setCurrentUser(null);
         }
-    }, []); // Пустой массив зависимостей делает эту функцию стабильной и предотвращает лишние ререндеры
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    }, []);
 
 
     const value = {
@@ -91,7 +89,6 @@ export const UserProvider = ({ children }) => {
         loadingUser,
         token,
         updateUserToken,
-        // Принудительный refetch тоже делаем фоновым по умолчанию.
         refetchUser: () => fetchUser(false),
     };
 

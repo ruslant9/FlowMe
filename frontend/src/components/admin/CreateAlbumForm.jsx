@@ -1,13 +1,12 @@
 // frontend/components/admin/CreateAlbumForm.jsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, Music, Edit } from 'lucide-react';
+import { Loader2, Music, Edit, ChevronDown } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelectorSingle from './GenreSelectorSingle';
-// --- ИЗМЕНЕНИЕ: Убираем импорт ArtistSelector ---
-// import ArtistSelector from './ArtistSelector';
+import Avatar from '../Avatar';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -18,23 +17,27 @@ const getImageUrl = (url) => {
     return `${API_URL}/${url}`;
 };
 
-// --- ИЗМЕНЕНИЕ: Новый компонент автодополнения ---
-const ArtistAutocomplete = ({ artists, onSelect }) => {
+const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     const [query, setQuery] = useState('');
     const [filteredArtists, setFilteredArtists] = useState([]);
     const [isFocused, setIsFocused] = useState(false);
+    
+    useEffect(() => {
+        if(initialArtistId && artists.length > 0) {
+            const initialArtist = artists.find(a => a._id === initialArtistId);
+            if(initialArtist) setQuery(initialArtist.name);
+        }
+    }, [initialArtistId, artists]);
 
     useEffect(() => {
-        if (query) {
-            setFilteredArtists(
+        if (isFocused) {
+             setFilteredArtists(
                 artists.filter(artist =>
                     artist.name.toLowerCase().includes(query.toLowerCase())
-                ).slice(0, 5) // Показываем до 5 совпадений
+                ).slice(0, 5)
             );
-        } else {
-            setFilteredArtists([]);
         }
-    }, [query, artists]);
+    }, [query, artists, isFocused]);
 
     const handleSelect = (artist) => {
         setQuery(artist.name);
@@ -53,15 +56,17 @@ const ArtistAutocomplete = ({ artists, onSelect }) => {
                 className="w-full p-2 rounded bg-white dark:bg-slate-700"
                 required
             />
-            {isFocused && filteredArtists.length > 0 && (
+            {isFocused && (
+                // --- ИЗМЕНЕНИЕ: Добавляем классы для темной темы ---
                 <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-auto">
                     {filteredArtists.map(artist => (
                         <li
                             key={artist._id}
-                            onMouseDown={() => handleSelect(artist)} // onMouseDown, чтобы сработал до onBlur
-                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                            onMouseDown={() => handleSelect(artist)}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer flex items-center space-x-2"
                         >
-                            {artist.name}
+                            <Avatar size="sm" username={artist.name} avatarUrl={artist.avatarUrl}/>
+                            <span>{artist.name}</span>
                         </li>
                     ))}
                 </ul>
@@ -69,7 +74,6 @@ const ArtistAutocomplete = ({ artists, onSelect }) => {
         </div>
     );
 };
-// --- КОНЕЦ НОВОГО КОМПОНЕНТА ---
 
 export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initialData = null, onEditTrack }) => {
     const { currentUser } = useUser();
@@ -95,17 +99,14 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const fetchAlbumTracks = async () => {
                 try {
                     const token = localStorage.getItem('token');
-                    const res = await axios.get(`${API_URL}/api/admin/albums/${initialData._id}/tracks`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
+                    const res = await axios.get(`${API_URL}/api/admin/albums/${initialData._id}/tracks`, { headers: { Authorization: `Bearer ${token}` } });
                     setAlbumTracks(res.data);
-                } catch (error) {
-                    toast.error("Не удалось загрузить треки альбома.");
-                }
+                } catch (error) { toast.error("Не удалось загрузить треки альбома."); }
             };
             fetchAlbumTracks();
         }
     }, [isEditMode, initialData]);
+
 
     const handleCoverChange = (e) => {
         const file = e.target.files[0];
@@ -119,7 +120,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         e.preventDefault();
         if (!artistId) { toast.error("Пожалуйста, выберите артиста."); return; }
         if (!genre) { toast.error("Пожалуйста, выберите жанр."); return; }
-
         setLoading(true);
         const formData = new FormData();
         formData.append('title', title);
@@ -127,7 +127,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         formData.append('genre', genre);
         if (releaseYear) formData.append('releaseYear', releaseYear);
         if (coverArt) formData.append('coverArt', coverArt);
-
         const isAdmin = currentUser.role === 'admin';
         const endpoint = isEditMode
             ? `${API_URL}/api/admin/content/albums/${initialData._id}`
@@ -139,9 +138,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios[method](endpoint, formData, {
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-            });
+            const res = await axios[method](endpoint, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
             toast.success(res.data.message || successMessage, { id: toastId });
             if (!isEditMode) {
                 setTitle(''); setArtistId(''); setGenre(''); setReleaseYear(''); setCoverArt(null); setCoverPreview('');
@@ -150,22 +147,17 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             onSuccess();
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при отправке заявки.", { id: toastId });
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     };
 
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-4">
-            <h3 className="font-bold text-lg">
-                {isEditMode ? `Редактирование: ${initialData.title}` : (currentUser.role === 'admin' ? 'Создать Альбом' : 'Предложить новый альбом')}
-            </h3>
+            <h3 className="font-bold text-lg">{isEditMode ? `Редактирование: ${initialData.title}` : (currentUser.role === 'admin' ? 'Создать Альбом' : 'Предложить новый альбом')}</h3>
             {currentUser.role !== 'admin' && !isEditMode && <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>}
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
-                {/* --- ИЗМЕНЕНИЕ: Используем новый компонент --- */}
-                <ArtistAutocomplete artists={artists} onSelect={setArtistId} />
+                <ArtistAutocomplete artists={artists} onSelect={setArtistId} initialArtistId={artistId} />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

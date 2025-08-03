@@ -3,97 +3,94 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, Trash2, X, Search, ChevronDown } from 'lucide-react';
+import { Loader2, Trash2, X } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelector from './GenreSelector';
 import Avatar from '../Avatar';
-import ReactDOM from 'react-dom';
-import { motion } from 'framer-motion';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- КОМПОНЕНТ ДЛЯ ВЫБОРА АЛЬБОМА (С ПОРТАЛОМ) ---
-const AlbumSelectorWithPortal = ({ albums, value, onChange, disabled = false }) => {
-    const [isOpen, setIsOpen] = useState(false);
+// --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ АЛЬБОМОВ ---
+const AlbumAutocomplete = ({ albums, onSelect }) => {
     const [query, setQuery] = useState('');
-    const buttonRef = useRef(null);
-    const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
-
-    const selectedAlbum = useMemo(() => albums.find(a => a._id === value) || null, [albums, value]);
-    const filteredAlbums = useMemo(() => query === '' ? albums : albums.filter(album => album.title.toLowerCase().includes(query.toLowerCase()) || album.artist.name.toLowerCase().includes(query.toLowerCase())), [albums, query]);
-    
-    const handleOpen = () => {
-        if (buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setPosition({ top: rect.bottom + window.scrollY + 5, left: rect.left + window.scrollX, width: rect.width });
-        }
-        setIsOpen(true);
-    };
+    const [filteredAlbums, setFilteredAlbums] = useState([]);
+    const [isFocused, setIsFocused] = useState(false);
 
     const handleSelect = (album) => {
-        onChange(album ? album._id : '');
-        setIsOpen(false);
+        setQuery(album ? `${album.title} - ${album.artist.name}` : '');
+        onSelect(album ? album._id : '');
+        setIsFocused(false);
     };
 
+    useEffect(() => {
+        if (isFocused) {
+            const lowerQuery = query.toLowerCase();
+            setFilteredAlbums(
+                albums.filter(album =>
+                    album.title.toLowerCase().includes(lowerQuery) ||
+                    album.artist.name.toLowerCase().includes(lowerQuery)
+                ).slice(0, 5)
+            );
+        } else {
+            setFilteredAlbums([]);
+        }
+    }, [query, albums, isFocused]);
+    
     return (
-        <>
-            <button
-                ref={buttonRef}
-                type="button"
-                onClick={handleOpen}
-                disabled={disabled}
-                className="w-full h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-slate-700 text-left flex items-center justify-between shadow-md">
-                <span className="truncate">{selectedAlbum?.title || '-- Сольный трек (сингл) --'}</span>
-                <ChevronDown className="h-5 w-5 text-gray-400" />
-            </button>
-            {isOpen && ReactDOM.createPortal(
-                <div className="fixed inset-0 z-50" onClick={() => setIsOpen(false)}>
-                    <motion.div initial={{ opacity: 0.95, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                        style={{ position: 'absolute', top: position.top, left: position.left, width: position.width }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 max-h-80 flex flex-col">
-                        <div className="p-2 border-b border-slate-200 dark:border-slate-700">
-                           <input type="text" placeholder="Поиск..." value={query} onChange={e => setQuery(e.target.value)} autoFocus
-                               className="w-full p-1 bg-slate-100 dark:bg-slate-700 rounded-md text-sm" />
-                        </div>
-                        <ul className="overflow-y-auto p-1">
-                            <li onClick={() => handleSelect(null)} className="p-2 text-sm rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700">-- Сольный трек (сингл) --</li>
-                            {filteredAlbums.map(album => (
-                                <li key={album._id} onClick={() => handleSelect(album)} className="p-2 text-sm rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700">
-                                    {album.title} <span className="text-slate-500">- {album.artist.name}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </motion.div>
-                </div>,
-                document.body
+        <div className="relative" onBlur={() => setTimeout(() => setIsFocused(false), 200)}>
+            <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                placeholder="-- Сольный трек (сингл) --"
+                className="w-full p-2 rounded bg-white dark:bg-slate-700"
+            />
+            {isFocused && (
+                <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-auto">
+                    <li onMouseDown={() => handleSelect(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer italic">
+                        -- Сольный трек (сингл) --
+                    </li>
+                    {filteredAlbums.map(album => (
+                        <li key={album._id} onMouseDown={() => handleSelect(album)}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer flex items-center space-x-2">
+                            <img src={album.coverArtUrl} alt={album.title} className="w-8 h-8 rounded-sm object-cover" />
+                            <div>
+                                <p>{album.title}</p>
+                                <p className="text-sm text-slate-500">{album.artist.name}</p>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
             )}
-        </>
+        </div>
     );
 };
 
-// --- КОМПОНЕНТ ДЛЯ ВЫБОРА АРТИСТОВ (С ПОРТАЛОМ) ---
-const MultiArtistSelectorWithPortal = ({ artists, selectedIds, onSelectionChange, excludeIds = [] }) => {
-    const [isOpen, setIsOpen] = useState(false);
+// --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ МНОЖЕСТВЕННОГО ВЫБОРА АРТИСТОВ ---
+const MultiArtistAutocomplete = ({ artists, selectedIds, onSelectionChange, excludeIds = [] }) => {
     const [query, setQuery] = useState('');
-    const buttonRef = useRef(null);
-    const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
-    
-    const selectedArtists = useMemo(() => selectedIds.map(id => artists.find(a => a._id === id)).filter(Boolean), [selectedIds, artists]);
-    const availableArtists = useMemo(() => artists.filter(a => !selectedIds.includes(a._id) && !excludeIds.includes(a._id)), [artists, selectedIds, excludeIds]);
-    const filteredArtists = useMemo(() => query === '' ? availableArtists.slice(0, 5) : availableArtists.filter(artist => artist.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5), [query, availableArtists]);
+    const [isFocused, setIsFocused] = useState(false);
 
-    const handleOpen = () => {
-        if (buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setPosition({ top: rect.bottom + window.scrollY + 5, left: rect.left + window.scrollX, width: rect.width });
-        }
-        setIsOpen(true);
-    };
+    const availableArtists = useMemo(() =>
+        artists.filter(a => !selectedIds.includes(a._id) && !excludeIds.includes(a._id))
+    , [artists, selectedIds, excludeIds]);
     
+    const filteredArtists = useMemo(() => {
+        if (!isFocused || !query) return [];
+        return availableArtists.filter(artist =>
+            artist.name.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 5);
+    }, [query, availableArtists, isFocused]);
+
+    const selectedArtists = useMemo(() =>
+        selectedIds.map(id => artists.find(a => a._id === id)).filter(Boolean)
+    , [selectedIds, artists]);
+
     const handleSelect = (artist) => {
         onSelectionChange([...selectedIds, artist._id]);
         setQuery('');
+        setIsFocused(false);
     };
 
     const handleRemove = (artistId) => {
@@ -101,48 +98,36 @@ const MultiArtistSelectorWithPortal = ({ artists, selectedIds, onSelectionChange
     };
 
     return (
-        <>
-            <div ref={buttonRef} onClick={handleOpen} className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 cursor-pointer">
-                <div className="flex flex-wrap gap-2 p-2 items-center min-h-[44px]">
-                    {selectedArtists.map(artist => (
-                        <div key={artist._id} className="flex items-center space-x-1 bg-blue-100 dark:bg-blue-900/50 rounded-full pl-1 pr-2">
-                            <Avatar size="sm" username={artist.name} avatarUrl={artist.avatarUrl} />
-                            <span className="text-sm">{artist.name}</span>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); handleRemove(artist._id); }}><X size={14} /></button>
-                        </div>
-                    ))}
-                     <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={selectedIds.length === 0 ? "Добавьте исполнителей..." : "Добавить еще..."}
-                        className="flex-grow bg-transparent outline-none p-1"
-                    />
-                </div>
+        <div className="relative" onBlur={() => setTimeout(() => setIsFocused(false), 200)}>
+            <div className="flex flex-wrap gap-2 p-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 min-h-[44px]">
+                {selectedArtists.map(artist => (
+                    <div key={artist._id} className="flex items-center space-x-1 bg-blue-100 dark:bg-blue-900/50 rounded-full pl-1 pr-2">
+                        <Avatar size="sm" username={artist.name} avatarUrl={artist.avatarUrl} />
+                        <span className="text-sm">{artist.name}</span>
+                        <button type="button" onClick={() => handleRemove(artist._id)}><X size={14}/></button>
+                    </div>
+                ))}
+                <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    placeholder={selectedIds.length === 0 ? "Добавьте исполнителей..." : "Добавить еще..."}
+                    className="flex-grow bg-transparent outline-none p-1"
+                />
             </div>
-             {isOpen && ReactDOM.createPortal(
-                <div className="fixed inset-0 z-50" onClick={() => setIsOpen(false)}>
-                    <motion.div initial={{ opacity: 0.95, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                        style={{ position: 'absolute', top: position.top, left: position.left, width: position.width }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 max-h-80 flex flex-col">
-                        <div className="p-2 border-b border-slate-200 dark:border-slate-700">
-                            <input type="text" placeholder="Поиск..." value={query} onChange={e => setQuery(e.target.value)} autoFocus
-                                   className="w-full p-1 bg-slate-100 dark:bg-slate-700 rounded-md text-sm" />
-                        </div>
-                        <ul className="overflow-y-auto p-1">
-                            {filteredArtists.map(artist => (
-                                <li key={artist._id} onMouseDown={() => handleSelect(artist)} className="p-2 text-sm rounded cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center space-x-2">
-                                    <Avatar size="md" username={artist.name} avatarUrl={artist.avatarUrl} />
-                                    <span>{artist.name}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </motion.div>
-                </div>,
-                document.body
+             {isFocused && filteredArtists.length > 0 && (
+                <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-auto">
+                    {filteredArtists.map(artist => (
+                        <li key={artist._id} onMouseDown={() => handleSelect(artist)}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer flex items-center space-x-2">
+                            <Avatar size="md" username={artist.name} avatarUrl={artist.avatarUrl} />
+                            <span>{artist.name}</span>
+                        </li>
+                    ))}
+                </ul>
             )}
-        </>
+        </div>
     );
 };
 
@@ -167,13 +152,14 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
                 className="w-full p-2 rounded bg-white dark:bg-slate-700 font-semibold" required />
             <div>
                 <label className="text-sm font-semibold block mb-1">Дополнительные исполнители (фит)</label>
-                 <MultiArtistSelectorWithPortal artists={artists} selectedIds={track.artistIds}
+                 <MultiArtistAutocomplete artists={artists} selectedIds={track.artistIds}
                     onSelectionChange={(ids) => onUpdate(index, 'artistIds', ids)} excludeIds={[mainArtistId]} />
             </div>
              <ToggleSwitch checked={track.isExplicit} onChange={(checked) => onUpdate(index, 'isExplicit', checked)} label="Explicit (ненормативная лексика)" />
         </div>
     );
 };
+
 
 export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
     const { currentUser } = useUser();
@@ -299,7 +285,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
-                <AlbumSelectorWithPortal albums={albums} value={albumId} onChange={setAlbumId} />
+                <AlbumAutocomplete albums={albums} onSelect={setAlbumId} />
             </div>
 
             {albumId ? (
@@ -325,7 +311,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                 <div className="space-y-4">
                      <div>
                         <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
-                        <MultiArtistSelectorWithPortal artists={artists} selectedIds={singleTrackData.artistIds} onSelectionChange={(ids) => handleSingleTrackChange('artistIds', ids)} />
+                        <MultiArtistAutocomplete artists={artists} selectedIds={singleTrackData.artistIds} onSelectionChange={(ids) => handleSingleTrackChange('artistIds', ids)} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
