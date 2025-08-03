@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { Loader2, CheckCircle, XCircle, Tag, FileText, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import Avatar from '../Avatar';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -60,12 +61,39 @@ const AdminSubmissionsList = () => {
     return (
         <div className="space-y-4">
             {submissions.map(sub => {
+                if (sub.entityType === 'BanAppeal') {
+                    return (
+                        <div key={sub._id} className="p-4 rounded-lg bg-red-500/10 dark:bg-red-900/20 border border-red-500/20 flex flex-col sm:flex-row gap-4">
+                            <div className="flex-shrink-0">
+                                <Avatar username={sub.submittedBy.username} fullName={sub.submittedBy.fullName} avatarUrl={sub.submittedBy.avatar} size="lg" />
+                            </div>
+                            <div className="flex-grow min-w-0">
+                                <p className="font-bold text-lg text-red-700 dark:text-red-300">Жалоба на блокировку</p>
+                                <p className="font-semibold">От: <span className="text-blue-500">{sub.submittedBy.fullName || sub.submittedBy.username}</span></p>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 bg-black/5 dark:bg-white/5 p-2 rounded-md whitespace-pre-wrap">
+                                    {sub.data.appealText}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-2">
+                                    {format(new Date(sub.createdAt), 'd MMMM yyyy, HH:mm', { locale: ru })}
+                                </p>
+                            </div>
+                            <div className="flex space-x-2 flex-shrink-0 self-center sm:self-start">
+                                <button onClick={() => handleAction(sub._id, 'approve')} className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600 disabled:opacity-50" title="Разбанить" disabled={processingId === sub._id}>
+                                    {processingId === sub._id ? <Loader2 size={20} className="animate-spin" /> : <CheckCircle size={20} />}
+                                </button>
+                                <button onClick={() => handleAction(sub._id, 'reject')} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 disabled:opacity-50" title="Отклонить жалобу" disabled={processingId === sub._id}>
+                                    {processingId === sub._id ? <Loader2 size={20} className="animate-spin" /> : <XCircle size={20} />}
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
                 const { data } = sub;
                 const imageUrl = data.avatarUrl || data.coverArtUrl;
 
                 return (
                     <div key={sub._id} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 flex flex-col sm:flex-row gap-4">
-                        {/* Левая часть: Обложка */}
                         <div className="w-full sm:w-24 h-24 flex-shrink-0 bg-slate-200 dark:bg-slate-700 rounded-md flex items-center justify-center overflow-hidden">
                             {imageUrl ? (
                                 <img src={getImageUrl(imageUrl)} alt="Обложка" className="w-full h-full object-cover" />
@@ -74,7 +102,6 @@ const AdminSubmissionsList = () => {
                             )}
                         </div>
                         
-                        {/* Средняя часть: Информация о заявке */}
                         <div className="flex-grow min-w-0">
                             <p className="font-bold text-lg">{sub.entityType}: <span className="text-blue-500">{data.name || data.title}</span></p>
                             
@@ -99,7 +126,6 @@ const AdminSubmissionsList = () => {
                             </p>
                         </div>
 
-                        {/* Правая часть: Кнопки управления */}
                         <div className="flex space-x-2 flex-shrink-0 self-center sm:self-start">
                             <button 
                                 onClick={() => handleAction(sub._id, 'approve')} 

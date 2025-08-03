@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
-import { Sun, Moon, Loader2, ShieldAlert } from 'lucide-react';
+import { Sun, Moon, Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { useUser } from './context/UserContext';
 
 // Ленивая загрузка нашего тяжелого компонента с шейдерами
@@ -31,10 +31,15 @@ import CommunityDetailPage from './pages/CommunityDetailPage';
 import CommunityManagementPage from './pages/CommunityManagementPage';
 import MusicPage from './pages/MusicPage';
 import PlaylistPage from './pages/PlaylistPage';
+import axios from 'axios';
 import PremiumPage from './pages/PremiumPage';
 import AdminPage from './pages/AdminPage'; 
-import { useMusicPlayer } from './context/MusicPlayerContext';
+import toast from 'react-hot-toast';
+
+// Импорт MusicPlayerProvider и MusicPlayerBar
+import { MusicPlayerProvider, useMusicPlayer } from './context/MusicPlayerContext';
 import MusicPlayerBar from './components/music/MusicPlayerBar';
+import { useWebSocket } from './context/WebSocketContext';
 
 // Компонент переключения темы
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
@@ -87,7 +92,6 @@ const MainLayout = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // --- НАЧАЛО ИЗМЕНЕНИЯ: Решение проблемы с высотой на мобильных устройствах ---
   useEffect(() => {
     const setViewportHeight = () => {
       let vh = window.innerHeight * 0.01;
@@ -138,6 +142,7 @@ const MainLayout = ({ children }) => {
           />
         </div>
       )}
+      
       <div className={`flex relative z-10 h-full overflow-hidden ${currentTrack ? 'pb-[100px]' : ''}`}>
         <Sidebar themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} />
         <div className="flex-1 relative overflow-y-auto">
@@ -148,8 +153,13 @@ const MainLayout = ({ children }) => {
   );
 };
 
-// --- НОВЫЙ КОМПОНЕНТ: Оверлей для забаненных пользователей ---
 const BannedOverlay = ({ banInfo }) => {
+    const { logout } = useWebSocket();
+    const [showAppealForm, setShowAppealForm] = useState(false);
+    const [appealText, setAppealText] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
+
     const banExpiresDate = banInfo.banExpires ? new Date(banInfo.banExpires) : null;
     const isPermanent = !banExpiresDate;
     
@@ -157,23 +167,84 @@ const BannedOverlay = ({ banInfo }) => {
         ? new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(banExpiresDate)
         : 'навсегда';
 
+    const handleAppealSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/api/submissions/appeal`, 
+                { appealText },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toast.success('Ваша жалоба отправлена на рассмотрение.');
+            setSubmitSuccess(true);
+            setShowAppealForm(false);
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Не удалось отправить жалобу.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-red-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4 text-white">
-            <div className="text-center">
-                <ShieldAlert size={64} className="mx-auto text-red-300 mb-4" />
-                <h1 className="text-3xl font-bold mb-2">Доступ ограничен</h1>
-                <p className="text-lg mb-4">
-                    Вы были заблокированы. Блокировка истекает: <strong className="font-bold">{formattedDate}</strong>.
-                </p>
-                <p className="text-md bg-red-500/30 p-3 rounded-lg">
-                    <strong>Причина:</strong> {banInfo.banReason || 'Не указана'}
-                </p>
-            </div>
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="ios-glass-final bg-red-500/10 border border-red-400/20 max-w-lg w-full p-8 rounded-3xl text-center"
+                >
+                    <ShieldAlert size={64} className="mx-auto text-red-300 mb-4" />
+                    <h1 className="text-3xl font-bold mb-2">Доступ ограничен</h1>
+                    <p className="text-lg mb-4 text-white/80">
+                        Вы были заблокированы. Блокировка истекает: <strong className="font-bold text-white">{formattedDate}</strong>.
+                    </p>
+                    <p className="text-md bg-red-500/30 p-3 rounded-lg mb-8">
+                        <strong>Причина:</strong> {banInfo.banReason || 'Не указана'}
+                    </p>
+
+                    {showAppealForm ? (
+                        <motion.form 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            onSubmit={handleAppealSubmit}
+                            className="space-y-4"
+                        >
+                            <textarea
+                                value={appealText}
+                                onChange={(e) => setAppealText(e.target.value)}
+                                placeholder="Опишите, почему вы считаете блокировку ошибочной..."
+                                className="w-full h-32 p-3 bg-slate-900/50 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-red-300 focus:outline-none resize-none"
+                                minLength="10"
+                                required
+                            />
+                            <div className="flex gap-4">
+                                <button type="button" onClick={() => setShowAppealForm(false)} className="w-full px-6 py-3 bg-slate-500/50 font-semibold rounded-lg hover:bg-slate-500/80 transition-colors">
+                                    Отмена
+                                </button>
+                                <button type="submit" disabled={isSubmitting} className="w-full px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50">
+                                    {isSubmitting ? <Loader2 className="animate-spin mx-auto"/> : 'Отправить'}
+                                </button>
+                            </div>
+                        </motion.form>
+                    ) : (
+                         <div className="flex flex-col sm:flex-row gap-4">
+                            <button onClick={logout} className="w-full sm:w-auto flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-slate-500/50 font-semibold rounded-lg hover:bg-slate-500/80 transition-colors">
+                                <LogOut size={18}/>
+                                <span>Выйти</span>
+                            </button>
+                            <button onClick={() => setShowAppealForm(true)} disabled={submitSuccess} className="w-full sm:w-auto flex-1 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {submitSuccess ? 'Жалоба отправлена' : 'Обжаловать решение'}
+                            </button>
+                        </div>
+                    )}
+                </motion.div>
+            </AnimatePresence>
         </div>
     );
 };
 
-// Компонент ProtectedLayout для защиты роутов
 const ProtectedLayout = () => {
   const { loadingUser, currentUser } = useUser();
   const token = localStorage.getItem('token');
@@ -194,7 +265,6 @@ const ProtectedLayout = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // --- НОВОЕ: Проверка на бан ---
   const isBanned = currentUser.banInfo?.isBanned;
   const banExpires = currentUser.banInfo?.banExpires ? new Date(currentUser.banInfo.banExpires) : null;
   if (isBanned && (!banExpires || banExpires > new Date())) {
@@ -208,13 +278,13 @@ const ProtectedLayout = () => {
   );
 };
 
-// --- НОВЫЙ КОМПОНЕНТ: Защищенный лейаут ТОЛЬКО для админов ---
 const AdminProtectedLayout = () => {
   const { currentUser, loadingUser } = useUser();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loadingUser && currentUser && currentUser.role !== 'admin') {
+      toast.error("Доступ запрещен. У вас нет прав администратора.");
       navigate('/', { replace: true });
     }
   }, [currentUser, loadingUser, navigate]);
@@ -227,7 +297,6 @@ const AdminProtectedLayout = () => {
 };
 
 
-// Главный компонент приложения
 function App() {
   const location = useLocation();
 
@@ -236,7 +305,6 @@ function App() {
       <AnimatePresence mode="wait" key={location.pathname}>
         <Routes location={location}>
 
-          {/* --- РОУТЫ АУТЕНТИФИКАЦИИ --- */}
           <Route element={<AuthLayout><PageWrapper><Outlet /></PageWrapper></AuthLayout>}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -246,7 +314,6 @@ function App() {
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
           </Route>
 
-          {/* --- ОСНОВНЫЕ РОУТЫ ПРИЛОЖЕНИЯ --- */}
           <Route element={<ProtectedLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/music" element={<MusicPage />} />
@@ -262,13 +329,11 @@ function App() {
             <Route path="/communities/:communityId/manage" element={<CommunityManagementPage />} />
             <Route path="/communities/:communityId" element={<CommunityDetailPage />} />
             <Route path="/premium" element={<PremiumPage />} />
-            {/* --- ИЗМЕНЯЕМ МАРШРУТИЗАЦИЮ: Оборачиваем админ-панель в новый защищенный лейаут --- */}
             <Route element={<AdminProtectedLayout />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>
           </Route>
 
-          {/* Роут для всех остальных путей, ведет на главную */}
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>

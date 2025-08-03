@@ -33,7 +33,7 @@ router.use(authMiddleware, adminMiddleware);
 router.get('/submissions', async (req, res) => {
     try {
         const submissions = await Submission.find({ status: 'pending' })
-            .populate('submittedBy', 'username')
+            .populate('submittedBy', 'username fullName avatar')
             .sort({ createdAt: -1 });
         res.json(submissions);
     } catch (error) {
@@ -50,7 +50,23 @@ router.post('/submissions/:id/approve', async (req, res) => {
             return res.status(404).json({ message: 'Заявка не найдена или уже обработана.' });
         }
 
-        if (submission.action === 'create') {
+        if (submission.entityType === 'BanAppeal') {
+            const userToUnban = await User.findById(submission.submittedBy);
+            if (userToUnban) {
+                userToUnban.banInfo = {
+                    isBanned: false,
+                    banReason: null,
+                    banExpires: null
+                };
+                await userToUnban.save();
+                
+                // Оповещаем пользователя о разбане через WebSocket
+                req.broadcastToUsers([userToUnban._id.toString()], {
+                    type: 'ACCOUNT_STATUS_CHANGED',
+                    payload: { banInfo: userToUnban.banInfo }
+                });
+            }
+        } else if (submission.action === 'create') {
             const Model = mongoose.model(submission.entityType);
             const newEntity = new Model({
                 ...submission.data,
@@ -405,25 +421,14 @@ router.get('/users', async (req, res) => {
 router.post('/users/:id/ban', async (req, res) => {
     try {
         const { isBanned, banReason, banExpires } = req.body;
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id, 
-            { $set: { 
-                'banInfo.isBanned': isBanned, 
-                'banInfo.banReason': banReason, 
-                'banInfo.banExpires': banExpires 
-            }}, 
-            { new: true }
-        );
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, { $set: { 'banInfo.isBanned': isBanned, 'banInfo.banReason': banReason, 'banInfo.banExpires': banExpires } }, { new: true });
         
-        // --- НАЧАЛО ИЗМЕНЕНИЯ: Отправляем WebSocket-уведомление пользователю ---
         if (updatedUser) {
-            // Отправляем сообщение только пользователю, чей статус изменился
             req.broadcastToUsers([updatedUser._id.toString()], {
                 type: 'ACCOUNT_STATUS_CHANGED',
                 payload: { banInfo: updatedUser.banInfo }
             });
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         res.json(updatedUser);
     } catch (error) {
