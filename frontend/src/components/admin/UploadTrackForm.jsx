@@ -11,10 +11,19 @@ import Avatar from '../Avatar';
 const API_URL = import.meta.env.VITE_API_URL;
 
 // --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ АЛЬБОМОВ ---
-const AlbumAutocomplete = ({ albums, onSelect }) => {
+const AlbumAutocomplete = ({ albums, onSelect, initialAlbumId }) => {
     const [query, setQuery] = useState('');
     const [filteredAlbums, setFilteredAlbums] = useState([]);
     const [isFocused, setIsFocused] = useState(false);
+
+    useEffect(() => {
+        if (initialAlbumId && albums.length > 0) {
+            const initialAlbum = albums.find(a => a._id === initialAlbumId);
+            if (initialAlbum) {
+                setQuery(`${initialAlbum.title} - ${initialAlbum.artist.name}`);
+            }
+        }
+    }, [initialAlbumId, albums]);
 
     const handleSelect = (album) => {
         setQuery(album ? `${album.title} - ${album.artist.name}` : '');
@@ -90,7 +99,6 @@ const MultiArtistAutocomplete = ({ artists, selectedIds, onSelectionChange, excl
     const handleSelect = (artist) => {
         onSelectionChange([...selectedIds, artist._id]);
         setQuery('');
-        setIsFocused(false);
     };
 
     const handleRemove = (artistId) => {
@@ -160,22 +168,31 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
     );
 };
 
-
-export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
+export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false, initialData = null }) => {
     const { currentUser } = useUser();
     const [albumId, setAlbumId] = useState('');
     const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [trackList, setTrackList] = useState([]);
     const [singleTrackData, setSingleTrackData] = useState({
-        title: '',
-        artistIds: [],
-        genres: [],
-        trackFile: null,
-        durationMs: 0,
-        coverArt: null,
-        coverPreview: '',
-        releaseYear: ''
+        title: '', artistIds: [], genres: [], trackFile: null,
+        durationMs: 0, coverArt: null, coverPreview: '', releaseYear: ''
     });
+
+    useEffect(() => {
+        if (isEditMode && initialData) {
+            setAlbumId(initialData.album?._id || initialData.album || null);
+            setSingleTrackData({
+                title: initialData.title || '',
+                artistIds: (initialData.artist || []).map(a => a._id),
+                genres: initialData.genres || [],
+                releaseYear: initialData.releaseYear || '',
+                trackFile: null, coverArt: null,
+                coverPreview: initialData.albumArtUrl || '',
+                durationMs: initialData.durationMs || 0,
+            });
+        }
+    }, [isEditMode, initialData]);
 
     const mainAlbumArtistId = useMemo(() => {
         if (!albumId) return null;
@@ -183,9 +200,9 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
         return album?.artist?._id || null;
     }, [albumId, albums]);
 
-    useEffect(() => { setTrackList([]); }, [albumId]);
+    useEffect(() => { if (!isEditMode) setTrackList([]); }, [albumId, isEditMode]);
 
-    const handleSingleTrackChange = (field, value) => { setSingleTrackData(prev => ({ ...prev, [field]: value })); };
+    const handleSingleTrackChange = (field, value) => setSingleTrackData(prev => ({ ...prev, [field]: value }));
 
     const handleSingleFileChange = (e, type) => {
         const file = e.target.files[0];
@@ -193,7 +210,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
         if (type === 'track') {
             handleSingleTrackChange('trackFile', file);
             const audio = new Audio(URL.createObjectURL(file));
-            audio.onloadedmetadata = () => { handleSingleTrackChange('durationMs', Math.round(audio.duration * 1000)); };
+            audio.onloadedmetadata = () => handleSingleTrackChange('durationMs', Math.round(audio.duration * 1000));
         } else if (type === 'cover') {
             handleSingleTrackChange('coverArt', file);
             handleSingleTrackChange('coverPreview', URL.createObjectURL(file));
@@ -228,34 +245,42 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        const toastId = toast.loading("Загрузка треков...");
-        
+        setUploadProgress(0);
+        const toastId = toast.loading('Подготовка к загрузке...');
+        const axiosConfig = {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: (progressEvent) => {
+                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                setUploadProgress(percentCompleted);
+                toast.loading(`Загрузка... ${percentCompleted}%`, { id: toastId });
+            }
+        };
+
         try {
-            const token = localStorage.getItem('token');
+            if (isEditMode) {
+                const formData = new FormData();
+                formData.append('title', singleTrackData.title);
+                formData.append('artistIds', JSON.stringify(singleTrackData.artistIds));
+                formData.append('albumId', albumId || '');
+                formData.append('genres', JSON.stringify(singleTrackData.genres || []));
+                await axios.put(`${API_URL}/api/admin/content/tracks/${initialData._id}`, formData, { headers: axiosConfig.headers });
+                toast.success("Трек успешно обновлен!", { id: toastId });
+                onSuccess();
+                return;
+            }
+
             if (albumId) {
-                if (trackList.length === 0) {
-                    toast.error("Выберите аудиофайлы для загрузки.", { id: toastId });
-                    setLoading(false);
-                    return;
-                }
+                if (trackList.length === 0) throw new Error("Выберите аудиофайлы для загрузки.");
                 const formData = new FormData();
                 const metadata = trackList.map(t => ({
-                    title: t.title,
-                    artistIds: [mainAlbumArtistId, ...t.artistIds].filter(Boolean),
-                    isExplicit: t.isExplicit,
-                    durationMs: t.durationMs
+                    title: t.title, artistIds: [mainAlbumArtistId, ...t.artistIds].filter(Boolean),
+                    isExplicit: t.isExplicit, durationMs: t.durationMs
                 }));
                 formData.append('tracksMetadata', JSON.stringify(metadata));
-                trackList.forEach(t => { formData.append('trackFiles', t.file); });
-                await axios.post(`${API_URL}/api/admin/albums/${albumId}/batch-upload-tracks`, formData, {
-                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-                });
+                trackList.forEach(t => formData.append('trackFiles', t.file));
+                await axios.post(`${API_URL}/api/admin/albums/${albumId}/batch-upload-tracks`, formData, axiosConfig);
             } else {
-                if (!singleTrackData.trackFile || singleTrackData.artistIds.length === 0) {
-                    toast.error("Исполнитель и аудиофайл обязательны.", { id: toastId });
-                    setLoading(false);
-                    return;
-                }
+                if (!singleTrackData.trackFile || singleTrackData.artistIds.length === 0) throw new Error("Исполнитель и аудиофайл обязательны.");
                 const formData = new FormData();
                 formData.append('title', singleTrackData.title);
                 formData.append('artistIds', JSON.stringify(singleTrackData.artistIds));
@@ -264,9 +289,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                 if (singleTrackData.coverArt) formData.append('coverArt', singleTrackData.coverArt);
                 formData.append('durationMs', singleTrackData.durationMs);
                 formData.append('releaseYear', singleTrackData.releaseYear);
-                await axios.post(`${API_URL}/api/admin/tracks`, formData, {
-                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-                });
+                await axios.post(`${API_URL}/api/admin/tracks`, formData, axiosConfig);
             }
             toast.success("Треки успешно загружены!", { id: toastId });
             onSuccess();
@@ -275,27 +298,27 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
             setSingleTrackData({ title: '', artistIds: [], genres: [], trackFile: null, durationMs: 0, coverArt: null, coverPreview: '', releaseYear: '' });
             e.target.reset();
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при загрузке.", { id: toastId });
-        } finally { setLoading(false); }
+            toast.error(error.message || error.response?.data?.message || "Ошибка при загрузке.", { id: toastId });
+        } finally { setLoading(false); setUploadProgress(0); }
     };
 
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-4">
-            <h3 className="font-bold text-lg">Загрузить трек</h3>
+            <h3 className="font-bold text-lg">{isEditMode ? `Редактирование: ${initialData.title}` : 'Загрузить трек'}</h3>
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
-                <AlbumAutocomplete albums={albums} onSelect={setAlbumId} />
+                <AlbumAutocomplete albums={albums} onSelect={setAlbumId} initialAlbumId={albumId}/>
             </div>
 
-            {albumId ? (
+            {albumId && !isEditMode ? (
                 <div className="space-y-4">
                     <div>
                         <label className="text-sm font-semibold block mb-1">Аудиофайлы *</label>
                         <div className="flex items-center space-x-4">
                             <label htmlFor="batch-file-upload" className="cursor-pointer px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">Выбрать файлы</label>
-                             <input id="batch-file-upload" type="file" multiple accept="audio/mpeg, audio/wav, audio/mp3" onChange={handleBatchFileChange} className="hidden" />
-                            {trackList.length > 0 && <span className="text-sm text-slate-500 dark:text-slate-400">Число файлов: {trackList.length}</span>}
+                             <input id="batch-file-upload" type="file" multiple accept="audio/*" onChange={handleBatchFileChange} className="hidden" />
+                            {trackList.length > 0 && <span className="text-sm text-slate-500 dark:text-slate-400">Выбрано файлов: {trackList.length}</span>}
                         </div>
                     </div>
                     {trackList.length > 0 && (
@@ -324,21 +347,29 @@ export const UploadTrackForm = ({ artists, albums, onSuccess }) => {
                         </div>
                     </div>
                     <GenreSelector selectedGenres={singleTrackData.genres} onGenreChange={(genres) => handleSingleTrackChange('genres', genres)} />
-                    <div>
-                        <label className="text-sm font-semibold block mb-1">Обложка сингла</label>
-                        <input type="file" accept="image/*" onChange={(e) => handleSingleFileChange(e, 'cover')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
-                        {singleTrackData.coverPreview && <img src={singleTrackData.coverPreview} alt="Предпросмотр обложки" className="mt-2 w-24 h-24 rounded object-cover"/>}
-                    </div>
-                     <div>
-                        <label className="text-sm font-semibold block mb-1">Аудиофайл *</label>
-                        <input type="file" accept="audio/mpeg, audio/wav, audio/mp3" onChange={(e) => handleSingleFileChange(e, 'track')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" required />
-                    </div>
+                    {!isEditMode && (
+                        <>
+                            <div>
+                                <label className="text-sm font-semibold block mb-1">Обложка сингла</label>
+                                <input type="file" accept="image/*" onChange={(e) => handleSingleFileChange(e, 'cover')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
+                                {singleTrackData.coverPreview && <img src={singleTrackData.coverPreview} alt="Предпросмотр обложки" className="mt-2 w-24 h-24 rounded object-cover"/>}
+                            </div>
+                            <div>
+                                <label className="text-sm font-semibold block mb-1">Аудиофайл *</label>
+                                <input type="file" accept="audio/*" onChange={(e) => handleSingleFileChange(e, 'track')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" required={!isEditMode} />
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
-
+            {loading && (
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                    <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+            )}
             <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
-                {loading && <Loader2 className="animate-spin mr-2"/>}
-                Загрузить трек(и)
+                {loading ? <Loader2 className="animate-spin mr-2"/> : null}
+                {isEditMode ? 'Сохранить изменения' : `Загрузить трек(и)`}
             </button>
         </form>
     );

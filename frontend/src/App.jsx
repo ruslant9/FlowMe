@@ -234,9 +234,6 @@ const BannedOverlay = ({ banInfo }) => {
                                 <LogOut size={18}/>
                                 <span>Выйти</span>
                             </button>
-                            <button onClick={() => setShowAppealForm(true)} disabled={submitSuccess} className="w-full sm:w-auto flex-1 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                {submitSuccess ? 'Жалоба отправлена' : 'Обжаловать решение'}
-                            </button>
                         </div>
                     )}
                 </motion.div>
