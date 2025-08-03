@@ -61,13 +61,13 @@ const AlbumPage = () => {
         <main className="flex-1 overflow-y-auto">
             <div className="relative">
                 <div 
-                    className="p-6 md:p-8 pt-20 text-white transition-all duration-500"
-                    style={{ backgroundImage: accentGradient }}
-                >
-                    <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
-                        <ArrowLeft size={16}/>
-                        <span>Назад</span>
-                    </button>
+    className="p-6 md:p-8 pt-28 text-white transition-all duration-500"
+    style={{ backgroundImage: accentGradient }}
+>
+                    <button onClick={() => navigate(-1)} className="absolute top-10 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
+    <ArrowLeft size={16}/>
+    <span>Назад</span>
+</button>
 
                     <div className="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6">
                         <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">

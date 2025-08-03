@@ -45,16 +45,18 @@ const MusicPage = () => {
     };
 
     const [activeTab, setActiveTab] = useState(getInitialTab);
-    // <<<--- НАЧАЛО ИСПРАВЛЕНИЯ 1: Меняем similarArtists на popularArtists ---
     const [mainPageData, setMainPageData] = useState({ newReleases: [], popularHits: [], popularArtists: [] });
-    // <<<--- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
     const [loadingRecommendations, setLoadingRecommendations] = useState(true);
     const [myMusicTracks, setMyMusicTracks] = useState([]);
     const [recentlyPlayed, setRecentlyPlayed] = useState([]);
     const [playlists, setPlaylists] = useState([]);
     const [loadingTabData, setLoadingTabData] = useState(false);
     
-    const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds } = useMusicPlayer(); 
+    // Получаем ВСЕ необходимые данные из контекста плеера
+    const { 
+        playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds,
+        progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause
+    } = useMusicPlayer(); 
     
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState({ tracks: [], playlists: [], artists: [], albums: [] });
@@ -245,7 +247,6 @@ const MusicPage = () => {
                                     </div>
                                 </div>
                             )}
-                            {/* <<<--- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем `popularArtists` --- */}
                              {mainPageData.popularArtists.length > 0 && (
                                 <div>
                                     <h2 className="text-2xl font-bold mb-4">Популярные артисты</h2>
@@ -254,7 +255,6 @@ const MusicPage = () => {
                                     </div>
                                 </div>
                             )}
-                             {/* <<<--- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                         </div>
                     )
                 )}
@@ -274,14 +274,22 @@ const MusicPage = () => {
                                 {searchResults.tracks.length > 0 && (
                                     <div>
                                         <h3 className="text-xl font-bold mb-3">Треки</h3>
+                                        {/* <<<--- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                         <TrackList
                                             tracks={searchResults.tracks}
                                             onSelectTrack={handleSelectTrack}
-                                            currentPlayingTrackId={currentTrack?._id}
+                                            currentPlayingTrackId={currentTrack?.youtubeId}
                                             isPlaying={isPlaying}
                                             onToggleSave={onToggleLike}
                                             myMusicTrackIds={myMusicTrackIds}
+                                            progress={progress}
+                                            duration={duration}
+                                            onSeek={onSeek}
+                                            loadingTrackId={loadingTrackId}
+                                            buffered={buffered}
+                                            onPlayPauseToggle={togglePlayPause}
                                         />
+                                        {/* <<<--- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     </div>
                                 )}
                                 {searchResults.artists.length > 0 && (
@@ -319,8 +327,8 @@ const MusicPage = () => {
                 {['my-music', 'recently-played', 'playlists'].includes(activeTab) && (
                     loadingTabData ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                         <div>
-                            {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
-                            {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
+                            {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
+                            {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
                             {activeTab === 'playlists' && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                     <div className="relative group aspect-square">
