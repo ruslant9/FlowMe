@@ -6,33 +6,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, ChevronDown, Check } from 'lucide-react';
 import Avatar from '../Avatar';
 
-// --- Модальное окно вынесено в отдельный компонент ---
 const MultiArtistSelectorModal = ({ isOpen, onClose, artists, excludeIds, onSave, initialSelection }) => {
     const [query, setQuery] = useState('');
     const [tempSelection, setTempSelection] = useState(initialSelection);
-
     const handleToggle = (artistId) => {
         setTempSelection(prev => 
             prev.includes(artistId) ? prev.filter(id => id !== artistId) : [...prev, artistId]
         );
     };
-    
-    const handleSaveClick = () => {
-        onSave(tempSelection);
-        onClose();
-    };
-
-    const availableArtists = useMemo(() => 
-        artists.filter(a => !excludeIds.includes(a._id))
-    , [artists, excludeIds]);
-
-    const filteredArtists = useMemo(() =>
-        query === ''
-            ? availableArtists
-            : availableArtists.filter((artist) =>
-                artist.name.toLowerCase().includes(query.toLowerCase())
-            )
-    , [availableArtists, query]);
+    const handleSaveClick = () => { onSave(tempSelection); onClose(); };
+    const availableArtists = useMemo(() => artists.filter(a => !excludeIds.includes(a._id)), [artists, excludeIds]);
+    const filteredArtists = useMemo(() => query === '' ? availableArtists : availableArtists.filter((artist) => artist.name.toLowerCase().includes(query.toLowerCase())), [availableArtists, query]);
     
     return (
         <AnimatePresence>
@@ -74,24 +58,16 @@ const MultiArtistSelectorModal = ({ isOpen, onClose, artists, excludeIds, onSave
 
 const MultiArtistSelector = ({ artists, value, onChange, required = true, excludeIds = [] }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const selectedArtists = useMemo(() =>
-        value.map(id => artists.find(a => a._id === id)).filter(Boolean)
-    , [artists, value]);
-    
-    const handleRemove = (artistId) => {
-        onChange(value.filter(id => id !== artistId));
-    };
+    const selectedArtists = useMemo(() => value.map(id => artists.find(a => a._id === id)).filter(Boolean), [artists, value]);
+    const handleRemove = (artistId) => { onChange(value.filter(id => id !== artistId)); };
 
     return (
         <>
             <div
-                // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
                 onClick={(e) => {
                     e.stopPropagation();
                     setIsModalOpen(true);
                 }}
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 className="w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 cursor-pointer"
             >
                 <div className="flex flex-wrap gap-2 p-2 items-center min-h-[44px] relative">
