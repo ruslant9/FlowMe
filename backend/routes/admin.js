@@ -504,7 +504,7 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
         }));
 
         const newTrackIds = newTracks.map(track => track._id);
-        await Album.updateOne({ _id: albumId }, { $addToSet: { tracks: { $each: newTrackIds } } });
+        await Album.updateOne({ _id: albumId }, { $push: { tracks: { $each: newTrackIds } } });
 
         res.status(201).json({ message: `${newTracks.length} треков успешно добавлены в альбом.` });
     } catch (error) {
