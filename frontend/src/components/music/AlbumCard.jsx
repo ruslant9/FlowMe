@@ -6,9 +6,18 @@ import { Link } from 'react-router-dom';
 import { Music } from 'lucide-react';
 
 const AlbumCard = ({ album }) => {
-    // --- ИСПРАВЛЕНИЕ: Динамически определяем URL в зависимости от того, сингл это или альбом ---
     const linkTo = album.isSingle ? `/single/${album._id}` : `/album/${album._id}`;
     
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Функция для форматирования имени(имен) артистов ---
+    const getArtistDisplay = (artistData) => {
+        if (!artistData) return '';
+        if (Array.isArray(artistData)) {
+            return artistData.map(a => a.name).join(', ');
+        }
+        return artistData.name;
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     return (
         <Link to={linkTo}>
             <motion.div
@@ -28,7 +37,8 @@ const AlbumCard = ({ album }) => {
                 <div className="mt-2">
                     <p className="font-semibold text-sm truncate group-hover:text-blue-400 transition-colors">{album.title}</p>
                     <p className="text-xs text-slate-500 truncate">
-                        {album.artist.name}{album.releaseYear && ` • ${album.releaseYear}`}
+                        {/* --- ИСПРАВЛЕНИЕ: Используем новую функцию --- */}
+                        {getArtistDisplay(album.artist)}{album.releaseYear && ` • ${album.releaseYear}`}
                     </p>
                 </div>
             </motion.div>

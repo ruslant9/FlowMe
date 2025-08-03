@@ -85,12 +85,13 @@ const MusicPage = () => {
                 setLoadingRecommendations(true);
                 resetSearchState();
                 try {
-                    const res = await axios.get(`${API_URL}/api/music/main-page-data`, headers);
+                    // --- ИСПРАВЛЕНИЕ: Используем новый эндпоинт для рекомендаций ---
+                    const res = await axios.get(`${API_URL}/api/music/recommendations`, headers);
                     setMainPageData(res.data);
                 } catch (e) { toast.error("Не удалось загрузить рекомендации."); }
                 setLoadingRecommendations(false);
                 break;
-
+            // ... (остальные case без изменений)
             case 'my-music':
                 setLoadingTabData(true);
                 resetSearchState();
@@ -199,11 +200,6 @@ const MusicPage = () => {
         } catch (error) { toast.error("Ошибка при запуске волны.", { id: toastId }); }
     }, [playTrack]);
 
-    const handleArtistClick = (artistName) => {
-        setActiveTab('search');
-        setSearchQuery(artistName);
-    };
-
     return (
         <div className="flex-1 p-4 md:p-8">
             <CreatePlaylistModal isOpen={isCreatePlaylistModalOpen} onClose={() => setCreatePlaylistModalOpen(false)} onPlaylistCreated={() => fetchDataForTab('playlists')} />
@@ -240,7 +236,7 @@ const MusicPage = () => {
                             )}
                             {mainPageData.newReleases.length > 0 && (
                                 <div>
-                                    <h2 className="text-2xl font-bold mb-4">Новинки</h2>
+                                    <h2 className="text-2xl font-bold mb-4">Новинки для вас</h2>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                          {mainPageData.newReleases.map(track => <RecommendationCard key={track._id} track={track} onSelectTrack={() => playTrack(track, mainPageData.newReleases)} />)}
                                     </div>
@@ -250,7 +246,8 @@ const MusicPage = () => {
                                 <div>
                                     <h2 className="text-2xl font-bold mb-4">Популярные артисты</h2>
                                     <div className="flex justify-around items-start">
-                                        {mainPageData.popularArtists.map(artist => <ArtistAvatar key={artist.name} artistName={artist.name} onClick={() => handleArtistClick(artist.name)} avatarUrl={artist.avatarUrl} />)}
+                                        {/* --- ИСПРАВЛЕНИЕ: Передаем весь объект artist --- */}
+                                        {mainPageData.popularArtists.map(artist => <ArtistAvatar key={artist._id} artist={artist} />)}
                                     </div>
                                 </div>
                             )}
@@ -270,26 +267,6 @@ const MusicPage = () => {
                             (searchResults.artists.length === 0 && searchResults.albums.length === 0 && searchResults.tracks.length === 0 && searchResults.playlists.length === 0) ? 
                             <p className="text-center py-10 text-slate-500">Ничего не найдено.</p> :
                             <div className="space-y-8">
-                                {searchResults.tracks.length > 0 && (
-                                    <div>
-                                        <h3 className="text-xl font-bold mb-3">Треки</h3>
-                                        <TrackList
-                                            tracks={searchResults.tracks}
-                                            onSelectTrack={handleSelectTrack}
-                                            currentPlayingTrackId={currentTrack?._id}
-                                            isPlaying={isPlaying}
-                                            onToggleSave={onToggleLike}
-                                            myMusicTrackIds={myMusicTrackIds}
-                                            progress={progress}
-                                            duration={duration}
-                                            onSeek={onSeek}
-                                            loadingTrackId={loadingTrackId}
-                                            buffered={buffered}
-                                            onPlayPauseToggle={togglePlayPause}
-                                            useSpotifyIdForSaving={true}
-                                        />
-                                    </div>
-                                )}
                                 {searchResults.artists.length > 0 && (
                                     <div>
                                         <h3 className="text-xl font-bold mb-3">Артисты</h3>
@@ -314,6 +291,25 @@ const MusicPage = () => {
                                         </div>
                                     </div>
                                 )}
+                                {searchResults.tracks.length > 0 && (
+                                    <div>
+                                        <h3 className="text-xl font-bold mb-3">Треки</h3>
+                                        <TrackList
+                                            tracks={searchResults.tracks}
+                                            onSelectTrack={handleSelectTrack}
+                                            currentPlayingTrackId={currentTrack?._id}
+                                            isPlaying={isPlaying}
+                                            onToggleSave={onToggleLike}
+                                            myMusicTrackIds={myMusicTrackIds}
+                                            progress={progress}
+                                            duration={duration}
+                                            onSeek={onSeek}
+                                            loadingTrackId={loadingTrackId}
+                                            buffered={buffered}
+                                            onPlayPauseToggle={togglePlayPause}
+                                        />
+                                    </div>
+                                )}
                                 <div ref={lastTrackElementRef} className="h-10 flex justify-center items-center">
                                     {loadingMore && <Loader2 className="animate-spin text-slate-400" />}
                                 </div>
@@ -325,8 +321,8 @@ const MusicPage = () => {
                 {['my-music', 'recently-played', 'playlists'].includes(activeTab) && (
                     loadingTabData ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                         <div>
-                            {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} currentPlayingTrackId={currentTrack?._id} {...{isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
-                            {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} currentPlayingTrackId={currentTrack?._id} {...{isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
+                            {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
+                            {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
                             {activeTab === 'playlists' && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                     <div className="relative group aspect-square">

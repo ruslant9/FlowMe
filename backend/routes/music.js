@@ -173,7 +173,6 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
             .populate('artist', 'name avatarUrl')
             .populate({
                 path: 'tracks',
-                // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок на артистов в треках альбома ---
                 populate: { path: 'artist', select: 'name _id' }
             })
             .lean();
@@ -205,7 +204,6 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             Track.find({ artist: artistId, status: 'approved' })
                 .sort({ playCount: -1 })
                 .limit(5)
-                 // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок ---
                 .populate('artist', 'name _id')
                 .populate('album', 'title coverArtUrl')
                 .lean(),
@@ -223,7 +221,6 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
                  .lean(),
             
             Track.find({ artist: artistId, status: 'approved', album: null })
-                 // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок ---
                  .populate('artist', 'name _id')
                  .sort({ releaseYear: -1, createdAt: -1 })
                  .lean()
@@ -296,7 +293,8 @@ router.get('/search-all', authMiddleware, async (req, res) => {
             page == 1 ? Album.find({ status: 'approved', $or: [{ title: searchQuery }, { artist: { $in: artistIds } }]}).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
             page == 1 ? Playlist.find({ name: searchQuery, visibility: 'public' }).populate('user', 'username').limit(6).lean() : Promise.resolve([]),
             Track.find(trackQuery)
-                .populate('artist', 'name')
+                // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок ---
+                .populate('artist', 'name _id')
                 .populate('album', 'title coverArtUrl')
                 .sort({ playCount: -1 })
                 .skip(skip)
@@ -360,7 +358,6 @@ router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
 router.get('/track/:trackId', authMiddleware, async (req, res) => {
     try {
         const track = await Track.findById(req.params.trackId)
-            // --- ИСПРАВЛЕНИЕ: Добавляем _id для ссылок ---
             .populate('artist', 'name _id avatarUrl')
             .lean();
 
@@ -397,29 +394,80 @@ router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/main-page-data', authMiddleware, async (req, res) => {
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый маршрут для персональных рекомендаций ---
+const processAndPopulateTracks = async (trackQuery, limit) => {
+    const tracks = await Track.find(trackQuery)
+        .sort({ playCount: -1, createdAt: -1 })
+        .limit(limit)
+        .populate('artist', 'name _id') // <-- Добавляем _id
+        .populate('album', 'title coverArtUrl')
+        .lean();
+
+    return tracks.map(track => {
+        if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+            return { ...track, albumArtUrl: track.album.coverArtUrl };
+        }
+        return track;
+    });
+};
+
+router.get('/recommendations', authMiddleware, async (req, res) => {
     try {
-        const [newReleases, popularHits, popularArtists] = await Promise.all([
-            Track.find({ status: 'approved' })
-                 .sort({ createdAt: -1 })
-                 .limit(10)
-                 .populate('artist', 'name')
-                 .lean(),
-            Track.find({ status: 'approved' })
-                 .sort({ playCount: -1 })
-                 .limit(10)
-                 .populate('artist', 'name')
-                 .lean(),
-            Artist.find({ status: 'approved' })
-                  .limit(6)
-                  .lean() 
-        ]);
+        const userId = req.user.userId;
+        const profile = await UserMusicProfile.findOne({ user: userId });
+        const currentYear = new Date().getFullYear();
+
+        let newReleases = [];
+        let popularHits = [];
+        
+        if (profile && (profile.topArtists.length > 0 || profile.topGenres.length > 0)) {
+            const topArtistIds = profile.topArtists.slice(0, 10).map(a => a.name); // Предполагаем, что name это ID
+            const topGenres = profile.topGenres.slice(0, 5).map(g => g.name);
+
+            const listenedTracks = await Track.find({ user: userId, type: { $in: ['saved', 'recent'] } }).distinct('spotifyId');
+
+            const newReleasesQuery = {
+                status: 'approved',
+                releaseYear: currentYear,
+                spotifyId: { $nin: listenedTracks },
+                $or: [
+                    { artist: { $in: topArtistIds } },
+                    { genres: { $in: topGenres } }
+                ]
+            };
+            newReleases = await processAndPopulateTracks(newReleasesQuery, 10);
+
+            const popularHitsQuery = {
+                status: 'approved',
+                spotifyId: { $nin: listenedTracks },
+                 $or: [
+                    { artist: { $in: topArtistIds } },
+                    { genres: { $in: topGenres } }
+                ]
+            };
+            popularHits = await processAndPopulateTracks(popularHitsQuery, 10);
+        }
+        
+        // Если персональных рекомендаций мало, дополняем общими
+        if (newReleases.length < 10) {
+            const generalNew = await processAndPopulateTracks({ status: 'approved', releaseYear: currentYear }, 10 - newReleases.length);
+            newReleases.push(...generalNew);
+        }
+        if (popularHits.length < 10) {
+            const generalPopular = await processAndPopulateTracks({ status: 'approved' }, 10 - popularHits.length);
+            popularHits.push(...generalPopular);
+        }
+
+        const popularArtists = await Artist.find({ status: 'approved' }).limit(6).lean();
 
         res.json({ newReleases, popularHits, popularArtists });
+
     } catch (error) {
-        console.error("Ошибка при загрузке данных для главной страницы музыки:", error);
+        console.error("Ошибка при загрузке рекомендаций:", error);
         res.status(500).json({ message: 'Не удалось загрузить рекомендации.' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
 module.exports = router;

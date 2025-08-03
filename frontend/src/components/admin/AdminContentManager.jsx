@@ -9,14 +9,12 @@ import { useModal } from '../../hooks/useModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- ИСПРАВЛЕНИЕ: Добавляем недостающую хелпер-функцию ---
 const getImageUrl = (url) => {
     if (!url || url.startsWith('http') || url.startsWith('blob:')) {
         return url;
     }
     return `${API_URL}/${url}`;
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
     <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${active ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'}`}>
@@ -157,10 +155,19 @@ export const AdminContentManager = () => {
                         {items.map(item => (
                             <tr key={item._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
                                 <td className="p-2">
-                                    <img src={getImageUrl(item.avatarUrl || item.coverArtUrl)} alt="cover" className="w-10 h-10 rounded object-cover bg-slate-200 dark:bg-slate-700" />
+                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем item.albumArtUrl --- */}
+                                    <img src={getImageUrl(item.avatarUrl || item.coverArtUrl || item.albumArtUrl)} alt="cover" className="w-10 h-10 rounded object-cover bg-slate-200 dark:bg-slate-700" />
                                 </td>
                                 <td className="p-2 font-semibold">{item.name || item.title}</td>
-                                {activeType !== 'artists' && <td className="p-2 text-slate-500">{item.artist?.name || 'N/A'}</td>}
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Корректно отображаем список артистов --- */}
+                                {activeType !== 'artists' && (
+                                    <td className="p-2 text-slate-500">
+                                        {Array.isArray(item.artist) 
+                                            ? item.artist.map(a => a.name).join(', ') 
+                                            : (item.artist?.name || 'N/A')}
+                                    </td>
+                                )}
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <td className="p-2 text-sm text-slate-500">{new Date(item.createdAt).toLocaleDateString('ru-RU')}</td>
                                 <td className="p-2">
                                     <div className="flex items-center justify-end space-x-2">

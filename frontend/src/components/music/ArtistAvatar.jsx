@@ -2,41 +2,39 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Avatar from '../Avatar';
+import { Link } from 'react-router-dom';
 
-const ArtistAvatar = ({ artistName, onClick, avatarUrl }) => {
-    // --- ИСПРАВЛЕНИЕ ---
-    const formatArtistName = (artist) => {
-        // 1. Проверяем, что данные существуют
-        if (!artist) return '';
-        
-        // 2. Эта функция получает только строку, поэтому логика простая.
-        // Проверяем тип, чтобы избежать ошибки.
-        if (typeof artist === 'string') {
-            if (artist.endsWith(' - Topic')) {
-                return artist.substring(0, artist.length - ' - Topic'.length).trim();
-            }
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Компонент теперь принимает весь объект артиста ---
+const ArtistAvatar = ({ artist }) => {
+    if (!artist) return null;
+    
+    const formatArtistName = (name) => {
+        if (!name) return '';
+        if (name.endsWith(' - Topic')) {
+            return name.substring(0, name.length - ' - Topic'.length).trim();
         }
-        // 3. Возвращаем как есть, если это не строка или не содержит " - Topic"
-        return artist;
+        return name;
     };
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return (
-        <motion.div
-            onClick={onClick}
-            className="flex flex-col items-center space-y-2 cursor-pointer group"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-        >
-            <Avatar
-                username={artistName}
-                avatarUrl={avatarUrl}
-                size="xl"
-            />
-            <p className="text-sm font-semibold text-center truncate w-24 group-hover:text-blue-400 transition-colors">
-                {formatArtistName(artistName)}
-            </p>
-        </motion.div>
+        // --- ИСПРАВЛЕНИЕ: Оборачиваем все в Link ---
+        <Link to={`/artist/${artist._id}`}>
+            <motion.div
+                className="flex flex-col items-center space-y-2 cursor-pointer group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+            >
+                <Avatar
+                    username={artist.name}
+                    avatarUrl={artist.avatarUrl}
+                    size="xl"
+                />
+                <p className="text-sm font-semibold text-center truncate w-24 group-hover:text-blue-400 transition-colors">
+                    {formatArtistName(artist.name)}
+                </p>
+            </motion.div>
+        </Link>
     );
 };
 
