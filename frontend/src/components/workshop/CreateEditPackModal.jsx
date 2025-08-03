@@ -2,15 +2,32 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Image as ImageIcon, Trash2, PlusCircle, AlertTriangle } from 'lucide-react';
+import { X, Loader2, Image as ImageIcon, Trash2, PlusCircle, AlertTriangle, Crown } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ ---
+const ToggleSwitch = ({ checked, onChange, label, description }) => (
+    <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+        <div>
+            <label htmlFor="premium-toggle" className="font-semibold text-slate-700 dark:text-white cursor-pointer">{label}</label>
+            <p className="text-xs text-slate-500 dark:text-white/60">{description}</p>
+        </div>
+        <div className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="premium-toggle" className="sr-only peer" checked={checked} onChange={e => onChange(e.target.checked)} />
+            <div className="w-11 h-6 bg-gray-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+        </div>
+    </div>
+);
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
+
 const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave }) => {
     const [name, setName] = useState('');
     const [type, setType] = useState('sticker');
+    const [isPremiumOnly, setIsPremiumOnly] = useState(false); // Новое состояние
     const [existingItems, setExistingItems] = useState([]);
     const [newFiles, setNewFiles] = useState([]);
     const [itemsToDelete, setItemsToDelete] = useState([]);
@@ -23,10 +40,12 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                 setName(initialData.name);
                 setType(initialData.type);
                 setExistingItems(initialData.items);
+                setIsPremiumOnly(initialData.isPremiumOnly || false);
             } else {
                 setName('');
                 setType('sticker');
                 setExistingItems([]);
+                setIsPremiumOnly(false);
             }
             setNewFiles([]);
             setItemsToDelete([]);
@@ -43,7 +62,6 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
             setNewFiles(prev => [...prev, ...preparedFiles]);
         }
     };
-
     const handleRemoveExistingItem = (itemId) => {
         setItemsToDelete(prev => [...prev, itemId]);
         setExistingItems(prev => prev.filter(item => item._id !== itemId));
@@ -61,6 +79,12 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
         const formData = new FormData();
         formData.append('name', name);
         formData.append('type', type);
+        
+        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        if (type === 'emoji') {
+            formData.append('isPremiumOnly', isPremiumOnly);
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         if (isEditMode) {
             formData.append('itemsToDelete', JSON.stringify(itemsToDelete));
@@ -123,16 +147,25 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                 </div>
                             )}
 
+                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                            {type === 'emoji' && (
+                                <ToggleSwitch 
+                                    checked={isPremiumOnly}
+                                    onChange={setIsPremiumOnly}
+                                    label="Только для Premium"
+                                    description="Этот пак будет доступен только пользователям с Premium-подпиской."
+                                />
+                            )}
+                            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+
                             <div className="flex-1 overflow-y-auto -mr-2 pr-2 border-t border-b border-slate-200 dark:border-slate-700 py-4">
                                 <label className="block text-sm font-semibold mb-2">Изображения</label>
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Новая подсказка --- */}
                                 {type === 'sticker' && (
                                     <div className="flex items-center space-x-2 text-xs text-blue-600 dark:text-blue-400 p-2 bg-blue-400/10 rounded-md mb-3">
                                         <AlertTriangle size={16} />
                                         <span>Изображения для стикеров будут автоматически вписаны в квадрат 300x300 пикселей.</span>
                                     </div>
                                 )}
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                 <div className={`grid gap-2 ${type === 'sticker' ? 'grid-cols-3' : 'grid-cols-5'}`}>
                                     {existingItems.map(item => (
                                         <div key={item._id} className="relative group aspect-square">
