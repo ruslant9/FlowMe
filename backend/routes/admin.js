@@ -439,7 +439,7 @@ router.post('/users/:id/ban', async (req, res) => {
 router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 20), async (req, res) => {
     try {
         const { albumId } = req.params;
-        const { tracksMetadata } = req.body; // Это будет JSON-строка
+        const { tracksMetadata } = req.body;
 
         const album = await Album.findById(albumId);
         if (!album) {
@@ -452,7 +452,7 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
             const meta = parsedMetadata[index];
             const newTrack = new Track({
                 title: meta.title,
-                artist: meta.artistIds, // Массив ID исполнителей
+                artist: meta.artistIds,
                 album: albumId,
                 durationMs: meta.durationMs,
                 isExplicit: meta.isExplicit,
@@ -460,6 +460,8 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
                 status: 'approved',
                 createdBy: req.user._id,
                 reviewedBy: req.user._id,
+                // --- ДОБАВЛЕНО: Явно указываем тип трека ---
+                type: 'library_track'
             });
             return newTrack.save();
         }));
@@ -473,6 +475,7 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
+
 
 router.get('/albums/:albumId/tracks', async (req, res) => {
     try {
