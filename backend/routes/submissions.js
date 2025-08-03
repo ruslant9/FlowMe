@@ -33,7 +33,6 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
                 name,
                 description,
                 tags: tags ? tags.split(',').map(t => t.trim()) : [],
-                // req.file.path содержит полный HTTPS URL от Cloudinary
                 avatarUrl: req.file ? req.file.path : null 
             }
         });
@@ -49,7 +48,8 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
         const { title, artistId } = req.body;
-        if (!title || !parsedArtistIds || parsedArtistIds.length === 0) {
+        // --- ИСПРАВЛЕНИЕ: Проверяем artistId, а не parsedArtistIds ---
+        if (!title || !artistId) {
             return res.status(400).json({ message: 'Название альбома и артист обязательны.' });
         }
         
@@ -71,16 +71,18 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Загрузка сингла пользователем ---
 // 3. Создать заявку на новый трек
-router.post('/tracks', upload.single('trackFile'), async (req, res) => {
+router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name: 'coverArt', maxCount: 1 }]), async (req, res) => {
     try {
-        const { title, artistIds, albumId, durationMs } = req.body;
+        const { title, artistIds, albumId, durationMs, genres, releaseYear } = req.body;
         const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
+        const parsedGenres = genres ? JSON.parse(genres) : [];
         
-        if (!title || !artistId) {
-            return res.status(400).json({ message: 'Название трека и артист обязательны.' });
+        if (!title || !parsedArtistIds || parsedArtistIds.length === 0) {
+            return res.status(400).json({ message: 'Название трека и исполнитель обязательны.' });
         }
-        if (!req.file) {
+        if (!req.files || !req.files.trackFile) {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });
         }
 
@@ -93,7 +95,8 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
                 artist: parsedArtistIds,
                 album: albumId || null,
                 durationMs: durationMs || 0,
-                // Для аудиофайлов Cloudinary также вернет URL в req.file.path
+                genres: parsedGenres,
+                releaseYear: releaseYear || null,
                 storageKey: req.files.trackFile[0].path,
                 albumArtUrl: albumId ? null : (req.files.coverArt?.[0]?.path || null)
             }
@@ -105,13 +108,13 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера при создании заявки.' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Новый роут для жалобы на бан ---
+
 router.post('/appeal', async (req, res) => {
     try {
         const { appealText } = req.body;
-        // Sanitize appealText to prevent XSS or other injection issues
-        const sanitizedAppealText = sanitize(appealText); // Assuming sanitize function is available
+        const sanitizedAppealText = sanitize(appealText);
 
         if (!sanitizedAppealText || sanitizedAppealText.trim().length < 10) {
             return res.status(400).json({ message: 'Текст жалобы должен содержать не менее 10 символов.' });
@@ -119,11 +122,10 @@ router.post('/appeal', async (req, res) => {
 
         const userId = req.user.userId;
 
-        // Проверяем, нет ли уже активной жалобы от этого пользователя
         const existingAppeal = await Submission.findOne({
             submittedBy: userId,
             entityType: 'BanAppeal',
-            status: 'pending' // Check only pending appeals
+            status: 'pending'
         });
 
         if (existingAppeal) {
@@ -135,7 +137,7 @@ router.post('/appeal', async (req, res) => {
             action: 'appeal',
             submittedBy: userId,
             data: {
-                appealText: sanitizedAppealText, // Use sanitized text
+                appealText: sanitizedAppealText,
             }
         });
 
@@ -143,10 +145,9 @@ router.post('/appeal', async (req, res) => {
         res.status(201).json({ message: 'Ваша жалоба отправлена на рассмотрение.' });
 
     } catch (error) {
-        console.error("Ошибка при подаче жалобы:", error.message, error.stack); // More detailed logging
-        res.status(500).json({ message: 'Ошибка сервера при отправке жалобы.' }); // Ensure message is always sent
+        console.error("Ошибка при подаче жалобы:", error.message, error.stack);
+        res.status(500).json({ message: 'Ошибка сервера при отправке жалобы.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 module.exports = router;

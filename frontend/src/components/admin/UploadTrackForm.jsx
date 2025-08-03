@@ -13,7 +13,6 @@ import { CSS } from '@dnd-kit/utilities';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ АЛЬБОМОВ (без изменений) ---
 const AlbumAutocomplete = ({ albums, onSelect, initialAlbumId }) => {
     const [query, setQuery] = useState('');
     const [filteredAlbums, setFilteredAlbums] = useState([]);
@@ -79,7 +78,6 @@ const AlbumAutocomplete = ({ albums, onSelect, initialAlbumId }) => {
     );
 };
 
-// --- КОМПОНЕНТ АВТОДОПОЛНЕНИЯ ДЛЯ МНОЖЕСТВЕННОГО ВЫБОРА АРТИСТОВ (без изменений) ---
 const MultiArtistAutocomplete = ({ artists, selectedIds, onSelectionChange, excludeIds = [] }) => {
     const [query, setQuery] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -153,7 +151,6 @@ const ToggleSwitch = ({ checked, onChange, label }) => (
     </label>
 );
 
-// --- ИСПРАВЛЕНИЕ 1: Перерабатываем компонент трека для Drag-and-Drop ---
 const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemove }) => {
     const {
         attributes,
@@ -172,7 +169,6 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
     
     return (
         <div ref={setNodeRef} style={style} className={`flex items-start space-x-3 transition-shadow ${isDragging ? 'shadow-lg' : ''}`}>
-            {/* Ручка для перетаскивания и порядковый номер */}
             <div className="flex flex-col items-center pt-3 flex-shrink-0">
                 <span className="font-bold text-lg text-slate-500 dark:text-slate-400 select-none">{index + 1}</span>
                 <div {...attributes} {...listeners} className="cursor-grab touch-none p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white">
@@ -180,13 +176,26 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
                 </div>
             </div>
 
-            {/* Основное содержимое карточки */}
-            <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3 relative w-full">
-                <button type="button" onClick={onRemove} className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full z-10">
-                    <Trash2 size={16} />
-                </button>
-                <input type="text" placeholder="Название трека" value={track.title} onChange={(e) => onUpdate(index, 'title', e.target.value)}
-                    className="w-full p-2 rounded bg-white dark:bg-slate-700 font-semibold" required />
+            <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3 w-full">
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Название трека"
+                        value={track.title}
+                        onChange={(e) => onUpdate(index, 'title', e.target.value)}
+                        className="w-full p-2 pr-10 rounded bg-white dark:bg-slate-700 font-semibold"
+                        required
+                    />
+                    <button
+                        type="button"
+                        onClick={onRemove}
+                        className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full z-10"
+                        title="Удалить трек"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+
                 <div>
                     <label className="text-sm font-semibold block mb-1">Дополнительные исполнители (фит)</label>
                     <MultiArtistAutocomplete artists={artists} selectedIds={track.artistIds}
@@ -209,7 +218,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         durationMs: 0, coverArt: null, coverPreview: '', releaseYear: ''
     });
 
-    // --- ИСПРАВЛЕНИЕ 2: Настройка сенсоров для dnd-kit ---
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -255,11 +263,10 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         }
     };
     
-    // --- ИСПРАВЛЕНИЕ 3: Добавляем уникальный ID к каждому треку при загрузке ---
     const handleBatchFileChange = (e) => {
         const files = Array.from(e.target.files);
         const newTracks = files.map(file => {
-            const trackId = crypto.randomUUID(); // Уникальный ID для dnd-kit
+            const trackId = crypto.randomUUID();
             const audio = new Audio(URL.createObjectURL(file));
             audio.onloadedmetadata = () => {
                 const duration = Math.round(audio.duration * 1000);
@@ -282,7 +289,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         setTrackList(currentList => currentList.filter((_, i) => i !== indexToRemove));
     };
 
-    // --- ИСПРАВЛЕНИЕ 4: Обработчик завершения перетаскивания ---
     const handleDragEnd = (event) => {
         const { active, over } = event;
         if (active.id !== over.id) {
@@ -309,6 +315,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         };
 
         try {
+            const isAdmin = currentUser.role === 'admin';
             if (isEditMode) {
                 const formData = new FormData();
                 formData.append('title', singleTrackData.title);
@@ -321,7 +328,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 return;
             }
 
-            if (albumId) {
+            if (albumId) { // Логика для загрузки в альбом (только админ)
                 if (trackList.length === 0) throw new Error("Выберите аудиофайлы для загрузки.");
                 const formData = new FormData();
                 const metadata = trackList.map(t => ({
@@ -331,7 +338,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('tracksMetadata', JSON.stringify(metadata));
                 trackList.forEach(t => formData.append('trackFiles', t.file));
                 await axios.post(`${API_URL}/api/admin/albums/${albumId}/batch-upload-tracks`, formData, axiosConfig);
-            } else {
+            } else { // Логика для сингла (и админ, и пользователь)
                 if (!singleTrackData.trackFile || singleTrackData.artistIds.length === 0) throw new Error("Исполнитель и аудиофайл обязательны.");
                 const formData = new FormData();
                 formData.append('title', singleTrackData.title);
@@ -341,9 +348,10 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 if (singleTrackData.coverArt) formData.append('coverArt', singleTrackData.coverArt);
                 formData.append('durationMs', singleTrackData.durationMs);
                 formData.append('releaseYear', singleTrackData.releaseYear);
-                await axios.post(`${API_URL}/api/admin/tracks`, formData, axiosConfig);
+                const endpoint = isAdmin ? `${API_URL}/api/admin/tracks` : `${API_URL}/api/submissions/tracks`;
+                await axios.post(endpoint, formData, axiosConfig);
             }
-            toast.success("Треки успешно загружены!", { id: toastId });
+            toast.success(isAdmin ? "Треки успешно загружены!" : "Заявка на добавление трека отправлена!", { id: toastId });
             onSuccess();
             setAlbumId('');
             setTrackList([]);
@@ -356,7 +364,15 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
 
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-4">
-            <h3 className="font-bold text-lg">{isEditMode ? `Редактирование: ${initialData.title}` : 'Загрузить трек'}</h3>
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Динамический заголовок и подзаголовок --- */}
+            <h3 className="font-bold text-lg">
+                {isEditMode ? `Редактирование: ${initialData.title}` : 
+                 (currentUser.role === 'admin' ? 'Загрузить трек' : 'Предложить новый трек')}
+            </h3>
+            {currentUser.role !== 'admin' && !isEditMode && (
+                <p className="text-xs text-slate-500 -mt-3">Ваша заявка будет рассмотрена администратором.</p>
+            )}
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             
             <div>
                 <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
@@ -374,7 +390,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                         </div>
                     </div>
                     {trackList.length > 0 && (
-                        // --- ИСПРАВЛЕНИЕ 5: Оборачиваем список в DndContext и убираем скролл ---
                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                             <SortableContext items={trackList.map(t => t.id)} strategy={verticalListSortingStrategy}>
                                 <div className="space-y-3">
@@ -432,10 +447,12 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                     <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
                 </div>
             )}
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Динамический текст кнопки --- */}
             <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
-                {loading ? <Loader2 className="animate-spin mr-2"/> : null}
-                {isEditMode ? 'Сохранить изменения' : `Загрузить трек(и)`}
+                {loading && <Loader2 className="animate-spin mr-2"/>}
+                {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? `Загрузить трек(и)` : 'Отправить на проверку')}
             </button>
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
         </form>
     );
 };

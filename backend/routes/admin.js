@@ -13,15 +13,12 @@ const Track = require('../models/Track');
 const Submission = require('../models/Submission');
 const User = require('../models/User');
 
-// --- ИЗМЕНЕНИЕ 1: Меняем импорты и настройку Multer ---
 const multer = require('multer');
-const { createStorage } = require('../config/cloudinary');
+const { createStorage, cloudinary } = require('../config/cloudinary');
 
 // Создаем хранилище для файлов, которые загружает админ.
-// Они будут помещены в папку 'music' на Cloudinary.
 const adminStorage = createStorage('music');
 const upload = multer({ storage: adminStorage });
-// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
 
 // Защищаем все роуты в этом файле - только для авторизованных админов
@@ -60,7 +57,6 @@ router.post('/submissions/:id/approve', async (req, res) => {
                 };
                 await userToUnban.save();
                 
-                // Оповещаем пользователя о разбане через WebSocket
                 req.broadcastToUsers([userToUnban._id.toString()], {
                     type: 'ACCOUNT_STATUS_CHANGED',
                     payload: { banInfo: userToUnban.banInfo }
@@ -131,7 +127,6 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
             name,
             description,
             tags: tags ? tags.split(',').map(t => t.trim()) : [],
-            // --- ИЗМЕНЕНИЕ 2: Используем req.file.path для URL из Cloudinary ---
             avatarUrl: req.file ? req.file.path : null,
             status: 'approved',
             createdBy: req.user._id,
@@ -145,40 +140,47 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Загрузка сингла ---
 // Загрузить трек напрямую
-router.post('/tracks', upload.single('trackFile'), async (req, res) => {
+router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name: 'coverArt', maxCount: 1 }]), async (req, res) => {
      try {
-        const { title, artistIds, albumId, durationMs, genres } = req.body;
+        const { title, artistIds, albumId, durationMs, genres, releaseYear } = req.body;
+        
         const parsedGenres = genres ? JSON.parse(genres) : [];
         const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
-        if (!req.file) {
+
+        if (!req.files || !req.files.trackFile) {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });
         }
         
         const newTrack = new Track({
             title,
-            artist: artistId,
             artist: parsedArtistIds,
             album: albumId || null,
             durationMs,
-            genres: parsedGenres, // Сохраняем массив
-            albumArtUrl: albumId ? null : (req.files?.coverArt?.[0]?.path || null),
-            storageKey: req.file.path,
+            genres: parsedGenres,
+            releaseYear: releaseYear || null,
+            albumArtUrl: albumId ? null : (req.files.coverArt?.[0]?.path || null),
+            storageKey: req.files.trackFile[0].path,
             status: 'approved',
             createdBy: req.user._id,
             reviewedBy: req.user._id,
+            type: 'library_track'
         });
         await newTrack.save();
 
         if (albumId) {
             await Album.updateOne({ _id: albumId }, { $addToSet: { tracks: newTrack._id } });
         }
+        
         res.status(201).json({ message: 'Трек успешно загружен и опубликован.' });
     } catch (error) {
         console.error("Ошибка загрузки трека:", error);
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
 // Создать альбом напрямую
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
@@ -188,7 +190,6 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
         const newAlbum = new Album({
             title,
             artist: artistId,
-            // --- ИЗМЕНЕНИЕ 4: Используем req.file.path ---
             coverArtUrl: req.file ? req.file.path : null,
             status: 'approved',
             createdBy: req.user._id,
@@ -266,7 +267,6 @@ router.get('/content/tracks', async (req, res) => {
     try {
         const { page = 1, limit = 15, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
         
-        // Ищем только треки, у которых нет альбома (album is null)
         const query = { status: 'approved', album: null };
         if (search) {
             query.title = { $regex: search, $options: 'i' };
@@ -300,7 +300,6 @@ router.put('/content/artists/:id', upload.single('avatar'), async (req, res) => 
 
         if (req.file) {
             updateData.avatarUrl = req.file.path;
-            // TODO: Удалить старый аватар из Cloudinary, если он был
         }
 
         const updatedArtist = await Artist.findByIdAndUpdate(req.params.id, updateData, { new: true });
@@ -314,8 +313,6 @@ router.put('/content/artists/:id', upload.single('avatar'), async (req, res) => 
 
 router.delete('/content/artists/:id', async (req, res) => {
     try {
-        // TODO: Перед удалением артиста нужно решить, что делать с его альбомами и треками
-        // Например, удалить их тоже или оставить "без автора". Пока просто удаляем.
         await Artist.findByIdAndDelete(req.params.id);
         res.json({ message: 'Артист удален' });
     } catch (error) {
@@ -345,7 +342,6 @@ router.put('/content/albums/:id', upload.single('coverArt'), async (req, res) =>
 
 router.delete('/content/albums/:id', async (req, res) => {
     try {
-        // TODO: Удалить треки из этого альбома
         await Album.findByIdAndDelete(req.params.id);
         res.json({ message: 'Альбом удален' });
     } catch (error) {
@@ -377,10 +373,34 @@ router.put('/content/tracks/:id', async (req, res) => {
 
 router.delete('/content/tracks/:id', async (req, res) => {
     try {
-        // TODO: Удалить файл трека из Cloudinary
+        const track = await Track.findById(req.params.id);
+        if (!track) {
+            return res.status(404).json({ message: 'Трек не найден' });
+        }
+
+        if (track.storageKey) {
+            const urlParts = track.storageKey.split('/');
+            const publicIdWithFormat = urlParts.slice(urlParts.indexOf('upload') + 2).join('/');
+            const publicId = publicIdWithFormat.substring(0, publicIdWithFormat.lastIndexOf('.'));
+            await cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
+        }
+
+        if (track.albumArtUrl && !track.album) {
+            const urlParts = track.albumArtUrl.split('/');
+            const publicIdWithFormat = urlParts.slice(urlParts.indexOf('upload') + 2).join('/');
+            const publicId = publicIdWithFormat.substring(0, publicIdWithFormat.lastIndexOf('.'));
+            await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
+        }
+
+        if (track.album) {
+            await Album.updateOne({ _id: track.album }, { $pull: { tracks: track._id } });
+        }
+        
         await Track.findByIdAndDelete(req.params.id);
+
         res.json({ message: 'Трек удален' });
     } catch (error) {
+        console.error("Ошибка при удалении трека:", error);
         res.status(500).json({ message: 'Ошибка при удалении трека' });
     }
 });
@@ -460,7 +480,6 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
                 status: 'approved',
                 createdBy: req.user._id,
                 reviewedBy: req.user._id,
-                // --- ДОБАВЛЕНО: Явно указываем тип трека ---
                 type: 'library_track'
             });
             return newTrack.save();

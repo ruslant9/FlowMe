@@ -1,12 +1,13 @@
 // frontend/components/admin/CreateAlbumForm.jsx
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, Music, Edit, ChevronDown } from 'lucide-react';
+import { Loader2, Music, Edit, ChevronDown, Trash2 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelectorSingle from './GenreSelectorSingle';
 import Avatar from '../Avatar';
+import { useModal } from '../../hooks/useModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -57,7 +58,6 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
                 required
             />
             {isFocused && (
-                // --- ИЗМЕНЕНИЕ: Добавляем классы для темной темы ---
                 <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-auto">
                     {filteredArtists.map(artist => (
                         <li
@@ -77,6 +77,7 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
 
 export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initialData = null, onEditTrack }) => {
     const { currentUser } = useUser();
+    const { showConfirmation } = useModal();
     const [title, setTitle] = useState('');
     const [artistId, setArtistId] = useState('');
     const [genre, setGenre] = useState('');
@@ -88,6 +89,15 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     
     const fileInputRef = useRef(null);
 
+    const fetchAlbumTracks = useCallback(async () => {
+        if (!isEditMode || !initialData?._id) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/api/admin/albums/${initialData._id}/tracks`, { headers: { Authorization: `Bearer ${token}` } });
+            setAlbumTracks(res.data);
+        } catch (error) { toast.error("Не удалось загрузить треки альбома."); }
+    }, [isEditMode, initialData]);
+
     useEffect(() => {
         if (isEditMode && initialData) {
             setTitle(initialData.title || '');
@@ -95,17 +105,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setGenre(initialData.genre || '');
             setReleaseYear(initialData.releaseYear || '');
             setCoverPreview(initialData.coverArtUrl ? getImageUrl(initialData.coverArtUrl) : '');
-
-            const fetchAlbumTracks = async () => {
-                try {
-                    const token = localStorage.getItem('token');
-                    const res = await axios.get(`${API_URL}/api/admin/albums/${initialData._id}/tracks`, { headers: { Authorization: `Bearer ${token}` } });
-                    setAlbumTracks(res.data);
-                } catch (error) { toast.error("Не удалось загрузить треки альбома."); }
-            };
             fetchAlbumTracks();
         }
-    }, [isEditMode, initialData]);
+    }, [isEditMode, initialData, fetchAlbumTracks]);
 
 
     const handleCoverChange = (e) => {
@@ -114,6 +116,26 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setCoverArt(file);
             setCoverPreview(URL.createObjectURL(file));
         }
+    };
+
+    const handleDeleteTrack = (trackToDelete) => {
+        showConfirmation({
+            title: `Удалить трек "${trackToDelete.title}"?`,
+            message: "Это действие необратимо. Файл трека будет удален навсегда.",
+            onConfirm: async () => {
+                const toastId = toast.loading('Удаление трека...');
+                try {
+                    const token = localStorage.getItem('token');
+                    await axios.delete(`${API_URL}/api/admin/content/tracks/${trackToDelete._id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success('Трек удален!', { id: toastId });
+                    fetchAlbumTracks(); // Обновляем список треков после удаления
+                } catch (error) {
+                    toast.error('Ошибка удаления трека.', { id: toastId });
+                }
+            }
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -192,13 +214,20 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                     <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                         {albumTracks.map(track => (
                             <div key={track._id} className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
-                                <div className="flex items-center space-x-2">
-                                    <Music size={16} className="text-slate-500" />
-                                    <span className="font-semibold text-sm">{track.title}</span>
+                                <div className="flex items-center space-x-2 min-w-0">
+                                    <Music size={16} className="text-slate-500 flex-shrink-0" />
+                                    <span className="font-semibold text-sm truncate">{track.title}</span>
                                 </div>
-                                <button type="button" onClick={() => onEditTrack(track)} className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600" title="Редактировать трек">
-                                    <Edit size={14} />
-                                </button>
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                                <div className="flex items-center space-x-1 flex-shrink-0">
+                                    <button type="button" onClick={() => onEditTrack(track)} className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600" title="Редактировать трек">
+                                        <Edit size={14} />
+                                    </button>
+                                    <button type="button" onClick={() => handleDeleteTrack(track)} className="p-1.5 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50" title="Удалить трек">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                             </div>
                         ))}
                     </div>
