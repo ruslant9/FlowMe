@@ -187,7 +187,7 @@ const BannedOverlay = ({ banInfo }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-red-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4 text-white">
+        <div className="fixed inset-0 bg-red-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4"> 
             <AnimatePresence>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
