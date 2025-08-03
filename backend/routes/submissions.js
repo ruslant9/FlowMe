@@ -111,7 +111,10 @@ router.post('/tracks', upload.single('trackFile'), async (req, res) => {
 router.post('/appeal', async (req, res) => {
     try {
         const { appealText } = req.body;
-        if (!appealText || appealText.trim().length < 10) {
+        // Sanitize appealText to prevent XSS or other injection issues
+        const sanitizedAppealText = sanitize(appealText); // Assuming sanitize function is available
+
+        if (!sanitizedAppealText || sanitizedAppealText.trim().length < 10) {
             return res.status(400).json({ message: 'Текст жалобы должен содержать не менее 10 символов.' });
         }
 
@@ -121,7 +124,7 @@ router.post('/appeal', async (req, res) => {
         const existingAppeal = await Submission.findOne({
             submittedBy: userId,
             entityType: 'BanAppeal',
-            status: 'pending'
+            status: 'pending' // Check only pending appeals
         });
 
         if (existingAppeal) {
@@ -133,7 +136,7 @@ router.post('/appeal', async (req, res) => {
             action: 'appeal',
             submittedBy: userId,
             data: {
-                appealText: appealText, // Сохраняем текст жалобы
+                appealText: sanitizedAppealText, // Use sanitized text
             }
         });
 
@@ -141,8 +144,8 @@ router.post('/appeal', async (req, res) => {
         res.status(201).json({ message: 'Ваша жалоба отправлена на рассмотрение.' });
 
     } catch (error) {
-        console.error("Ошибка при подаче жалобы:", error);
-        res.status(500).json({ message: 'Ошибка сервера при отправке жалобы.' });
+        console.error("Ошибка при подаче жалобы:", error.message, error.stack); // More detailed logging
+        res.status(500).json({ message: 'Ошибка сервера при отправке жалобы.' }); // Ensure message is always sent
     }
 });
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
