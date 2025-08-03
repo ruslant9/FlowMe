@@ -33,13 +33,15 @@ import MusicPage from './pages/MusicPage';
 import PlaylistPage from './pages/PlaylistPage';
 import axios from 'axios';
 import PremiumPage from './pages/PremiumPage';
-import AdminPage from './pages/AdminPage'; 
+import AdminPage from './pages/AdminPage';
 import toast from 'react-hot-toast';
 
 // Импорт MusicPlayerProvider и MusicPlayerBar
 import { MusicPlayerProvider, useMusicPlayer } from './context/MusicPlayerContext';
 import MusicPlayerBar from './components/music/MusicPlayerBar';
 import { useWebSocket } from './context/WebSocketContext';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Компонент переключения темы
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
@@ -118,7 +120,7 @@ const MainLayout = ({ children }) => {
       )}
 
       {currentTrack && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80"> 
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80">
           <MusicPlayerBar
             track={currentTrack}
             isPlaying={isPlaying}
@@ -163,7 +165,7 @@ const BannedOverlay = ({ banInfo }) => {
     const banExpiresDate = banInfo.banExpires ? new Date(banInfo.banExpires) : null;
     const isPermanent = !banExpiresDate;
     
-    const formattedDate = banExpiresDate 
+    const formattedDate = banExpiresDate
         ? new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(banExpiresDate)
         : 'навсегда';
 
@@ -172,7 +174,7 @@ const BannedOverlay = ({ banInfo }) => {
         setIsSubmitting(true);
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/api/submissions/appeal`, 
+            await axios.post(`${API_URL}/api/submissions/appeal`,
                 { appealText },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -197,10 +199,10 @@ const BannedOverlay = ({ banInfo }) => {
                 >
                     <ShieldAlert size={64} className="mx-auto text-red-400 mb-4" />
                     <h1 className="text-3xl font-bold mb-2 text-red-300">Доступ ограничен</h1>
-                    <p className="text-lg mb-4">
-                        Вы были заблокированы. Блокировка истекает: <strong className="font-bold">{formattedDate}</strong>.
+                    <p className="text-lg mb-4 text-white/80">
+                        Вы были заблокированы. Блокировка истекает: <strong className="font-bold text-white">{formattedDate}</strong>.
                     </p>
-                    <p className="text-md p-3 rounded-lg mb-8">
+                    <p className="text-md p-3 rounded-lg mb-8 text-white/80">
                         <strong>Причина:</strong> {banInfo.banReason || 'Не указана'}
                     </p>
 
@@ -223,7 +225,8 @@ const BannedOverlay = ({ banInfo }) => {
                                 <button type="button" onClick={() => setShowAppealForm(false)} className="w-full px-6 py-3 bg-slate-600/80 font-semibold rounded-lg hover:bg-slate-600 transition-colors">
                                     Отмена
                                 </button>
-                                <button type="submit" disabled={isSubmitting} className="w-full px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50">
+                                {/* --- ИЗМЕНЕНИЕ 1: Стили кнопки "Отправить" --- */}
+                                <button type="submit" disabled={isSubmitting} className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50">
                                     {isSubmitting ? <Loader2 className="animate-spin mx-auto"/> : 'Отправить'}
                                 </button>
                             </div>
@@ -287,7 +290,7 @@ const AdminProtectedLayout = () => {
   }, [currentUser, loadingUser, navigate]);
 
   if (!loadingUser && currentUser && currentUser.role !== 'admin') {
-    return null; 
+    return null;
   }
 
   return <Outlet />;

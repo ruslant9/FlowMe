@@ -268,6 +268,17 @@ const MusicPage = () => {
                             (searchResults.artists.length === 0 && searchResults.albums.length === 0 && searchResults.tracks.length === 0 && searchResults.playlists.length === 0) ? 
                             <p className="text-center py-10 text-slate-500">Ничего не найдено.</p> :
                             <div className="space-y-8">
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЙ: Меняем порядок рендеринга --- */}
+                                {searchResults.tracks.length > 0 && (
+                                    <div>
+                                        <h3 className="text-xl font-bold mb-3">Треки</h3>
+                                        <TrackList
+                                            tracks={searchResults.tracks}
+                                            onSelectTrack={handleSelectTrack}
+                                            {...{ currentTrack, isPlaying, onToggleLike, myMusicTrackIds }}
+                                        />
+                                    </div>
+                                )}
                                 {searchResults.artists.length > 0 && (
                                     <div>
                                         <h3 className="text-xl font-bold mb-3">Артисты</h3>
@@ -292,15 +303,8 @@ const MusicPage = () => {
                                         </div>
                                     </div>
                                 )}
-                                {searchResults.tracks.length > 0 && (
-                                    <div>
-                                        <h3 className="text-xl font-bold mb-3">Треки</h3>
-                                        <TrackList
-                                            tracks={searchResults.tracks} onSelectTrack={handleSelectTrack}
-                                            {...{ currentTrack, isPlaying, onToggleLike, myMusicTrackIds }}
-                                        />
-                                    </div>
-                                )}
+                                {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
+
                                 <div ref={lastTrackElementRef} className="h-10 flex justify-center items-center">
                                     {loadingMore && <Loader2 className="animate-spin text-slate-400" />}
                                 </div>
