@@ -235,7 +235,7 @@ html.dark .tippy-arrow {
   color: rgba(30, 41, 59, 0.9); /* Цвет стрелки для темной темы (slate-800 с прозрачностью) */
 }
 
-/* --- НАЧАЛО ИЗМЕНЕНИЯ: Кастомные стили для rc-slider --- */
+/* --- НАЧАЛО ИЗМЕНЕНИЙ: Кастомные стили для rc-slider --- */
 .rc-slider {
   position: relative;
   height: 14px;
@@ -250,17 +250,17 @@ html.dark .tippy-arrow {
   box-sizing: border-box;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
-/* ИЗМЕНЕНИЕ ЗДЕСЬ: делаем дорожку прозрачной, чтобы была видна полоса буферизации под ней */
+/* --- ИСПРАВЛЕНИЕ: Возвращаем видимый фон для подложки слайдера --- */
 .rc-slider-rail {
   position: absolute;
   width: 100%;
-  background-color: transparent !important;
+  background-color: #e2e8f0; /* slate-200 */
   height: 4px;
   border-radius: 6px;
 }
-/* Стили для темной темы также делаем прозрачными */
+/* --- ИСПРАВЛЕНИЕ: Видимый фон для темной темы --- */
 html.dark .rc-slider-rail {
-    background-color: transparent !important;
+    background-color: #475569; /* slate-600 */
 }
 .rc-slider-track {
   position: absolute;
