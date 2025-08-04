@@ -12,6 +12,7 @@ const Album = require('../models/Album');
 const Track = require('../models/Track');
 const Submission = require('../models/Submission');
 const User = require('../models/User');
+const Playlist = require('../models/Playlist');
 
 const multer = require('multer');
 const { createStorage, cloudinary } = require('../config/cloudinary');
@@ -432,6 +433,9 @@ router.delete('/content/tracks/:id', async (req, res) => {
             await Album.updateOne({ _id: track.album }, { $pull: { tracks: track._id } });
         }
         
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Удаляем трек из всех плейлистов ---
+        await Playlist.updateMany({}, { $pull: { tracks: track._id } });
+        
         await Track.findByIdAndDelete(req.params.id);
 
         res.json({ message: 'Трек удален' });
@@ -512,9 +516,7 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
                 album: albumId,
                 durationMs: meta.durationMs,
                 isExplicit: meta.isExplicit,
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Наследуем дату релиза от альбома ---
                 releaseDate: album.releaseDate || new Date(),
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 storageKey: file.path,
                 status: 'approved',
                 createdBy: req.user._id,

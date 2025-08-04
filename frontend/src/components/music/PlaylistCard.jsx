@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Music, Trash2, Play, Edit } from 'lucide-react';
 import { useModal } from '../../hooks/useModal';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 // Компонент для кешированного изображения
 const CachedImage = ({ src, alt, className }) => {
@@ -20,12 +20,8 @@ const PlaylistCard = ({ playlist, onClick, onDelete, onEdit }) => {
 
     const handleDeleteClick = (e) => {
         e.stopPropagation();
-        showConfirmation({
-            title: "Удалить плейлист?",
-            message: `Вы уверены, что хотите удалить плейлист "${playlist.name}"?`,
-            message: "Это действие нельзя отменить.",
-            onConfirm: () => onDelete(playlist._id)
-        });
+        // Просто вызываем функцию, переданную от родителя
+        onDelete(playlist._id);
     };
     
     const handleEditClick = (e) => {
@@ -91,7 +87,6 @@ const PlaylistCard = ({ playlist, onClick, onDelete, onEdit }) => {
                 {renderCover()}
             </div>
             
-            {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
             <div className="absolute top-2 right-2 z-20 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 {onEdit && (
                      <button 
@@ -112,7 +107,6 @@ const PlaylistCard = ({ playlist, onClick, onDelete, onEdit }) => {
                     </button>
                 )}
             </div>
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
             
             <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
                 <div className="flex justify-between items-end">

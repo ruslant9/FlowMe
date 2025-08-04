@@ -54,7 +54,6 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
         setIsFocused(false);
     };
 
-    // --- ИЗМЕНЕНИЕ 3: Логика для очистки поля, если артист не найден ---
     const handleBlur = () => {
         setTimeout(() => {
             const match = artists.some(artist => artist.name.toLowerCase() === query.toLowerCase());
@@ -64,7 +63,7 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
                 toast.error("Исполнитель не найден. Поле очищено.", { duration: 2000 });
             }
             setIsFocused(false);
-        }, 200); // Небольшая задержка, чтобы успел сработать клик по элементу списка
+        }, 200); 
     };
     
     return (
@@ -96,7 +95,6 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
-// --- ИЗМЕНЕНИЕ 1: Добавлен `index` для нумерации треков ---
 const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
     const {
         attributes,
@@ -136,7 +134,6 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
     );
 };
 
-// --- ИЗМЕНЕНИЕ 2: Компонент для кастомного выбора даты ---
 const MonthYearPicker = ({ value, onChange }) => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
@@ -163,16 +160,26 @@ const MonthYearPicker = ({ value, onChange }) => {
 
     return (
         <div className="grid grid-cols-2 gap-2">
-            <select value={selectedMonth} onChange={handleMonthChange} className="w-full p-2 rounded bg-white dark:bg-slate-700">
-                {months.map(month => (
-                    <option key={month.value} value={month.value}>{month.name}</option>
-                ))}
-            </select>
-            <select value={selectedYear} onChange={handleYearChange} className="w-full p-2 rounded bg-white dark:bg-slate-700">
-                {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                ))}
-            </select>
+            <div className="relative">
+                <select value={selectedMonth} onChange={handleMonthChange} className="w-full p-2 pr-8 rounded bg-white dark:bg-slate-700 appearance-none">
+                    {months.map(month => (
+                        <option key={month.value} value={month.value}>{month.name}</option>
+                    ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-700 dark:text-slate-300">
+                    <ChevronDown size={16} />
+                </div>
+            </div>
+            <div className="relative">
+                <select value={selectedYear} onChange={handleYearChange} className="w-full p-2 pr-8 rounded bg-white dark:bg-slate-700 appearance-none">
+                    {years.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                    ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-700 dark:text-slate-300">
+                    <ChevronDown size={16} />
+                </div>
+            </div>
         </div>
     );
 };
@@ -295,7 +302,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             });
             metadata.push({
                 title: file.name.replace(/\.[^/.]+$/, ""),
-                artistIds: [artistId], // Основной артист альбома
+                artistIds: [artistId],
                 isExplicit: false,
                 durationMs: duration
             });
@@ -363,7 +370,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             </div>
 
             <div className="flex flex-col md:flex-row md:space-x-6 mt-6">
-                {/* Левая колонка */}
                 <div className="space-y-4 md:w-1/2 flex-shrink-0">
                     <div>
                         <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
@@ -377,7 +383,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                         </div>
                         <div>
                             <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
-                            {/* --- ИЗМЕНЕНИЕ 2: Используем новый компонент --- */}
                             <MonthYearPicker value={releaseDate} onChange={setReleaseDate} />
                         </div>
                     </div>
@@ -422,7 +427,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                                 <SortableTrackItem 
                                                     key={track._id} 
                                                     track={track}
-                                                    // --- ИЗМЕНЕНИЕ 1: Передаем `index` ---
                                                     index={index + 1}
                                                     onEditTrack={onEditTrack} 
                                                     onDeleteTrack={handleDeleteTrack} 

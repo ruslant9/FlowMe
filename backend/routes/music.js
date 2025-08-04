@@ -91,7 +91,6 @@ const logMusicAction = async (req, track, action) => {
 
 // --- МАРШРУТЫ ДЛЯ "МОЕЙ МУЗЫКИ" И ИСТОРИИ ---
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.post('/toggle-save', authMiddleware, async (req, res) => {
     try {
         const trackDataFromClient = req.body;
@@ -99,20 +98,16 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
 
         let libraryTrack;
 
-        // Определяем оригинальный трек из библиотеки, вне зависимости от того,
-        // какая копия была передана (из истории, из другого плейлиста и т.д.)
         if (trackDataFromClient.type === 'library_track') {
             libraryTrack = await Track.findById(trackDataFromClient._id);
         } else if (trackDataFromClient.sourceId) {
             libraryTrack = await Track.findById(trackDataFromClient.sourceId);
         }
 
-        // Если трек все еще не найден, это ошибка
         if (!libraryTrack || libraryTrack.type !== 'library_track') {
             return res.status(404).json({ message: 'Трек не найден в библиотеке.' });
         }
 
-        // Ищем уже сохраненную копию, используя ID оригинального трека
         const existingSavedTrack = await Track.findOne({
             user: userId,
             sourceId: libraryTrack._id,
@@ -120,25 +115,28 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
         });
 
         if (existingSavedTrack) {
-            // Если трек уже был сохранен - удаляем его
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Удаляем ID этого трека из всех плейлистов пользователя ---
+            await Playlist.updateMany(
+                { user: userId },
+                { $pull: { tracks: existingSavedTrack._id } }
+            );
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             await Track.deleteOne({ _id: existingSavedTrack._id });
             res.status(200).json({ message: 'Трек удален из Моей музыки.', saved: false });
         } else {
-            // Если трека не было - создаем новую "сохраненную" копию на основе библиотечной
             const newSavedTrack = new Track({
                 ...libraryTrack.toObject(),
-                _id: new mongoose.Types.ObjectId(), // Генерируем новый ID для копии
+                _id: new mongoose.Types.ObjectId(),
                 user: userId,
                 type: 'saved',
-                sourceId: libraryTrack._id, // Ссылка на оригинал
+                sourceId: libraryTrack._id,
                 savedAt: new Date(),
             });
             await newSavedTrack.save();
-            logMusicAction(req, libraryTrack, 'like'); // Логируем действие "лайка"
+            logMusicAction(req, libraryTrack, 'like');
             res.status(201).json({ message: 'Трек добавлен в Мою музыку.', saved: true });
         }
         
-        // Уведомляем фронтенд об изменениях
         broadcastToUsers(req, [userId], { type: 'MUSIC_UPDATED' });
         
     } catch (error) {
@@ -146,7 +144,6 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера при обновлении трека.' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 router.get('/saved', authMiddleware, async (req, res) => {
@@ -250,7 +247,7 @@ router.get('/album/:albumId/recommendations', authMiddleware, async (req, res) =
             ]
         })
         .sort({ playCount: -1 })
-        .limit(11)
+        .limit(10)
         .populate('artist', 'name _id')
         .populate('album', 'title coverArtUrl')
         .lean();
@@ -339,8 +336,6 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
     }
 });
 
-// --- ПОЛНОСТЬЮ ПЕРЕРАБОТАННЫЙ МАРШРУТ ПОИСКА ---
-
 router.get('/search-all', authMiddleware, async (req, res) => {
     try {
         const { q, page = 1 } = req.query;
@@ -368,6 +363,7 @@ router.get('/search-all', authMiddleware, async (req, res) => {
 
         const trackQuery = {
             status: 'approved',
+            type: 'library_track',
             $or: [
                 searchOrCondition('title'),
                 { artist: { $in: artistIds } },
@@ -431,49 +427,16 @@ router.get('/albums/all', authMiddleware, async (req, res) => {
 
 router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
     try {
-        const trackId = req.params.id;
-        const userId = req.user.userId;
-
-        // Обновляем счетчик асинхронно, не дожидаясь завершения
-        Track.updateOne({ _id: trackId }, { $inc: { playCount: 1 } }).exec();
-
-        const libraryTrack = await Track.findById(trackId).populate('artist').lean();
-        if (libraryTrack) {
-            // Обновляем профиль рекомендаций
-            logMusicAction(req, libraryTrack, 'listen');
-
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-            // 1. Проверяем, не слушали ли вы этот же трек недавно, чтобы не спамить историю
-            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-            const recentPlay = await Track.findOne({
-                user: userId,
-                sourceId: libraryTrack._id,
-                type: 'recent',
-                playedAt: { $gte: thirtyMinutesAgo }
-            });
-
-            // 2. Если недавней записи нет, создаем новую
-            if (!recentPlay) {
-                const historyTrack = new Track({
-                    // Копируем ключевые данные из оригинального трека
-                    ...libraryTrack,
-                    _id: new mongoose.Types.ObjectId(), // Новый уникальный ID для записи в истории
-                    user: userId,                        // Привязываем к текущему пользователю
-                    type: 'recent',                      // Устанавливаем тип "прослушанный"
-                    sourceId: libraryTrack._id,          // Ссылка на оригинальный трек в библиотеке
-                    playedAt: new Date()                 // Фиксируем время прослушивания
-                });
-                await historyTrack.save();
-            }
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        Track.updateOne({ _id: req.params.id }, { $inc: { playCount: 1 } }).exec();
+        const track = await Track.findById(req.params.id).populate('artist').lean();
+        if (track) {
+            logMusicAction(req, track, 'listen');
         }
         res.sendStatus(202);
     } catch (error) {
-        console.error('Ошибка при логировании прослушивания:', error);
         res.sendStatus(500);
     }
 });
-
 router.get('/track/:trackId', authMiddleware, async (req, res) => {
     try {
         const track = await Track.findById(req.params.trackId)
@@ -511,7 +474,7 @@ router.get('/track/:trackId/recommendations', authMiddleware, async (req, res) =
             ]
         })
         .sort({ playCount: -1 })
-        .limit(11)
+        .limit(10)
         .populate('artist', 'name _id')
         .populate('album', 'title coverArtUrl')
         .lean();

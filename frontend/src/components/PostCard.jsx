@@ -15,12 +15,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PostViewModal from './modals/PostViewModal';
 import { Listbox, Transition } from '@headlessui/react';
 import EmojiPickerPopover from './EmojiPickerPopover';
-import AttachedTrack from './music/AttachedTrack'; // ИСПРАВЛЕННЫЙ ПУТЬ
+import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
 import AnimatedAccent from './AnimatedAccent';
-import { useCachedImage } from '../hooks/useCachedImage'; 
+import { useCachedImage } from '../../hooks/useCachedImage'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
@@ -94,9 +94,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
     const [showPostMenu, setShowPostMenu] = useState(false);
     const postMenuRef = useRef(null);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем новое состояние для подгрузки ---
     const [loadingMore, setLoadingMore] = useState(false);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
     const userAccent = currentPost.user?.premiumCustomization?.activeCardAccent;
 
@@ -159,13 +157,11 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
 
     const fetchComments = useCallback(async (page = 1, sortBy = 'newest') => {
         if (currentPost.commentsDisabled) return;
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Обновляем логику установки состояний загрузки ---
         if (page === 1) {
             setLoadingComments(true);
         } else {
             setLoadingMore(true);
         }
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
         try {
             const token = localStorage.getItem('token');
@@ -187,13 +183,11 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
             console.error("Failed to fetch comments", error);
             if (page === 1) toast.error("Не удалось загрузить комментарии");
         } finally {
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Обновляем логику сброса состояний загрузки ---
             if (page === 1) {
                 setLoadingComments(false);
             } else {
                 setLoadingMore(false);
             }
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
         }
     }, [currentPost._id, currentPost.commentsDisabled]);
 
@@ -865,12 +859,13 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                         <div className="flex justify-center py-4"><Loader2 className="animate-spin" /></div>
                                     )}
                                     
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Кнопка теперь показывает спиннер --- */}
                                     <div className="flex justify-center mt-4">
                                         {comments.length < totalRootComments && !loadingComments && (
                                             <button 
                                                 onClick={handleLoadMore} 
-                                                className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:underline px-3 py-1.5 rounded-lg flex items-center justify-center w-28"
+                                                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем `w-28` и добавляем `whitespace-nowrap` ---
+                                                className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:underline px-3 py-1.5 rounded-lg flex items-center justify-center whitespace-nowrap"
+                                                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                                 disabled={loadingMore}
                                             >
                                                 {loadingMore ? <Loader2 className="animate-spin" /> : "Показать еще"}
@@ -882,7 +877,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                             </button>
                                         )}
                                     </div>
-                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
 
                                     <div className="relative">
                                         {replyingTo && (
