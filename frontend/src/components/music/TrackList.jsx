@@ -12,20 +12,23 @@ const TrackList = ({
 }) => {
     return (
         <div className="space-y-1">
-            {tracks.map((track, index) => (
-                <React.Fragment key={track._id || track.youtubeId || index}>
-                    <PlaylistTrackItem
-                        track={track}
-                        index={index + 1}
-                        onPlay={() => onSelectTrack(track)}
-                        isCurrent={track._id === currentPlayingTrackId}
-                        isPlaying={isPlaying}
-                        onToggleSave={onToggleSave}
-                        isSaved={myMusicTrackIds.has(track._id)}
-                        onRemoveFromPlaylist={showRemoveButtons ? onRemoveFromPlaylist : null}
-                    />
-                </React.Fragment>
-            ))}
+            {tracks.map((track, index) => {
+                const isSaved = track.type === 'saved' || myMusicTrackIds.has(track.sourceId || track._id);
+                return (
+                    <React.Fragment key={track._id || track.youtubeId || index}>
+                        <PlaylistTrackItem
+                            track={track}
+                            index={index + 1}
+                            onPlay={() => onSelectTrack(track)}
+                            isCurrent={track._id === currentPlayingTrackId}
+                            isPlaying={isPlaying}
+                            onToggleSave={onToggleSave}
+                            isSaved={isSaved} 
+                            onRemoveFromPlaylist={showRemoveButtons ? onRemoveFromPlaylist : null}
+                        />
+                    </React.Fragment>
+                );
+            })}
         </div>
     );
 };

@@ -186,7 +186,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                     </button>
                                                 ))}
                                             </div>
-                                            <div className="grid grid-cols-6 gap-2 overflow-y-auto p-1 flex-1">
+                                            <div className="grid grid-cols-6 gap-2 overflow-y-auto p-1 flex-1 content-start">
                                                 {activeUserEmojis.map(emoji => (
                                                     <button
                                                         key={emoji._id}
@@ -220,7 +220,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                     </button>
                                                 ))}
                                             </div>
-                                            <div className="grid grid-cols-6 gap-2 overflow-y-auto p-1 flex-1">
+                                            <div className="grid grid-cols-6 gap-2 overflow-y-auto p-1 flex-1 content-start">
                                                 {activePremiumEmojis.map(emoji => (
                                                     <button
                                                         key={emoji.id || emoji._id}

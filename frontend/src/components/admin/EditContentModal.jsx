@@ -28,6 +28,13 @@ const EditContentModal = ({ isOpen, onClose, item, itemType, artists, albums, on
         }
     };
 
+    const getModalWidthClass = () => {
+        if (editingTrack || itemType === 'albums') {
+            return 'max-w-4xl';
+        }
+        return 'max-w-2xl';
+    };
+
     if (!isOpen) {
         return null;
     }
@@ -41,7 +48,7 @@ const EditContentModal = ({ isOpen, onClose, item, itemType, artists, albums, on
                     className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
                         onClick={(e) => e.stopPropagation()}
-                        className={`ios-glass-final w-full p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh] transition-all ${editingTrack ? 'max-w-4xl' : 'max-w-2xl'}`}>
+                        className={`ios-glass-final w-full p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh] transition-all ${getModalWidthClass()}`}>
                         
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">
