@@ -14,7 +14,7 @@ import ArtistInfoPanel from '../components/music/ArtistInfoPanel';
 import { AnimatePresence } from 'framer-motion';
 
 const API_URL = import.meta.env.VITE_API_URL;
-const INITIAL_DISPLAY_LIMIT = 6;
+const INITIAL_DISPLAY_LIMIT = 8; // --- ИСПРАВЛЕНИЕ: Увеличиваем лимит для соответствия новому гриду ---
 
 const ArtistPage = () => {
     const { artistId } = useParams();
@@ -92,20 +92,24 @@ const ArtistPage = () => {
                 onClose={() => setIsInfoPanelOpen(false)}
             />
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
-                <div className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300">
-                    <div 
-                        className="absolute inset-0 -z-20"
-                        style={{ backgroundImage: gradient }}
-                    />
-                    <div 
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем шапку --- */}
+                <div 
+                    className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300"
+                    style={{ backgroundImage: gradient }}
+                >
+                     <div 
                         className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
                     />
-
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
+                        style={{ color: dominantColor }}
+                    >
+                        <ArrowLeft size={16} strokeWidth={2.5} />
+                        <span>Назад</span>
+                    </button>
+                    
                     <div className="relative">
-                        <button onClick={() => navigate(-1)} className="absolute -top-14 left-0 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
-                            <ArrowLeft size={16}/>
-                            <span>Назад</span>
-                        </button>
                         <div className="flex items-center space-x-6">
                             <div className="flex-shrink-0">
                                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
@@ -116,6 +120,7 @@ const ArtistPage = () => {
                         </div>
                     </div>
                 </div>
+                 {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                 <div className="p-6 md:p-8 relative bg-slate-100 dark:bg-slate-900">
                     <div className="flex items-center space-x-4 mb-8">
@@ -160,7 +165,9 @@ const ArtistPage = () => {
                         <div>
                             <hr className="my-12 border-slate-200 dark:border-slate-700/50" />
                             <h2 className="text-2xl font-bold mb-4">Альбомы</h2>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем классы грида --- */}
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 {displayedAlbums.map(album => (
                                     <AlbumCard key={album._id} album={album} />
                                 ))}
@@ -179,7 +186,9 @@ const ArtistPage = () => {
                         <div>
                             <hr className="my-12 border-slate-200 dark:border-slate-700/50" />
                             <h2 className="text-2xl font-bold mb-4">Сольные треки (синглы)</h2>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем классы грида --- */}
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 {displayedSingles.map(single => {
                                     const singleAsAlbum = {
                                         _id: single._id,
@@ -206,7 +215,9 @@ const ArtistPage = () => {
                          <div>
                             <hr className="my-12 border-slate-200 dark:border-slate-700/50" />
                             <h2 className="text-2xl font-bold mb-4">Участие в других релизах</h2>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем классы грида --- */}
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 {featuredOn.map(album => (
                                     <AlbumCard key={album._id} album={album} />
                                 ))}
