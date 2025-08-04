@@ -20,7 +20,6 @@ import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
-import Tippy from '@tippyjs/react/headless'; // --- ИСПРАВЛЕНИЕ 1: Добавлен недостающий импорт ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
@@ -426,6 +425,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                     ${hasImages ? 'hidden md:flex md:w-2/5' : 'flex w-full'}
                                 `}>
                                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center space-x-3 flex-shrink-0">
+                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                         {(() => {
                                             const author = activePost.community || activePost.user;
                                             const linkTo = activePost.community ? `/communities/${author._id}` : `/profile/${author._id}`;
@@ -451,6 +451,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                 </Link>
                                             );
                                         })()}
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                         <div className="flex-grow"></div>
                                         {activePost.user._id === currentUserId && <div ref={postMenuRef} className="relative"><button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><MoreHorizontal size={20}/></button>
                                             {showPostMenu && (
@@ -482,16 +483,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             {(activePost.text || activePost.attachedTrack || activePost.poll) && (
                                                 <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-4 py-2 mb-4 space-y-3">
                                                     {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
-                                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2 --- */}
-                                                    {activePost.attachedTrack && 
-                                                        <AttachedTrack 
-                                                            track={{
-                                                                ...activePost.attachedTrack,
-                                                                albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl
-                                                            }} 
-                                                        />
-                                                    }
-                                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
+                                                    {activePost.attachedTrack && <AttachedTrack track={activePost.attachedTrack} />}
                                                     {activePost.poll && <PollDisplay poll={activePost.poll} onVote={handleVote} />}
                                                 </div>
                                             )}
@@ -574,36 +566,53 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
 
                                           <form onSubmit={handleCommentSubmit} className="flex items-center space-x-2">
                                               {commentAs && (
-                                                  <Listbox value={commentAs} onChange={setCommentAs}>
-                                                      <div className="relative">
-                                                          <Listbox.Button className="focus:outline-none">
-                                                              <Avatar 
-                                                                    username={commentAs.name || commentAs.username}
-                                                                    avatarUrl={getImageUrl(commentAs.avatar)}
-                                                                    size="sm"
-                                                                />
-                                                          </Listbox.Button>
-                                                          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                                                              <Listbox.Options className="absolute bottom-full mb-2 w-56 max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-20">
-                                                                  {commentingOptions.map((option) => (
-                                                                      <Listbox.Option key={option._id || 'personal'} className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`} value={option}>
-                                                                          {({ selected }) => (
-                                                                              <>
-                                                                                  <div className="flex items-center space-x-2">
-                                                                                      <Avatar username={option.username || option.name} avatarUrl={getImageUrl(option.avatar)} size="sm" />
-                                                                                      <div className="flex flex-col items-start">
-                                                                                          <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{option.name}</span>
-                                                                                      </div>
-                                                                                  </div>
-                                                                                  {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-white"><Check className="h-5 w-5" aria-hidden="true" /></span> : null}
-                                                                              </>
-                                                                          )}
-                                                                      </Listbox.Option>
-                                                                  ))}
-                                                              </Listbox.Options>
-                                                          </Transition>
-                                                      </div>
-                                                  </Listbox>
+                                                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                                                  <Tippy
+                                                      interactive
+                                                      placement="top-start"
+                                                      disabled={commentingOptions.length <= 1}
+                                                      render={attrs => (
+                                                          <AnimatePresence>
+                                                              <motion.div
+                                                                  initial={{ opacity: 0, y: 10 }}
+                                                                  animate={{ opacity: 1, y: 0 }}
+                                                                  exit={{ opacity: 0, y: 10 }}
+                                                                  className="ios-glass-popover p-2 rounded-xl shadow-lg w-72" {...attrs}
+                                                              >
+                                                                  <div className="grid grid-cols-2 gap-2">
+                                                                      {commentingOptions.map(option => {
+                                                                          const isSelected = commentAs?._id === option._id;
+                                                                          return (
+                                                                              <button
+                                                                                  type="button"
+                                                                                  key={option._id || 'personal'}    
+                                                                                  onClick={() => setCommentAs(option)}
+                                                                                  className={`p-2 rounded-lg flex flex-col items-center justify-center text-center transition-colors ${isSelected ? 'bg-blue-600/20 ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                                                                              >
+                                                                                  <Avatar
+                                                                                      username={option.type === 'user' ? option.username : option.name}
+                                                                                      avatarUrl={getImageUrl(option.avatar)}
+                                                                                      size="md"
+                                                                                  />
+                                                                                  <span className="text-xs font-semibold mt-2 truncate">{option.name}</span>
+                                                                                  <span className="text-xs text-slate-500 dark:text-slate-400">{option.type === 'user' ? 'Личный профиль' : 'Сообщество'}</span>
+                                                                              </button>
+                                                                          )
+                                                                      })}
+                                                                  </div>
+                                                              </motion.div>
+                                                          </AnimatePresence>
+                                                      )}
+                                                  >
+                                                      <button type="button" className="focus:outline-none">
+                                                          <Avatar
+                                                              username={commentAs.name || commentAs.username}
+                                                              avatarUrl={getImageUrl(commentAs.avatar)}
+                                                              size="sm"
+                                                          />
+                                                      </button>
+                                                  </Tippy>
+                                                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                               )}
                                               <div className="relative flex-1">
                                                   <input 

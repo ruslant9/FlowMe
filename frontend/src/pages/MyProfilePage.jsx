@@ -49,19 +49,12 @@ const ProfileFieldDisplay = ({ label, value, accentTextColor }) => {
 };
 
 const avatarBordersMap = {
-    'animated-hearts': 'Сердца',
-    'animated-neon': 'Неон',
-    'animated-orbit': 'Орбита',
-    'animated-fire': 'Огонь',
-    'animated-glitch': 'Глитч',
-    'animated-tech': 'Техно',
-    'animated-pulse': 'Пульс',
-    'animated-runes': 'Руны',
-    'animated-sparkle': 'Искры',
+    'static-blue': 'Синяя рамка',
+    'static-purple': 'Фиолетовая рамка',
+    'static-green': 'Зеленая рамка',
     'animated-1': 'Рамка "Аврора"',
     'animated-2': 'Рамка "Инста"',
 };
-
 
 const usernameEmojisMap = {
     'fire': 'Эмодзи "Огонь"',
@@ -119,7 +112,7 @@ const MyProfilePage = () => {
             setPosts(postsRes.data);
             setStats(statsRes.data);
             setMusicTracks(musicRes.data);
-            setMyMusicTrackIds(new Set(musicRes.data.map(track => track._id)));
+            setMyMusicTrackIds(new Set(musicRes.data.map(track => track.youtubeId)));
             setScheduledPosts(scheduledRes.data);
         } catch (error) {
             toast.error('Не удалось загрузить посты и статистику.');
@@ -347,40 +340,37 @@ const MyProfilePage = () => {
                             }
                             renderContent={(accentTextColor) => (
                                 <div className="text-center pt-4 pb-6">
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-                                    <div className="relative group flex-shrink-0 mx-auto mb-4">
-                                        <Avatar
-                                            username={user.username}
-                                            fullName={user.fullName}
-                                            avatarUrl={user.avatar}
-                                            size="xl"
-                                            isPremium={user.premium?.isActive}
-                                            customBorder={user.premiumCustomization?.avatarBorder}
-                                        />
-                                        <div 
-                                            className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2 cursor-pointer"
-                                            onClick={() => avatarInputRef.current.click()}
-                                        >
-                                            {user.avatar && (
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); handleAvatarDelete(); }} 
-                                                    title="Удалить аватар" 
-                                                    className="p-2 bg-red-500/50 rounded-full hover:bg-red-500/70"
-                                                >
-                                                    <Trash2 size={20} className="text-white" />
-                                                </button>
-                                            )}
-                                            <button 
-                                                onClick={(e) => e.stopPropagation()} // Предотвращаем двойной клик по input
-                                                title="Изменить аватар" 
-                                                className="p-2 bg-white/20 rounded-full hover:bg-white/40"
-                                            >
-                                                <Upload size={20} className="text-white" />
-                                            </button>
-                                        </div>
-                                        <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={handleAvatarUpload} />
-                                    </div>
-                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                                    <div className="relative group flex-shrink-0 mx-auto mb-4 w-24 h-24">
+    <Avatar
+        username={user.username}
+        fullName={user.fullName}
+        avatarUrl={user.avatar}
+        size="xl"
+        isPremium={user.premium?.isActive}
+        customBorder={user.premiumCustomization?.avatarBorder}
+    />
+    
+    {/* Оверлей и кнопки теперь находятся снаружи компонента Avatar */}
+    <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2 cursor-pointer">
+        {user.avatar && (
+            <button 
+                onClick={handleAvatarDelete} 
+                title="Удалить аватар" 
+                className="p-2 bg-red-500/50 rounded-full hover:bg-red-500/70"
+            >
+                <Trash2 size={20} className="text-white" />
+            </button>
+        )}
+        <button 
+            onClick={() => avatarInputRef.current.click()} 
+            title="Изменить аватар" 
+            className="p-2 bg-white/20 rounded-full hover:bg-white/40"
+        >
+            <Upload size={20} className="text-white" />
+        </button>
+    </div>
+    <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={handleAvatarUpload} />
+</div>
                                     <div className="flex items-center justify-center">
                                         <h1 className="text-2xl font-bold">{user.fullName || user.username}</h1>
                                         {user.premiumCustomization?.usernameEmoji?.url && (
@@ -487,8 +477,8 @@ const MyProfilePage = () => {
                                 ) : musicTracks.length > 0 ? (
                                     <TrackList
                                         tracks={musicTracks.slice(0, 3)} 
-                                        onSelectTrack={(track) => playTrack(track, musicTracks)}
-                                        currentPlayingTrackId={currentTrack?._id}
+                                        onSelectTrack={(youtubeId) => playTrack(musicTracks.find(t => t.youtubeId === youtubeId), musicTracks)}
+                                        currentPlayingTrackId={currentTrack?.youtubeId}
                                         isPlaying={isPlaying}
                                         onToggleSave={onToggleLike}
                                         myMusicTrackIds={myMusicTrackIds}
