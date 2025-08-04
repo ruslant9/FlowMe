@@ -4,7 +4,7 @@ import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X } from 'lucide-react';
 import Slider from 'rc-slider';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 // Компонент для кешированного изображения
 const CachedImage = ({ src, alt, className, onClick }) => {
