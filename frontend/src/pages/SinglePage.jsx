@@ -16,7 +16,6 @@ import RecommendationCard from '../components/music/RecommendationCard';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src, alt }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -46,10 +45,10 @@ const SinglePage = () => {
     const [loadingRecs, setLoadingRecs] = useState(false);
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds, loadingTrackId, togglePlayPause } = useMusicPlayer();
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    // --- НАЧАЛО ИЗМЕНЕНИЙ ---
     const [isScrolled, setIsScrolled] = useState(false);
     const mainRef = useRef(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const fetchTrack = useCallback(async () => {
         setLoading(true);
@@ -80,30 +79,26 @@ const SinglePage = () => {
     useEffect(() => {
         fetchTrack();
     }, [fetchTrack]);
-    
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+
+    // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем отслеживание скролла ---
     useEffect(() => {
         const mainEl = mainRef.current;
         if (!mainEl) return;
-
         const handleScroll = () => {
             setIsScrolled(mainEl.scrollTop > 10);
         };
-
         mainEl.addEventListener('scroll', handleScroll);
         return () => {
             mainEl.removeEventListener('scroll', handleScroll);
         };
     }, []);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const primaryArtist = track?.artist?.[0];
 
     useTitle(track ? `${track.title} - ${primaryArtist?.name}` : 'Сингл');
-    
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+
     const { gradient, dominantColor, textColor } = useDynamicAccent(track?.albumArtUrl);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const handlePlaySingle = () => {
         if (track) {
@@ -118,13 +113,13 @@ const SinglePage = () => {
     const totalMinutes = Math.floor((track.durationMs || 0) / 60000);
 
     return (
-        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Полностью переработанная структура, аналогичная AlbumPage ---
         <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
             <div 
                 className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300"
                 style={{ backgroundImage: gradient }}
             >
-                 <div 
+                <div 
                     className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
                 />
                 <button 
@@ -135,19 +130,22 @@ const SinglePage = () => {
                     <ArrowLeft size={16} strokeWidth={2.5} />
                     <span>Назад</span>
                 </button>
-                <div className="relative z-10 flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6 text-white" style={{ color: textColor }}>
+                
+                <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
                     <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">
                         <CachedImage src={track.albumArtUrl} alt={track.title} />
                     </div>
                     <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                        <span className="text-sm font-bold" style={{ opacity: 0.8 }}>Сольный трек (сингл)</span>
-                        <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{textShadow: '0 2px 10px rgba(0,0,0,0.5)'}}>{track.title}</h1>
-                        <div className="flex items-center space-x-2 mt-4 text-sm">
-                            <Link to={`/artist/${primaryArtist._id}`}>
-                                <Avatar size="sm" username={primaryArtist.name} avatarUrl={primaryArtist.avatarUrl} />
+                        <span className="text-sm font-bold opacity-80" style={{ color: textColor }}>Сольный трек (сингл)</span>
+                        <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{track.title}</h1>
+                        <div className="flex items-center space-x-2 mt-4 text-sm" style={{ color: textColor, opacity: 0.9 }}>
+                            <Link to={`/artist/${primaryArtist._id}`} className="hover:underline">
+                                <div className="flex items-center space-x-2">
+                                    <Avatar size="sm" username={primaryArtist.name} avatarUrl={primaryArtist.avatarUrl} />
+                                    <div className="font-bold">{renderArtistLinks(track.artist)}</div>
+                                </div>
                             </Link>
-                            <div className="font-bold">{renderArtistLinks(track.artist)}</div>
-                            <span style={{ opacity: 0.7 }}>• {track.releaseDate ? format(new Date(track.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • 1 трек, {totalMinutes} мин.</span>
+                            <span className="opacity-80">• {track.releaseDate ? format(new Date(track.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • 1 трек, {totalMinutes} мин.</span>
                         </div>
                     </div>
                 </div>
@@ -167,7 +165,7 @@ const SinglePage = () => {
                         <Shuffle />
                     </button>
                 </div>
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+        // --- КОНЕЦ ИЗМЕНЕНИЙ В СТРУКТУРЕ ---
 
                 <div className="space-y-1">
                     <div className="grid grid-cols-[auto_1fr_auto] gap-x-4 px-4 text-sm text-slate-500 dark:text-slate-400 border-b border-slate-300 dark:border-white/10 pb-2">

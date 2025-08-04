@@ -32,11 +32,11 @@ const AlbumPage = () => {
     const [recommendations, setRecommendations] = useState([]);
     const [loadingRecs, setLoadingRecs] = useState(false);
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds, loadingTrackId, togglePlayPause } = useMusicPlayer();
-
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    
+    // --- НАЧАЛО ИЗМЕНЕНИЙ ---
     const [isScrolled, setIsScrolled] = useState(false);
     const mainRef = useRef(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const fetchAlbum = useCallback(async () => {
         setLoading(true);
@@ -68,27 +68,23 @@ const AlbumPage = () => {
         fetchAlbum();
     }, [fetchAlbum]);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем отслеживание скролла для эффекта "залипания" шапки ---
     useEffect(() => {
         const mainEl = mainRef.current;
         if (!mainEl) return;
-
         const handleScroll = () => {
             setIsScrolled(mainEl.scrollTop > 10);
         };
-
         mainEl.addEventListener('scroll', handleScroll);
         return () => {
             mainEl.removeEventListener('scroll', handleScroll);
         };
     }, []);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     useTitle(album ? `${album.title} - ${album.artist.name}` : 'Альбом');
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const { gradient, dominantColor, textColor } = useDynamicAccent(album?.coverArtUrl);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const handlePlayAlbum = (startShuffled = false) => {
         if (album && album.tracks.length > 0) {
@@ -108,12 +104,14 @@ const AlbumPage = () => {
     const totalMinutes = Math.floor(totalDurationMs / 60000);
 
     return (
-        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Полностью переработанная структура для лучшего вида ---
         <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
-             <div 
+            {/* Новая "липкая" шапка */}
+            <div 
                 className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300"
                 style={{ backgroundImage: gradient }}
             >
+                {/* Эффект размытия при скролле */}
                 <div 
                     className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
                 />
@@ -125,23 +123,27 @@ const AlbumPage = () => {
                     <ArrowLeft size={16} strokeWidth={2.5} />
                     <span>Назад</span>
                 </button>
-                <div className="relative z-10 flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6 text-white" style={{ color: textColor }}>
+                
+                {/* Основная информация в шапке */}
+                <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
                     <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">
                         <CachedImage src={album.coverArtUrl} alt={album.title} />
                     </div>
                     <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                        <span className="text-sm font-bold" style={{ opacity: 0.8 }}>
+                        <span className="text-sm font-bold opacity-80" style={{ color: textColor }}>
                             {isSingle ? 'Сингл' : 'Альбом'}
                         </span>
-                        <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{textShadow: '0 2px 10px rgba(0,0,0,0.5)'}}>{album.title}</h1>
-                        <div className="flex items-center space-x-2 mt-4 text-sm flex-wrap justify-center md:justify-start">
-                            <Link to={`/artist/${album.artist._id}`}>
-                                <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
+                        <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{album.title}</h1>
+                        <div className="flex items-center space-x-2 mt-4 text-sm flex-wrap justify-center md:justify-start" style={{ color: textColor, opacity: 0.9 }}>
+                            <Link to={`/artist/${album.artist._id}`} className="hover:underline">
+                                <div className="flex items-center space-x-2">
+                                    <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
+                                    <span className="font-bold">{album.artist.name}</span>
+                                </div>
                             </Link>
-                            <Link to={`/artist/${album.artist._id}`} className="font-bold hover:underline">{album.artist.name}</Link>
-                            <span style={{ opacity: 0.7 }}>• {album.releaseDate ? format(new Date(album.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • {album.tracks.length} треков, {totalMinutes} мин.</span>
+                            <span className="opacity-80">• {album.releaseDate ? format(new Date(album.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • {album.tracks.length} треков, {totalMinutes} мин.</span>
                             {album.totalPlayCount > 0 && (
-                                <span style={{ opacity: 0.7 }} className="flex items-center space-x-1">
+                                <span className="opacity-80 flex items-center space-x-1">
                                     <span>•</span>
                                     <Play size={14} fill="currentColor" />
                                     <span>{album.totalPlayCount.toLocaleString('ru-RU')}</span>
@@ -152,6 +154,7 @@ const AlbumPage = () => {
                 </div>
             </div>
 
+            {/* Контент страницы */}
             <div className="p-6 md:p-8 relative bg-slate-100 dark:bg-slate-900">
                 <div className="flex items-center space-x-4 mb-8">
                     <button 
@@ -166,7 +169,7 @@ const AlbumPage = () => {
                         <Shuffle />
                     </button>
                 </div>
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+        // --- КОНЕЦ ИЗМЕНЕНИЙ В СТРУКТУРЕ ---
 
                 <div className="space-y-1">
                     <div className="grid grid-cols-[auto_1fr_auto] gap-x-4 px-4 text-sm text-slate-500 dark:text-slate-400 border-b border-slate-300 dark:border-white/10 pb-2">

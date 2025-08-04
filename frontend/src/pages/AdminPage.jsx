@@ -3,32 +3,23 @@
 import React, { useState } from 'react';
 import useTitle from '../hooks/useTitle';
 import AdminSubmissionsList from '../components/admin/AdminSubmissionsList';
+import AdminUploadPanel from '../components/admin/AdminUploadPanel';
 import AdminContentManager from '../components/admin/AdminContentManager';
 import AdminUserManager from '../components/admin/AdminUserManager';
-import AdminUploadPanel from '../components/admin/AdminUploadPanel';
-import { CheckCircle, UploadCloud, Database, Users, Shield } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { CheckCircle, UploadCloud, Database, Users } from 'lucide-react';
 
-// Новый, более стильный компонент навигационной кнопки для боковой панели
-const NavButton = ({ active, onClick, children, icon: Icon }) => (
+// Возвращаем стильный компонент для горизонтальных вкладок
+const TabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
         onClick={onClick}
-        className={`flex items-center w-full space-x-3 px-4 py-3 text-sm font-semibold rounded-lg transition-colors relative ${
+        className={`flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${
             active 
-            ? 'text-white' 
-            : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'
+            ? 'border-blue-500 text-blue-500' 
+            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
         }`}
     >
-        {/* Анимированный индикатор активной вкладки */}
-        {active && (
-            <motion.div
-                layoutId="admin-active-pill"
-                className="absolute inset-0 bg-blue-600 rounded-lg"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            />
-        )}
-        <Icon size={20} className="relative z-10" />
-        <span className="relative z-10">{children}</span>
+        <Icon size={18} />
+        <span>{children}</span>
     </button>
 );
 
@@ -36,49 +27,61 @@ const AdminPage = () => {
     useTitle('Панель администратора');
     const [activeTab, setActiveTab] = useState('submissions');
 
-    // Структура для удобного управления вкладками и их содержимым
-    const TABS = {
-        submissions: { title: 'Заявки на модерацию', component: <AdminSubmissionsList />, icon: CheckCircle },
-        content: { title: 'Управление контентом', component: <AdminContentManager />, icon: Database },
-        users: { title: 'Управление пользователями', component: <AdminUserManager />, icon: Users },
-        create: { title: 'Создать контент', component: <AdminUploadPanel />, icon: UploadCloud },
+    // Компоненты для каждой вкладки
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'submissions': return <AdminSubmissionsList />;
+            case 'content': return <AdminContentManager />;
+            case 'users': return <AdminUserManager />;
+            case 'create': return <AdminUploadPanel />;
+            default: return null;
+        }
     };
 
     return (
-        // Полноэкранный контейнер
-        <div className="flex h-full w-full bg-slate-100 dark:bg-slate-900">
-            {/* Боковая панель, специфичная для админки */}
-            <aside className="w-64 flex-shrink-0 bg-slate-50 dark:bg-slate-800/50 p-4 flex flex-col">
-                <div className="flex items-center space-x-2 p-2 mb-6">
-                     <div className="p-2 bg-gradient-to-br from-blue-500 to-violet-500 rounded-lg">
-                        <Shield className="text-white" />
-                    </div>
-                    <h1 className="text-xl font-bold">Админ-панель</h1>
+        // Основной контейнер, который центрирует контент на странице
+        <main className="flex-1 p-4 md:p-8">
+            <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
+                <h1 className="text-3xl font-bold mb-6">Панель администратора</h1>
+                
+                {/* Горизонтальная панель навигации */}
+                <div className="flex flex-wrap border-b border-slate-300 dark:border-slate-700 mb-6">
+                    <TabButton 
+                        active={activeTab === 'submissions'} 
+                        onClick={() => setActiveTab('submissions')}
+                        icon={CheckCircle}
+                    >
+                        Заявки на модерацию
+                    </TabButton>
+                    <TabButton 
+                        active={activeTab === 'content'} 
+                        onClick={() => setActiveTab('content')}
+                        icon={Database}
+                    >
+                        Управление контентом
+                    </TabButton>
+                    <TabButton 
+                        active={activeTab === 'users'} 
+                        onClick={() => setActiveTab('users')}
+                        icon={Users}
+                    >
+                        Управление пользователями
+                    </TabButton>
+                    <TabButton 
+                        active={activeTab === 'create'} 
+                        onClick={() => setActiveTab('create')}
+                        icon={UploadCloud}
+                    >
+                        Создать контент
+                    </TabButton>
                 </div>
-                <nav className="space-y-2">
-                    {Object.keys(TABS).map(key => (
-                        <NavButton
-                            key={key}
-                            active={activeTab === key}
-                            onClick={() => setActiveTab(key)}
-                            icon={TABS[key].icon}
-                        >
-                            {TABS[key].title}
-                        </NavButton>
-                    ))}
-                </nav>
-            </aside>
 
-            {/* Основная область контента */}
-            <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-                <div className="max-w-7xl mx-auto">
-                    <h1 className="text-3xl font-bold mb-8">{TABS[activeTab].title}</h1>
-                    <div>
-                        {TABS[activeTab].component}
-                    </div>
+                {/* Область для отображения контента активной вкладки */}
+                <div>
+                    {renderContent()}
                 </div>
-            </main>
-        </div>
+            </div>
+        </main>
     );
 };
 

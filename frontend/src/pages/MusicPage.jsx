@@ -247,25 +247,6 @@ const MusicPage = () => {
             <CreatePlaylistModal isOpen={isCreatePlaylistModalOpen} onClose={() => setCreatePlaylistModalOpen(false)} onPlaylistCreated={() => fetchDataForTab('playlists')} />
             <EditPlaylistModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} playlist={playlistToEdit} onPlaylistUpdated={() => fetchDataForTab('playlists')} />
             <UploadContentModal isOpen={isUploadModalOpen} onClose={() => setUploadModalOpen(false)} />
-            <div 
-                className="sticky top-0 z-10 p-6 md:p-8 pt-20 text-white min-h-[350px] flex flex-col justify-end transition-all duration-300"
-                style={{ backgroundImage: gradient }}
-            >
-                 <div className="absolute inset-0 bg-black/30 backdrop-blur-lg"></div>
-                <div className="relative z-20 flex items-center justify-between mb-6">
-                    <div className="flex-col">
-                        <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>
-                            Музыка
-                        </h1>
-                        <p className="font-semibold mt-2" style={{ color: textColor, opacity: 0.8 }}>
-                            Привет, {user?.fullName || user?.username}! Вот что нового для тебя.
-                        </p>
-                    </div>
-                    <button onClick={() => setUploadModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-                        <UploadCloud size={18} /> <span>Загрузить аудио</span>
-                    </button>
-                </div>
-            </div>
             <div className="p-6 md:p-8 bg-slate-100 dark:bg-slate-900 relative z-20">
                  <div className="flex items-center space-x-2 border-b border-slate-300 dark:border-slate-700 mb-6">
                     <TabButton active={activeTab === 'recommendations'} onClick={() => setActiveTab('recommendations')}><Star size={16}/><span>Главная</span></TabButton>
@@ -278,13 +259,13 @@ const MusicPage = () => {
                 {activeTab === 'recommendations' && (
                     loadingRecommendations ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                         <div className="space-y-10">
-                            <div className="max-w-4xl mx-auto"><MusicWave onPlay={handlePlayWave} /></div>
+                            <div><MusicWave onPlay={handlePlayWave} /></div>
                             {mainPageData.popularHits.length > 0 && (
                                 <div>
                                     <h2 className="text-2xl font-bold mb-4">Хиты платформы</h2>
                                      <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
                                         {mainPageData.popularHits.map(track => (
-                                            <div key={track._id} className="w-1/4 sm:w-1/5 md:w-1/6 lg:w-1/8 flex-shrink-0">
+                                            <div key={track._id} className="w-1/6 sm:w-1/8 md:w-1/10 lg:w-1/12 flex-shrink-0">
                                                 <RecommendationCard track={track} onSelectTrack={() => playTrack(track, mainPageData.popularHits)} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying && track._id === currentTrack?._id} isLoading={loadingTrackId === track._id} onPlayPause={togglePlayPause} />
                                             </div>
                                         ))}
@@ -296,7 +277,7 @@ const MusicPage = () => {
                                     <h2 className="text-2xl font-bold mb-4">Новинки для вас</h2>
                                      <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
                                         {mainPageData.newReleases.map(track => (
-                                             <div key={track._id} className="w-1/4 sm:w-1/5 md:w-1/6 lg:w-1/8 flex-shrink-0">
+                                             <div key={track._id} className="w-1/6 sm:w-1/8 md:w-1/10 lg:w-1/12 flex-shrink-0">
                                                 <RecommendationCard track={track} onSelectTrack={() => playTrack(track, mainPageData.newReleases)} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying && track._id === currentTrack?._id} isLoading={loadingTrackId === track._id} onPlayPause={togglePlayPause} />
                                             </div>
                                         ))}

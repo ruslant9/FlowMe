@@ -239,6 +239,9 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                                                 Premium
                                                             </span>
                                                         )}
+                                                        
+                                                        <hr className="border-slate-200 dark:border-slate-700/50 my-2" />
+                                                        
                                                         <span className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
                                                             {user?.fullName || user?.username || 'Профиль'}
                                                         </span>
@@ -252,6 +255,8 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     </TippyWrapper>
                                 </Tippy>
                                 
+                                <hr className="border-slate-200 dark:border-slate-700/50 my-2" />
+
                                 {user?.role === 'admin' && (
                                     <NavItem
                                         to="/admin"
@@ -262,7 +267,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     />
                                 )}
 
-                                <hr className="border-slate-200 dark:border-slate-700/50 my-2" />
+                                
 
                                 {menuItems.map(item => (
                                     <NavItem

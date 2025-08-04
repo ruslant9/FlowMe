@@ -450,18 +450,47 @@ router.get('/albums/all', authMiddleware, async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
     try {
-        Track.updateOne({ _id: req.params.id }, { $inc: { playCount: 1 } }).exec();
-        const track = await Track.findById(req.params.id).populate('artist').lean();
-        if (track) {
-            logMusicAction(req, track, 'listen');
+        const trackId = req.params.id;
+        const userId = req.user.userId;
+
+        // 1. Асинхронно увеличиваем счетчик прослушиваний, не ждем завершения
+        Track.updateOne({ _id: trackId }, { $inc: { playCount: 1 } }).exec();
+
+        // 2. Получаем данные библиотечного трека для создания/обновления истории
+        const libraryTrack = await Track.findById(trackId).lean();
+        if (libraryTrack) {
+            // 3. Записываем действие для системы рекомендаций
+            logMusicAction(req, libraryTrack, 'listen');
+
+            // 4. Создаем или обновляем запись в истории прослушиваний (upsert)
+            const historyEntry = {
+                ...libraryTrack,
+                _id: undefined, // Удаляем старый _id, чтобы MongoDB сгенерировал новый при создании
+                user: userId,
+                type: 'recent',
+                sourceId: libraryTrack._id, // Ссылка на оригинальный трек
+                playedAt: new Date(),
+            };
+            
+            await Track.findOneAndUpdate(
+                { user: userId, sourceId: libraryTrack._id, type: 'recent' },
+                { $set: historyEntry },
+                { upsert: true }
+            );
         }
-        res.sendStatus(202);
+        
+        // Отвечаем немедленно, не дожидаясь всех операций с БД
+        res.sendStatus(202); 
     } catch (error) {
-        res.sendStatus(500);
+        // Логируем ошибку, но не отправляем клиенту, чтобы не прерывать воспроизведение
+        console.error("Ошибка при логировании прослушивания:", error);
+        res.sendStatus(202); // Все равно отправляем успешный статус
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 router.get('/track/:trackId', authMiddleware, async (req, res) => {
     try {
         const track = await Track.findById(req.params.trackId)
@@ -685,9 +714,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
             }
         ]);
 
-        res.json({ newReleases, popularHits, popularArtists });
-
-         const uniqueNewReleasesMap = new Map();
+        const uniqueNewReleasesMap = new Map();
         newReleases.forEach(track => uniqueNewReleasesMap.set(track._id.toString(), track));
         const uniqueNewReleases = Array.from(uniqueNewReleasesMap.values());
 
