@@ -11,16 +11,20 @@ import { useModal } from '../../hooks/useModal';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const getImageUrl = (url) => {
-    if (!url || url.startsWith('http') || url.startsWith('blob:')) {
-        return url;
+// Компонент для кешированного изображения
+const CachedImage = ({ src }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-24 h-24 rounded object-cover flex-shrink-0 bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
     }
-    return `${API_URL}/${url}`;
+    return <img src={finalSrc} alt="Предпросмотр" className="w-24 h-24 rounded object-cover flex-shrink-0"/>;
 };
+
 
 const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     const [query, setQuery] = useState('');
@@ -158,7 +162,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setArtistId(initialData.artist?._id || initialData.artist || '');
             setGenre(initialData.genre || '');
             setReleaseYear(initialData.releaseYear || '');
-            setCoverPreview(initialData.coverArtUrl ? getImageUrl(initialData.coverArtUrl) : '');
+            setCoverPreview(initialData.coverArtUrl || '');
             fetchAlbumTracks();
         }
     }, [isEditMode, initialData, fetchAlbumTracks]);
@@ -285,7 +289,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                     </button>
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
                     <span className="text-sm text-slate-500">{coverArt?.name || 'Файл не выбран'}</span>
-                    {coverPreview && <img src={coverPreview} alt="Предпросмотр" className="ml-auto w-24 h-24 rounded object-cover flex-shrink-0"/>}
+                    {coverPreview && <CachedImage src={coverPreview} />}
                 </div>
             </div>
 

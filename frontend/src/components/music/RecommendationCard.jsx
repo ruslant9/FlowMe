@@ -3,8 +3,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack }) => {
+    
+    // Используем хук для получения кешированного URL
+    const { finalSrc, loading: imageLoading } = useCachedImage(track.albumArtUrl);
+
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -35,12 +40,17 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
     };
     return (
         <motion.div
-            className="flex-shrink-0 w-full rounded-2xl flex flex-col p-4 relative overflow-hidden group aspect-[4/5]"
+            className="flex-shrink-0 w-full rounded-2xl flex flex-col p-4 relative overflow-hidden group aspect-[4/5] cursor-pointer"
             whileHover={{ scale: 1.02, y: -5 }}
             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             onClick={onSelectTrack}
         >
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${track.albumArtUrl})` }}></div>
+            <motion.div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" 
+                style={{ backgroundImage: `url(${finalSrc || ''})` }}
+            >
+                {imageLoading && <div className="w-full h-full bg-slate-800 animate-pulse"></div>}
+            </motion.div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
             
             <div className="absolute top-4 right-4 z-20">

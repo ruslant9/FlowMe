@@ -5,9 +5,6 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Avatar from './Avatar';
 
-// Убираем API_URL
-// const API_URL = import.meta.env.VITE_API_URL;
-
 const VotersList = ({ voters, attrs }) => {
     if (!voters || voters.length === 0) {
         return null;
@@ -26,14 +23,12 @@ const VotersList = ({ voters, attrs }) => {
                 if (!user?._id) return null;
                 return (
                     <Link to={`/profile/${user._id}`} key={user._id} title={user.fullName || user.username} className="flex items-center space-x-2 p-1 -m-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
-                        {/* --- ИЗМЕНЕНИЕ --- */}
                         <Avatar
                             username={user.username}
                             fullName={user.fullName}
                             avatarUrl={user.avatar}
                             size="sm"
                         />
-                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                         <span className="text-sm text-slate-800 dark:text-white truncate">{user.fullName || user.username}</span>
                     </Link>
                 )

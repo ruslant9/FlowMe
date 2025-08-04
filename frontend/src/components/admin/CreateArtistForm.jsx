@@ -41,7 +41,7 @@ export const CreateArtistForm = ({ onSuccess, isEditMode = false, initialData = 
         const file = e.target.files[0];
         if (file) {
             setAvatar(file);
-            if (avatarPreview) {
+            if (avatarPreview && avatarPreview.startsWith('blob:')) {
                 URL.revokeObjectURL(avatarPreview);
             }
             setAvatarPreview(URL.createObjectURL(file));
@@ -50,7 +50,7 @@ export const CreateArtistForm = ({ onSuccess, isEditMode = false, initialData = 
 
     const handleRemoveAvatar = () => {
         setAvatar(null);
-        if (avatarPreview) {
+        if (avatarPreview && avatarPreview.startsWith('blob:')) {
             URL.revokeObjectURL(avatarPreview);
         }
         setAvatarPreview(null);

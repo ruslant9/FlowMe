@@ -10,6 +10,7 @@ import { ru } from 'date-fns/locale';
 import { setHours, setMinutes, isToday } from 'date-fns';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
+
 registerLocale('ru', ru);
 const Picker = React.lazy(() => import('emoji-picker-react'));
 const API_URL = import.meta.env.VITE_API_URL;
@@ -23,7 +24,6 @@ const CachedImage = ({ src }) => {
     }
     return <img src={finalSrc} alt="existing" className="w-full h-full object-cover rounded-md" />;
 };
-
 
 const getMinTime = (date) => {
     if (!date || !isToday(date)) {

@@ -9,8 +9,18 @@ import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
 import toast from 'react-hot-toast';
+import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full object-cover bg-slate-800 animate-pulse"></div>;
+    }
+    return <img src={finalSrc} alt={alt} className="w-full h-full object-cover" />;
+};
 
 const SinglePage = () => {
     const { trackId } = useParams();
@@ -68,11 +78,9 @@ const SinglePage = () => {
                     </button>
 
                     <div className="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                        {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
                         <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl md:ml-8">
-                            <img src={track.albumArtUrl} alt={track.title} className="w-full h-full object-cover" />
+                            <CachedImage src={track.albumArtUrl} alt={track.title} />
                         </div>
-                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
                             <span className="text-sm font-bold">Сольный трек (сингл)</span>
                             <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{track.title}</h1>
