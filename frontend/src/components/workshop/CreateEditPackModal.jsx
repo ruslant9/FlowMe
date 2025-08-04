@@ -10,16 +10,16 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 const ToggleSwitch = ({ checked, onChange, label, description }) => (
-    <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+    <label htmlFor="premium-toggle" className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg cursor-pointer">
         <div>
-            <label htmlFor="premium-toggle" className="font-semibold text-slate-700 dark:text-white cursor-pointer">{label}</label>
+            <span className="font-semibold text-slate-700 dark:text-white">{label}</span>
             <p className="text-xs text-slate-500 dark:text-white/60">{description}</p>
         </div>
-        <div className="relative inline-flex items-center cursor-pointer">
+        <div className="relative inline-flex items-center flex-shrink-0">
             <input type="checkbox" id="premium-toggle" className="sr-only peer" checked={checked} onChange={e => onChange(e.target.checked)} />
             <div className="w-11 h-6 bg-gray-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </div>
-    </div>
+    </label>
 );
 // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
@@ -40,9 +40,7 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                 setName(initialData.name);
                 setType(initialData.type);
                 setExistingItems(initialData.items);
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                 setIsPremiumOnly(initialData.isPremium || false);
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             } else {
                 setName('');
                 setType('sticker');
@@ -82,11 +80,9 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
         formData.append('name', name);
         formData.append('type', type);
         
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         if (type === 'emoji') {
             formData.append('isPremiumOnly', isPremiumOnly);
         }
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         if (isEditMode) {
             formData.append('itemsToDelete', JSON.stringify(itemsToDelete));
@@ -149,7 +145,6 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                 </div>
                             )}
 
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                             {type === 'emoji' && (
                                 <ToggleSwitch 
                                     checked={isPremiumOnly}
@@ -158,7 +153,6 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                     description="Этот пак будет доступен только пользователям с Premium-подпиской."
                                 />
                             )}
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                             <div className="flex-1 overflow-y-auto -mr-2 pr-2 border-t border-b border-slate-200 dark:border-slate-700 py-4">
                                 <label className="block text-sm font-semibold mb-2">Изображения</label>

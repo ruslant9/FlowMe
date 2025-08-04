@@ -10,7 +10,7 @@ const Community = require('../../models/Community');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getPopulatedPost } = require('../../utils/posts');
+const { getPopulatedPost } = require('../../utils/posts_');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
 const { createStorage, cloudinary } = require('../../config/cloudinary');
 // --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---

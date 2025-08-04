@@ -1,3 +1,5 @@
+// backend/utils/posts_.js
+
 const mongoose = require('mongoose');
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
@@ -10,12 +12,27 @@ async function getPopulatedPost(postId, requesterId) {
         .populate('user', 'username fullName avatar privacySettings friends blacklist')
         .populate('likes', 'username fullName avatar _id')
         .populate('community', 'name avatar visibility members postingPolicy owner')
-        .populate('attachedTrack')
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        .populate({
+            path: 'attachedTrack',
+            populate: [
+                { path: 'artist', select: 'name _id' },
+                { path: 'album', select: 'title coverArtUrl' }
+            ]
+        })
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         .populate({ path: 'poll.options.votes', select: 'username fullName avatar' })
         .lean();
 
     if (!post) return null;
     
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    // Добавляем обложку альбома, если у трека нет своей
+    if (post.attachedTrack && post.attachedTrack.album && post.attachedTrack.album.coverArtUrl && !post.attachedTrack.albumArtUrl) {
+        post.attachedTrack.albumArtUrl = post.attachedTrack.album.coverArtUrl;
+    }
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     const commentIds = await Comment.find({ post: postId }).select('_id').lean();
     const allCommentIds = commentIds.map(c => c._id);
 

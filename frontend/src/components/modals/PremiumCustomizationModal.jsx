@@ -14,19 +14,22 @@ import AnimatedAccent from '../AnimatedAccent';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const avatarBorders = [ // ИЗМЕНЕНИЕ: Полностью обновленный список рамок
+const avatarBorders = [
     { id: 'none', name: 'Без рамки', type: 'none', value: null },
+    // Эти две рамки - градиенты, они не используют псевдо-элементы
     { id: 'animated-1', name: 'Аврора', type: 'animated-1', value: null },
     { id: 'animated-2', name: 'Инста', type: 'animated-2', value: null },
-    { id: 'hearts', name: 'Сердца', type: 'static', value: '#ef4444' },
-    { id: 'neon', name: 'Неон', type: 'static', value: '#22c55e' },
-    { id: 'orbit', name: 'Орбита', type: 'static', value: '#8b5cf6' },
-    { id: 'fire', name: 'Огонь', type: 'static', value: '#f97316' },
-    { id: 'glitch', name: 'Глитч', type: 'static', value: '#06b6d4' },
-    { id: 'techno', name: 'Техно', type: 'static', value: '#64748b' },
-    { id: 'pulse', name: 'Пульс', type: 'static', value: '#ec4899' },
-    { id: 'runes', name: 'Руны', type: 'static', value: '#eab308' },
-    { id: 'sparks', name: 'Искры', type: 'static', value: '#f1f5f9' },
+    // Остальные - сложные анимации через ::before/::after, им нужен флаг 'pseudo'
+    { id: 'hearts', name: 'Сердца', type: 'animated-hearts', pseudo: true },
+    { id: 'neon', name: 'Неон', type: 'animated-neon', pseudo: true },
+    { id: 'orbit', name: 'Орбита', type: 'animated-orbit', pseudo: true },
+    { id: 'fire', name: 'Огонь', type: 'animated-fire', pseudo: true },
+    { id: 'glitch', name: 'Глитч', type: 'animated-glitch', pseudo: true },
+    { id: 'techno', name: 'Техно', type: 'animated-tech', pseudo: true },
+    // Эта рамка анимирует сам элемент, а не псевдо-элемент
+    { id: 'pulse', name: 'Пульс', type: 'animated-pulse' },
+    { id: 'runes', name: 'Руны', type: 'animated-runes', pseudo: true },
+    { id: 'sparks', name: 'Искры', type: 'animated-sparkle', pseudo: true },
 ];
 
 const premadeAccents = [

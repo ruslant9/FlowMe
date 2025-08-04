@@ -7,7 +7,7 @@ const Comment = require('../../models/Comment');
 const Notification = require('../../models/Notification');
 const Community = require('../../models/Community');
 const mongoose = require('mongoose');
-const { getPopulatedPost } = require('../../utils/posts');
+const { getPopulatedPost } = require('../../utils/posts_');
 // --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
 const { sanitize } = require('../../utils/sanitize');
 

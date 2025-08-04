@@ -1,7 +1,19 @@
+// frontend/src/components/AttachedTrack.jsx
+
 import React from 'react';
 import { Play, Pause, Music, Loader2 } from 'lucide-react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import Slider from 'rc-slider';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `${API_URL}/${url}`;
+};
 
 const formatTime = (seconds) => {
     if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -37,8 +49,12 @@ const AttachedTrack = ({ track }) => {
         return '';
     }; 
     if (!track) return null;
-    const isCurrent = currentTrack?.youtubeId === track.youtubeId;
-    const isLoading = loadingTrackId === track.youtubeId;
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const isCurrent = currentTrack?._id === track._id;
+    const isLoading = loadingTrackId === track._id;
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     const handlePlayClick = (e) => {
         e.stopPropagation();
         if (isCurrent) {
@@ -52,7 +68,8 @@ const AttachedTrack = ({ track }) => {
             <div className="flex items-start space-x-3">
                 <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
                     {track.albumArtUrl ? (
-                        <img src={track.albumArtUrl} alt={track.title} className="w-full h-full object-cover"/>
+                        // --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННОЙ ФУНКЦИИ ---
+                        <img src={getImageUrl(track.albumArtUrl)} alt={track.title} className="w-full h-full object-cover"/>
                     ) : (
                         <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
                             <Music size={24} className="text-slate-400"/>

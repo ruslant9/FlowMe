@@ -192,27 +192,43 @@ const WorkshopPage = () => {
                 packs = searchResults;
                 emptyMessage = searchQuery ? 'По вашему запросу ничего не найдено.' : 'Найдите стикеры и эмодзи, созданные другими пользователями.';
                 cardActions = (pack) => {
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                     const isCreator = pack.creator._id === currentUser._id;
-                    if (isCreator) return <span className="text-xs font-semibold text-slate-500">Ваш пак</span>;
-                    
+                    if (isCreator) {
+                        return <span className="text-xs font-semibold text-slate-500">Ваш пак</span>;
+                    }
+
                     const isPremade = pack.creator.username === 'Flow me';
-                    if (isPremade) {
+                    const isPackPremium = isPremade || pack.isPremium;
+                    const isAdded = addedPackIds.has(pack._id);
+
+                    if (isPackPremium) {
+                        if (currentUser?.premium?.isActive) {
+                            // Premium user can add/remove any premium pack
+                            return (
+                                <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
+                                    {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
+                                    <span>{isAdded ? 'Добавлено' : 'Добавить'}</span>
+                                </button>
+                            );
+                        } else {
+                            // Non-premium user sees the premium button
+                            return (
+                                <button onClick={() => setIsPremiumModalOpen(true)} className="flex items-center space-x-2 text-xs font-semibold text-yellow-500">
+                                    <Crown size={14} />
+                                    <span>Premium</span>
+                                </button>
+                            );
+                        }
+                    } else {
+                        // This is a free, user-created pack. Anyone can add/remove it.
                         return (
-                            <button onClick={() => !currentUser?.premium?.isActive && setIsPremiumModalOpen(true)} className="flex items-center space-x-2 text-xs font-semibold text-yellow-500">
-                                <Crown size={14} />
-                                <span>Premium</span>
+                            <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
+                                {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
+                                <span>{isAdded ? 'Добавлено' : 'Добавить'}</span>
                             </button>
                         );
                     }
-
-                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Возвращаем кнопку "Добавить" для пользовательских паков ---
-                    const isAdded = addedPackIds.has(pack._id);
-                    return (
-                        <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
-                            {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
-                            <span>{isAdded ? 'Добавлено' : 'Добавить'}</span>
-                        </button>
-                    );
                     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 };
                 break;
