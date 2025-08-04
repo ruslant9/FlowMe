@@ -10,13 +10,31 @@ const { sanitize } = require('../utils/sanitize');
 // --- НАЧАЛО ИСПРАВЛЕНИЯ: Хелпер-функция для обновления обложки ---
 async function updatePlaylistCover(playlist) {
     if (playlist.tracks.length > 0) {
-        const coverTracks = await Track.find({ '_id': { $in: playlist.tracks } })
+        // Чтобы не сканировать огромные плейлисты, берем ID первых 50 треков
+        const trackIdsToScan = playlist.tracks.slice(0, 50);
+
+        const potentialCoverTracks = await Track.find({ '_id': { $in: trackIdsToScan } })
             .populate('album', 'coverArtUrl') // Важно, чтобы получить обложку альбома
             .select('albumArtUrl album')
-            .limit(4)
             .lean(); // .lean() для производительности
-        // Приоритет обложке сингла, иначе берем обложку альбома
-        playlist.coverImageUrls = coverTracks.map(t => t.albumArtUrl || t.album?.coverArtUrl).filter(Boolean);
+
+        // Создаем Map, чтобы сохранить порядок и быстро получать треки по ID
+        const tracksMap = new Map(potentialCoverTracks.map(t => [t._id.toString(), t]));
+
+        const coverUrls = [];
+        // Проходим по оригинальному списку ID, чтобы сохранить порядок
+        for (const trackId of trackIdsToScan) {
+            if (coverUrls.length >= 4) break; // Нам нужно не более 4 обложек
+
+            const track = tracksMap.get(trackId.toString());
+            if (track) {
+                const coverUrl = track.albumArtUrl || track.album?.coverArtUrl;
+                if (coverUrl) {
+                    coverUrls.push(coverUrl);
+                }
+            }
+        }
+        playlist.coverImageUrls = coverUrls;
     } else {
         playlist.coverImageUrls = [];
     }
@@ -64,15 +82,13 @@ router.get('/:playlistId', authMiddleware, async (req, res) => {
         const playlist = await Playlist.findById(req.params.playlistId)
             .populate({
                 path: 'tracks',
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Популируем и артиста, и альбом для получения обложки ---
                 populate: [
                     { path: 'artist', select: 'name _id' },
                     { path: 'album', select: 'coverArtUrl' }
                 ]
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             })
             .populate('user', 'username fullName avatar')
-            .lean(); // Используем .lean() для получения простого объекта JS
+            .lean();
 
         if (!playlist) {
             return res.status(404).json({ message: 'Плейлист не найден.' });
@@ -83,14 +99,12 @@ router.get('/:playlistId', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: 'Это приватный плейлист.' });
         }
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проставляем обложку альбома для треков, у которых ее нет ---
         playlist.tracks = playlist.tracks.map(track => {
             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
             }
             return track;
         });
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         res.json(playlist);
     } catch (error) {
@@ -169,7 +183,6 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
         const tracksToAdd = trackIds.filter(id => !playlist.tracks.some(trackId => trackId.equals(id)));
         playlist.tracks.push(...tracksToAdd);
 
-        // --- ИСПРАВЛЕНИЕ: Вызываем хелпер перед сохранением ---
         await updatePlaylistCover(playlist);
         await playlist.save();
 
@@ -195,7 +208,6 @@ router.delete('/:playlistId/tracks/:trackId', authMiddleware, async (req, res) =
 
         playlist.tracks.pull(trackId);
         
-        // --- ИСПРАВЛЕНИЕ: Вызываем хелпер перед сохранением ---
         await updatePlaylistCover(playlist);
         await playlist.save();
         

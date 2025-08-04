@@ -258,7 +258,7 @@ const PlaylistPage = () => {
                             <h1 className="text-4xl font-extrabold break-words mt-1 text-slate-900 dark:text-white">{playlist.name}</h1>
                             <div className="flex items-center space-x-2 mt-3 text-sm">
                                 <Link to={`/profile/${playlist.user._id}`}>
-                                    <Avatar size="sm" username={playlist.user.username} avatarUrl={playlist.user.avatar} />
+                                    <Avatar size="sm" username={playlist.user.username} fullName={playlist.user.fullName} avatarUrl={playlist.user.avatar} />
                                 </Link>
                                 <Link to={`/profile/${playlist.user._id}`} className="font-bold hover:underline text-slate-800 dark:text-white">{playlist.user.fullName || playlist.user.username}</Link>
                                 <span className="text-slate-500 dark:text-slate-400">• {playlist.tracks.length} треков, {totalMinutes} мин.</span>

@@ -53,9 +53,22 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
         onSelect(artist._id);
         setIsFocused(false);
     };
+
+    // --- ИЗМЕНЕНИЕ 3: Логика для очистки поля, если артист не найден ---
+    const handleBlur = () => {
+        setTimeout(() => {
+            const match = artists.some(artist => artist.name.toLowerCase() === query.toLowerCase());
+            if (!match && query !== '') {
+                setQuery('');
+                onSelect('');
+                toast.error("Исполнитель не найден. Поле очищено.", { duration: 2000 });
+            }
+            setIsFocused(false);
+        }, 200); // Небольшая задержка, чтобы успел сработать клик по элементу списка
+    };
     
     return (
-        <div className="relative" onBlur={() => setTimeout(() => setIsFocused(false), 200)}>
+        <div className="relative" onBlur={handleBlur}>
             <input
                 type="text"
                 value={query}
@@ -83,7 +96,8 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
-const SortableTrackItem = ({ track, onEditTrack, onDeleteTrack }) => {
+// --- ИЗМЕНЕНИЕ 1: Добавлен `index` для нумерации треков ---
+const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
     const {
         attributes,
         listeners,
@@ -102,6 +116,7 @@ const SortableTrackItem = ({ track, onEditTrack, onDeleteTrack }) => {
     return (
         <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow ${isDragging ? 'shadow-xl' : ''}`}>
             <div className="flex items-center space-x-2 min-w-0">
+                <span className="font-bold text-slate-500 w-6 text-center">{index}</span>
                 <div {...attributes} {...listeners} className="cursor-grab touch-none p-1 text-slate-500">
                     <GripVertical size={16} />
                 </div>
@@ -121,6 +136,7 @@ const SortableTrackItem = ({ track, onEditTrack, onDeleteTrack }) => {
     );
 };
 
+// --- ИЗМЕНЕНИЕ 2: Компонент для кастомного выбора даты ---
 const MonthYearPicker = ({ value, onChange }) => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
@@ -340,7 +356,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     };
 
     return (
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем основной контейнер формы ---
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800">
             <div>
                 <h3 className="font-bold text-lg">{isEditMode ? `Редактирование: ${initialData.title}` : (currentUser.role === 'admin' ? 'Создать Альбом' : 'Предложить новый альбом')}</h3>
@@ -362,6 +377,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                         </div>
                         <div>
                             <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
+                            {/* --- ИЗМЕНЕНИЕ 2: Используем новый компонент --- */}
                             <MonthYearPicker value={releaseDate} onChange={setReleaseDate} />
                         </div>
                     </div>
@@ -402,10 +418,12 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                     <SortableContext items={albumTracks} strategy={verticalListSortingStrategy}>
                                         <div className="space-y-2 overflow-y-auto pr-2 flex-1">
-                                            {albumTracks.map(track => (
+                                            {albumTracks.map((track, index) => (
                                                 <SortableTrackItem 
                                                     key={track._id} 
-                                                    track={track} 
+                                                    track={track}
+                                                    // --- ИЗМЕНЕНИЕ 1: Передаем `index` ---
+                                                    index={index + 1}
                                                     onEditTrack={onEditTrack} 
                                                     onDeleteTrack={handleDeleteTrack} 
                                                 />
@@ -428,6 +446,5 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 </button>
             </div>
         </form>
-         // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     );
 };

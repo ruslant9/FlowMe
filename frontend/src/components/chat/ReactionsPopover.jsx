@@ -34,10 +34,6 @@ const ReactionsPopover = ({ onSelect, children }) => {
     const longPressTimerRef = useRef(null);
     const longPressTriggeredRef = useRef(false);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Новое состояние для ручного управления видимостью ---
-    const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
-    
     const [activePremiumPackName, setActivePremiumPackName] = useState('');
     const [activeUserPackName, setActiveUserPackName] = useState('');
 
@@ -81,12 +77,9 @@ const ReactionsPopover = ({ onSelect, children }) => {
         }
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Обновляем onSelect для закрытия плашки ---
     const handleReactionSelect = (reactionUrl) => {
         onSelect(reactionUrl);
-        setIsPopoverVisible(false); // Закрываем плашку после выбора
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     const handleMouseDown = (item) => {
         longPressTriggeredRef.current = false;
@@ -127,41 +120,20 @@ const ReactionsPopover = ({ onSelect, children }) => {
     }, [activeTab, activeUserPackName, userFreeEmojiPacks, searchQuery]);
 
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Новые обработчики для управления видимостью ---
-    const showPopover = () => setIsPopoverVisible(true);
-    const hidePopover = () => {
-        // Прячем, только если окно предпросмотра НЕ открыто
-        if (!previewingEmoji) {
-            setIsPopoverVisible(false);
-        }
-    };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
-
     return (
         <>
             <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Синхронизируем закрытие --- */}
-            <EmojiPreviewModal 
-                isOpen={!!previewingEmoji} 
-                onClose={() => {
-                    setPreviewingEmoji(null);
-                    setIsPopoverVisible(false); // Закрываем и плашку тоже
-                }} 
-                emojiUrl={previewingEmoji} 
-            />
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
+            <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
             <Tippy
                 interactive
                 placement="auto"
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ 5: Управляем состоянием вручную ---
-                visible={isPopoverVisible}
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ 5 ---
+                delay={[100, 100]}
                 onClickOutside={(instance, event) => {
                     const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
-                    if (isClickOnPreviewOverlay || previewingEmoji) {
+                    if (isClickOnPreviewOverlay) {
                         return false; 
                     }
-                    setIsPopoverVisible(false); // Закрываем плашку
+                    instance.hide();
                 }}
                 render={attrs => (
                     <motion.div
@@ -171,10 +143,6 @@ const ReactionsPopover = ({ onSelect, children }) => {
                         transition={{ duration: 0.15, ease: 'easeOut' }}
                         className="ios-glass-popover p-2 rounded-xl shadow-lg w-auto max-w-sm"
                         {...attrs}
-                        // --- НАЧАЛО ИСПРАВЛЕНИЯ 6: Добавляем обработчики на саму плашку ---
-                        onMouseEnter={showPopover}
-                        onMouseLeave={hidePopover}
-                        // --- КОНЕЦ ИСПРАВЛЕНИЯ 6 ---
                     >
                         <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg">
                             <button onClick={() => { setActiveTab('regular'); setSearchQuery(''); }} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'regular' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Обычные</button>
@@ -296,11 +264,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                     </motion.div>
                 )}
             >
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 7: Оборачиваем дочерний элемент и вешаем обработчики --- */}
-                <div onMouseEnter={showPopover} onMouseLeave={hidePopover}>
-                    {children}
-                </div>
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 7 --- */}
+                {children}
             </Tippy>
         </>
     );
