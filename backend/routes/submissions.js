@@ -48,7 +48,7 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
 // 2. Создать заявку на новый альбом
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
-        const { title, artistId, genre, releaseYear } = req.body;
+        const { title, artistId, genre, releaseDate } = req.body;
         if (!title || !artistId || !genre) {
             return res.status(400).json({ message: 'Название альбома, артист и жанр обязательны.' });
         }
@@ -61,7 +61,7 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
                 title,
                 artist: artistId,
                 genre,
-                releaseYear: releaseYear || null,
+                releaseDate: releaseDate || null,
                 coverArtUrl: req.file ? req.file.path : null
             }
         });
@@ -78,7 +78,7 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
 // 3. Создать заявку на новый трек
 router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name: 'coverArt', maxCount: 1 }]), async (req, res) => {
     try {
-        const { title, artistIds, albumId, durationMs, genres, releaseYear, isExplicit } = req.body;
+        const { title, artistIds, albumId, durationMs, genres, releaseDate, isExplicit } = req.body;
         const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
         const parsedGenres = genres ? JSON.parse(genres) : [];
         
@@ -100,7 +100,7 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
                 durationMs: durationMs || 0,
                 genres: parsedGenres,
                 isExplicit: isExplicit === 'true',
-                releaseYear: releaseYear || null,
+                releaseDate: releaseDate || null,
                 storageKey: req.files.trackFile[0].path,
                 albumArtUrl: albumId ? null : (req.files.coverArt?.[0]?.path || null)
             }

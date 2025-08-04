@@ -10,7 +10,9 @@ import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
 import toast from 'react-hot-toast';
-import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../hooks/useCachedImage'; 
+import { format } from 'date-fns'; // ИМПОРТ
+import { ru } from 'date-fns/locale'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -100,7 +102,7 @@ const AlbumPage = () => {
                                     <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
                                 </Link>
                                 <Link to={`/artist/${album.artist._id}`} className="font-bold hover:underline" style={{ color: textColor }}>{album.artist.name}</Link>
-                                <span className="opacity-70">• {album.releaseYear} • {album.tracks.length} треков, {totalMinutes} мин.</span>
+                                <span className="opacity-70">• {album.releaseDate ? format(new Date(album.releaseDate), 'MMMM yyyy', { locale: ru }) : ''} • {album.tracks.length} треков, {totalMinutes} мин.</span>
                             </div>
                         </div>
                     </div>

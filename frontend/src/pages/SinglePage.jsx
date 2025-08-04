@@ -9,7 +9,9 @@ import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
 import toast from 'react-hot-toast';
-import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../hooks/useCachedImage';
+import { format } from 'date-fns'; // ИМПОРТ
+import { ru } from 'date-fns/locale'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -89,7 +91,7 @@ const SinglePage = () => {
                                     <Avatar size="sm" username={primaryArtist.name} avatarUrl={primaryArtist.avatarUrl} />
                                 </Link>
                                 <Link to={`/artist/${primaryArtist._id}`} className="font-bold hover:underline">{primaryArtist.name}</Link>
-                                <span className="opacity-70">• {track.releaseYear} • 1 трек, {totalMinutes} мин.</span>
+                                <span className="opacity-70">• {track.releaseDate ? format(new Date(track.releaseDate), 'MMMM yyyy', { locale: ru }) : ''} • 1 трек, {totalMinutes} мин.</span>
                             </div>
                         </div>
                     </div>

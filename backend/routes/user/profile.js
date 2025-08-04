@@ -14,8 +14,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { createStorage, cloudinary } = require('../../config/cloudinary');
-// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
-const { sanitize } = require('../../utils/sanitize');
+const { sanitize } = require('../../utils/sanitize'); // <-- ИМПОРТ
 
 const avatarStorage = createStorage('avatars');
 const uploadAvatar = multer({ storage: avatarStorage });
@@ -60,14 +59,16 @@ router.put('/profile', authMiddleware, async (req, res) => {
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
         
-        // --- ИЗМЕНЕНИЕ: Очищаем текстовые поля ---
         const sanitizedFullName = sanitize(fullName);
         const sanitizedStatus = sanitize(status);
+        const sanitizedUsername = sanitize(username); // <-- ИСПРАВЛЕНИЕ
+        const sanitizedCountry = sanitize(country); // <-- ИСПРАВЛЕНИЕ
+        const sanitizedCity = sanitize(city); // <-- ИСПРАВЛЕНИЕ
 
-        if (username && username !== user.username) {
-            const existingUser = await User.findOne({ username });
+        if (sanitizedUsername && sanitizedUsername !== user.username) {
+            const existingUser = await User.findOne({ username: sanitizedUsername });
             if (existingUser) return res.status(400).json({ message: 'Это имя пользователя уже занято' });
-            user.username = username;
+            user.username = sanitizedUsername;
         }
         if (dob) {
             const dateOfBirth = new Date(dob);
@@ -82,7 +83,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
         if (typeof sanitizedStatus !== 'undefined') {
             user.status = sanitizedStatus.trim() === '' ? null : sanitizedStatus.trim();
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         if (premiumCustomization) {
             if (user.premium && user.premium.isActive) {
@@ -99,10 +99,10 @@ router.put('/profile', authMiddleware, async (req, res) => {
 
         user.gender = gender || user.gender;
         if (interests !== undefined) {
-            user.interests = Array.isArray(interests) ? interests : [];
+            user.interests = Array.isArray(interests) ? interests.map(i => sanitize(i)) : []; // <-- ИСПРАВЛЕНИЕ
         }
-        user.country = country === '' ? null : country;
-        user.city = city === '' ? null : city;
+        user.country = sanitizedCountry === '' ? null : sanitizedCountry; // <-- ИСПРАВЛЕНИЕ
+        user.city = sanitizedCity === '' ? null : sanitizedCity; // <-- ИСПРАВЛЕНИЕ
         await user.save();
         const updatedUser = await User.findById(req.user.userId).select('-password');
         res.json({ message: 'Профиль успешно обновлен', user: updatedUser });
@@ -114,7 +114,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
     }
 });
 
-// ... (остальные роуты без изменений)
 router.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Файл не загружен' });

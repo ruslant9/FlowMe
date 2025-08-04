@@ -186,7 +186,7 @@ const ArtistPage = () => {
                                         title: single.title,
                                         coverArtUrl: single.albumArtUrl,
                                         artist: single.artist,
-                                        releaseYear: single.releaseYear,
+                                        releaseDate: single.releaseDate,
                                         isSingle: true 
                                     };
                                     return <AlbumCard key={single._id} album={singleAsAlbum} />;

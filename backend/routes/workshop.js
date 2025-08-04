@@ -10,6 +10,7 @@ const { createStorage, cloudinary } = require('../config/cloudinary');
 const multer = require('multer');
 const sharp = require('sharp');
 const { Readable } = require('stream');
+const { sanitize } = require('../utils/sanitize'); // <-- ИМПОРТ
 
 const memoryStorage = multer.memoryStorage();
 const upload = multer({ storage: memoryStorage });
@@ -75,14 +76,16 @@ const processAndUpload = (req, res, next) => {
 router.post('/packs', authMiddleware, upload.array('items', 20), processAndUpload, async (req, res) => {
     try {
         const { name, type, isPremiumOnly } = req.body;
-        if (!name || !type || !['emoji', 'sticker'].includes(type)) {
+        const sanitizedName = sanitize(name); // <-- ИСПРАВЛЕНИЕ: Санитизация названия
+
+        if (!sanitizedName || !type || !['emoji', 'sticker'].includes(type)) { // <-- ИСПРАВЛЕНИЕ: Проверка очищенного названия
             return res.status(400).json({ message: 'Неверные данные для создания пака.' });
         }
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: 'Добавьте хотя бы один файл.' });
         }
         const newPack = new ContentPack({
-            name,
+            name: sanitizedName, // <-- ИСПРАВЛЕНИЕ: Сохранение очищенного названия
             type,
             creator: req.user.userId,
             isPremium: type === 'emoji' ? (isPremiumOnly === 'true') : false,
@@ -135,7 +138,7 @@ router.get('/packs/added', authMiddleware, async (req, res) => {
 });
 
 router.get('/packs/search', authMiddleware, async (req, res) => {
-    const { q = '', page = 1, type, isPremium } = req.query; // Достаем isPremium
+    const { q = '', page = 1, type, isPremium } = req.query;
     const limit = 12;
     const skip = (page - 1) * limit;
     try {
@@ -146,22 +149,18 @@ router.get('/packs/search', authMiddleware, async (req, res) => {
         if (type && ['sticker', 'emoji'].includes(type)) {
             query.type = type;
         }
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         if (isPremium !== undefined) {
             const isPremiumBool = isPremium === 'true';
             if (isPremiumBool) {
-                // Если ищем Premium, то это либо паки с флагом isPremium=true, либо системные
                  query.$or = [
                     { isPremium: true },
                     { creator: await User.findOne({ username: 'Flow me' }).select('_id') }
                  ];
             } else {
-                // Если ищем бесплатные, то это паки с флагом isPremium=false И НЕ системные
                  query.isPremium = false;
                  query.creator = { $ne: await User.findOne({ username: 'Flow me' }).select('_id') };
             }
         }
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         
         const packs = await ContentPack.find(query)
             .populate('creator', 'username fullName')
@@ -202,7 +201,9 @@ router.put('/packs/:packId', authMiddleware, canModifyPack, upload.array('newIte
     try {
         const { name, itemsToDelete, isPremiumOnly } = req.body;
         const pack = req.pack;
-        if (name) pack.name = name;
+        if (name) {
+            pack.name = sanitize(name); // <-- ИСПРАВЛЕНИЕ: Санитизация
+        }
         if (itemsToDelete) {
             const toDelete = JSON.parse(itemsToDelete);
             pack.items = pack.items.filter(item => !toDelete.includes(item._id.toString()));

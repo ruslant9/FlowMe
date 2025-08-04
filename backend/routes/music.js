@@ -9,7 +9,7 @@ const Playlist = require('../models/Playlist');
 const Artist = require('../models/Artist');
 const Album = require('../models/Album');
 const UserMusicProfile = require('../models/UserMusicProfile');
-const User = require('../models/User'); // <-- ИСПРАВЛЕНИЕ: Добавлен импорт User
+const User = require('../models/User'); 
 const { isAllowedByPrivacy } = require('../utils/privacy');
 const { generateSearchQueries } = require('../utils/searchUtils');
 
@@ -208,10 +208,10 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
 
         const [artist, topTracksAggregation, albums, featuredTracks, singles] = await Promise.all([
             Artist.findById(artistId).lean(),
-            Track.aggregate(topTracksPipeline), // Выполняем агрегацию
+            Track.aggregate(topTracksPipeline),
             Album.find({ artist: artistId, status: 'approved' })
                 .populate('artist', 'name')
-                .sort({ releaseYear: -1, createdAt: -1 })
+                .sort({ releaseDate: -1, createdAt: -1 })
                 .lean(),
             Track.find({ artist: artistId, status: 'approved', album: { $ne: null } })
                  .populate({
@@ -221,7 +221,7 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
                  .lean(),
             Track.find({ artist: artistId, status: 'approved', album: null })
                  .populate('artist', 'name _id')
-                 .sort({ releaseYear: -1, createdAt: -1 })
+                 .sort({ releaseDate: -1, createdAt: -1 })
                  .lean()
         ]);
 
@@ -488,7 +488,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
 
             const newReleasesQuery = {
                 status: 'approved',
-                releaseYear: currentYear,
+                releaseDate: { $gte: new Date(`${currentYear}-01-01`) },
                 _id: { $nin: listenedTracks },
                 $or: [
                     { artist: { $in: topArtistIds } },
@@ -509,7 +509,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
         }
         
         if (newReleases.length < 10) {
-            const generalNew = await processAndPopulateTracks({ status: 'approved', releaseYear: currentYear }, 10 - newReleases.length);
+            const generalNew = await processAndPopulateTracks({ status: 'approved', releaseDate: { $gte: new Date(`${currentYear}-01-01`) } }, 10 - newReleases.length);
             newReleases.push(...generalNew);
         }
         if (popularHits.length < 10) {

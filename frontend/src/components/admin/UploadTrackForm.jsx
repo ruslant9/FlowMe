@@ -205,6 +205,48 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
     );
 };
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Компонент выбора месяца и года ---
+const MonthYearPicker = ({ value, onChange }) => {
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
+    const months = [
+        { value: 0, name: 'Январь' }, { value: 1, name: 'Февраль' }, { value: 2, name: 'Март' },
+        { value: 3, name: 'Апрель' }, { value: 4, name: 'Май' }, { value: 5, name: 'Июнь' },
+        { value: 6, name: 'Июль' }, { value: 7, name: 'Август' }, { value: 8, name: 'Сентябрь' },
+        { value: 9, name: 'Октябрь' }, { value: 10, name: 'Ноябрь' }, { value: 11, name: 'Декабрь' }
+    ];
+
+    const selectedDate = value ? new Date(value) : new Date();
+    const selectedYear = selectedDate.getFullYear();
+    const selectedMonth = selectedDate.getMonth();
+
+    const handleYearChange = (e) => {
+        const newYear = parseInt(e.target.value, 10);
+        onChange(new Date(newYear, selectedMonth, 1));
+    };
+
+    const handleMonthChange = (e) => {
+        const newMonth = parseInt(e.target.value, 10);
+        onChange(new Date(selectedYear, newMonth, 1));
+    };
+
+    return (
+        <div className="grid grid-cols-2 gap-2">
+            <select value={selectedMonth} onChange={handleMonthChange} className="w-full p-2 rounded bg-white dark:bg-slate-700">
+                {months.map(month => (
+                    <option key={month.value} value={month.value}>{month.name}</option>
+                ))}
+            </select>
+            <select value={selectedYear} onChange={handleYearChange} className="w-full p-2 rounded bg-white dark:bg-slate-700">
+                {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                ))}
+            </select>
+        </div>
+    );
+};
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false, initialData = null }) => {
     const { currentUser } = useUser();
     const [albumId, setAlbumId] = useState('');
@@ -213,7 +255,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
     const [trackList, setTrackList] = useState([]);
     const [singleTrackData, setSingleTrackData] = useState({
         title: '', artistIds: [], genres: [], trackFile: null, isExplicit: false,
-        durationMs: 0, coverArt: null, coverPreview: '', releaseYear: ''
+        durationMs: 0, coverArt: null, coverPreview: '', releaseDate: new Date()
     });
     const abortControllerRef = useRef(null);
 
@@ -232,7 +274,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 artistIds: (initialData.artist || []).map(a => a._id),
                 genres: initialData.genres || [],
                 isExplicit: initialData.isExplicit || false,
-                releaseYear: initialData.releaseYear || '',
+                releaseDate: initialData.releaseDate ? new Date(initialData.releaseDate) : new Date(),
                 trackFile: null, coverArt: null,
                 coverPreview: initialData.albumArtUrl || '',
                 durationMs: initialData.durationMs || 0,
@@ -339,6 +381,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('albumId', albumId || '');
                 formData.append('genres', JSON.stringify(singleTrackData.genres || []));
                 formData.append('isExplicit', singleTrackData.isExplicit);
+                formData.append('releaseDate', singleTrackData.releaseDate.toISOString()); // ИЗМЕНЕНИЕ
                 await axios.put(`${API_URL}/api/admin/content/tracks/${initialData._id}`, formData, { headers: axiosConfig.headers });
                 toast.success("Трек успешно обновлен!", { id: toastId });
                 onSuccess();
@@ -365,7 +408,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('trackFile', singleTrackData.trackFile);
                 if (singleTrackData.coverArt) formData.append('coverArt', singleTrackData.coverArt);
                 formData.append('durationMs', singleTrackData.durationMs);
-                formData.append('releaseYear', singleTrackData.releaseYear);
+                formData.append('releaseDate', singleTrackData.releaseDate.toISOString()); // ИЗМЕНЕНИЕ
                 const endpoint = isAdmin ? `${API_URL}/api/admin/tracks` : `${API_URL}/api/submissions/tracks`;
                 await axios.post(endpoint, formData, axiosConfig);
             }
@@ -373,7 +416,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
             onSuccess();
             setAlbumId('');
             setTrackList([]);
-            setSingleTrackData({ title: '', artistIds: [], genres: [], trackFile: null, isExplicit: false, durationMs: 0, coverArt: null, coverPreview: '', releaseYear: '' });
+            setSingleTrackData({ title: '', artistIds: [], genres: [], trackFile: null, isExplicit: false, durationMs: 0, coverArt: null, coverPreview: '', releaseDate: new Date() });
             e.target.reset();
         } catch (error) {
             if (axios.isCancel(error)) {
@@ -446,12 +489,11 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                             <input type="text" placeholder="Название" value={singleTrackData.title} onChange={e => handleSingleTrackChange('title', e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
                         </div>
                         <div>
-                            <label className="text-sm font-semibold block mb-1">Год выпуска</label>
-                            <input type="number" placeholder="Например: 2024" value={singleTrackData.releaseYear} onChange={e => handleSingleTrackChange('releaseYear', e.target.value)} min="1900" max={new Date().getFullYear() + 1} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
+                            <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
+                            <MonthYearPicker value={singleTrackData.releaseDate} onChange={(date) => handleSingleTrackChange('releaseDate', date)} />
                         </div>
                     </div>
 
-                    {/* --- ИЗМЕНЕНИЕ: Группируем жанры и Explicit --- */}
                     <div className="p-4 rounded-lg bg-slate-200 dark:bg-slate-900/50 space-y-4">
                         <GenreSelector selectedGenres={singleTrackData.genres} onGenreChange={(genres) => handleSingleTrackChange('genres', genres)} />
                         <ToggleSwitch 

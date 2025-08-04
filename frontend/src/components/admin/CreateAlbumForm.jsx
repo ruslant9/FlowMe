@@ -11,7 +11,7 @@ import { useModal } from '../../hooks/useModal';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -83,7 +83,6 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Компонент для перетаскиваемого трека ---
 const SortableTrackItem = ({ track, onEditTrack, onDeleteTrack }) => {
     const {
         attributes,
@@ -121,7 +120,48 @@ const SortableTrackItem = ({ track, onEditTrack, onDeleteTrack }) => {
         </div>
     );
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Компонент выбора месяца и года ---
+const MonthYearPicker = ({ value, onChange }) => {
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
+    const months = [
+        { value: 0, name: 'Январь' }, { value: 1, name: 'Февраль' }, { value: 2, name: 'Март' },
+        { value: 3, name: 'Апрель' }, { value: 4, name: 'Май' }, { value: 5, name: 'Июнь' },
+        { value: 6, name: 'Июль' }, { value: 7, name: 'Август' }, { value: 8, name: 'Сентябрь' },
+        { value: 9, name: 'Октябрь' }, { value: 10, name: 'Ноябрь' }, { value: 11, name: 'Декабрь' }
+    ];
+
+    const selectedDate = value ? new Date(value) : new Date();
+    const selectedYear = selectedDate.getFullYear();
+    const selectedMonth = selectedDate.getMonth();
+
+    const handleYearChange = (e) => {
+        const newYear = parseInt(e.target.value, 10);
+        onChange(new Date(newYear, selectedMonth, 1));
+    };
+
+    const handleMonthChange = (e) => {
+        const newMonth = parseInt(e.target.value, 10);
+        onChange(new Date(selectedYear, newMonth, 1));
+    };
+
+    return (
+        <div className="grid grid-cols-2 gap-2">
+            <select value={selectedMonth} onChange={handleMonthChange} className="w-full p-2 rounded bg-white dark:bg-slate-700">
+                {months.map(month => (
+                    <option key={month.value} value={month.value}>{month.name}</option>
+                ))}
+            </select>
+            <select value={selectedYear} onChange={handleYearChange} className="w-full p-2 rounded bg-white dark:bg-slate-700">
+                {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                ))}
+            </select>
+        </div>
+    );
+};
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
 export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initialData = null, onEditTrack }) => {
@@ -130,7 +170,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [title, setTitle] = useState('');
     const [artistId, setArtistId] = useState('');
     const [genre, setGenre] = useState('');
-    const [releaseYear, setReleaseYear] = useState('');
+    const [releaseDate, setReleaseDate] = useState(new Date()); // ИЗМЕНЕНИЕ
     const [coverArt, setCoverArt] = useState(null);
     const [loading, setLoading] = useState(false);
     const [coverPreview, setCoverPreview] = useState('');
@@ -138,14 +178,12 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     
     const fileInputRef = useRef(null);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Настройка сенсоров для dnd-kit ---
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const fetchAlbumTracks = useCallback(async () => {
         if (!isEditMode || !initialData?._id) return;
@@ -161,7 +199,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setTitle(initialData.title || '');
             setArtistId(initialData.artist?._id || initialData.artist || '');
             setGenre(initialData.genre || '');
-            setReleaseYear(initialData.releaseYear || '');
+            setReleaseDate(initialData.releaseDate ? new Date(initialData.releaseDate) : new Date()); // ИЗМЕНЕНИЕ
             setCoverPreview(initialData.coverArtUrl || '');
             fetchAlbumTracks();
         }
@@ -196,7 +234,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         });
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика для сохранения нового порядка треков ---
     const handleDragEnd = async (event) => {
         const { active, over } = event;
         if (active.id !== over.id) {
@@ -216,11 +253,10 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 toast.success('Порядок треков сохранен!', { id: toastId });
             } catch (error) {
                 toast.error('Не удалось сохранить порядок.', { id: toastId });
-                fetchAlbumTracks(); // Возвращаем к исходному порядку в случае ошибки
+                fetchAlbumTracks();
             }
         }
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     const handleSubmit = async (e) => {
@@ -232,7 +268,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         formData.append('title', title);
         formData.append('artistId', artistId);
         formData.append('genre', genre);
-        if (releaseYear) formData.append('releaseYear', releaseYear);
+        if (releaseDate) formData.append('releaseDate', releaseDate.toISOString()); // ИЗМЕНЕНИЕ
         if (coverArt) formData.append('coverArt', coverArt);
         const isAdmin = currentUser.role === 'admin';
         const endpoint = isEditMode
@@ -248,7 +284,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const res = await axios[method](endpoint, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
             toast.success(res.data.message || successMessage, { id: toastId });
             if (!isEditMode) {
-                setTitle(''); setArtistId(''); setGenre(''); setReleaseYear(''); setCoverArt(null); setCoverPreview('');
+                setTitle(''); setArtistId(''); setGenre(''); setReleaseDate(new Date()); setCoverArt(null); setCoverPreview(''); // ИЗМЕНЕНИЕ
                 e.target.reset();
             }
             onSuccess();
@@ -273,8 +309,8 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                     <input type="text" placeholder="Название" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
                 </div>
                  <div>
-                    <label className="text-sm font-semibold block mb-1">Год выпуска</label>
-                    <input type="number" placeholder="Например: 2024" value={releaseYear} onChange={e => setReleaseYear(e.target.value)} min="1900" max={new Date().getFullYear() + 1} className="w-full p-2 rounded bg-white dark:bg-slate-700" />
+                    <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
+                    <MonthYearPicker value={releaseDate} onChange={setReleaseDate} />
                 </div>
             </div>
             
@@ -296,7 +332,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             {isEditMode && albumTracks.length > 0 && (
                 <div>
                     <h4 className="font-bold text-md mb-2">Треки в альбоме ({albumTracks.length})</h4>
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем список в DndContext --- */}
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={albumTracks} strategy={verticalListSortingStrategy}>
                             <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
@@ -311,7 +346,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                             </div>
                         </SortableContext>
                     </DndContext>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             )}
 

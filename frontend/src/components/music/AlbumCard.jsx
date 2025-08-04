@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Music } from 'lucide-react';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage'; 
 
 // Компонент для кешированного изображения
 const CachedImage = ({ src, alt }) => {
@@ -19,7 +19,7 @@ const CachedImage = ({ src, alt }) => {
 const AlbumCard = ({ album }) => {
     const linkTo = album.isSingle ? `/single/${album._id}` : `/album/${album._id}`;
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Функция для форматирования имени(имен) артистов ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const getArtistDisplay = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
@@ -48,8 +48,7 @@ const AlbumCard = ({ album }) => {
                 <div className="mt-2">
                     <p className="font-semibold text-sm truncate group-hover:text-blue-400 transition-colors">{album.title}</p>
                     <p className="text-xs text-slate-500 truncate">
-                        {/* --- ИСПРАВЛЕНИЕ: Используем новую функцию --- */}
-                        {getArtistDisplay(album.artist)}{album.releaseYear && ` • ${album.releaseYear}`}
+                        {getArtistDisplay(album.artist)}{album.releaseDate && ` • ${new Date(album.releaseDate).getFullYear()}`}
                     </p>
                 </div>
             </motion.div>

@@ -158,7 +158,7 @@ router.post('/artists', upload.single('avatar'), async (req, res) => {
 // Загрузить трек напрямую
 router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name: 'coverArt', maxCount: 1 }]), async (req, res) => {
      try {
-        const { title, artistIds, albumId, durationMs, genres, releaseYear, isExplicit } = req.body;
+        const { title, artistIds, albumId, durationMs, genres, releaseDate, isExplicit } = req.body;
         
         const parsedGenres = genres ? JSON.parse(genres) : [];
         const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
@@ -174,7 +174,7 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
             durationMs,
             genres: parsedGenres,
             isExplicit: isExplicit === 'true',
-            releaseYear: releaseYear || null,
+            releaseDate: releaseDate || null,
             albumArtUrl: albumId ? null : (req.files.coverArt?.[0]?.path || null),
             storageKey: req.files.trackFile[0].path,
             status: 'approved',
@@ -198,13 +198,13 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
 // Создать альбом напрямую
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
-        const { title, artistId, genre, releaseYear } = req.body;
+        const { title, artistId, genre, releaseDate } = req.body;
         
         const newAlbum = new Album({
             title,
             artist: artistId,
             genre,
-            releaseYear: releaseYear || null,
+            releaseDate: releaseDate || null,
             coverArtUrl: req.file ? req.file.path : null,
             status: 'approved',
             createdBy: req.user._id,
@@ -340,8 +340,8 @@ router.delete('/content/artists/:id', async (req, res) => {
 // --- АЛЬБОМЫ ---
 router.put('/content/albums/:id', upload.single('coverArt'), async (req, res) => {
     try {
-        const { title, artistId, genre, releaseYear } = req.body;
-        const updateData = { title, artist: artistId, genre, releaseYear: releaseYear || null };
+        const { title, artistId, genre, releaseDate } = req.body;
+        const updateData = { title, artist: artistId, genre, releaseDate: releaseDate || null };
         
         if (req.file) {
             updateData.coverArtUrl = req.file.path;
@@ -381,12 +381,10 @@ router.delete('/content/albums/:id', async (req, res) => {
 // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.put('/content/tracks/:id', async (req, res) => {
     try {
-        const { title, artistIds, albumId, genres, isExplicit } = req.body;
+        const { title, artistIds, albumId, genres, isExplicit, releaseDate } = req.body;
         
-        // Проверяем, является ли artistIds строкой, и парсим, если это так
         const parsedArtistIds = typeof artistIds === 'string' ? JSON.parse(artistIds) : (artistIds || []);
         
-        // Проверяем, является ли genres строкой, и парсим, если это так
         const parsedGenres = typeof genres === 'string' ? JSON.parse(genres) : (genres || []);
 
         const updateData = { 
@@ -394,8 +392,8 @@ router.put('/content/tracks/:id', async (req, res) => {
             artist: parsedArtistIds, 
             album: albumId || null, 
             genres: parsedGenres,
-            // Преобразуем строковое значение 'true'/'false' в булево
             isExplicit: isExplicit === 'true',
+            releaseDate: releaseDate || null,
         };
 
         const updatedTrack = await Track.findByIdAndUpdate(req.params.id, updateData, { new: true });
@@ -541,7 +539,6 @@ router.get('/albums/:albumId/tracks', async (req, res) => {
         const album = await Album.findById(albumId)
             .populate({
                 path: 'tracks',
-                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
                 populate: { path: 'artist', select: 'name premium premiumCustomization' }
             });
         
