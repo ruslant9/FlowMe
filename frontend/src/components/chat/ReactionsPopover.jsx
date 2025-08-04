@@ -159,9 +159,8 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                     transition={{ duration: 0.1 }}
                                     className="h-full flex flex-col" // Заставляем блок занимать всю высоту родителя
                                 >
-                                    {activeTab === 'regular' && (
-                                        <div className="flex items-center justify-center flex-1">
-                                            <div className="flex items-center space-x-1">
+                                    {activeTab === 'regular' && ( <div className="flex items-start justify-center flex-1 pt-4">
++                                         <div className="flex items-center space-x-1">
                                                 {regularReactions.map(emoji => (
                                                     <button
                                                         key={emoji}

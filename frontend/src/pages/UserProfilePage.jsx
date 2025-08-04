@@ -38,10 +38,8 @@ const formatLastSeen = (dateString) => {
     if (!dateString) return 'недавно';
     const date = new Date(dateString);
     const now = new Date();
-
     const diffMs = now.getTime() - date.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
-
     if (diffHours < 24) {
         return formatDistanceToNow(date, { addSuffix: true, locale: customRuLocaleForDistance });
     } else {
@@ -282,7 +280,9 @@ const UserProfilePage = () => {
             try {
                 const token = localStorage.getItem('token');
                 const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-                setMyMusicTrackIds(new Set(res.data.map(track => track._id)));
+                 // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                setMyMusicTrackIds(new Set(res.data.map(track => track.sourceId)));
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             } catch (error) {
                 console.error("Could not fetch my music for like status");
             }
@@ -470,7 +470,6 @@ const UserProfilePage = () => {
                         userAccent={userAccent}
                         renderContent={(accentTextColor) => (
                              <div className="text-center pt-4 pb-6">
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                 <div className="relative flex-shrink-0 mx-auto mb-4">
                                     <Avatar
                                         username={user.username}
@@ -481,7 +480,6 @@ const UserProfilePage = () => {
                                         customBorder={user.premiumCustomization?.avatarBorder}
                                     />
                                 </div>
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <div className="flex flex-col items-center mt-4">
                                     <div className="flex items-center justify-center">
                                         <h1 className="text-2xl font-bold">{user.fullName || user.username}</h1>

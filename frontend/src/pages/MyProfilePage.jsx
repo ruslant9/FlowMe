@@ -112,7 +112,9 @@ const MyProfilePage = () => {
             setPosts(postsRes.data);
             setStats(statsRes.data);
             setMusicTracks(musicRes.data);
-            setMyMusicTrackIds(new Set(musicRes.data.map(track => track.youtubeId)));
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            setMyMusicTrackIds(new Set(musicRes.data.map(track => track.sourceId)));
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             setScheduledPosts(scheduledRes.data);
         } catch (error) {
             toast.error('Не удалось загрузить посты и статистику.');

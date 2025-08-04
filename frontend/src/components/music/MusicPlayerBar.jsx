@@ -5,6 +5,7 @@ import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, Vo
 import Slider from 'rc-slider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { Link } from 'react-router-dom';
 
 // Компонент для кешированного изображения
 const CachedImage = ({ src, alt, className, onClick }) => {
@@ -36,7 +37,7 @@ const NotificationToast = ({ message }) => (
         )}
     </AnimatePresence>
 );
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем openFullScreenPlayer в пропсы ---
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем openFullScreenPlayer в пропсы ---
 const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification, openFullScreenPlayer }) => {
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     if (!track) {
@@ -48,28 +49,36 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
             /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
             ''
         ).trim();
-    };    
+    };
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
-            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
+            return artistData.map((artist, index) => (
+                <React.Fragment key={artist._id || index}>
+                    <Link to={`/artist/${artist._id}`} className="hover:underline">
+                        {(artist.name || '').replace(' - Topic', '').trim()}
+                    </Link>
+                    {index < artistData.length - 1 && ', '}
+                </React.Fragment>
+            ));
         }
         if (typeof artistData === 'object' && artistData.name) {
-            return artistData.name.replace(' - Topic', '').trim();
+            return (
+                <Link to={`/artist/${artistData._id}`} className="hover:underline">
+                    {artistData.name.replace(' - Topic', '').trim()}
+                </Link>
+            );
         }
-        if (typeof artistData === 'string') {
-            return artistData.replace(' - Topic', '').trim();
-        }
-        return '';
+        return <span>{artistData.toString()}</span>;
     };
     const currentProgress = progress || 0;
     const totalDuration = duration || 1;
     return (
         <div className="w-full p-4 flex items-center space-x-4">
             <div className="flex items-center space-x-4 w-1/4 flex-shrink-0">
-                <CachedImage 
-                    src={track.albumArtUrl} 
-                    alt={track.title} 
+                <CachedImage
+                    src={track.albumArtUrl}
+                    alt={track.title}
                     className="w-16 h-16 rounded-md object-cover shadow-md cursor-pointer"
                     onClick={openFullScreenPlayer}
                 />
