@@ -112,22 +112,24 @@ const MyProfilePage = () => {
             setPosts(postsRes.data);
             setStats(statsRes.data);
             setMusicTracks(musicRes.data);
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
             setMyMusicTrackIds(new Set(musicRes.data.map(track => track.sourceId)));
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             setScheduledPosts(scheduledRes.data);
         } catch (error) {
             toast.error('Не удалось загрузить посты и статистику.');
         } finally {
-            if (showLoader) setLoadingPostsAndStats(false);
+             // --- НАЧАЛО ИСПРАВЛЕНИЯ: Всегда выключаем спиннер после загрузки ---
+            setLoadingPostsAndStats(false);
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         }
     }, [user?._id]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменяем зависимость с `user` на `user?._id` ---
     useEffect(() => {
         if (user) {
             fetchPostsAndStats(true);
         }
-    }, [user, fetchPostsAndStats]);
+    }, [user?._id, fetchPostsAndStats]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     useEffect(() => {
         const handleBackgroundUpdate = () => {
