@@ -5,12 +5,11 @@ import Tippy from '@tippyjs/react/headless';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../../context/UserContext';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
-import { Sparkles, Loader2 } from 'lucide-react'; // ИЗМЕНЕНИЕ: Добавлен Loader2
+import { Sparkles, Loader2 } from 'lucide-react';
 import { regularReactions, emojiPacks, allPremiumReactionUrls } from '../../data/emojiData';
 import EmojiPreviewModal from '../modals/EmojiPreviewModal';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИЗМЕНЕНИЕ: Импортируем хук
+import { useCachedImage } from '../../hooks/useCachedImage';
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Создаем компонент для кешированного эмодзи ---
 const CachedEmoji = ({ src, alt }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -18,7 +17,6 @@ const CachedEmoji = ({ src, alt }) => {
     }
     return <img src={finalSrc} alt={alt} className="w-8 h-8 object-contain" />;
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const preloadImages = (urls) => {
     urls.forEach(url => {
@@ -182,7 +180,9 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                 </button>
                                             ))}
                                         </div>
-                                        <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
+                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем max-h на h и добавляем overflow-y-auto --- */}
+                                        <div className="grid grid-cols-6 gap-2 h-28 overflow-y-auto p-1">
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                             {activeUserEmojis.map(emoji => (
                                                 <button
                                                     key={emoji._id}
@@ -191,10 +191,9 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                     onMouseLeave={handleMouseLeave}
                                                     onTouchStart={() => handleMouseDown(emoji)}
                                                     onTouchEnd={() => handleMouseUp(emoji)}
-                                                    className="p-1 rounded-full transition-transform duration-100 hover:scale-125 flex items-center justify-center" // ИЗМЕНЕНИЕ
+                                                    className="p-1 rounded-full transition-transform duration-100 hover:scale-125 flex items-center justify-center"
                                                     title={emoji.name}
                                                 >
-                                                    {/* --- ИЗМЕНЕНИЕ: Заменяем img на CachedEmoji --- */}
                                                     <CachedEmoji src={emoji.imageUrl} alt={emoji.name} />
                                                 </button>
                                             ))}
@@ -217,7 +216,9 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                 </button>
                                             ))}
                                         </div>
-                                        <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
+                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем max-h на h и добавляем overflow-y-auto --- */}
+                                        <div className="grid grid-cols-6 gap-2 h-28 overflow-y-auto p-1">
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                             {activePremiumEmojis.map(emoji => (
                                                 <button
                                                     key={emoji.id || emoji._id}
@@ -226,10 +227,9 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                     onMouseLeave={handleMouseLeave}
                                                     onTouchStart={() => handleMouseDown(emoji)}
                                                     onTouchEnd={() => handleMouseUp(emoji)}
-                                                    className="p-1 rounded-full transition-transform duration-100 hover:scale-125 flex items-center justify-center" // ИЗМЕНЕНИЕ
+                                                    className="p-1 rounded-full transition-transform duration-100 hover:scale-125 flex items-center justify-center"
                                                     title={emoji.name}
                                                 >
-                                                    {/* --- ИЗМЕНЕНИЕ: Заменяем img на CachedEmoji --- */}
                                                     <CachedEmoji src={emoji.imageUrl || emoji.url} alt={emoji.name} />
                                                 </button>
                                             ))}

@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import { useCachedImage } from '../hooks/useCachedImage'; 
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import RecommendationCard from '../components/music/RecommendationCard'; // --- ИСПРАВЛЕНИЕ: Импортируем карточку ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -30,22 +31,18 @@ const AlbumPage = () => {
     const navigate = useNavigate();
     const [album, setAlbum] = useState(null);
     const [loading, setLoading] = useState(true);
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новые состояния для рекомендаций ---
     const [recommendations, setRecommendations] = useState([]);
     const [loadingRecs, setLoadingRecs] = useState(false);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-    const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds } = useMusicPlayer();
+    const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds, loadingTrackId, togglePlayPause } = useMusicPlayer();
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновленная функция загрузки данных ---
     const fetchAlbum = useCallback(async () => {
         setLoading(true);
-        setRecommendations([]); // Сбрасываем старые рекомендации
+        setRecommendations([]);
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/album/${albumId}`, { headers: { Authorization: `Bearer ${token}` } });
             setAlbum(res.data);
             
-            // После успешной загрузки альбома, запрашиваем рекомендации
             setLoadingRecs(true);
             try {
                 const recsRes = await axios.get(`${API_URL}/api/music/album/${albumId}/recommendations`, { headers: { Authorization: `Bearer ${token}` } });
@@ -63,7 +60,6 @@ const AlbumPage = () => {
             setLoading(false);
         }
     }, [albumId, navigate]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     useEffect(() => {
         fetchAlbum();
@@ -165,32 +161,31 @@ const AlbumPage = () => {
                         />
                     ))}
                 </div>
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Блок с рекомендациями --- */}
                 {(loadingRecs || recommendations.length > 0) && (
                     <div className="mt-12">
                         <h2 className="text-2xl font-bold mb-4">Похожие треки</h2>
                         {loadingRecs ? (
                             <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400"/></div>
                         ) : (
-                            <div className="space-y-1">
-                                {recommendations.map((recTrack, index) => (
-                                    <PlaylistTrackItem
-                                        key={recTrack._id}
-                                        track={recTrack}
-                                        index={index + 1}
-                                        onPlay={() => playTrack(recTrack, recommendations)}
-                                        isCurrent={recTrack._id === currentTrack?._id}
-                                        isPlaying={isPlaying}
-                                        isSaved={myMusicTrackIds?.has(recTrack._id)}
-                                        onToggleSave={onToggleLike}
-                                        accentColor={dominantColor}
-                                    />
+                            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем список на карточки ---
+                            <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
+                                {recommendations.map((recTrack) => (
+                                    <div key={recTrack._id} className="w-40 flex-shrink-0">
+                                        <RecommendationCard
+                                            track={recTrack}
+                                            onSelectTrack={() => playTrack(recTrack, recommendations)}
+                                            isCurrent={recTrack._id === currentTrack?._id}
+                                            isPlaying={isPlaying && recTrack._id === currentTrack?._id}
+                                            isLoading={loadingTrackId === recTrack._id}
+                                            onPlayPause={togglePlayPause}
+                                        />
+                                    </div>
                                 ))}
                             </div>
+                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                         )}
                     </div>
                 )}
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             </div>
         </main>
     );

@@ -93,15 +93,23 @@ const logMusicAction = async (req, track, action) => {
 
 router.post('/toggle-save', authMiddleware, async (req, res) => {
     try {
-        const { _id: trackId } = req.body;
+        const libraryTrackData = req.body;
         const userId = req.user.userId;
 
-        const existingLibraryTrack = await Track.findById(trackId);
-        if (!existingLibraryTrack || existingLibraryTrack.type !== 'library_track') {
+        const existingLibraryTrack = await Track.findOne({ 
+            _id: libraryTrackData._id, 
+            type: 'library_track' 
+        });
+
+        if (!existingLibraryTrack) {
             return res.status(404).json({ message: 'Трек не найден в библиотеке.' });
         }
-        
-        const existingSavedTrack = await Track.findOne({ user: userId, _id: existingLibraryTrack._id, type: 'saved' });
+
+        const existingSavedTrack = await Track.findOne({ 
+            user: userId, 
+            youtubeId: existingLibraryTrack.youtubeId, 
+            type: 'saved' 
+        });
 
         if (existingSavedTrack) {
             await Track.deleteOne({ _id: existingSavedTrack._id });
@@ -117,9 +125,11 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
             await newSavedTrack.save();
             res.status(201).json({ message: 'Трек добавлен в Мою музыку.', saved: true });
         }
+        
         broadcastToUsers(req, [userId], { type: 'MUSIC_UPDATED' });
         logMusicAction(req, existingLibraryTrack, 'like');
     } catch (error) {
+        console.error("Ошибка при обновлении трека в медиатеке:", error);
         res.status(500).json({ message: 'Ошибка сервера при обновлении трека.' });
     }
 });
@@ -188,7 +198,6 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый роут для рекомендаций к альбому ---
 router.get('/album/:albumId/recommendations', authMiddleware, async (req, res) => {
     try {
         const { albumId } = req.params;
@@ -243,10 +252,9 @@ router.get('/album/:albumId/recommendations', authMiddleware, async (req, res) =
         res.status(500).json({ message: "Ошибка сервера" });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
-router.get('/artist/:artistId', async (req, res) => {
+router.get('/artist/:artistId', authMiddleware, async (req, res) => {
     try {
         const artistId = new mongoose.Types.ObjectId(req.params.artistId);
         const topTracksPipeline = [
@@ -431,6 +439,49 @@ router.get('/track/:trackId', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера при загрузке трека.' });
     }
 });
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый роут для рекомендаций к синглу ---
+router.get('/track/:trackId/recommendations', authMiddleware, async (req, res) => {
+    try {
+        const { trackId } = req.params;
+        const track = await Track.findById(trackId).lean();
+
+        if (!track) {
+            return res.json([]);
+        }
+
+        const allArtistIds = (track.artist || []).map(a => new mongoose.Types.ObjectId(a));
+        const allGenres = track.genres || [];
+
+        const recommendations = await Track.find({
+            _id: { $ne: track._id },
+            status: 'approved',
+            type: 'library_track',
+            $or: [
+                { artist: { $in: allArtistIds } },
+                { genres: { $in: allGenres } }
+            ]
+        })
+        .sort({ playCount: -1 })
+        .limit(10)
+        .populate('artist', 'name _id')
+        .populate('album', 'title coverArtUrl')
+        .lean();
+
+        const processedRecs = recommendations.map(rec => {
+            if (rec.album && rec.album.coverArtUrl && !rec.albumArtUrl) {
+                return { ...rec, albumArtUrl: rec.album.coverArtUrl };
+            }
+            return rec;
+        });
+
+        res.json(processedRecs);
+    } catch (error) {
+        console.error("Ошибка при генерации рекомендаций к треку:", error);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+});
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 router.post('/log-action', authMiddleware, async (req, res) => {
