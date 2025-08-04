@@ -104,7 +104,6 @@ html.dark .ios-glass-final::after,
 
 /* ИЗМЕНЕНИЕ: Новый класс для всплывающих окон с эффектом стекла */
 .ios-glass-popover {
-  position: relative;
   backdrop-filter: blur(10px); /* Менее интенсивное размытие для небольших элементов */
   -webkit-backdrop-filter: blur(10px);
   background-color: rgba(255, 255, 255, 0.9); /* Почти непрозрачный светлый фон */
