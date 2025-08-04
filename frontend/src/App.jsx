@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
-import { Sun, Moon, Loader2, ShieldAlert, LogOut } from 'lucide-react';
+import { Sun, Moon, Loader2, ShieldAlert, LogOut, Menu } from 'lucide-react';
 import { useUser } from './context/UserContext';
 const LiquidGlassBackground = React.lazy(() => import('./components/LiquidGlassBackground'));
 import LoginPage from './pages/LoginPage';
@@ -39,7 +39,7 @@ import MusicPlayerBar from './components/music/MusicPlayerBar';
 import FullScreenPlayer from './components/music/FullScreenPlayer';
 import { useWebSocket } from './context/WebSocketContext';
 import WorkshopPage from './pages/WorkshopPage';
-import { Link } from 'react-router-dom'; // Импортируем Link
+import { Link } from 'react-router-dom';
 
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
   <div className="flex items-center justify-center space-x-2 p-2 rounded-lg">
@@ -60,6 +60,7 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
     currentTrack,
     isPlaying,
@@ -124,6 +125,13 @@ const MainLayout = ({ children }) => {
         </Suspense>
       )}
 
+      <button 
+        onClick={() => setIsMobileNavOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm"
+      >
+        <Menu />
+      </button>
+
       <AnimatePresence>
           {isFullScreenPlayerOpen && <FullScreenPlayer />}
       </AnimatePresence>
@@ -158,7 +166,11 @@ const MainLayout = ({ children }) => {
       
       
       <div className={`flex relative z-10 h-full overflow-hidden ${currentTrack ? 'pb-[100px]' : ''}`}>
-        <Sidebar themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} />
+        <Sidebar 
+          themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} 
+          isMobileNavOpen={isMobileNavOpen}
+          onMobileNavClose={() => setIsMobileNavOpen(false)}
+        />
         <div className="flex-1 relative overflow-y-auto">
           {children}
         </div>
@@ -350,7 +362,6 @@ function App() {
               <Route path="/admin" element={<AdminPage />} />
             </Route>
             
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
             <Route path="/page-not-found" element={
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-8 h-full">
                     <h1 className="text-4xl font-bold">404 - Страница не найдена</h1>
@@ -358,7 +369,6 @@ function App() {
                     <Link to="/" className="mt-6 inline-block text-blue-500 hover:underline">Вернуться на главную</Link>
                 </div>
             } />
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
             <Route path="*" element={<Navigate to="/page-not-found" replace />} />
           </Route>
