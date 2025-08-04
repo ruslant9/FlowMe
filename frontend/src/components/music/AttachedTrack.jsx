@@ -4,7 +4,7 @@ import React from 'react';
 import { Play, Pause, Music, Loader2 } from 'lucide-react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import Slider from 'rc-slider';
-import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from './hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
