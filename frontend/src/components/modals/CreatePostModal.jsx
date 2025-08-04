@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, Suspense, Fragment, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Image as ImageIcon, Loader2, Lock, Unlock, Smile, Pencil, BookOpen, Music, XCircle, BarChart2 as PollIcon, Calendar as CalendarIcon } from 'lucide-react';
+import { X, Image as ImageIcon, Loader2, Lock, Unlock, Smile, Pencil, BookOpen, Music, XCircle, BarChart2 as PollIcon, Calendar as CalendarIcon, Text } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import ImageAttachmentModal from '../chat/ImageAttachmentModal'; // Re-use existing image editor
@@ -13,12 +13,20 @@ import DatePicker, { registerLocale } from 'react-datepicker';
 import { ru } from 'date-fns/locale';
 import { setHours, setMinutes, isToday } from 'date-fns';
 import AttachedTrack from '../music/AttachedTrack';
+import Avatar from '../Avatar';
 
 registerLocale('ru', ru);
 const Picker = React.lazy(() => import('emoji-picker-react'));
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+const getImageUrl = (url) => {
+    if (!url || url.startsWith('http')) return url;
+    return `${API_URL}/${url}`;
+};
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const ToggleSwitch = ({ checked, onChange, label }) => (
     <label className="flex items-center space-x-2 cursor-pointer text-sm">
@@ -334,24 +342,24 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                         
                         <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
                             <div className="relative">
-    <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Что у вас нового?"
-        className="w-full h-32 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-    ></textarea>
-    
-    {isPickerVisible && (
-        <div ref={pickerRef} className={`absolute z-10 right-0 ${pickerPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
-            <Suspense fallback={<div className="w-80 h-96 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">...</div>}>
-                <Picker 
-                    onEmojiClick={(emojiObject) => setText(prev => prev + emojiObject.emoji)} 
-                    theme={localStorage.getItem('theme') === 'dark' ? "dark" : "light"}
-                />
-            </Suspense>
-        </div>
-    )}
-</div>
+                                <textarea
+                                    value={text}
+                                    onChange={(e) => setText(e.target.value)}
+                                    placeholder="Что у вас нового?"
+                                    className="w-full h-32 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                ></textarea>
+                                
+                                {isPickerVisible && (
+                                    <div ref={pickerRef} className={`absolute z-10 right-0 ${pickerPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
+                                         <Suspense fallback={<div className="w-80 h-96 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">...</div>}>
+                                            <Picker 
+                                                onEmojiClick={(emojiObject) => setText(prev => prev + emojiObject.emoji)} 
+                                                theme={localStorage.getItem('theme') === 'dark' ? "dark" : "light"}
+                                            />
+                                        </Suspense>
+                                    </div>
+                                )}
+                            </div>
                             
                             {images.length > 0 && (
                                 <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-4">
@@ -488,54 +496,55 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                             </button>
                                         }
                                     />
-                                    <div className="flex items-stretch space-x-3 overflow-x-auto pb-2 -mx-2 px-2">
-    {fetchingCommunities ? (
-        [...Array(3)].map((_, i) => (
-            <div key={i} className="w-28 flex-shrink-0 p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 animate-pulse">
-                <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 mx-auto"></div>
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded mt-3"></div>
-                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded mt-2 w-3/4 mx-auto"></div>
-            </div>
-        ))
-    ) : (
-        myCommunities.map(option => { {/* ИЗМЕНЕНО: commentingOptions -> myCommunities */}
-            const isSelected = selectedCommunity?._id === option._id;
-            return (
-                <button
-                    key={option._id || 'personal'}
-                    type="button"
-                    onClick={() => setSelectedCommunity(option)}
-                    className={`w-28 flex-shrink-0 p-3 rounded-xl flex flex-col items-center text-center transition-all duration-200
-                        ${isSelected
-                            ? 'bg-blue-600/20 ring-2 ring-blue-500'
-                            : 'bg-slate-100/50 dark:bg-slate-800/50 hover:bg-slate-200/80 dark:hover:bg-slate-700/80'
-                        }
-                    `}
-                >
-                    <Avatar
-                        username={option.type === 'user' ? option.username : option.name}
-                        fullName={option.name}
-                        avatarUrl={getImageUrl(option.avatar)}
-                        size="md"
-                        isPremium={option.premium?.isActive}
-                        customBorder={option.premiumCustomization?.avatarBorder}
-                    />
-                    <div className="mt-2 w-full">
-                        <div className="flex items-center justify-center space-x-1">
-                            <span className="text-xs font-semibold truncate leading-tight">{option.name}</span>
-                            {option.type === 'user' && option.premium?.isActive && (
-                                <span className="premium-shimmer-text text-[10px] font-bold">Premium</span>
-                            )}
-                        </div>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                            {option.type === 'user' ? 'Личный профиль' : 'Сообщество'}
-                        </span>
-                    </div>
-                </button>
-            )
-        })
-    )}
-</div>
+                                    <Listbox value={selectedCommunity} onChange={setSelectedCommunity} disabled={fetchingCommunities}>
+                                        <div className="relative z-10 w-56">
+                                            <Listbox.Button className="relative w-full cursor-default rounded-lg bg-slate-100 dark:bg-slate-800 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
+                                                <span className="block truncate">
+                                                    {fetchingCommunities ? 'Загрузка...' : (selectedCommunity ? selectedCommunity.name : 'Моя страница')}
+                                                </span>
+                                                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                                    <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                                </span>
+                                            </Listbox.Button>
+                                            <Transition
+                                                as={Fragment}
+                                                leave="transition ease-in duration-100"
+                                                leaveFrom="opacity-100"
+                                                leaveTo="opacity-0"
+                                            >
+                                                <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                    {myCommunities.map((communityOption) => (
+                                                        <Listbox.Option
+                                                            key={communityOption._id || 'personal'}
+                                                            className={({ active }) =>
+                                                                `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                                                    active ? 'bg-blue-100 dark:bg-blue-600' : ''
+                                                                }`
+                                                            }
+                                                            value={communityOption}
+                                                        >
+                                                            {({ selected }) => (
+                                                                <>
+                                                                    <span
+                                                                        className={`block truncate ${
+                                                                            selected ? 'font-medium' : 'font-normal'
+                                                                        }`}
+                                                                    >
+                                                                        {communityOption.name}
+                                                                    </span>
+                                                                    {selected ? (
+                                                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-white">
+                                                                            <Check className="h-5 w-5" aria-hidden="true" />
+                                                                        </span>
+                                                                    ) : null}
+                                                                </>
+                                                            )}
+                                                        </Listbox.Option>
+                                                    ))}
+                                                </Listbox.Options>
+                                            </Transition>
+                                        </div>
+                                    </Listbox>
                                 </div>
                                 <button
                                     type="submit"

@@ -1,7 +1,7 @@
 // frontend/src/components/music/FullScreenPlayer.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, List, MoreHorizontal, PlusCircle } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, List, MoreHorizontal, PlusCircle, Volume2, VolumeX } from 'lucide-react';
 import Slider from 'rc-slider';
 import { Link } from 'react-router-dom';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
@@ -52,11 +52,13 @@ const FullScreenPlayer = () => {
         isPlaying,
         progress,
         duration,
+        volume,
         isShuffle,
         isRepeat,
         isLiked,
         togglePlayPause,
         seekTo,
+        setVolume,
         prevTrack,
         nextTrack,
         toggleShuffle,
@@ -67,6 +69,33 @@ const FullScreenPlayer = () => {
 
     const [isMenuOpen, setMenuOpen] = useState(false);
     const [isAddToPlaylistModalOpen, setAddToPlaylistModalOpen] = useState(false);
+    
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояния и рефы для параллакса ---
+    const [rotate, setRotate] = useState({ x: 0, y: 0 });
+    const parallaxRef = useRef(null);
+
+    const handleMouseMove = (e) => {
+        if (!parallaxRef.current) return;
+        const rect = parallaxRef.current.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const xPct = mouseX / width - 0.5;
+        const yPct = mouseY / height - 0.5;
+        
+        // Умножаем на ~30, чтобы получить максимальный наклон в 15 градусов
+        setRotate({
+            x: yPct * -30, // Инвертируем X для естественного наклона
+            y: xPct * 30
+        });
+    };
+
+    const handleMouseLeave = () => {
+        setRotate({ x: 0, y: 0 });
+    };
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 
     const { gradient } = useDynamicAccent(track?.albumArtUrl);
 
@@ -98,24 +127,41 @@ const FullScreenPlayer = () => {
                     </div>
 
                     <div className="flex-1 flex items-center justify-center w-full max-w-md">
+                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Обертка для параллакса и тени --- */}
                         <motion.div
-                            animate={{ scale: isPlaying ? [1, 1.03, 1] : 1 }}
-                            transition={{
-                                duration: 1.2,
-                                repeat: isPlaying ? Infinity : 0,
-                                ease: "easeInOut"
-                            }}
+                            ref={parallaxRef}
+                            onMouseMove={handleMouseMove}
+                            onMouseLeave={handleMouseLeave}
+                            style={{ perspective: '1000px' }} // Включаем 3D-перспективу
                         >
-                            <motion.img 
-                                key={track._id}
-                                src={track.albumArtUrl} 
-                                alt={track.title} 
-                                className="w-full aspect-square rounded-2xl object-cover shadow-2xl" 
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.5, ease: 'easeOut' }}
-                            />
+                            <motion.div
+                                animate={{
+                                    scale: isPlaying ? [1, 1.03, 1] : 1,
+                                    rotateX: rotate.x,
+                                    rotateY: rotate.y
+                                }}
+                                transition={{
+                                    scale: { duration: 1.2, repeat: isPlaying ? Infinity : 0, ease: "easeInOut" },
+                                    rotateX: { type: 'spring', stiffness: 400, damping: 30 },
+                                    rotateY: { type: 'spring', stiffness: 400, damping: 30 }
+                                }}
+                                style={{ transformStyle: 'preserve-3d' }} // Важно для дочерних 3D-трансформаций
+                            >
+                                <motion.img 
+                                    key={track._id}
+                                    src={track.albumArtUrl} 
+                                    alt={track.title} 
+                                    className="w-full aspect-square rounded-2xl object-cover" 
+                                    style={{
+                                        filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.5))' // Глубокая и мягкая тень
+                                    }}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                                />
+                            </motion.div>
                         </motion.div>
+                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     </div>
                     
                     <div className="w-full max-w-md">
@@ -143,30 +189,43 @@ const FullScreenPlayer = () => {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <Tippy
-                                interactive
-                                placement="top-start"
-                                visible={isMenuOpen}
-                                onClickOutside={() => setMenuOpen(false)}
-                                render={attrs => (
-                                    <div className="ios-glass-popover w-52 rounded-xl shadow-lg p-1" {...attrs}>
-                                        <button 
-                                            onClick={() => { setAddToPlaylistModalOpen(true); setMenuOpen(false); }}
-                                            className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                                        >
-                                            <PlusCircle size={16}/> <span>Добавить в плейлист</span>
-                                        </button>
-                                        <div className="tippy-arrow" data-popper-arrow></div>
-                                    </div>
-                                )}
-                            >
-                                <button onClick={() => setMenuOpen(v => !v)} className="p-3 opacity-70 hover:opacity-100"><MoreHorizontal size={24}/></button>
-                            </Tippy>
+                            <div className="flex-1 flex justify-start">
+                                <Tippy
+                                    interactive
+                                    placement="top-start"
+                                    visible={isMenuOpen}
+                                    onClickOutside={() => setMenuOpen(false)}
+                                    render={attrs => (
+                                        <div className="ios-glass-popover w-52 rounded-xl shadow-lg p-1" {...attrs}>
+                                            <button 
+                                                onClick={() => { setAddToPlaylistModalOpen(true); setMenuOpen(false); }}
+                                                className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                                            >
+                                                <PlusCircle size={16}/> <span>Добавить в плейлист</span>
+                                            </button>
+                                            <div className="tippy-arrow" data-popper-arrow></div>
+                                        </div>
+                                    )}
+                                >
+                                    <button onClick={() => setMenuOpen(v => !v)} className="p-3 opacity-70 hover:opacity-100"><MoreHorizontal size={24}/></button>
+                                </Tippy>
+                            </div>
                             
-                            <button className="p-3 opacity-70 hover:opacity-100"><List size={24}/></button>
-                            <button onClick={() => onToggleLike(track)} className={`p-3 transition-colors ${isLiked ? 'text-red-500 opacity-100' : 'opacity-70 hover:opacity-100'}`}>
-                                <Heart size={24} fill={isLiked ? 'currentColor' : 'none'}/>
-                            </button>
+                            <div className="flex-1 flex justify-center">
+                                <button className="p-3 opacity-70 hover:opacity-100"><List size={24}/></button>
+                            </div>
+
+                            <div className="flex-1 flex justify-end items-center space-x-4">
+                                <div className="flex items-center space-x-2 w-32">
+                                    <button onClick={() => setVolume(volume > 0 ? 0 : 0.5)} className="p-2 opacity-70 hover:opacity-100">
+                                        {volume > 0 ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                                    </button>
+                                    <Slider min={0} max={1} step={0.01} value={volume} onChange={setVolume} className="w-full" />
+                                </div>
+                                <button onClick={() => onToggleLike(track)} className={`p-3 transition-colors ${isLiked ? 'text-red-500 opacity-100' : 'opacity-70 hover:opacity-100'}`}>
+                                    <Heart size={24} fill={isLiked ? 'currentColor' : 'none'}/>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

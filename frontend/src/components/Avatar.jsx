@@ -40,51 +40,59 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
         '2xl': 'w-32 h-32 text-5xl',
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const nameForInitial = fullName || username;
     const firstLetter = nameForInitial.charAt(0).toUpperCase();
-    const hash = getHash(nameForInitial || ''); // Используем полное имя для хеша
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    const hash = getHash(username || '');
     const colorIndex = Math.abs(hash) % avatarColors.length;
     const bgColor = avatarColors[colorIndex];
-
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ВНУТРЕННЕЙ ЛОГИКИ AVATAR.JSX ---
     const hasCustomBorder = customBorder && customBorder.type !== 'none';
     const isPseudoElementBorder = hasCustomBorder && customBorder.pseudo;
-    const borderClass = hasCustomBorder && customBorder.type.startsWith('animated') ? `premium-border-${customBorder.type}` : '';
+    const borderClass = hasCustomBorder && customBorder.type.startsWith('animated') && !isPseudoElementBorder ? `premium-border-${customBorder.type}` : '';
     const borderStyle = hasCustomBorder && customBorder.type === 'static' ? { padding: '4px', backgroundColor: customBorder.value } : {};
-    
     const defaultPremiumClass = isPremium && !customBorder ? 'p-1 premium-gradient-bg' : '';
-
     const finalWrapperClass = `relative group rounded-full transition-all duration-300 inline-block ${borderClass} ${defaultPremiumClass}`;
-    
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ВНУТРЕННЕЙ ЛОГИКИ AVATAR.JSX ---
+
     return (
         <div 
             className={finalWrapperClass}
             style={borderStyle}
             onClick={onClick}
         >
-            {avatarUrl ? (
-                <div
-                    className={`${sizeClasses[size]} rounded-full flex-shrink-0 overflow-hidden bg-slate-200 dark:bg-slate-700 ${onClick ? 'cursor-pointer' : ''}`}
-                >
-                    <img
-                        src={getImageUrl(avatarUrl)}
-                        alt={username}
-                        className="w-full h-full object-cover"
-                    />
-                </div>
-            ) : (
-                <div
-                    className={`
-                        ${sizeClasses[size]} rounded-full flex items-center justify-center font-bold text-white
-                        flex-shrink-0 ${onClick ? 'cursor-pointer' : ''} bg-slate-700
-                    `}
-                    style={{ backgroundColor: bgColor }}
-                >
-                    {firstLetter}
-                </div>
-            )}
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+            {(() => {
+                return avatarUrl ? (
+                    <div
+                        className={`${sizeClasses[size]} rounded-full flex-shrink-0 overflow-hidden ${isPseudoElementBorder ? 'bg-transparent' : 'bg-slate-200 dark:bg-slate-700'} ${onClick ? 'cursor-pointer' : ''}`}
+                    >
+                        <img
+                            src={getImageUrl(avatarUrl)}
+                            alt={username}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                ) : (
+                    <div
+                        className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${onClick ? 'cursor-pointer' : ''}`}
+                        style={{ backgroundColor: isPseudoElementBorder ? 'transparent' : bgColor }}
+                    >
+                        {isPseudoElementBorder ? (
+                            <div className="w-full h-full rounded-full flex items-center justify-center" style={{ backgroundColor: bgColor }}>
+                                {firstLetter}
+                            </div>
+                        ) : (
+                            firstLetter
+                        )}
+                    </div>
+                );
+            })()}
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
             {(hasCustomBorder && !isPseudoElementBorder || defaultPremiumClass) && <div className="absolute inset-1 rounded-full bg-slate-50 dark:bg-slate-900 -z-10"></div>}    
+            
+            {/* Этот блок оставлен для обратной совместимости, если Avatar где-то еще используется со старым подходом */}
             {onClick && children && (
                 <>
                     <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
