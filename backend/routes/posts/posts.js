@@ -36,7 +36,13 @@ router.get('/feed', authMiddleware, async (req, res) => {
             .populate('user', 'username fullName avatar privacySettings friends blacklist premiumCustomization')
             .populate('likes', 'username fullName avatar _id premium premiumCustomization')
             .populate('community', 'name avatar visibility members')
-            .populate('attachedTrack')
+            .populate({
+                path: 'attachedTrack',
+                populate: [
+                    { path: 'artist', select: 'name _id' },
+                    { path: 'album', select: 'title coverArtUrl' }
+                ]
+            })
             .populate({ path: 'poll.options.votes', select: 'username fullName avatar' })
             .sort({ createdAt: -1 })
             .limit(40)

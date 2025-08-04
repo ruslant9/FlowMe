@@ -13,7 +13,13 @@ async function getPopulatedPost(postId, requesterId) {
         // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
         .populate('likes', 'username fullName avatar _id premium premiumCustomization')
         .populate('community', 'name avatar visibility members postingPolicy owner')
-        .populate('attachedTrack')
+        .populate({
+                path: 'attachedTrack',
+                populate: [
+                    { path: 'artist', select: 'name _id' },
+                    { path: 'album', select: 'title coverArtUrl' }
+                ]
+            })
         .populate({ path: 'poll.options.votes', select: 'username fullName avatar' })
         .lean();
 

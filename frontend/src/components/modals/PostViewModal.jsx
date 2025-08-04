@@ -578,7 +578,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                       <div className="relative">
                                                           <Listbox.Button className="focus:outline-none">
                                                               <Avatar 
-                                                                    username={commentAs.name || commentAs.username}
+                                                                    username={commentAs.type === 'user' ? commentAs.username : commentAs.name}
                                                                     avatarUrl={getImageUrl(commentAs.avatar)}
                                                                     size="sm"
                                                                 />
