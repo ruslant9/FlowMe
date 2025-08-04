@@ -17,6 +17,7 @@ import EditPlaylistModal from '../components/modals/EditPlaylistModal';
 import UploadContentModal from '../components/modals/UploadContentModal';
 import ArtistCard from '../components/music/ArtistCard';
 import AlbumCard from '../components/music/AlbumCard';
+import { useModal } from '../hooks/useModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -68,6 +69,7 @@ const MusicPage = () => {
     const [isCreatePlaylistModalOpen, setCreatePlaylistModalOpen] = useState(false);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [playlistToEdit, setPlaylistToEdit] = useState(null);
+    const { showConfirmation } = useModal();
 
     const fetchDataForTab = useCallback(async (tab, query = '', page = 1) => {
         const token = localStorage.getItem('token');
@@ -132,18 +134,15 @@ const MusicPage = () => {
 
                 try {
                     const res = await axios.get(`${API_URL}/api/music/search-all?q=${encodeURIComponent(query)}&page=${page}`, headers);
-                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика обновления результатов поиска ---
                     setSearchResults(prev => {
                         if (page === 1) {
-                            return res.data; // Первая страница, заменяем все
+                            return res.data;
                         }
-                        // Последующие страницы, добавляем только треки
                         return {
                             ...prev,
                             tracks: [...prev.tracks, ...res.data.tracks]
                         };
                     });
-                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                     setHasMoreSearchResults(res.data.hasMore);
                     setSearchPage(page);
                 } catch (error) { toast.error("Ошибка при поиске."); }
@@ -197,6 +196,31 @@ const MusicPage = () => {
             }
         } catch (error) { toast.error("Ошибка при запуске волны.", { id: toastId }); }
     }, [playTrack]);
+
+    const handleEditPlaylist = (playlist) => {
+        setPlaylistToEdit(playlist);
+        setEditModalOpen(true);
+    };
+
+    const handleDeletePlaylist = (playlistId) => {
+        showConfirmation({
+            title: "Удалить плейлист?",
+            message: "Это действие необратимо. Плейлист будет удален навсегда.",
+            onConfirm: async () => {
+                const toastId = toast.loading('Удаление...');
+                try {
+                    const token = localStorage.getItem('token');
+                    await axios.delete(`${API_URL}/api/playlists/${playlistId}`, { 
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success('Плейлист удален', { id: toastId });
+                    fetchDataForTab('playlists'); // Обновляем список
+                } catch (error) {
+                    toast.error('Ошибка при удалении плейлиста.', { id: toastId });
+                }
+            }
+        });
+    };
 
     return (
         <div className="flex-1 p-4 md:p-8">
@@ -263,7 +287,6 @@ const MusicPage = () => {
                             !searchQuery.trim() ? <div className="text-center py-10 text-slate-500">Начните вводить что-нибудь для поиска.</div> :
                             (searchResults.artists.length === 0 && searchResults.albums.length === 0 && searchResults.tracks.length === 0 && searchResults.playlists.length === 0) ? 
                             <p className="text-center py-10 text-slate-500">Ничего не найдено.</p> :
-                            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Меняем порядок секций и добавляем кнопку ---
                             <div className="space-y-8">
                                 {searchResults.tracks.length > 0 && (
                                     <div>
@@ -320,7 +343,6 @@ const MusicPage = () => {
                                     </div>
                                 )}
                             </div>
-                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                         )}
                     </div>
                 )}
@@ -338,7 +360,14 @@ const MusicPage = () => {
                                             <span className="mt-2 font-semibold">Создать плейлист</span>
                                         </button>
                                     </div>
-                                    {playlists.map(p => <PlaylistCard key={p._id} playlist={p} onClick={() => navigate(`/music/playlist/${p._id}`)} onEdit={() => {}} onDelete={() => {}} />)}
+                                    {playlists.map(p => 
+                                        <PlaylistCard 
+                                            key={p._id} 
+                                            playlist={p} 
+                                            onClick={() => navigate(`/music/playlist/${p._id}`)} 
+                                            onEdit={handleEditPlaylist} 
+                                            onDelete={handleDeletePlaylist} />
+                                    )}
                                 </div>
                             )}
                         </div>

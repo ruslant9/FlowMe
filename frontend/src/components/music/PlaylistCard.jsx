@@ -21,7 +21,8 @@ const PlaylistCard = ({ playlist, onClick, onDelete, onEdit }) => {
     const handleDeleteClick = (e) => {
         e.stopPropagation();
         showConfirmation({
-            title: `Удалить плейлист "${playlist.name}"?`,
+            title: "Удалить плейлист?",
+            message: `Вы уверены, что хотите удалить плейлист "${playlist.name}"?`,
             message: "Это действие нельзя отменить.",
             onConfirm: () => onDelete(playlist._id)
         });
