@@ -186,3 +186,5 @@ return (
 );
 
 };
+
+export default AlbumPage;
