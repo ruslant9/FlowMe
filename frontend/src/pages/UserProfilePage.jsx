@@ -151,8 +151,7 @@ const UserProfilePage = () => {
     const [processingAction, setProcessingAction] = useState(null);
     const { userStatuses } = useWebSocket();
     const { currentUser } = useUser();
-    const { playTrack, currentTrack, isPlaying, onToggleLike, progress, duration, seekTo, loadingTrackId, buffered, togglePlayPause } = useMusicPlayer();
-    const [myMusicTracks, setMyMusicTracks] = useState([]);
+    const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, seekTo, loadingTrackId, buffered, togglePlayPause } = useMusicPlayer();
     const [musicTracks, setMusicTracks] = useState([]);
     const [totalMusicCount, setTotalMusicCount] = useState(0);
     const [musicError, setMusicError] = useState(null);
@@ -283,7 +282,7 @@ const UserProfilePage = () => {
             try {
                 const token = localStorage.getItem('token');
                 const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-                setMyMusicTracks(res.data);
+                setMyMusicTrackIds(new Set(res.data.map(track => track._id)));
             } catch (error) {
                 console.error("Could not fetch my music for like status");
             }
@@ -471,10 +470,31 @@ const UserProfilePage = () => {
                         userAccent={userAccent}
                         renderContent={(accentTextColor) => (
                              <div className="text-center pt-4 pb-6">
-                                <div className="relative flex-shrink-0 mx-auto mb-4 w-24 h-24">
-                                    {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
-                                    <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} size="xl" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder}/>
-                                </div>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                                {(() => {
+                                    const border = user.premiumCustomization?.avatarBorder;
+                                    const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
+                                    const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
+
+                                    return (
+                                        <div className="relative flex-shrink-0 mx-auto mb-4">
+                                            <div 
+                                                className={`relative rounded-full ${borderClass}`}
+                                                style={staticBorderStyle}
+                                            >
+                                                <Avatar
+                                                    username={user.username}
+                                                    fullName={user.fullName}
+                                                    avatarUrl={user.avatar}
+                                                    size="xl"
+                                                    isPremium={user.premium?.isActive}
+                                                    customBorder={user.premiumCustomization?.avatarBorder}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <div className="flex flex-col items-center mt-4">
                                     <div className="flex items-center justify-center">
                                         <h1 className="text-2xl font-bold">{user.fullName || user.username}</h1>
@@ -572,38 +592,38 @@ const UserProfilePage = () => {
                             />
                             
                             <ProfileCard 
-    icon={Music} 
-    title="Музыка пользователя" 
-    actionButton={
-        <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-500 hover:underline">
-            Показать все
-        </button>
-    }
-    renderContent={() => (
-         musicError ? (
-            <p className="text-slate-500 dark:text-white/50">{musicError}</p>
-        ) : loading ? (
-            <div className="flex justify-center py-4"><Loader2 className="animate-spin" /></div>
-        ) : musicTracks.length > 0 ? (
-            <TrackList
-                tracks={musicTracks}
-                onSelectTrack={(track) => playTrack(track, musicTracks)}
-                currentPlayingTrackId={currentTrack?.youtubeId}
-                isPlaying={isPlaying}
-                onToggleSave={onToggleLike}
-                myMusicTrackIds={new Set(myMusicTracks.map(t => t.youtubeId))}
-                progress={progress}
-                duration={duration}
-                onSeek={seekTo}
-                loadingTrackId={loadingTrackId}
-                buffered={buffered}
-                togglePlayPause={togglePlayPause}
-            />
-        ) : (
-            <p className="text-slate-500 dark:text-white/50">У пользователя нет сохраненной музыки.</p>
-        )
-    )}
-/>
+                                icon={Music} 
+                                title="Музыка пользователя" 
+                                actionButton={
+                                    <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-500 hover:underline">
+                                        Показать все ({totalMusicCount})
+                                    </button>
+                                }
+                                renderContent={() => (
+                                    musicError ? (
+                                        <p className="text-slate-500 dark:text-white/50">{musicError}</p>
+                                    ) : loading ? (
+                                        <div className="flex justify-center py-4"><Loader2 className="animate-spin" /></div>
+                                    ) : musicTracks.length > 0 ? (
+                                        <TrackList
+                                            tracks={musicTracks}
+                                            onSelectTrack={(track) => playTrack(track, musicTracks)}
+                                            currentPlayingTrackId={currentTrack?._id}
+                                            isPlaying={isPlaying}
+                                            onToggleSave={onToggleLike}
+                                            myMusicTrackIds={myMusicTrackIds}
+                                            progress={progress}
+                                            duration={duration}
+                                            onSeek={seekTo}
+                                            loadingTrackId={loadingTrackId}
+                                            buffered={buffered}
+                                            togglePlayPause={togglePlayPause}
+                                        />
+                                    ) : (
+                                        <p className="text-slate-500 dark:text-white/50">У пользователя нет сохраненной музыки.</p>
+                                    )
+                                )}
+                            />
                         </>
                     )}
                 </div>

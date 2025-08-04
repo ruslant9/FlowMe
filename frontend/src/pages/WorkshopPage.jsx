@@ -64,6 +64,17 @@ const WorkshopPage = () => {
 
     const addedPackIds = useMemo(() => new Set(addedPacks.map(p => p._id)), [addedPacks]);
 
+    const fetchAddedPacksData = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const headers = { headers: { Authorization: `Bearer ${token}` } };
+            const res = await axios.get(`${API_URL}/api/workshop/packs/added`, headers);
+            setAddedPacks(res.data);
+        } catch (error) {
+            toast.error("Не удалось обновить список добавленных паков.");
+        }
+    }, []);
+
     const fetchData = useCallback(async (tab, query = '', page = 1, type = 'all') => {
         setLoading(true);
         try {
@@ -75,8 +86,7 @@ const WorkshopPage = () => {
                 const res = await axios.get(`${API_URL}/api/workshop/packs/my${typeParam}`, headers);
                 setMyPacks(res.data);
             } else if (tab === 'added') {
-                const res = await axios.get(`${API_URL}/api/workshop/packs/added${typeParam}`, headers);
-                setAddedPacks(res.data);
+                await fetchAddedPacksData();
             } else if (tab === 'search') {
                 const searchParams = new URLSearchParams({ q: query, page });
                 if (type !== 'all') {
@@ -92,8 +102,12 @@ const WorkshopPage = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [fetchAddedPacksData]);
     
+    useEffect(() => {
+        fetchAddedPacksData();
+    }, [fetchAddedPacksData]);
+
     useEffect(() => {
         fetchData(activeTab, searchQuery, 1, activeTypeFilter);
     }, [activeTab, activeTypeFilter, fetchData]);
@@ -149,8 +163,7 @@ const WorkshopPage = () => {
             const token = localStorage.getItem('token');
             await axios[method](endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
             toast.success(isAdded ? 'Пак удален из вашей библиотеки' : 'Пак добавлен в вашу библиотеку');
-            const addedRes = await axios.get(`${API_URL}/api/workshop/packs/added`, { headers: { Authorization: `Bearer ${token}` } });
-            setAddedPacks(addedRes.data);
+            await fetchAddedPacksData();
             refetchPacks();
         } catch (error) {
             toast.error('Произошла ошибка');
@@ -192,7 +205,6 @@ const WorkshopPage = () => {
                 packs = searchResults;
                 emptyMessage = searchQuery ? 'По вашему запросу ничего не найдено.' : 'Найдите стикеры и эмодзи, созданные другими пользователями.';
                 cardActions = (pack) => {
-                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                     const isCreator = pack.creator._id === currentUser._id;
                     if (isCreator) {
                         return <span className="text-xs font-semibold text-slate-500">Ваш пак</span>;
@@ -204,7 +216,6 @@ const WorkshopPage = () => {
 
                     if (isPackPremium) {
                         if (currentUser?.premium?.isActive) {
-                            // Premium user can add/remove any premium pack
                             return (
                                 <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
                                     {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
@@ -212,7 +223,6 @@ const WorkshopPage = () => {
                                 </button>
                             );
                         } else {
-                            // Non-premium user sees the premium button
                             return (
                                 <button onClick={() => setIsPremiumModalOpen(true)} className="flex items-center space-x-2 text-xs font-semibold text-yellow-500">
                                     <Crown size={14} />
@@ -221,7 +231,6 @@ const WorkshopPage = () => {
                             );
                         }
                     } else {
-                        // This is a free, user-created pack. Anyone can add/remove it.
                         return (
                             <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
                                 {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
@@ -229,7 +238,6 @@ const WorkshopPage = () => {
                             </button>
                         );
                     }
-                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 };
                 break;
             default:

@@ -5,7 +5,7 @@ import Tippy from '@tippyjs/react/headless';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../../context/UserContext';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Search } from 'lucide-react';
 import { regularReactions, allPremiumReactionUrls } from '../../data/emojiData';
 import EmojiPreviewModal from '../modals/EmojiPreviewModal';
 
@@ -24,21 +24,21 @@ const ReactionsPopover = ({ onSelect, children }) => {
     const [previewingEmoji, setPreviewingEmoji] = useState(null);
     const longPressTimerRef = useRef(null);
     const longPressTriggeredRef = useRef(false);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const [searchQuery, setSearchQuery] = useState('');
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Фильтруем только добавленные пользователем эмодзи-паки ---
     const userEmojiPacks = useMemo(() => {
         return addedPacks.filter(pack => pack.type === 'emoji');
     }, [addedPacks]);
 
     useEffect(() => {
-        // Устанавливаем активный пак при инициализации или изменении паков
         if (userEmojiPacks.length > 0) {
             setActivePackName(userEmojiPacks[0].name);
         } else {
             setActivePackName('');
         }
     }, [userEmojiPacks]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 
     useEffect(() => {
@@ -86,6 +86,21 @@ const ReactionsPopover = ({ onSelect, children }) => {
         return pack?.items || [];
     }, [activePackName, userEmojiPacks]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    useEffect(() => {
+        setSearchQuery('');
+    }, [activeTab, activePackName]);
+
+    const filteredEmojis = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return activeEmojis;
+        }
+        return activeEmojis.filter(emoji => 
+            emoji.name && emoji.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [activeEmojis, searchQuery]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     return (
         <>
@@ -93,7 +108,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
             <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
             <Tippy
                 interactive
-                placement="top"
+                placement="auto"
                 delay={[100, 100]}
                 onClickOutside={(instance, event) => {
                     const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
@@ -108,9 +123,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.9 }}
                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                        // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Увеличиваем размер окна ---
                         className="ios-glass-popover p-3 rounded-xl shadow-lg w-auto max-w-md"
-                        // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
                         {...attrs}
                     >
                         <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg">
@@ -142,7 +155,6 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                     </div>
                                 )}
                                 {activeTab === 'premium' && (
-                                    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Логика отображения добавленных паков ---
                                     <div>
                                         {userEmojiPacks.length > 0 ? (
                                             <>
@@ -157,8 +169,19 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                         </button>
                                                     ))}
                                                 </div>
-                                                <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1">
-                                                    {activeEmojis.map(emoji => (
+                                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                                                <div className="relative mb-2">
+                                                    <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                    <input 
+                                                        type="text"
+                                                        placeholder="Поиск эмодзи..."
+                                                        value={searchQuery}
+                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                        className="w-full pl-7 pr-2 py-1 text-xs bg-slate-100 dark:bg-slate-800 rounded-md"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-2">
+                                                    {filteredEmojis.length > 0 ? filteredEmojis.map(emoji => (
                                                         <button
                                                             key={emoji._id}
                                                             onMouseDown={() => handleMouseDown(emoji)}
@@ -171,8 +194,11 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                         >
                                                             <img src={emoji.imageUrl} alt={emoji.name} className="w-8 h-8 object-contain"/>
                                                         </button>
-                                                    ))}
+                                                    )) : (
+                                                        <p className="col-span-5 text-center text-xs text-slate-400 py-4">Ничего не найдено</p>
+                                                    )}
                                                 </div>
+                                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                                 <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2">
                                                     Удерживайте для предпросмотра
                                                 </p>
@@ -183,7 +209,6 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                             </p>
                                         )}
                                     </div>
-                                    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
                                 )}
                             </motion.div>
                         </AnimatePresence>

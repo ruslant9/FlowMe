@@ -545,14 +545,45 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                         </div>
                                     </Link>
                                 ) : (
-                                    <Link to={`/profile/${authorData._id}`} onClick={e => e.stopPropagation()} className="flex items-center space-x-3 group">
-                                        <Avatar username={authorData.username} fullName={authorData.fullName} avatarUrl={getImageUrl(authorData.avatar)} isPremium={authorData.premium?.isActive} customBorder={authorData.premiumCustomization?.avatarBorder} />
-                                        <div>
-                                            {currentPost.isPinned && <p className="text-xs text-slate-400 flex items-center mb-1"><Pin size={12} className="mr-1"/> Закреплено в профиле</p>}
-                                            <p className="font-bold group-hover:underline">{authorData.fullName || authorData.username}</p>
-                                            <p className="text-sm text-slate-500 dark:text-white/60">{timeAgo}</p>
-                                        </div>
-                                    </Link>
+                                    <Link to={currentPost.community ? `/communities/${currentPost.community._id}` : `/profile/${authorData._id}`} onClick={e => e.stopPropagation()} className="flex items-center space-x-3 group">
+    {(() => {
+        const border = currentPost.community ? null : authorData.premiumCustomization?.avatarBorder; // У сообществ нет кастомных рамок
+        const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
+        const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
+
+        return (
+            <div 
+                className={`relative rounded-full ${borderClass}`}
+                style={staticBorderStyle}
+            >
+                <Avatar
+                    username={currentPost.community ? currentPost.community.name : authorData.username}
+                    fullName={currentPost.community ? null : authorData.fullName}
+                    avatarUrl={getImageUrl(currentPost.community ? currentPost.community.avatar : authorData.avatar)}
+                    size="md"
+                    isPremium={!currentPost.community && authorData.premium?.isActive}
+                    customBorder={border}
+                />
+            </div>
+        );
+    })()}
+    <div>
+        {currentPost.community ? (
+             <>
+                <p className="text-xs text-slate-400 flex items-center mb-1"><Users size={12} className="mr-1"/> Сообщество</p>
+                <p className="font-bold group-hover:underline">{currentPost.community.name}</p> 
+                {currentPost.isPinned && <p className="text-xs text-slate-400 flex items-center mt-1"><Pin size={12} className="mr-1"/> Закреплено в сообществе</p>}
+                <p className="text-sm text-slate-500 dark:text-white/60">{timeAgo}</p>
+            </>
+        ) : (
+            <>
+                {currentPost.isPinned && <p className="text-xs text-slate-400 flex items-center mb-1"><Pin size={12} className="mr-1"/> Закреплено в профиле</p>}
+                <p className="font-bold group-hover:underline">{authorData.fullName || authorData.username}</p>
+                <p className="text-sm text-slate-500 dark:text-white/60">{timeAgo}</p>
+            </>
+        )}
+    </div>
+</Link>
                                 )}
                             </div>
                             
