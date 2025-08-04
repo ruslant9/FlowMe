@@ -8,8 +8,7 @@ const TrackList = ({
     onToggleSave, myMusicTrackIds, progress, duration, onSeek, 
     loadingTrackId, buffered, onPlayPauseToggle, 
     showDeleteButtons = false, onDeleteFromHistory,
-    showRemoveButtons = false, onRemoveFromPlaylist,
-    useSpotifyIdForSaving = false
+    showRemoveButtons = false, onRemoveFromPlaylist
 }) => {
     return (
         <div className="space-y-1">
@@ -18,12 +17,13 @@ const TrackList = ({
                     <PlaylistTrackItem
                         track={track}
                         index={index + 1}
-                        // --- ИСПРАВЛЕНИЕ: Упрощаем вызов onPlay, так как onSelectTrack теперь принимает весь объект ---
                         onPlay={() => onSelectTrack(track)}
                         isCurrent={track._id === currentPlayingTrackId}
                         isPlaying={isPlaying}
                         onToggleSave={onToggleSave}
-                        isSaved={myMusicTrackIds.has(useSpotifyIdForSaving ? track.spotifyId : track._id)}
+                        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверяем лайк по youtubeId (с фолбэком на _id) ---
+                        isSaved={myMusicTrackIds.has(track.youtubeId || track._id)}
+                        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                         onRemoveFromPlaylist={showRemoveButtons ? onRemoveFromPlaylist : null}
                     />
                 </React.Fragment>

@@ -91,68 +91,38 @@ const logMusicAction = async (req, track, action) => {
 
 // --- МАРШРУТЫ ДЛЯ "МОЕЙ МУЗЫКИ" И ИСТОРИИ ---
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Переработанная логика сохранения/удаления трека ---
 router.post('/toggle-save', authMiddleware, async (req, res) => {
     try {
-        const clickedTrack = req.body;
+        const { _id: trackId } = req.body;
         const userId = req.user.userId;
 
-        // Шаг 1: Найти каноничный трек в библиотеке.
-        // Он может быть не найден по youtubeId, если тот null, поэтому нужен фолбэк.
-        let libraryTrack;
-        if (clickedTrack.youtubeId) {
-            libraryTrack = await Track.findOne({ type: 'library_track', youtubeId: clickedTrack.youtubeId }).lean();
+        const existingLibraryTrack = await Track.findById(trackId);
+        if (!existingLibraryTrack || existingLibraryTrack.type !== 'library_track') {
+            return res.status(404).json({ message: 'Трек не найден в библиотеке.' });
         }
-        // Если по youtubeId не нашли или его не было, ищем по _id, если кликнутый трек - из библиотеки.
-        if (!libraryTrack && clickedTrack.type === 'library_track') {
-             libraryTrack = await Track.findById(clickedTrack._id).lean();
-        }
-        // Если мы до сих пор не нашли трек, значит что-то не так.
-        if (!libraryTrack) {
-            return res.status(404).json({ message: 'Оригинал трека не найден в библиотеке.' });
-        }
-
-        // Шаг 2: Определить УНИКАЛЬНЫЙ идентификатор контента.
-        // Приоритет у youtubeId, но если его нет, используем _id библиотечного трека.
-        const uniqueContentId = libraryTrack.youtubeId || libraryTrack._id.toString();
-
-        // Шаг 3: Найти, существует ли уже сохраненная копия по этому уникальному ID.
-        // Для поиска используем поле youtubeId, т.к. на нем стоит индекс.
-        const existingSavedTrack = await Track.findOne({
-            user: userId,
-            youtubeId: uniqueContentId,
-            type: 'saved'
-        });
+        
+        const existingSavedTrack = await Track.findOne({ user: userId, _id: existingLibraryTrack._id, type: 'saved' });
 
         if (existingSavedTrack) {
-            // Трек уже сохранен -> удаляем его.
             await Track.deleteOne({ _id: existingSavedTrack._id });
             res.status(200).json({ message: 'Трек удален из Моей музыки.', saved: false });
         } else {
-            // Трек не сохранен -> создаем новую копию.
             const newSavedTrack = new Track({
-                ...libraryTrack, // Копируем все данные из каноничного трека
-                _id: new mongoose.Types.ObjectId(), // Новый уникальный ID для документа
+                ...existingLibraryTrack.toObject(),
+                _id: new mongoose.Types.ObjectId(),
                 user: userId,
                 type: 'saved',
                 savedAt: new Date(),
-                // КРИТИЧЕСКИ ВАЖНО: сохраняем наш уникальный идентификатор в поле youtubeId
-                // чтобы он соответствовал уникальному индексу в БД.
-                youtubeId: uniqueContentId,
             });
             await newSavedTrack.save();
             res.status(201).json({ message: 'Трек добавлен в Мою музыку.', saved: true });
         }
-        
-        logMusicAction(req, libraryTrack, 'like');
         broadcastToUsers(req, [userId], { type: 'MUSIC_UPDATED' });
-
+        logMusicAction(req, existingLibraryTrack, 'like');
     } catch (error) {
-        console.error("Критическая ошибка в /toggle-save:", error);
         res.status(500).json({ message: 'Ошибка сервера при обновлении трека.' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 router.get('/saved', authMiddleware, async (req, res) => {
     try {
@@ -218,8 +188,65 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый роут для рекомендаций к альбому ---
+router.get('/album/:albumId/recommendations', authMiddleware, async (req, res) => {
+    try {
+        const { albumId } = req.params;
+        const album = await Album.findById(albumId).populate('tracks').lean();
 
-router.get('/artist/:artistId', authMiddleware, async (req, res) => {
+        if (!album) {
+            return res.json([]);
+        }
+
+        const primaryArtistId = album.artist;
+        const allArtistIds = new Set([primaryArtistId.toString()]);
+        const allGenres = new Set(album.genre ? [album.genre] : []);
+        
+        const populatedTracks = await Track.find({ _id: { $in: album.tracks.map(t => t._id) } }).lean();
+
+        populatedTracks.forEach(track => {
+            if (track.artist) {
+                track.artist.forEach(a => allArtistIds.add(a.toString()));
+            }
+            if (track.genres) {
+                track.genres.forEach(g => allGenres.add(g));
+            }
+        });
+
+        const trackIdsInAlbum = populatedTracks.map(t => t._id);
+
+        const recommendations = await Track.find({
+            _id: { $nin: trackIdsInAlbum },
+            status: 'approved',
+            type: 'library_track',
+            $or: [
+                { artist: { $in: Array.from(allArtistIds).map(id => new mongoose.Types.ObjectId(id)) } },
+                { genres: { $in: Array.from(allGenres) } }
+            ]
+        })
+        .sort({ playCount: -1 })
+        .limit(10)
+        .populate('artist', 'name _id')
+        .populate('album', 'title coverArtUrl')
+        .lean();
+
+        const processedRecs = recommendations.map(track => {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                return { ...track, albumArtUrl: track.album.coverArtUrl };
+            }
+            return track;
+        });
+
+        res.json(processedRecs);
+    } catch (error) {
+        console.error("Ошибка при генерации рекомендаций к альбому:", error);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+});
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+
+router.get('/artist/:artistId', async (req, res) => {
     try {
         const artistId = new mongoose.Types.ObjectId(req.params.artistId);
         const topTracksPipeline = [

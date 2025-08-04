@@ -32,10 +32,8 @@ export const MusicPlayerProvider = ({ children }) => {
     const [playerNotification, setPlayerNotification] = useState(null);
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новые состояния и ref для стабильности ---
-    const [isLoadingPlayback, setIsLoadingPlayback] = useState(false); // Флаг-замок для предотвращения гонки состояний
-    const abortControllerRef = useRef(null); // Ref для отмены предыдущих запросов
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    const [isLoadingPlayback, setIsLoadingPlayback] = useState(false);
+    const abortControllerRef = useRef(null); 
 
     const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
@@ -53,6 +51,7 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, []);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Сохраняем youtubeId (или _id как фолбэк) в Set ---
     const fetchMyMusicIds = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
@@ -61,11 +60,13 @@ export const MusicPlayerProvider = ({ children }) => {
                 return;
             }
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-            setMyMusicTrackIds(new Set(res.data.map(track => track._id)));
+            // Поле youtubeId в сохраненных треках содержит уникальный идентификатор контента
+            setMyMusicTrackIds(new Set(res.data.map(track => track.youtubeId).filter(Boolean)));
         } catch (error) {
             console.error("Не удалось обновить список сохраненной музыки");
         }
     }, []);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
     useEffect(() => {
         fetchMyMusicIds();
@@ -73,15 +74,17 @@ export const MusicPlayerProvider = ({ children }) => {
         return () => window.removeEventListener('myMusicUpdated', fetchMyMusicIds);
     }, [fetchMyMusicIds]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Проверяем лайк по уникальному ID контента ---
     useEffect(() => {
         if (currentTrack) {
-            setIsLiked(myMusicTrackIds.has(currentTrack._id));
+            const uniqueContentId = currentTrack.youtubeId || currentTrack._id;
+            setIsLiked(myMusicTrackIds.has(uniqueContentId));
         } else {
             setIsLiked(false);
         }
     }, [currentTrack, myMusicTrackIds]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Полностью переработанная функция playTrack ---
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
         if (isLoadingPlayback) {
@@ -92,7 +95,7 @@ export const MusicPlayerProvider = ({ children }) => {
         }
         abortControllerRef.current = new AbortController();
 
-        setIsLoadingPlayback(true); // "Закрываем замок"
+        setIsLoadingPlayback(true);
         setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
         setIsPlaying(false);
@@ -104,7 +107,7 @@ export const MusicPlayerProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
                 headers: { Authorization: `Bearer ${token}` },
-                signal: abortControllerRef.current.signal // Привязываем сигнал отмены к запросу
+                signal: abortControllerRef.current.signal
             });
 
             const streamUrl = res.data.url;
@@ -145,12 +148,11 @@ export const MusicPlayerProvider = ({ children }) => {
                 setCurrentTrack(null);
             }
         } finally {
-            setIsLoadingPlayback(false); // "Открываем замок"
+            setIsLoadingPlayback(false);
             setLoadingTrackId(null);
             abortControllerRef.current = null;
         }
     }, [volume, logMusicAction, isLoadingPlayback]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     const handleNextTrack = useCallback(() => {
@@ -280,16 +282,20 @@ export const MusicPlayerProvider = ({ children }) => {
         });
     }, []);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Оптимистичное обновление по уникальному ID контента ---
     const onToggleLike = useCallback(async (trackData) => {
-        if (!trackData?._id) return;
+        if (!trackData) return;
         
-        const wasLiked = myMusicTrackIds.has(trackData._id);
+        const uniqueContentId = trackData.youtubeId || trackData._id;
+        if (!uniqueContentId) return;
+
+        const wasLiked = myMusicTrackIds.has(uniqueContentId);
         
         const newSet = new Set(myMusicTrackIds);
         if (wasLiked) {
-            newSet.delete(trackData._id);
+            newSet.delete(uniqueContentId);
         } else {
-            newSet.add(trackData._id);
+            newSet.add(uniqueContentId);
         }
         setMyMusicTrackIds(newSet);
         
@@ -299,14 +305,17 @@ export const MusicPlayerProvider = ({ children }) => {
 
         try {
             const token = localStorage.getItem('token');
+            // Передаем на бэкенд весь объект трека, чтобы он мог найти оригинал в библиотеке
             await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
             if (!wasLiked) logMusicAction(trackData, 'like');
             window.dispatchEvent(new CustomEvent('myMusicUpdated'));
         } catch (error) {
+            // В случае ошибки откатываем изменения и синхронизируемся с сервером
             fetchMyMusicIds();
             toast.error('Ошибка при изменении статуса трека.');
         }
     }, [myMusicTrackIds, currentTrack, logMusicAction, fetchMyMusicIds]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 
     const contextValue = {
         currentTrack,

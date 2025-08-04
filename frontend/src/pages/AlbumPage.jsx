@@ -11,8 +11,8 @@ import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
 import toast from 'react-hot-toast';
 import { useCachedImage } from '../hooks/useCachedImage'; 
-import { format } from 'date-fns'; // ИМПОРТ
-import { ru } from 'date-fns/locale'; // ИМПОРТ
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -30,14 +30,32 @@ const AlbumPage = () => {
     const navigate = useNavigate();
     const [album, setAlbum] = useState(null);
     const [loading, setLoading] = useState(true);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новые состояния для рекомендаций ---
+    const [recommendations, setRecommendations] = useState([]);
+    const [loadingRecs, setLoadingRecs] = useState(false);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds } = useMusicPlayer();
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновленная функция загрузки данных ---
     const fetchAlbum = useCallback(async () => {
         setLoading(true);
+        setRecommendations([]); // Сбрасываем старые рекомендации
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/album/${albumId}`, { headers: { Authorization: `Bearer ${token}` } });
             setAlbum(res.data);
+            
+            // После успешной загрузки альбома, запрашиваем рекомендации
+            setLoadingRecs(true);
+            try {
+                const recsRes = await axios.get(`${API_URL}/api/music/album/${albumId}/recommendations`, { headers: { Authorization: `Bearer ${token}` } });
+                setRecommendations(recsRes.data);
+            } catch (recError) {
+                console.error("Не удалось загрузить рекомендации:", recError);
+            } finally {
+                setLoadingRecs(false);
+            }
+
         } catch (error) {
             toast.error("Не удалось загрузить альбом.");
             navigate('/music');
@@ -45,6 +63,7 @@ const AlbumPage = () => {
             setLoading(false);
         }
     }, [albumId, navigate]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     useEffect(() => {
         fetchAlbum();
@@ -102,7 +121,7 @@ const AlbumPage = () => {
                                     <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
                                 </Link>
                                 <Link to={`/artist/${album.artist._id}`} className="font-bold hover:underline" style={{ color: textColor }}>{album.artist.name}</Link>
-                                <span className="opacity-70">• {album.releaseDate ? format(new Date(album.releaseDate), 'MMMM yyyy', { locale: ru }) : ''} • {album.tracks.length} треков, {totalMinutes} мин.</span>
+                                <span className="opacity-70">• {album.releaseDate ? format(new Date(album.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • {album.tracks.length} треков, {totalMinutes} мин.</span>
                             </div>
                         </div>
                     </div>
@@ -146,6 +165,32 @@ const AlbumPage = () => {
                         />
                     ))}
                 </div>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Блок с рекомендациями --- */}
+                {(loadingRecs || recommendations.length > 0) && (
+                    <div className="mt-12">
+                        <h2 className="text-2xl font-bold mb-4">Похожие треки</h2>
+                        {loadingRecs ? (
+                            <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400"/></div>
+                        ) : (
+                            <div className="space-y-1">
+                                {recommendations.map((recTrack, index) => (
+                                    <PlaylistTrackItem
+                                        key={recTrack._id}
+                                        track={recTrack}
+                                        index={index + 1}
+                                        onPlay={() => playTrack(recTrack, recommendations)}
+                                        isCurrent={recTrack._id === currentTrack?._id}
+                                        isPlaying={isPlaying}
+                                        isSaved={myMusicTrackIds?.has(recTrack._id)}
+                                        onToggleSave={onToggleLike}
+                                        accentColor={dominantColor}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             </div>
         </main>
     );
