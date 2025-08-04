@@ -7,15 +7,17 @@ import { Loader2, CheckCircle, XCircle, Tag, FileText, Image as ImageIcon, MicVo
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import Avatar from '../Avatar';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Хелпер-функция для получения полного URL изображения
-const getImageUrl = (url) => {
-    if (!url || url.startsWith('http')) {
-        return url;
+// Компонент для кешированного изображения
+const CachedImage = ({ src }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full object-cover bg-slate-200 dark:bg-slate-700 animate-pulse" />;
     }
-    return `${API_URL}/${url}`;
+    return <img src={finalSrc} alt="Обложка" className="w-full h-full object-cover" />;
 };
 
 const AdminSubmissionsList = () => {
@@ -96,7 +98,7 @@ const AdminSubmissionsList = () => {
                     <div key={sub._id} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 flex flex-col sm:flex-row gap-4">
                         <div className="w-full sm:w-24 h-24 flex-shrink-0 bg-slate-200 dark:bg-slate-700 rounded-md flex items-center justify-center overflow-hidden">
                             {imageUrl ? (
-                                <img src={getImageUrl(imageUrl)} alt="Обложка" className="w-full h-full object-cover" />
+                                <CachedImage src={imageUrl} />
                             ) : (
                                 <ImageIcon size={40} className="text-slate-400" />
                             )}

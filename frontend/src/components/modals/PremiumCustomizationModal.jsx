@@ -18,15 +18,7 @@ const avatarBorders = [
     { id: 'none', name: 'Без рамки', type: 'none', value: null },
     { id: 'animated-1', name: 'Аврора', type: 'animated-1', value: null },
     { id: 'animated-2', name: 'Инста', type: 'animated-2', value: null },
-    { id: 'hearts', name: 'Сердца', type: 'animated-hearts', pseudo: true },
-    { id: 'neon', name: 'Неон', type: 'animated-neon', pseudo: true },
-    { id: 'orbit', name: 'Орбита', type: 'animated-orbit', pseudo: true },
-    { id: 'fire', name: 'Огонь', type: 'animated-fire', pseudo: true },
-    { id: 'glitch', name: 'Глитч', type: 'animated-glitch', pseudo: true },
-    { id: 'techno', name: 'Техно', type: 'animated-tech', pseudo: true },
     { id: 'pulse', name: 'Пульс', type: 'animated-pulse' },
-    { id: 'runes', name: 'Руны', type: 'animated-runes', pseudo: true },
-    { id: 'sparks', name: 'Искры', type: 'animated-sparkle', pseudo: true },
 ];
 
 const premadeAccents = [
@@ -68,7 +60,6 @@ const AvatarBorderPreview = ({ border, isSelected, onClick, user }) => {
             onClick={onClick}
             className={`flex flex-col items-center space-y-2 p-2 rounded-lg cursor-pointer transition-all ${isSelected ? 'ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
-            {/* --- ИСПРАВЛЕНИЕ: Убрана лишняя обертка. Теперь Avatar сам рендерит рамку. --- */}
             <Avatar
                 username={user.username}
                 avatarUrl={user.avatar ? getImageUrl(user.avatar) : ''}

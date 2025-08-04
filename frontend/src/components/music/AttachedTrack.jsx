@@ -4,15 +4,17 @@ import React from 'react';
 import { Play, Pause, Music, Loader2 } from 'lucide-react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import Slider from 'rc-slider';
+import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
     }
-    return `${API_URL}/${url}`;
+    return <img src={finalSrc} alt={alt} className="w-full h-full object-cover"/>;
 };
 
 const formatTime = (seconds) => {
@@ -68,8 +70,7 @@ const AttachedTrack = ({ track }) => {
             <div className="flex items-start space-x-3">
                 <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
                     {track.albumArtUrl ? (
-                        // --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННОЙ ФУНКЦИИ ---
-                        <img src={getImageUrl(track.albumArtUrl)} alt={track.title} className="w-full h-full object-cover"/>
+                        <CachedImage src={track.albumArtUrl} alt={track.title} />
                     ) : (
                         <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
                             <Music size={24} className="text-slate-400"/>

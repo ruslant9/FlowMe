@@ -3,16 +3,17 @@ import React from 'react';
 import { Play, Pause, Heart, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Tippy from '@tippyjs/react/headless';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем хелпер для URL изображений ---
-const API_URL = import.meta.env.VITE_API_URL;
-
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
-    return `${API_URL}/${url}`;
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt, className }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className={`${className} bg-slate-200 dark:bg-slate-700 animate-pulse`}></div>;
+    }
+    return <img src={finalSrc} alt={alt} className={className} />;
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15' }) => {
     
@@ -80,9 +81,8 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                 )}
             </div>
             <div className="flex items-center space-x-4 min-w-0">
-                {/* --- ИСПОЛЬЗУЕМ ХЕЛПЕР --- */}
-                <img 
-                    src={getImageUrl(track.albumArtUrl)} 
+                <CachedImage 
+                    src={track.albumArtUrl} 
                     alt={cleanedTitle} className="w-10 h-10 rounded object-cover"
                 />
                 <div className="min-w-0">

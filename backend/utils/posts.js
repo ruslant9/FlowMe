@@ -44,8 +44,8 @@ async function getPopulatedPost(postId, requesterId) {
         const userAuthorIds = allComments.filter(c => (c.authorModel || 'User') === 'User').map(c => c.author);
         const communityAuthorIds = allComments.filter(c => c.authorModel === 'Community').map(c => c.author);
 
-        const userAuthors = await User.find({ _id: { $in: userAuthorIds } }).select('username fullName avatar').lean();
-        const communityAuthors = await Community.find({ _id: { $in: communityAuthorIds } }).select('name avatar').lean();
+        const userAuthors = await User.find({ _id: { $in: userAuthorIds } }).select('username fullName avatar premium premiumCustomization').lean();
+        const communityAuthors = await Community.find({ _id: { $in: communityAuthorIds } }).select('name avatar premium premiumCustomization').lean();
 
         const userAuthorMap = new Map(userAuthors.map(u => [u._id.toString(), u]));
         const communityAuthorMap = new Map(communityAuthors.map(c => [c._id.toString(), c]));

@@ -154,14 +154,12 @@ router.get('/:postId/comments', authMiddleware, async (req, res) => {
         const totalRootComments = await Comment.countDocuments({ post: postId, parent: null });
         const totalComments = await Comment.countDocuments({ post: postId });
         const populationOptions = [
-            { path: 'author', select: 'username fullName name avatar premiumCustomization' },
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            { path: 'author', select: 'username fullName name avatar premium premiumCustomization' },
             { path: 'likes', select: 'username fullName avatar _id premium premiumCustomization' },
             {
                 path: 'children',
                 populate: [
-                    { path: 'author', select: 'username fullName name avatar _id premiumCustomization' },
-                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                    { path: 'author', select: 'username fullName name avatar _id premium premiumCustomization' },
                     { path: 'likes', select: 'username fullName avatar _id premium premiumCustomization' },
                     {
                         path: 'parent',

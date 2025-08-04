@@ -6,14 +6,17 @@ import toast from 'react-hot-toast';
 import { Loader2, Search, MicVocal, Disc, Music, ArrowUp, ArrowDown, Edit as EditIcon, Trash2 as TrashIcon } from 'lucide-react';
 import EditContentModal from './EditContentModal';
 import { useModal } from '../../hooks/useModal';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const getImageUrl = (url) => {
-    if (!url || url.startsWith('http') || url.startsWith('blob:')) {
-        return url;
+// Компонент для кешированного изображения
+const CachedImage = ({ src }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-10 h-10 rounded object-cover bg-slate-200 dark:bg-slate-700 animate-pulse" />;
     }
-    return `${API_URL}/${url}`;
+    return <img src={finalSrc} alt="cover" className="w-10 h-10 rounded object-cover bg-slate-200 dark:bg-slate-700" />;
 };
 
 const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
@@ -155,11 +158,9 @@ export const AdminContentManager = () => {
                         {items.map(item => (
                             <tr key={item._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
                                 <td className="p-2">
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем item.albumArtUrl --- */}
-                                    <img src={getImageUrl(item.avatarUrl || item.coverArtUrl || item.albumArtUrl)} alt="cover" className="w-10 h-10 rounded object-cover bg-slate-200 dark:bg-slate-700" />
+                                    <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
                                 </td>
                                 <td className="p-2 font-semibold">{item.name || item.title}</td>
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Корректно отображаем список артистов --- */}
                                 {activeType !== 'artists' && (
                                     <td className="p-2 text-slate-500">
                                         {Array.isArray(item.artist) 
@@ -167,7 +168,6 @@ export const AdminContentManager = () => {
                                             : (item.artist?.name || 'N/A')}
                                     </td>
                                 )}
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <td className="p-2 text-sm text-slate-500">{new Date(item.createdAt).toLocaleDateString('ru-RU')}</td>
                                 <td className="p-2">
                                     <div className="flex items-center justify-end space-x-2">

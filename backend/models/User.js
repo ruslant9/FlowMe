@@ -36,9 +36,7 @@ const customAccentSchema = new Schema({
 const premiumCustomizationSchema = new Schema({
     avatarBorder: {
         id: { type: String, default: 'none' },
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем новые типы рамок в список разрешенных ---
-        type: { type: String, enum: ['none', 'static', 'animated-1', 'animated-2', 'animated-hearts', 'animated-neon', 'animated-orbit', 'animated-fire', 'animated-glitch', 'animated-tech', 'animated-pulse', 'animated-runes', 'animated-sparkle'], default: 'none' },
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        type: { type: String, enum: ['none', 'animated-1', 'animated-2', 'animated-pulse'], default: 'none' },
         value: { type: String, default: null }, // for static color hex value
         pseudo: { type: Boolean, default: false } // Флаг для рамок с псевдо-элементами
     },
@@ -87,9 +85,7 @@ const UserSchema = new Schema({
     resetPasswordToken: String,
     resetPasswordExpires: Date,
     subscribedCommunities: [{ type: Schema.Types.ObjectId, ref: 'Community' }],
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     addedContentPacks: [{ type: Schema.Types.ObjectId, ref: 'ContentPack' }]
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 }, { timestamps: true });
 UserSchema.add({ banInfo: { type: banInfoSchema, default: () => ({}) } });
 

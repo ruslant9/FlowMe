@@ -1,13 +1,9 @@
 // frontend/src/components/Avatar.jsx
 
 import { UserX } from 'lucide-react';
+import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
-
-const getImageUrl = (url) => {
-    if (!url || url.startsWith('http') || url.startsWith('blob:')) return url || '';
-    return `${API_URL}/${url}`;
-};
 
 const avatarColors = [
     '#F59E0B', // Оранжевый
@@ -31,6 +27,8 @@ const getHash = (str) => {
 
 const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium = false, customBorder, children }) => {
     if (!username && !fullName) return null;
+
+    const { finalSrc, loading } = useCachedImage(avatarUrl);
 
     const sizeClasses = {
         sm: 'w-8 h-8 text-sm',
@@ -73,11 +71,15 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
                 if (avatarUrl) {
                     return (
                         <div className={`${baseAvatarContainerClass} ${bgClass}`}>
-                            <img
-                                src={getImageUrl(avatarUrl)}
-                                alt={username}
-                                className="w-full h-full object-cover"
-                            />
+                            {loading ? (
+                                <div className="w-full h-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
+                            ) : (
+                                <img
+                                    src={finalSrc}
+                                    alt={username}
+                                    className="w-full h-full object-cover"
+                                />
+                            )}
                         </div>
                     );
                 } else {

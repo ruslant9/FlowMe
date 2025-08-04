@@ -27,6 +27,7 @@
     "express-rate-limit": "^7.3.1",
     "fast-average-color": "^9.5.0",
     "framer-motion": "^12.23.5",
+    "idb": "^8.0.3",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.525.0",
     "multer": "^2.0.1",

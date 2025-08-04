@@ -8,21 +8,22 @@ import toast from 'react-hot-toast';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { ru } from 'date-fns/locale';
 import { setHours, setMinutes, isToday } from 'date-fns';
-
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 registerLocale('ru', ru);
 const Picker = React.lazy(() => import('emoji-picker-react'));
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
 
-// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
+// Компонент для кешированного изображения
+const CachedImage = ({ src }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full object-cover rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
     }
-    return `${API_URL}/${url}`;
+    return <img src={finalSrc} alt="existing" className="w-full h-full object-cover rounded-md" />;
 };
+
 
 const getMinTime = (date) => {
     if (!date || !isToday(date)) {
@@ -187,8 +188,7 @@ const EditPostModal = ({ isOpen, onClose, post }) => {
                             <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-4">
                                 {existingImages.map((url) => (
                                     <div key={url} className="relative aspect-square">
-                                        {/* --- ИЗМЕНЕНИЕ --- */}
-                                        <img src={getImageUrl(url)} alt="existing" className="w-full h-full object-cover rounded-md" />
+                                        <CachedImage src={url} />
                                         <button type="button" onClick={() => removeExistingImage(url)} className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full hover:bg-red-600"><X size={14} /></button>
                                     </div>
                                 ))}

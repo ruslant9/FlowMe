@@ -33,15 +33,6 @@ const pluralizeMembers = (count) => {
     return `${count} участников`;
 };
 
-// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию для изображений ---
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
-    }
-    return `${API_URL}/${url}`;
-};
-
 const CommunityDetailPage = () => {
     const { communityId } = useParams();
     const { currentUser } = useUser();
@@ -344,8 +335,7 @@ const CommunityDetailPage = () => {
                     <ProfileCard icon={UserIcon} title="Сообщество" noHeaderMargin>
                          <div className="text-center pt-4 pb-6">
                             <div className="relative group flex-shrink-0 mx-auto mb-4 w-24 h-24">
-                                {/* --- ИЗМЕНЕНИЕ --- */}
-                                <Avatar username={community.name} avatarUrl={getImageUrl(community.avatar)} size="xl" onClick={() => community.avatar && setIsImageViewerOpen(true)} />
+                                <Avatar username={community.name} avatarUrl={community.avatar} size="xl" onClick={() => community.avatar && setIsImageViewerOpen(true)} />
                             </div>
                             <h2 className="text-2xl font-bold">{community.name}</h2>
                             <p className="text-slate-500 dark:text-white/60">Тематика: {getTranslatedTopic(community.topic)}</p>
@@ -369,8 +359,7 @@ const CommunityDetailPage = () => {
                     {canShowAdmin() && (
                         <ProfileCard icon={UserIcon} title="Администратор">
                             <Link to={`/profile/${community.owner._id}`} className="flex items-center space-x-3 group p-2 -m-2 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-700/50">
-                                {/* --- ИЗМЕНЕНИЕ --- */}
-                                <Avatar username={community.owner.username} fullName={community.owner.fullName} avatarUrl={getImageUrl(community.owner.avatar)} size="md" />
+                                <Avatar username={community.owner.username} fullName={community.owner.fullName} avatarUrl={community.owner.avatar} size="md" />
                                 <div>
                                     <p className="font-bold group-hover:underline">{community.owner.fullName || community.owner.username}</p>
                                     <p className="text-sm text-slate-500 dark:text-white/60">@{community.owner.username}</p>

@@ -15,26 +15,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PostViewModal from './modals/PostViewModal';
 import { Listbox, Transition } from '@headlessui/react';
 import EmojiPickerPopover from './EmojiPickerPopover';
-import AttachedTrack from './music/AttachedTrack';
+import AttachedTrack from './AttachedTrack';
 import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
 import AnimatedAccent from './AnimatedAccent';
+import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
 
-// --- НОВАЯ ХЕЛПЕР-ФУНКЦИЯ ---
-const getImageUrl = (url) => {
-    if (!url) return '';
-    // Если URL уже полный (от Cloudinary), используем его как есть.
-    if (url.startsWith('http')) {
-        return url;
+// Компонент для кешированного изображения с анимацией
+const CachedMotionImage = ({ src, ...props }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+
+    if (loading) {
+        return (
+            <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
+                <Loader2 className="w-10 h-10 animate-spin text-white" />
+            </motion.div>
+        );
     }
-    // В противном случае, собираем URL (для старых файлов, если они есть).
-    return `${API_URL}/${url}`;
+
+    return <motion.img src={finalSrc} {...props} />;
 };
-// --- КОНЕЦ НОВОЙ ФУНКЦИИ ---
+
 
 const customRuLocale = {
     ...ru,
@@ -499,9 +504,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
         setIsPostViewModalOpen(true);
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const hasAnimatedBorder = !post.community && authorData.premium?.isActive && authorData.premiumCustomization?.avatarBorder?.type?.startsWith('animated');
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return (
         <>
@@ -540,7 +543,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                             <div onClick={handleOpenPostInModal} className="flex items-center space-x-3 cursor-pointer">
                                 {currentPost.community ? (
                                     <Link to={`/communities/${currentPost.community._id}`} onClick={e => e.stopPropagation()} className="flex items-center space-x-3 group">
-                                        <Avatar username={currentPost.community.name} avatarUrl={getImageUrl(currentPost.community.avatar)} size="md" />
+                                        <Avatar username={currentPost.community.name} avatarUrl={currentPost.community.avatar} size="md" />
                                         <div>
                                             <p className="text-xs text-slate-400 flex items-center mb-1"><Users size={12} className="mr-1"/> Сообщество</p>
                                             <p className="font-bold group-hover:underline">{currentPost.community.name}</p> 
@@ -549,7 +552,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                         </div>
                                     </Link>
                                 ) : (
-                                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                                     <div className={`p-1 ${hasAnimatedBorder ? '' : ''}`}>
                                         <Link to={`/profile/${authorData._id}`} onClick={e => e.stopPropagation()} className={`flex items-center space-x-3 group ${hasAnimatedBorder ? '-m-1' : ''}`}>
                                             {(() => {
@@ -558,7 +560,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                     <Avatar
                                                         username={authorData.username}
                                                         fullName={authorData.fullName}
-                                                        avatarUrl={getImageUrl(authorData.avatar)}
+                                                        avatarUrl={authorData.avatar}
                                                         size="md"
                                                         isPremium={authorData.premium?.isActive}
                                                         customBorder={border}
@@ -572,7 +574,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                             </div>
                                         </Link>
                                     </div>
-                                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                 )}
                             </div>
                             
@@ -722,9 +723,9 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                             <div className="relative group mb-4">
                                 <div className="relative aspect-square md:aspect-video bg-black rounded-lg overflow-hidden">
                                     <AnimatePresence initial={false} custom={imageDirection}>
-                                        <motion.img
+                                        <CachedMotionImage
                                             key={imagePage}
-                                            src={getImageUrl(currentPost.imageUrls[imagePage])}
+                                            src={currentPost.imageUrls[imagePage]}
                                             custom={carouselVariants}
                                             initial="enter"
                                             animate="center"
@@ -898,7 +899,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                                                 <Avatar
                                                                                     username={option.type === 'user' ? option.username : option.name}
                                                                                     fullName={option.type === 'user' ? option.name : null}
-                                                                                    avatarUrl={getImageUrl(option.avatar)}
+                                                                                    avatarUrl={option.avatar}
                                                                                     size="md"
                                                                                     isPremium={option.premium?.isActive}
                                                                                     customBorder={option.premiumCustomization?.avatarBorder}
@@ -922,7 +923,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                         <Avatar
                                                             username={commentAs.type === 'user' ? commentAs.username : commentAs.name}
                                                             fullName={commentAs.name}
-                                                            avatarUrl={getImageUrl(commentAs.avatar)}
+                                                            avatarUrl={commentAs.avatar}
                                                             isPremium={commentAs.premium?.isActive}
                                                             customBorder={commentAs.premiumCustomization?.avatarBorder}
                                                             size="sm"

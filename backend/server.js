@@ -63,7 +63,9 @@ app.use(cors({
 app.use(passport.initialize());
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '1y' // Кешировать на 1 год
+}));
 
 // WebSocket server
 const wss = new WebSocketServer({ server });

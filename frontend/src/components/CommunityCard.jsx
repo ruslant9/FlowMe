@@ -1,3 +1,4 @@
+
 // frontend/src/components/CommunityCard.jsx
 
 import React from 'react';

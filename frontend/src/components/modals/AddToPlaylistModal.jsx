@@ -5,8 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Music, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+// Компонент для кешированного изображения обложки
+const CachedCoverImage = ({ src, alt }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
+    }
+    return <img src={finalSrc} alt={alt} className="w-full h-full object-cover" />;
+};
 
 const AddToPlaylistModal = ({ isOpen, onClose, trackToAdd }) => {
     const [playlists, setPlaylists] = useState([]);
@@ -56,12 +66,12 @@ const AddToPlaylistModal = ({ isOpen, onClose, trackToAdd }) => {
             return <div className="w-full h-full flex items-center justify-center text-slate-400"><Music size={24} /></div>;
         }
         if (images.length === 1) {
-            return <img src={images[0]} alt={playlist.name} className="w-full h-full object-cover" />;
+            return <CachedCoverImage src={images[0]} alt={playlist.name} />;
         }
         return (
             <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
                 {images.slice(0, 4).map((url, i) => (
-                    <img key={i} src={url} alt="" className="w-full h-full object-cover"/>
+                    <CachedCoverImage key={i} src={url} alt="" />
                 ))}
             </div>
         );

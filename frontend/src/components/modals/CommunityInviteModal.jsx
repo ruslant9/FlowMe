@@ -106,7 +106,6 @@ const CommunityInviteModal = ({ isOpen, onClose, targetUser }) => {
                                         onClick={() => setSelectedCommunity(community)} 
                                         className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors ${selectedCommunity?._id === community._id ? 'bg-blue-500/20' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                                     >
-                                        {/* --- ИЗМЕНЕНИЕ --- */}
                                         <Avatar size="md" username={community.name} avatarUrl={community.avatar} />
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold truncate">{community.name}</p>

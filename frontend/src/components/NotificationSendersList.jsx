@@ -6,10 +6,11 @@ import { Link } from 'react-router-dom';
 import Avatar from './Avatar';
 import Tippy from '@tippyjs/react';
 
-// Убираем API_URL
-// const API_URL = import.meta.env.VITE_API_URL;
-
 const NotificationSendersList = ({ senders, attrs }) => {
+    if (!senders || senders.length === 0) {
+        return null;
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -30,9 +31,7 @@ const NotificationSendersList = ({ senders, attrs }) => {
                                 className="flex items-center space-x-2 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-md p-1 -mx-1"
                                 onClick={e => e.stopPropagation()}
                             >
-                                {/* --- ИЗМЕНЕНИЕ --- */}
                                 <Avatar username={sender.username} fullName={sender.fullName} avatarUrl={sender.avatar} size="sm" />
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                 <span className="text-sm truncate">{userName}</span>
                             </Link>
                         </Tippy>

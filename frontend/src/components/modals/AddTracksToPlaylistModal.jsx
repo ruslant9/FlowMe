@@ -4,7 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Music, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 const API_URL = import.meta.env.VITE_API_URL;
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full bg-slate-200 dark:bg-slate-700 animate-pulse rounded-md"></div>;
+    }
+    return <img src={finalSrc} alt={alt} className="w-full h-full rounded-md object-cover" />;
+};
 
 const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackIds }) => {
     const [myMusic, setMyMusic] = useState([]);
@@ -87,7 +97,7 @@ const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackI
                                 <div key={track._id} onClick={() => handleToggleTrack(track._id)}
                                     className={`flex items-center space-x-4 p-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-blue-500/20' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                                     <div className="relative w-12 h-12 flex-shrink-0">
-                                        <img src={track.albumArtUrl} alt={track.title} className="w-full h-full rounded-md object-cover"/>
+                                        <CachedImage src={track.albumArtUrl} alt={track.title} />
                                         <AnimatePresence>
                                         {isSelected && (
                                             <motion.div 

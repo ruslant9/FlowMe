@@ -9,9 +9,16 @@ import Avatar from './Avatar';
 import { motion } from 'framer-motion';
 import Tippy from '@tippyjs/react/headless'; 
 import NotificationSendersList from './NotificationSendersList'; 
+import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
 
-// Убираем API_URL
-// const API_URL = import.meta.env.VITE_API_URL;
+// Компонент для кешированного изображения
+const CachedImage = ({ src }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-12 h-12 object-cover rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
+    }
+    return <img src={finalSrc} alt="preview" className="w-12 h-12 object-cover rounded-md" />;
+};
 
 const notificationDetails = {
     like_post: { 
@@ -197,16 +204,14 @@ const NotificationItem = ({ notification, onDelete, onAction }) => {
         avatarLink = notification.link;
         avatarProps = {
             username: notification.previewText,
-            // --- ИЗМЕНЕНИЕ 1 ---
-            avatarUrl: notification.previewImage // Используем напрямую
+            avatarUrl: notification.previewImage
         };
     } else {
         avatarLink = `/profile/${notification.lastSender?._id}`;
         avatarProps = {
             username: notification.lastSender?.username,
             fullName: notification.lastSender?.fullName,
-            // --- ИЗМЕНЕНИЕ 2 ---
-            avatarUrl: notification.lastSender?.avatar // Используем напрямую
+            avatarUrl: notification.lastSender?.avatar
         };
     }
 
@@ -259,11 +264,7 @@ const NotificationItem = ({ notification, onDelete, onAction }) => {
                     </div>
                     {notification.previewImage && !isCommunitySystemNotif && (
                         <div className="flex-shrink-0 ml-4">
-                             <img 
-                                src={notification.previewImage} 
-                                alt="preview" 
-                                className="w-12 h-12 object-cover rounded-md"
-                            />
+                             <CachedImage src={notification.previewImage} />
                         </div>
                     )}
                     <button 

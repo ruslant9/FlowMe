@@ -13,17 +13,19 @@ import AddTracksToPlaylistModal from '../components/modals/AddTracksToPlaylistMo
 import { useModal } from '../hooks/useModal';
 import toast from 'react-hot-toast';
 import ColorThief from 'colorthief';
+import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt, className, ...props }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className={`${className} bg-slate-200 dark:bg-slate-800 animate-pulse`}></div>;
     }
-    return `${API_URL}/${url}`;
+    return <img src={finalSrc} alt={alt} className={className} {...props} />;
 };
+
 
 const PlaylistPage = () => {
     const { playlistId } = useParams();
@@ -201,25 +203,25 @@ const PlaylistPage = () => {
        
         switch (images.length) {
             case 1:
-                return <img src={images[0]} alt="" className={imgClass} {...firstImageProps(0)} />;
+                return <CachedImage src={images[0]} alt="" className={imgClass} {...firstImageProps(0)} />;
             case 2:
                 return (
                     <>
-                        <img src={images[0]} alt="" className={imgClass} {...firstImageProps(0)} />
-                        <img src={images[1]} alt="" className={imgClass} />
+                        <CachedImage src={images[0]} alt="" className={imgClass} {...firstImageProps(0)} />
+                        <CachedImage src={images[1]} alt="" className={imgClass} />
                     </>
                 );
             case 3:
                 return (
                     <>
-                        <div className="row-span-2"><img src={images[0]} alt="" className={imgClass} {...firstImageProps(0)} /></div>
-                        <div><img src={images[1]} alt="" className={imgClass} /></div>
-                        <div><img src={images[2]} alt="" className={imgClass} /></div>
+                        <div className="row-span-2"><CachedImage src={images[0]} alt="" className={imgClass} {...firstImageProps(0)} /></div>
+                        <div><CachedImage src={images[1]} alt="" className={imgClass} /></div>
+                        <div><CachedImage src={images[2]} alt="" className={imgClass} /></div>
                     </>
                 );
             default:
                 return images.slice(0, 4).map((url, index) => (
-                    <img key={index} src={url} alt="" className={imgClass} {...firstImageProps(index)} />
+                    <CachedImage key={index} src={url} alt="" className={imgClass} {...firstImageProps(index)} />
                 ));
         }
     };
@@ -256,8 +258,7 @@ const PlaylistPage = () => {
                             <h1 className="text-4xl font-extrabold break-words mt-1 text-slate-900 dark:text-white">{playlist.name}</h1>
                             <div className="flex items-center space-x-2 mt-3 text-sm">
                                 <Link to={`/profile/${playlist.user._id}`}>
-                                    {/* --- ИЗМЕНЕНИЕ: Используем getImageUrl --- */}
-                                    <Avatar size="sm" username={playlist.user.username} avatarUrl={getImageUrl(playlist.user.avatar)} />
+                                    <Avatar size="sm" username={playlist.user.username} avatarUrl={playlist.user.avatar} />
                                 </Link>
                                 <Link to={`/profile/${playlist.user._id}`} className="font-bold hover:underline text-slate-800 dark:text-white">{playlist.user.fullName || playlist.user.username}</Link>
                                 <span className="text-slate-500 dark:text-slate-400">• {playlist.tracks.length} треков, {totalMinutes} мин.</span>

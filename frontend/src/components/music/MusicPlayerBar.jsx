@@ -4,6 +4,17 @@ import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X } from 'lucide-react';
 import Slider from 'rc-slider';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt, className, onClick }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className={`${className} bg-slate-200 dark:bg-slate-700 animate-pulse`}></div>;
+    }
+    return <img src={finalSrc} alt={alt} className={className} onClick={onClick} />;
+};
+
 
 const formatTime = (seconds) => {
     if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -56,14 +67,12 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
     return (
         <div className="w-full p-4 flex items-center space-x-4">
             <div className="flex items-center space-x-4 w-1/4 flex-shrink-0">
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем onClick и cursor-pointer --- */}
-                <img 
+                <CachedImage 
                     src={track.albumArtUrl} 
                     alt={track.title} 
                     className="w-16 h-16 rounded-md object-cover shadow-md cursor-pointer"
                     onClick={openFullScreenPlayer}
                 />
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 <div className="flex flex-col min-w-0 flex-grow">
                     <p className="font-bold truncate text-lg text-slate-900 dark:text-white">{cleanTitle(track.title)}</p>
                     <p className="text-sm text-slate-700 dark:text-white/60 truncate">{formatArtistName(track.artist)}</p>

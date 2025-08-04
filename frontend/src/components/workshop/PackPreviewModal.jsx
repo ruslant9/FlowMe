@@ -6,7 +6,16 @@ import { X } from 'lucide-react';
 import ReactDOM from 'react-dom';
 // --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем Link ---
 import { Link } from 'react-router-dom';
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt, className }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className={`${className} bg-slate-200/50 dark:bg-slate-900/50 animate-pulse rounded-lg`}></div>;
+    }
+    return <img src={finalSrc} alt={alt} className={className} />;
+};
 
 const PackPreviewModal = ({ isOpen, onClose, pack }) => {
     if (!isOpen || !pack) return null;
@@ -59,7 +68,7 @@ const PackPreviewModal = ({ isOpen, onClose, pack }) => {
                             <div className={`grid gap-3 ${isSticker ? 'grid-cols-4' : 'grid-cols-6'}`}>
                                 {pack.items.map(item => (
                                     <div key={item._id} className="aspect-square bg-slate-200/50 dark:bg-slate-900/50 rounded-lg flex items-center justify-center p-2">
-                                        <img src={item.imageUrl} alt="" className="max-w-full max-h-full object-contain" />
+                                        <CachedImage src={item.imageUrl} alt="" className="max-w-full max-h-full object-contain" />
                                     </div>
                                 ))}
                             </div>

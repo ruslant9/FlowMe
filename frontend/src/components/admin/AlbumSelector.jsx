@@ -4,6 +4,17 @@ import React, { useState, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, ChevronDown, Music } from 'lucide-react';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full rounded-md object-cover bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
+    }
+    return <img src={finalSrc} alt={alt} className="w-full h-full rounded-md object-cover" />;
+};
+
 
 const AlbumSelectorModal = ({ isOpen, onClose, albums, onSelect }) => {
     const [query, setQuery] = useState('');
@@ -39,7 +50,9 @@ const AlbumSelectorModal = ({ isOpen, onClose, albums, onSelect }) => {
                             </div>
                             {filteredAlbums.map(album => (
                                 <div key={album._id} onClick={() => onSelect(album)} className="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
-                                    <div className="relative w-12 h-12 flex-shrink-0"><img src={album.coverArtUrl} alt={album.title} className="w-full h-full rounded-md object-cover"/></div>
+                                    <div className="relative w-12 h-12 flex-shrink-0">
+                                        <CachedImage src={album.coverArtUrl} alt={album.title} />
+                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-semibold truncate">{album.title}</p>
                                         <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{album.artist.name}</p>

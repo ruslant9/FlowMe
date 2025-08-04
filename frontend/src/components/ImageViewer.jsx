@@ -2,17 +2,24 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
+// Компонент для кешированного изображения с анимацией
+const CachedMotionImage = ({ src, ...props }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+
+    if (loading) {
+        return (
+            <motion.div {...props} className="absolute w-full h-full flex items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-white" />
+            </motion.div>
+        );
     }
-    return `${API_URL}/${url}`;
+
+    return <motion.img src={finalSrc} {...props} />;
 };
 
 const variants = {
@@ -104,11 +111,9 @@ const ImageViewer = ({ images, startIndex, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <AnimatePresence initial={false} custom={direction}>
-          <motion.img
+          <CachedMotionImage
             key={page}
-            // --- ИЗМЕНЕНИЕ ---
-            src={getImageUrl(images[activeImageIndex])}
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+            src={images[activeImageIndex]}
             custom={direction}
             variants={variants}
             initial="enter"

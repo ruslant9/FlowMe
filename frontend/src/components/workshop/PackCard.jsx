@@ -2,6 +2,16 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt, className }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className={`${className} bg-slate-200/50 dark:bg-slate-900/50 animate-pulse rounded-md`}></div>;
+    }
+    return <img src={finalSrc} alt={alt} className={className} />;
+};
 
 const PackCard = ({ pack, children, onLongPress }) => {
     const isSticker = pack.type === 'sticker';
@@ -14,7 +24,7 @@ const PackCard = ({ pack, children, onLongPress }) => {
             if (onLongPress) {
                 onLongPress(pack);
             }
-        }, 500); // 500ms для долгого нажатия
+        }, 300); // 500ms для долгого нажатия
     };
 
     const handleMouseUp = () => {
@@ -56,7 +66,7 @@ const PackCard = ({ pack, children, onLongPress }) => {
                 <div className={`mt-3 grid gap-2 ${isSticker ? 'grid-cols-3' : 'grid-cols-5'}`}>
                     {pack.items.slice(0, isSticker ? 6 : 10).map(item => (
                         <div key={item._id} className="aspect-square bg-slate-200/50 dark:bg-slate-900/50 rounded-md flex items-center justify-center p-1">
-                            <img src={item.imageUrl} alt="" className="max-w-full max-h-full object-contain" />
+                            <CachedImage src={item.imageUrl} alt="" className="max-w-full max-h-full object-contain" />
                         </div>
                     ))}
                     {pack.items.length > (isSticker ? 6 : 10) && (

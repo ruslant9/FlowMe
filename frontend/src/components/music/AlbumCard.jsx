@@ -4,6 +4,17 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Music } from 'lucide-react';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full bg-slate-200 dark:bg-slate-800 animate-pulse"></div>;
+    }
+    return <img src={finalSrc} alt={alt} className="w-full h-full object-cover" />;
+};
+
 
 const AlbumCard = ({ album }) => {
     const linkTo = album.isSingle ? `/single/${album._id}` : `/album/${album._id}`;
@@ -27,7 +38,7 @@ const AlbumCard = ({ album }) => {
             >
                 <div className="relative aspect-square rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800">
                     {album.coverArtUrl ? (
-                        <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
+                        <CachedImage src={album.coverArtUrl} alt={album.title} />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-400">
                             <Music size={48} />

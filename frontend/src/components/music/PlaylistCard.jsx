@@ -3,6 +3,17 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Music, Trash2, Play, Edit } from 'lucide-react';
 import { useModal } from '../../hooks/useModal';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt, className }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className={`${className} bg-slate-200 dark:bg-slate-800 animate-pulse`}></div>;
+    }
+    return <img src={finalSrc} alt={alt} className={className} />;
+};
+
 
 const PlaylistCard = ({ playlist, onClick, onDelete, onEdit }) => {
     const { showConfirmation } = useModal();
@@ -35,25 +46,25 @@ const PlaylistCard = ({ playlist, onClick, onDelete, onEdit }) => {
 
         switch (images.length) {
             case 1:
-                return <img src={images[0]} alt="" className={imgClass} />;
+                return <CachedImage src={images[0]} alt="" className={imgClass} />;
             case 2:
                 return (
                     <div className="w-full h-full grid grid-cols-2">
-                        <img src={images[0]} alt="" className={imgClass} />
-                        <img src={images[1]} alt="" className={imgClass} />
+                        <CachedImage src={images[0]} alt="" className={imgClass} />
+                        <CachedImage src={images[1]} alt="" className={imgClass} />
                     </div>
                 );
             case 3:
                 return (
                     <div className="w-full h-full grid grid-cols-2 grid-rows-2">
                         <div className="row-span-2">
-                            <img src={images[0]} alt="" className={imgClass} />
+                            <CachedImage src={images[0]} alt="" className={imgClass} />
                         </div>
                         <div>
-                            <img src={images[1]} alt="" className={imgClass} />
+                            <CachedImage src={images[1]} alt="" className={imgClass} />
                         </div>
                         <div>
-                            <img src={images[2]} alt="" className={imgClass} />
+                            <CachedImage src={images[2]} alt="" className={imgClass} />
                         </div>
                     </div>
                 );
@@ -61,7 +72,7 @@ const PlaylistCard = ({ playlist, onClick, onDelete, onEdit }) => {
                 return (
                     <div className="w-full h-full grid grid-cols-2 grid-rows-2">
                         {images.slice(0, 4).map((url, index) => (
-                            <img key={index} src={url} alt="" className={imgClass} />
+                            <CachedImage key={index} src={url} alt="" className={imgClass} />
                         ))}
                     </div>
                 );

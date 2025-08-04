@@ -8,12 +8,22 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import { useDynamicAccent } from '../../hooks/useDynamicAccent';
 import Tippy from '@tippyjs/react/headless';
 import AddToPlaylistModal from '../modals/AddToPlaylistModal';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const formatTime = (seconds) => {
     if (isNaN(seconds) || seconds < 0) return "0:00";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+};
+
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt, style, className, key, initial, animate, transition }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className={`${className} bg-slate-800 animate-pulse`} style={style}></div>;
+    }
+    return <motion.img src={finalSrc} alt={alt} className={className} style={style} key={key} initial={initial} animate={animate} transition={transition} />;
 };
 
 const cleanTitle = (title) => {
@@ -147,7 +157,7 @@ const FullScreenPlayer = () => {
                                 }}
                                 style={{ transformStyle: 'preserve-3d' }} // Важно для дочерних 3D-трансформаций
                             >
-                                <motion.img 
+                                <CachedImage 
                                     key={track._id}
                                     src={track.albumArtUrl} 
                                     alt={track.title} 

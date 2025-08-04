@@ -192,7 +192,7 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                     <Avatar
                                         size="sm"
                                         username={authorName}
-                                        fullName={authorFullName}
+                                        fullName={authorObject.fullName || authorName}
                                         avatarUrl={authorAvatar}
                                         isPremium={authorIsPremium}
                                         customBorder={authorCustomBorder}

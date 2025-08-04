@@ -2,16 +2,17 @@
 import React, { useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, X, Image as ImageIcon } from 'lucide-react';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
+// Компонент для кешированного изображения
+const CachedImage = ({ src, alt, onClick }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full object-cover bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
     }
-    return `${API_URL}/${url}`;
+    return <img src={finalSrc} alt={alt} className="w-full h-full object-cover" onClick={onClick} />;
 };
 
 const AttachmentsPanel = ({ attachments, loading, hasMore, onLoadMore, onClose, onImageClick }) => {
@@ -45,9 +46,8 @@ const AttachmentsPanel = ({ attachments, loading, hasMore, onLoadMore, onClose, 
                 ) : attachments.length > 0 ? (
                     <div className="grid grid-cols-3 gap-1">
                         {attachments.map((att, index) => (
-                            <div key={att._id} ref={attachments.length === index + 1 ? lastAttachmentElementRef : null} className="aspect-square bg-slate-200 dark:bg-slate-700 rounded-md overflow-hidden cursor-pointer" onClick={() => onImageClick(index)}>
-                                {/* --- ИЗМЕНЕНИЕ --- */}
-                                <img src={getImageUrl(att.imageUrl)} alt="attachment" className="w-full h-full object-cover" />
+                            <div key={att._id} ref={attachments.length === index + 1 ? lastAttachmentElementRef : null} className="aspect-square bg-slate-200 dark:bg-slate-700 rounded-md overflow-hidden cursor-pointer">
+                                <CachedImage src={att.imageUrl} alt="attachment" onClick={() => onImageClick(index)} />
                             </div>
                         ))}
                     </div>

@@ -6,9 +6,6 @@ import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import Avatar from './Avatar';
 
-// Убираем API_URL, он больше не нужен
-// const API_URL = import.meta.env.VITE_API_URL;
-
 const CustomToast = ({ t, sender, title, message, link, entityId, type }) => {
     const navigate = useNavigate();
 
@@ -41,14 +38,12 @@ const CustomToast = ({ t, sender, title, message, link, entityId, type }) => {
             onClick={handleToastClick}
         >
             <div className="flex-shrink-0">
-                {/* --- ИЗМЕНЕНИЕ --- */}
                 <Avatar
                     username={sender?.username}
                     fullName={sender?.fullName}
                     avatarUrl={sender?.avatar}
                     size="md"
                 />
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
             </div>
             <div className="flex-1 min-w-0">
                 <p className="font-bold text-slate-800 dark:text-white truncate">{title}</p>

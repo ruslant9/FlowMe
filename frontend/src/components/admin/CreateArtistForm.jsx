@@ -5,14 +5,17 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const getImageUrl = (url) => {
-    if (!url || url.startsWith('http') || url.startsWith('blob:')) {
-        return url;
+// Компонент для кешированного изображения
+const CachedImage = ({ src }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className="w-full h-full object-cover bg-slate-200 dark:bg-slate-700 animate-pulse" />;
     }
-    return `${API_URL}/${url}`;
+    return <img src={finalSrc} alt="Предпросмотр" className="w-full h-full object-cover" />;
 };
 
 export const CreateArtistForm = ({ onSuccess, isEditMode = false, initialData = null }) => {
@@ -30,7 +33,7 @@ export const CreateArtistForm = ({ onSuccess, isEditMode = false, initialData = 
             setName(initialData.name || '');
             setDescription(initialData.description || '');
             setTags(initialData.tags?.join(', ') || '');
-            setAvatarPreview(initialData.avatarUrl ? getImageUrl(initialData.avatarUrl) : null);
+            setAvatarPreview(initialData.avatarUrl || null);
         }
     }, [isEditMode, initialData]);
 
@@ -123,7 +126,7 @@ export const CreateArtistForm = ({ onSuccess, isEditMode = false, initialData = 
                 <div className="flex items-center space-x-4">
                     <div className="w-24 h-24 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                         {avatarPreview ? (
-                            <img src={avatarPreview} alt="Предпросмотр" className="w-full h-full object-cover" />
+                            <CachedImage src={avatarPreview} />
                         ) : (
                             <ImageIcon size={40} className="text-slate-400" />
                         )}
