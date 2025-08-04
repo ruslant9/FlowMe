@@ -36,9 +36,10 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useMusicPlayer } from './context/MusicPlayerContext';
 import MusicPlayerBar from './components/music/MusicPlayerBar';
-import FullScreenPlayer from './components/music/FullScreenPlayer'; // --- НОВЫЙ ИМПОРТ ---
+import FullScreenPlayer from './components/music/FullScreenPlayer';
 import { useWebSocket } from './context/WebSocketContext';
 import WorkshopPage from './pages/WorkshopPage';
+import { Link } from 'react-router-dom'; // Импортируем Link
 
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
   <div className="flex items-center justify-center space-x-2 p-2 rounded-lg">
@@ -79,10 +80,8 @@ const MainLayout = ({ children }) => {
     buffered,
     stopAndClearPlayer,
     playerNotification,
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Получаем состояние и функцию для полноэкранного плеера ---
     isFullScreenPlayerOpen,
     openFullScreenPlayer,
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
   } = useMusicPlayer();
 
   useEffect(() => {
@@ -119,11 +118,9 @@ const MainLayout = ({ children }) => {
         </Suspense>
       )}
 
-      {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Рендерим полноэкранный плеер --- */}
       <AnimatePresence>
           {isFullScreenPlayerOpen && <FullScreenPlayer />}
       </AnimatePresence>
-      {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
 
       {currentTrack && (
@@ -148,9 +145,7 @@ const MainLayout = ({ children }) => {
             onToggleLike={() => onToggleLike(currentTrack)}
             stopAndClearPlayer={stopAndClearPlayer}
             playerNotification={playerNotification}
-            // --- НАЧАЛО ИЗМЕНЕНИЯ: Передаем функцию для открытия ---
             openFullScreenPlayer={openFullScreenPlayer}
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
           />
         </div>
       )}
@@ -183,7 +178,7 @@ const BannedOverlay = ({ banInfo }) => {
 
     useEffect(() => {
         stopAndClearPlayer();
-    }, []);
+    }, [stopAndClearPlayer]);
 
     const handleAppealSubmit = async (e) => {
         e.preventDefault();
@@ -295,17 +290,13 @@ const ProtectedLayout = () => {
 
 const AdminProtectedLayout = () => {
   const { currentUser, loadingUser } = useUser();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loadingUser && currentUser && currentUser.role !== 'admin') {
-      toast.error("Доступ запрещен. У вас нет прав администратора.");
-      navigate('/', { replace: true });
-    }
-  }, [currentUser, loadingUser, navigate]);
+  if (loadingUser) {
+    return null;
+  }
 
-  if (!loadingUser && currentUser && currentUser.role !== 'admin') {
-    return null; 
+  if (currentUser && currentUser.role !== 'admin') {
+    return <Navigate to="/page-not-found" replace />;
   }
 
   return <Outlet />;
@@ -348,18 +339,28 @@ function App() {
             <Route path="/communities/:communityId" element={<CommunityDetailPage />} />
             <Route path="/premium" element={<PremiumPage />} />
             <Route path="/workshop" element={<WorkshopPage />} />
+            
             <Route element={<AdminProtectedLayout />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>
-          </Route>
+            
+            {/* Маршрут для страницы "Не найдено" */}
+            <Route path="/page-not-found" element={
+                <div className="flex-1 p-8 text-center">
+                    <h1 className="text-4xl font-bold">404 - Страница не найдена</h1>
+                    <p className="mt-4">Извините, мы не смогли найти то, что вы искали.</p>
+                    <Link to="/" className="mt-6 inline-block text-blue-500 hover:underline">Вернуться на главную</Link>
+                </div>
+            } />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Общий "catch-all" роут теперь ведет на нашу страницу 404 */}
+            <Route path="*" element={<Navigate to="/page-not-found" replace />} />
+          </Route>
 
         </Routes>
       </AnimatePresence>
     </>
   );
 }
-
 
 export default App;

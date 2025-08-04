@@ -63,36 +63,45 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
         >
             {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
             {(() => {
-                return avatarUrl ? (
-                    <div
-                        className={`${sizeClasses[size]} rounded-full flex-shrink-0 overflow-hidden ${isPseudoElementBorder ? 'bg-transparent' : 'bg-slate-200 dark:bg-slate-700'} ${onClick ? 'cursor-pointer' : ''}`}
-                    >
-                        <img
-                            src={getImageUrl(avatarUrl)}
-                            alt={username}
-                            className="w-full h-full object-cover"
-                        />
-                    </div>
-                ) : (
-                    <div
-                        className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${onClick ? 'cursor-pointer' : ''}`}
-                        style={{ backgroundColor: isPseudoElementBorder ? 'transparent' : bgColor }}
-                    >
-                        {isPseudoElementBorder ? (
-                            <div className="w-full h-full rounded-full flex items-center justify-center" style={{ backgroundColor: bgColor }}>
-                                {firstLetter}
-                            </div>
-                        ) : (
-                            firstLetter
-                        )}
-                    </div>
-                );
+                // Внутренний контейнер для аватара. Он должен быть прозрачным для анимированных рамок,
+                // чтобы градиент внешнего контейнера был виден.
+                const needsTransparentBg = (hasCustomBorder && !isPseudoElementBorder && !defaultPremiumClass) || (defaultPremiumClass && !hasCustomBorder);
+
+                const baseAvatarContainerClass = `${sizeClasses[size]} rounded-full flex-shrink-0 overflow-hidden ${onClick ? 'cursor-pointer' : ''}`;
+                const bgClass = needsTransparentBg ? 'bg-transparent' : 'bg-slate-200 dark:bg-slate-700';
+
+                if (avatarUrl) {
+                    return (
+                        <div className={`${baseAvatarContainerClass} ${bgClass}`}>
+                            <img
+                                src={getImageUrl(avatarUrl)}
+                                alt={username}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    );
+                } else {
+                    const initialContainerClass = `${baseAvatarContainerClass} flex items-center justify-center font-bold text-white`;
+                    return (
+                        <div
+                            className={initialContainerClass}
+                            style={{ backgroundColor: isPseudoElementBorder ? 'transparent' : bgColor }}
+                        >
+                            {isPseudoElementBorder ? (
+                                <div className="w-full h-full rounded-full flex items-center justify-center" style={{ backgroundColor: bgColor }}>
+                                    {firstLetter}
+                                </div>
+                            ) : (
+                                firstLetter
+                            )}
+                        </div>
+                    );
+                }
             })()}
             {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
             {(hasCustomBorder && !isPseudoElementBorder || defaultPremiumClass) && <div className="absolute inset-1 rounded-full bg-slate-50 dark:bg-slate-900 -z-10"></div>}    
             
-            {/* Этот блок оставлен для обратной совместимости, если Avatar где-то еще используется со старым подходом */}
             {onClick && children && (
                 <>
                     <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>

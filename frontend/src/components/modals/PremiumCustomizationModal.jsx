@@ -63,29 +63,18 @@ const preloadImages = (urls) => {
 };
 
 const AvatarBorderPreview = ({ border, isSelected, onClick, user }) => {
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-    const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
-    const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
     return (
         <div 
             onClick={onClick}
             className={`flex flex-col items-center space-y-2 p-2 rounded-lg cursor-pointer transition-all ${isSelected ? 'ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-            <div 
-                className={`relative rounded-full ${borderClass}`}
-                style={staticBorderStyle}
-            >
-                <Avatar
-                    username={user.username}
-                    avatarUrl={user.avatar ? getImageUrl(user.avatar) : ''}
-                    customBorder={border}
-                    size="md"
-                />
-            </div>
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+            {/* --- ИСПРАВЛЕНИЕ: Убрана лишняя обертка. Теперь Avatar сам рендерит рамку. --- */}
+            <Avatar
+                username={user.username}
+                avatarUrl={user.avatar ? getImageUrl(user.avatar) : ''}
+                customBorder={border}
+                size="md"
+            />
             <span className="text-xs text-center">{border.name}</span>
         </div>
     );

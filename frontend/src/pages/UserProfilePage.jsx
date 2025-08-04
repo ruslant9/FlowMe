@@ -471,29 +471,16 @@ const UserProfilePage = () => {
                         renderContent={(accentTextColor) => (
                              <div className="text-center pt-4 pb-6">
                                 {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-                                {(() => {
-                                    const border = user.premiumCustomization?.avatarBorder;
-                                    const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
-                                    const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
-
-                                    return (
-                                        <div className="relative flex-shrink-0 mx-auto mb-4">
-                                            <div 
-                                                className={`relative rounded-full ${borderClass}`}
-                                                style={staticBorderStyle}
-                                            >
-                                                <Avatar
-                                                    username={user.username}
-                                                    fullName={user.fullName}
-                                                    avatarUrl={user.avatar}
-                                                    size="xl"
-                                                    isPremium={user.premium?.isActive}
-                                                    customBorder={user.premiumCustomization?.avatarBorder}
-                                                />
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
+                                <div className="relative flex-shrink-0 mx-auto mb-4">
+                                    <Avatar
+                                        username={user.username}
+                                        fullName={user.fullName}
+                                        avatarUrl={user.avatar}
+                                        size="xl"
+                                        isPremium={user.premium?.isActive}
+                                        customBorder={user.premiumCustomization?.avatarBorder}
+                                    />
+                                </div>
                                 {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <div className="flex flex-col items-center mt-4">
                                     <div className="flex items-center justify-center">

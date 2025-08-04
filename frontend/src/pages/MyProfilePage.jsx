@@ -348,51 +348,38 @@ const MyProfilePage = () => {
                             renderContent={(accentTextColor) => (
                                 <div className="text-center pt-4 pb-6">
                                     {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-                                    {(() => {
-                                        const border = user.premiumCustomization?.avatarBorder;
-                                        const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
-                                        const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
-
-                                        return (
-                                            <div className="relative group flex-shrink-0 mx-auto mb-4">
-                                                <div 
-                                                    className={`relative rounded-full ${borderClass}`}
-                                                    style={staticBorderStyle}
+                                    <div className="relative group flex-shrink-0 mx-auto mb-4">
+                                        <Avatar
+                                            username={user.username}
+                                            fullName={user.fullName}
+                                            avatarUrl={user.avatar}
+                                            size="xl"
+                                            isPremium={user.premium?.isActive}
+                                            customBorder={user.premiumCustomization?.avatarBorder}
+                                        />
+                                        <div 
+                                            className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2 cursor-pointer"
+                                            onClick={() => avatarInputRef.current.click()}
+                                        >
+                                            {user.avatar && (
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); handleAvatarDelete(); }} 
+                                                    title="Удалить аватар" 
+                                                    className="p-2 bg-red-500/50 rounded-full hover:bg-red-500/70"
                                                 >
-                                                    <Avatar
-                                                        username={user.username}
-                                                        fullName={user.fullName}
-                                                        avatarUrl={user.avatar}
-                                                        size="xl"
-                                                        isPremium={user.premium?.isActive}
-                                                        customBorder={user.premiumCustomization?.avatarBorder}
-                                                    />
-                                                    <div 
-                                                        className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2 cursor-pointer"
-                                                        onClick={() => avatarInputRef.current.click()}
-                                                    >
-                                                        {user.avatar && (
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); handleAvatarDelete(); }} 
-                                                                title="Удалить аватар" 
-                                                                className="p-2 bg-red-500/50 rounded-full hover:bg-red-500/70"
-                                                            >
-                                                                <Trash2 size={20} className="text-white" />
-                                                            </button>
-                                                        )}
-                                                        <button 
-                                                            onClick={(e) => e.stopPropagation()} // Предотвращаем двойной клик по input
-                                                            title="Изменить аватар" 
-                                                            className="p-2 bg-white/20 rounded-full hover:bg-white/40"
-                                                        >
-                                                            <Upload size={20} className="text-white" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={handleAvatarUpload} />
-                                            </div>
-                                        );
-                                    })()}
+                                                    <Trash2 size={20} className="text-white" />
+                                                </button>
+                                            )}
+                                            <button 
+                                                onClick={(e) => e.stopPropagation()} // Предотвращаем двойной клик по input
+                                                title="Изменить аватар" 
+                                                className="p-2 bg-white/20 rounded-full hover:bg-white/40"
+                                            >
+                                                <Upload size={20} className="text-white" />
+                                            </button>
+                                        </div>
+                                        <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={handleAvatarUpload} />
+                                    </div>
                                     {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     <div className="flex items-center justify-center">
                                         <h1 className="text-2xl font-bold">{user.fullName || user.username}</h1>
