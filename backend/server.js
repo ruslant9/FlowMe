@@ -10,6 +10,7 @@ const { WebSocketServer, WebSocket } = require('ws');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet'); // <-- ИМПОРТ HELMET
 
 require('dotenv').config();
 
@@ -60,6 +61,7 @@ app.use(cors({
 }));
 
 // Middleware
+app.use(helmet()); // <-- ИСПОЛЬЗОВАНИЕ HELMET ДЛЯ УСТАНОВКИ ЗАЩИТНЫХ HTTP-ЗАГОЛОВКОВ
 app.use(passport.initialize());
 app.use(express.json());
 app.use(cookieParser());
@@ -201,8 +203,23 @@ app.use((req, res, next) => {
     next();
 });
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: ДОБАВЛЕН ОБЩИЙ ОГРАНИЧИТЕЛЬ ЗАПРОСОВ ---
+// Общий ограничитель для всех API-запросов для базовой защиты от DoS
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 минут
+    max: 200, // Ограничение для каждого IP: 200 запросов за 15 минут
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Слишком много запросов с этого IP, пожалуйста, попробуйте снова через 15 минут.' }
+});
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: { message: 'Слишком много попыток. Пожалуйста, попробуйте снова через 15 минут.' } });
 const codeLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { message: 'Слишком много запросов на отправку кода. Попробуйте позже.' } });
+
+// --- НАЧАЛО ИЗМЕНЕНИЯ: ПРИМЕНЕНИЕ ОБЩЕГО ОГРАНИЧИТЕЛЯ ---
+app.use('/api/', apiLimiter); // Применяем ко всем маршрутам, начинающимся с /api/
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/verify-email', authLimiter);

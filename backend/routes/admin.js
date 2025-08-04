@@ -378,8 +378,10 @@ router.delete('/content/albums/:id', async (req, res) => {
 
 
 // --- ТРЕКИ ---
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-router.put('/content/tracks/:id', async (req, res) => {
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем multer().none() для парсинга multipart/form-data без файлов ---
+const formParser = multer();
+router.put('/content/tracks/:id', formParser.none(), async (req, res) => {
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     try {
         const { title, artistIds, albumId, genres, isExplicit, releaseDate } = req.body;
         
@@ -405,7 +407,6 @@ router.put('/content/tracks/:id', async (req, res) => {
         res.status(500).json({ message: 'Ошибка при обновлении трека' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 router.delete('/content/tracks/:id', async (req, res) => {
@@ -493,6 +494,7 @@ router.post('/users/:id/ban', async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новый роут для пакетной загрузки треков ---
 router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 20), async (req, res) => {
     try {
         const { albumId } = req.params;
@@ -531,6 +533,7 @@ router.post('/albums/:albumId/batch-upload-tracks', upload.array('trackFiles', 2
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 router.get('/albums/:albumId/tracks', async (req, res) => {

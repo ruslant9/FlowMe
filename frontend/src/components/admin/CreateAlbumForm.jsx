@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, Music, Edit, ChevronDown, Trash2, GripVertical } from 'lucide-react';
+import { Loader2, Music, Edit, ChevronDown, Trash2, GripVertical, PlusCircle } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelectorSingle from './GenreSelectorSingle';
 import Avatar from '../Avatar';
@@ -121,7 +121,6 @@ const SortableTrackItem = ({ track, onEditTrack, onDeleteTrack }) => {
     );
 };
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Компонент выбора месяца и года ---
 const MonthYearPicker = ({ value, onChange }) => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
@@ -161,7 +160,6 @@ const MonthYearPicker = ({ value, onChange }) => {
         </div>
     );
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
 export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initialData = null, onEditTrack }) => {
@@ -170,13 +168,17 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [title, setTitle] = useState('');
     const [artistId, setArtistId] = useState('');
     const [genre, setGenre] = useState('');
-    const [releaseDate, setReleaseDate] = useState(new Date()); // ИЗМЕНЕНИЕ
+    const [releaseDate, setReleaseDate] = useState(new Date());
     const [coverArt, setCoverArt] = useState(null);
     const [loading, setLoading] = useState(false);
     const [coverPreview, setCoverPreview] = useState('');
     const [albumTracks, setAlbumTracks] = useState([]);
     
     const fileInputRef = useRef(null);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Ref для пакетной загрузки ---
+    const batchFileInputRef = useRef(null);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -199,7 +201,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setTitle(initialData.title || '');
             setArtistId(initialData.artist?._id || initialData.artist || '');
             setGenre(initialData.genre || '');
-            setReleaseDate(initialData.releaseDate ? new Date(initialData.releaseDate) : new Date()); // ИЗМЕНЕНИЕ
+            setReleaseDate(initialData.releaseDate ? new Date(initialData.releaseDate) : new Date());
             setCoverPreview(initialData.coverArtUrl || '');
             fetchAlbumTracks();
         }
@@ -257,6 +259,54 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             }
         }
     };
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Функция пакетной загрузки ---
+    const handleBatchUpload = async (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        
+        const toastId = toast.loading(`Загрузка ${files.length} треков...`);
+        setLoading(true);
+
+        const formData = new FormData();
+        const metadata = [];
+        
+        const mainArtist = artists.find(a => a._id === artistId);
+
+        for (const file of files) {
+            formData.append('trackFiles', file);
+            const duration = await new Promise(resolve => {
+                const audio = document.createElement('audio');
+                audio.src = URL.createObjectURL(file);
+                audio.onloadedmetadata = () => resolve(Math.round(audio.duration * 1000));
+            });
+            metadata.push({
+                title: file.name.replace(/\.[^/.]+$/, ""),
+                artistIds: [artistId], // Основной артист альбома
+                isExplicit: false,
+                durationMs: duration
+            });
+        }
+        
+        formData.append('tracksMetadata', JSON.stringify(metadata));
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/api/admin/albums/${initialData._id}/batch-upload-tracks`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+            });
+            toast.success('Треки успешно добавлены!', { id: toastId });
+            fetchAlbumTracks();
+        } catch (error) {
+            toast.error('Ошибка при загрузке треков.', { id: toastId });
+        } finally {
+            setLoading(false);
+            if (batchFileInputRef.current) {
+                batchFileInputRef.current.value = "";
+            }
+        }
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     const handleSubmit = async (e) => {
@@ -268,7 +318,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         formData.append('title', title);
         formData.append('artistId', artistId);
         formData.append('genre', genre);
-        if (releaseDate) formData.append('releaseDate', releaseDate.toISOString()); // ИЗМЕНЕНИЕ
+        if (releaseDate) formData.append('releaseDate', releaseDate.toISOString());
         if (coverArt) formData.append('coverArt', coverArt);
         const isAdmin = currentUser.role === 'admin';
         const endpoint = isEditMode
@@ -284,7 +334,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const res = await axios[method](endpoint, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
             toast.success(res.data.message || successMessage, { id: toastId });
             if (!isEditMode) {
-                setTitle(''); setArtistId(''); setGenre(''); setReleaseDate(new Date()); setCoverArt(null); setCoverPreview(''); // ИЗМЕНЕНИЕ
+                setTitle(''); setArtistId(''); setGenre(''); setReleaseDate(new Date()); setCoverArt(null); setCoverPreview('');
                 e.target.reset();
             }
             onSuccess();
@@ -329,25 +379,40 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 </div>
             </div>
 
-            {isEditMode && albumTracks.length > 0 && (
+            {isEditMode && (
                 <div>
-                    <h4 className="font-bold text-md mb-2">Треки в альбоме ({albumTracks.length})</h4>
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={albumTracks} strategy={verticalListSortingStrategy}>
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                {albumTracks.map(track => (
-                                    <SortableTrackItem 
-                                        key={track._id} 
-                                        track={track} 
-                                        onEditTrack={onEditTrack} 
-                                        onDeleteTrack={handleDeleteTrack} 
-                                    />
-                                ))}
-                            </div>
-                        </SortableContext>
-                    </DndContext>
+                     {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка пакетной загрузки --- */}
+                    <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-bold text-md">Треки в альбоме ({albumTracks.length})</h4>
+                        <button 
+                            type="button" 
+                            onClick={() => batchFileInputRef.current.click()}
+                            className="flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-500/20 dark:text-green-300 dark:hover:bg-green-500/30"
+                        >
+                           <PlusCircle size={14} /> <span>Добавить еще треки</span>
+                        </button>
+                        <input ref={batchFileInputRef} type="file" accept="audio/*" multiple onChange={handleBatchUpload} className="hidden" />
+                    </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                    {albumTracks.length > 0 && (
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                            <SortableContext items={albumTracks} strategy={verticalListSortingStrategy}>
+                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                    {albumTracks.map(track => (
+                                        <SortableTrackItem 
+                                            key={track._id} 
+                                            track={track} 
+                                            onEditTrack={onEditTrack} 
+                                            onDeleteTrack={handleDeleteTrack} 
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
+                    )}
                 </div>
             )}
+
 
             <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
                 {loading && <Loader2 className="animate-spin mr-2"/>}
