@@ -67,8 +67,12 @@ const AlbumPage = () => {
                     className="p-6 md:p-8 pt-32 pb-32 transition-all duration-500"
                     style={{ backgroundImage: gradient }}
                 >
-                    <button onClick={() => navigate(-1)} className="absolute top-10 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
-                        <ArrowLeft size={16}/>
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
+                        style={{ color: dominantColor }}
+                    >
+                        <ArrowLeft size={16} strokeWidth={2.5} />
                         <span>Назад</span>
                     </button>
 

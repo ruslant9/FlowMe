@@ -4,13 +4,11 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/auth.middleware');
-const premiumMiddleware = require('../middleware/premium.middleware');
 const ContentPack = require('../models/ContentPack');
 const User = require('../models/User');
 const { createStorage, cloudinary } = require('../config/cloudinary');
 const multer = require('multer');
 const sharp = require('sharp');
-const ColorThief = require('colorthief');
 const { Readable } = require('stream');
 
 const memoryStorage = multer.memoryStorage();
@@ -74,7 +72,7 @@ const processAndUpload = (req, res, next) => {
         });
 };
 
-router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 20), processAndUpload, async (req, res) => {
+router.post('/packs', authMiddleware, upload.array('items', 20), processAndUpload, async (req, res) => {
     try {
         const { name, type, isPremiumOnly } = req.body;
         if (!name || !type || !['emoji', 'sticker'].includes(type)) {
@@ -87,9 +85,7 @@ router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 2
             name,
             type,
             creator: req.user.userId,
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
             isPremium: type === 'emoji' ? (isPremiumOnly === 'true') : false,
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             items: req.files.map(file => ({ imageUrl: file.path }))
         });
         await newPack.save();
@@ -113,49 +109,33 @@ router.get('/packs/my', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.get('/packs/added', authMiddleware, async (req, res) => {
     try {
         const { type } = req.query;
         const userId = req.user.userId;
-
-        // 1. Находим паки, которые пользователь добавил
         const user = await User.findById(userId).populate({
             path: 'addedContentPacks',
             populate: { path: 'creator', select: 'username fullName' }
         });
         const addedPacks = user.addedContentPacks;
-
-        // 2. Находим паки, которые пользователь создал
-        const createdPacks = await ContentPack.find({ creator: userId })
-            .populate('creator', 'username fullName');
-
-        // 3. Объединяем их и убираем дубликаты
+        const createdPacks = await ContentPack.find({ creator: userId }).populate('creator', 'username fullName');
         const allPacksMap = new Map();
         [...addedPacks, ...createdPacks].forEach(pack => {
             allPacksMap.set(pack._id.toString(), pack);
         });
-
         let finalPacks = Array.from(allPacksMap.values());
-
-        // 4. Применяем фильтр по типу, если он есть
         if (type && ['sticker', 'emoji'].includes(type)) {
             finalPacks = finalPacks.filter(pack => pack.type === type);
         }
-
-        // 5. Сортируем (например, по дате создания)
         finalPacks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
         res.json(finalPacks);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка загрузки добавленных паков.' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
 router.get('/packs/search', authMiddleware, async (req, res) => {
-    const { q = '', page = 1, type } = req.query;
+    const { q = '', page = 1, type, isPremium } = req.query; // Достаем isPremium
     const limit = 12;
     const skip = (page - 1) * limit;
     try {
@@ -166,6 +146,23 @@ router.get('/packs/search', authMiddleware, async (req, res) => {
         if (type && ['sticker', 'emoji'].includes(type)) {
             query.type = type;
         }
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        if (isPremium !== undefined) {
+            const isPremiumBool = isPremium === 'true';
+            if (isPremiumBool) {
+                // Если ищем Premium, то это либо паки с флагом isPremium=true, либо системные
+                 query.$or = [
+                    { isPremium: true },
+                    { creator: await User.findOne({ username: 'Flow me' }).select('_id') }
+                 ];
+            } else {
+                // Если ищем бесплатные, то это паки с флагом isPremium=false И НЕ системные
+                 query.isPremium = false;
+                 query.creator = { $ne: await User.findOne({ username: 'Flow me' }).select('_id') };
+            }
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        
         const packs = await ContentPack.find(query)
             .populate('creator', 'username fullName')
             .sort({ createdAt: -1 })
@@ -201,11 +198,10 @@ const canModifyPack = async (req, res, next) => {
     }
 };
 
-router.put('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, upload.array('newItems', 10), processAndUpload, async (req, res) => {
+router.put('/packs/:packId', authMiddleware, canModifyPack, upload.array('newItems', 10), processAndUpload, async (req, res) => {
     try {
         const { name, itemsToDelete, isPremiumOnly } = req.body;
         const pack = req.pack;
-
         if (name) pack.name = name;
         if (itemsToDelete) {
             const toDelete = JSON.parse(itemsToDelete);
@@ -215,11 +211,9 @@ router.put('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, u
             const newItems = req.files.map(file => ({ imageUrl: file.path }));
             pack.items.push(...newItems);
         }
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         if (isPremiumOnly !== undefined && pack.type === 'emoji') {
             pack.isPremium = isPremiumOnly === 'true';
         }
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         await pack.save();
         res.json(pack);
     } catch (error) {
@@ -227,7 +221,7 @@ router.put('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, u
     }
 });
 
-router.delete('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, async (req, res) => {
+router.delete('/packs/:packId', authMiddleware, canModifyPack, async (req, res) => {
     try {
         await req.pack.deleteOne();
         await User.updateMany({}, { $pull: { addedContentPacks: req.pack._id } });

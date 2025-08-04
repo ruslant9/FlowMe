@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown, Sticker, Smile } from 'lucide-react';
+import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown } from 'lucide-react'; // Убрал неиспользуемые Sticker, Smile
 import CreateEditPackModal from '../components/workshop/CreateEditPackModal';
 import PackCard from '../components/workshop/PackCard';
 import { useUser } from '../context/UserContext';
@@ -48,6 +48,9 @@ const WorkshopPage = () => {
     const { showConfirmation } = useModal();
     
     const [activeTypeFilter, setActiveTypeFilter] = useState('all');
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Новое состояние для Premium фильтра ---
+    const [premiumFilter, setPremiumFilter] = useState('all'); // 'all', 'free', 'premium'
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
     
     const [myPacks, setMyPacks] = useState([]);
     const [addedPacks, setAddedPacks] = useState([]);
@@ -75,7 +78,8 @@ const WorkshopPage = () => {
         }
     }, []);
 
-    const fetchData = useCallback(async (tab, query = '', page = 1, type = 'all') => {
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Добавляем premiumFilter в fetchData ---
+    const fetchData = useCallback(async (tab, query = '', page = 1, type = 'all', premFilter = 'all') => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
@@ -89,9 +93,9 @@ const WorkshopPage = () => {
                 await fetchAddedPacksData();
             } else if (tab === 'search') {
                 const searchParams = new URLSearchParams({ q: query, page });
-                if (type !== 'all') {
-                    searchParams.append('type', type);
-                }
+                if (type !== 'all') searchParams.append('type', type);
+                if (premFilter !== 'all') searchParams.append('isPremium', premFilter === 'premium'); // Добавляем новый параметр
+                
                 const res = await axios.get(`${API_URL}/api/workshop/packs/search?${searchParams.toString()}`, headers);
                 setSearchResults(res.data.packs);
                 setSearchTotalPages(res.data.totalPages);
@@ -103,29 +107,28 @@ const WorkshopPage = () => {
             setLoading(false);
         }
     }, [fetchAddedPacksData]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
     
     useEffect(() => {
         fetchAddedPacksData();
     }, [fetchAddedPacksData]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Добавляем premiumFilter в зависимости ---
     useEffect(() => {
-        fetchData(activeTab, searchQuery, 1, activeTypeFilter);
-    }, [activeTab, activeTypeFilter, fetchData]);
+        fetchData(activeTab, searchQuery, 1, activeTypeFilter, premiumFilter);
+    }, [activeTab, activeTypeFilter, premiumFilter, fetchData]);
 
     useEffect(() => {
         if (activeTab === 'search') {
             const debounce = setTimeout(() => {
-                fetchData('search', searchQuery, 1, activeTypeFilter);
+                fetchData('search', searchQuery, 1, activeTypeFilter, premiumFilter);
             }, 300);
             return () => clearTimeout(debounce);
         }
-    }, [searchQuery, activeTab, activeTypeFilter, fetchData]);
+    }, [searchQuery, activeTab, activeTypeFilter, premiumFilter, fetchData]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 
     const handleCreatePack = () => {
-        if (!currentUser?.premium?.isActive) {
-            setIsPremiumModalOpen(true);
-            return;
-        }
         setEditingPack(null);
         setIsModalOpen(true);
     };
@@ -145,7 +148,7 @@ const WorkshopPage = () => {
                     const token = localStorage.getItem('token');
                     await axios.delete(`${API_URL}/api/workshop/packs/${pack._id}`, { headers: { Authorization: `Bearer ${token}` } });
                     toast.success('Пак удален', { id: toastId });
-                    fetchData(activeTab, searchQuery, 1, activeTypeFilter);
+                    fetchData(activeTab, searchQuery, 1, activeTypeFilter, premiumFilter);
                     refetchPacks();
                 } catch (error) {
                     toast.error(error.response?.data?.message || 'Ошибка удаления', { id: toastId });
@@ -262,9 +265,9 @@ const WorkshopPage = () => {
                 )}
                 {activeTab === 'search' && searchTotalPages > 1 && (
                      <div className="flex justify-center items-center space-x-2 mt-6">
-                        <button onClick={() => fetchData('search', searchQuery, searchPage - 1, activeTypeFilter)} disabled={searchPage === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>
+                        <button onClick={() => fetchData('search', searchQuery, searchPage - 1, activeTypeFilter, premiumFilter)} disabled={searchPage === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>
                         <span>Стр. {searchPage} из {searchTotalPages}</span>
-                        <button onClick={() => fetchData('search', searchQuery, searchPage + 1, activeTypeFilter)} disabled={searchPage === searchTotalPages} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Вперед</button>
+                        <button onClick={() => fetchData('search', searchQuery, searchPage + 1, activeTypeFilter, premiumFilter)} disabled={searchPage === searchTotalPages} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Вперед</button>
                     </div>
                 )}
             </div>
@@ -280,7 +283,7 @@ const WorkshopPage = () => {
                 isEditMode={!!editingPack}
                 initialData={editingPack}
                 onSave={() => {
-                    fetchData('my', '', 1, activeTypeFilter);
+                    fetchData('my', '', 1, activeTypeFilter, premiumFilter);
                     refetchPacks();
                 }}
             />
@@ -312,11 +315,20 @@ const WorkshopPage = () => {
                 </div>
 
                 {activeTab === 'search' && (
-                    <div className="relative mb-6">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg"/>
-                    </div>
+                    <>
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Добавляем новый блок фильтров --- */}
+                        <div className="flex items-center space-x-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                            <SubTabButton active={premiumFilter === 'all'} onClick={() => setPremiumFilter('all')}>Все</SubTabButton>
+                            <SubTabButton active={premiumFilter === 'free'} onClick={() => setPremiumFilter('free')}>Бесплатные</SubTabButton>
+                            <SubTabButton active={premiumFilter === 'premium'} onClick={() => setPremiumFilter('premium')}>Premium</SubTabButton>
+                        </div>
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
+                        <div className="relative mb-6">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
+                                className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg"/>
+                        </div>
+                    </>
                 )}
 
                 <div>{renderContent()}</div>

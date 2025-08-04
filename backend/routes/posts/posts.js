@@ -10,7 +10,7 @@ const Community = require('../../models/Community');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getPopulatedPost } = require('../../utils/posts_');
+const { getPopulatedPost } = require('../../utils/posts');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
 const { createStorage, cloudinary } = require('../../config/cloudinary');
 // --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
@@ -34,7 +34,7 @@ router.get('/feed', authMiddleware, async (req, res) => {
             ]
         })  
             .populate('user', 'username fullName avatar privacySettings friends blacklist premiumCustomization')
-            .populate('likes', 'username fullName avatar _id')
+            .populate('likes', 'username fullName avatar _id premium premiumCustomization')
             .populate('community', 'name avatar visibility members')
             .populate('attachedTrack')
             .populate({ path: 'poll.options.votes', select: 'username fullName avatar' })
@@ -244,7 +244,8 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
         }
         const posts = await Post.find({ user: req.params.userId, community: null, status: 'published' })
             .populate('user', 'username fullName avatar premiumCustomization')
-            .populate('likes', 'username fullName avatar _id')
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            .populate('likes', 'username fullName avatar _id premium premiumCustomization')
             .populate('attachedTrack')
             .populate({ path: 'poll.options.votes', select: 'username fullName avatar' })
             .sort({ isPinned: -1, createdAt: -1 });

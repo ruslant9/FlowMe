@@ -1,9 +1,12 @@
-// frontend/src/components/workshop/PackPreviewModal.jsx --- НОВЫЙ ФАЙЛ ---
+// frontend/src/components/workshop/PackPreviewModal.jsx
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import ReactDOM from 'react-dom';
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем Link ---
+import { Link } from 'react-router-dom';
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const PackPreviewModal = ({ isOpen, onClose, pack }) => {
     if (!isOpen || !pack) return null;
@@ -36,7 +39,18 @@ const PackPreviewModal = ({ isOpen, onClose, pack }) => {
                         <div className="flex justify-between items-center mb-4">
                             <div>
                                 <h2 className="text-xl font-bold">{pack.name}</h2>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">от {pack.creator.username}</p>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем имя автора в Link --- */}
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    от{' '}
+                                    <Link
+                                        to={`/profile/${pack.creator._id}`}
+                                        onClick={onClose}
+                                        className="font-semibold hover:underline"
+                                    >
+                                        {pack.creator.username}
+                                    </Link>
+                                </p>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </div>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
                         </div>

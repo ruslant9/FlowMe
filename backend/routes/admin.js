@@ -541,7 +541,8 @@ router.get('/albums/:albumId/tracks', async (req, res) => {
         const album = await Album.findById(albumId)
             .populate({
                 path: 'tracks',
-                populate: { path: 'artist', select: 'name' }
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                populate: { path: 'artist', select: 'name premium premiumCustomization' }
             });
         
         if (!album) {

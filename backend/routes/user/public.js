@@ -91,7 +91,7 @@ router.get('/search', authMiddleware, async (req, res) => {
         pipeline.push({
              $project: {
                 username: 1, fullName: 1, avatar: 1, privacySettings: 1,
-                friends: 1, blacklist: 1, city: 1, status: 1
+                friends: 1, blacklist: 1, city: 1, status: 1, lastSeen: 1 
             }
         });
         const users = await User.aggregate(pipeline);
@@ -190,7 +190,8 @@ router.get('/:userId/friends-list', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: 'Доступ к списку друзей ограничен настройками приватности.' });
         }
         const friendsData = await User.findById(targetUserId)
-            .populate({ path: 'friends.user', select: 'username fullName avatar' })
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            .populate({ path: 'friends.user', select: 'username fullName avatar premium premiumCustomization' })
             .select('friends');
         if (!friendsData) return res.status(404).json({ message: 'Пользователь не найден.' });
         res.json(friendsData.friends.map(f => f.user).filter(Boolean));
@@ -212,13 +213,17 @@ router.get('/:userId/subscribers-list', authMiddleware, async (req, res) => {
         if (!isAllowedByPrivacy(targetUser.privacySettings?.viewSubscribers, requesterId, targetUser)) {
             return res.status(403).json({ message: 'Доступ к списку подписчиков ограничен настройками приватности.' });
         }
-        const subscribersData = await User.findById(targetUserId).populate('friendRequestsReceived', 'username fullName avatar').select('friendRequestsReceived');
+        const subscribersData = await User.findById(targetUserId)
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            .populate('friendRequestsReceived', 'username fullName avatar premium premiumCustomization')
+            .select('friendRequestsReceived');
         if (!subscribersData) return res.status(404).json({ message: 'Пользователь не найден.' });
         res.json(subscribersData.friendRequestsReceived);
     } catch (e) {
         res.status(500).json({ message: 'Ошибка сервера при получении списка подписчиков.' });
     }
 });
+
 
 router.get('/:userId/communities-list', authMiddleware, async (req, res) => {
     try {

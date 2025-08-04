@@ -7,7 +7,7 @@ const Comment = require('../../models/Comment');
 const Notification = require('../../models/Notification');
 const Community = require('../../models/Community');
 const mongoose = require('mongoose');
-const { getPopulatedPost } = require('../../utils/posts_');
+const { getPopulatedPost } = require('../../utils/posts');
 // --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
 const { sanitize } = require('../../utils/sanitize');
 
@@ -155,15 +155,17 @@ router.get('/:postId/comments', authMiddleware, async (req, res) => {
         const totalComments = await Comment.countDocuments({ post: postId });
         const populationOptions = [
             { path: 'author', select: 'username fullName name avatar premiumCustomization' },
-            { path: 'likes', select: 'username fullName avatar _id' },
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            { path: 'likes', select: 'username fullName avatar _id premium premiumCustomization' },
             {
                 path: 'children',
                 populate: [
                     { path: 'author', select: 'username fullName name avatar _id premiumCustomization' },
-                    { path: 'likes', select: 'username fullName avatar _id' },
+                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                    { path: 'likes', select: 'username fullName avatar _id premium premiumCustomization' },
                     {
-                        path: 'parent', // Populate the parent comment of a reply
-                        populate: { path: 'author', select: 'username fullName name premiumCustomization' }  // And populate the author of that parent comment
+                        path: 'parent',
+                        populate: { path: 'author', select: 'username fullName name premiumCustomization' }
                     }
                 ]
             }

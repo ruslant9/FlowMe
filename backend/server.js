@@ -19,7 +19,7 @@ const Conversation = require('./models/Conversation');
 const Community = require('./models/Community');
 const Submission = require('./models/Submission');
 const Post = require('./models/Post');
-const { getPopulatedPost } = require('./utils/posts_');
+const { getPopulatedPost } = require('./utils/posts');
 
 // Import configurations and routes
 const passportSetup = require('./config/passport-setup');

@@ -169,14 +169,26 @@ router.get('/friends', authMiddleware, async (req, res) => {
         const user = await User.findById(currentUserId)
             .populate({
                 path: 'friends.user',
-                select: 'username fullName avatar privacySettings city lastSeen status'
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                select: 'username fullName avatar privacySettings city lastSeen status premium premiumCustomization'
             })
-            // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-            .populate({ path: 'friendRequestsReceived', select: 'username fullName avatar privacySettings city lastSeen' })
-            .populate({ path: 'friendRequestsSent', select: 'username fullName avatar privacySettings city status lastSeen'})
-            .populate({ path: 'blacklist', select: 'username fullName avatar status lastSeen'});
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+            .populate({
+                path: 'friendRequestsReceived',
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                select: 'username fullName avatar privacySettings city lastSeen premium premiumCustomization'
+            })
+            .populate({
+                path: 'friendRequestsSent',
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                select: 'username fullName avatar privacySettings city status lastSeen premium premiumCustomization'
+            })
+            .populate({
+                path: 'blacklist',
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                select: 'username fullName avatar status lastSeen premium premiumCustomization'
+            });
 
+        // ... (остальной код роута без изменений)
         if (!user) return res.status(404).json({ message: "Пользователь не найден" });
 
         const friendPromises = user.friends.map(async (friendship) => {

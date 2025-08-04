@@ -541,7 +541,8 @@ router.get('/:communityId/members', authMiddleware, async (req, res) => {
         }
         
         const detailedCommunity = await Community.findById(communityId)
-            .populate('members', 'username fullName avatar')
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            .populate('members', 'username fullName avatar premium premiumCustomization')
             .select('members');
 
         res.json(detailedCommunity.members);
@@ -550,6 +551,7 @@ router.get('/:communityId/members', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера при получении списка участников.' });
     }
 });
+
 router.get('/:communityId/posts', authMiddleware, async (req, res) => {
     try {
         const { communityId } = req.params;

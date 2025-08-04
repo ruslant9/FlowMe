@@ -154,9 +154,7 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
 
     const authorName = authorObject.name || authorObject.username;
     const authorFullName = authorObject.fullName;
-    // --- ИЗМЕНЕНИЕ ---
-    const authorAvatar = authorObject.avatar || ''; // Используем URL напрямую
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    const authorAvatar = authorObject.avatar || '';
     const authorLink = authorModel === 'Community' ? `/communities/${authorObject._id}` : `/profile/${authorObject._id}`;
     const authorIsPremium = authorModel === 'User' && authorObject.premium?.isActive;
     const authorCustomBorder = authorModel === 'User' ? authorObject.premiumCustomization?.avatarBorder : null;
@@ -180,7 +178,29 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                 }
                 <div className={`${selectionMode ? 'pl-8' : ''} comment-body w-full`}>
                     <div className="flex items-start space-x-3">
-                        <Avatar size="sm" username={authorName} fullName={authorFullName} avatarUrl={authorAvatar} isPremium={authorIsPremium} customBorder={authorCustomBorder} />
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                        {(() => {
+                            const border = authorCustomBorder;
+                            const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
+                            const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
+
+                            return (
+                                <div 
+                                    className={`relative rounded-full ${borderClass}`}
+                                    style={staticBorderStyle}
+                                >
+                                    <Avatar
+                                        size="sm"
+                                        username={authorName}
+                                        fullName={authorFullName}
+                                        avatarUrl={authorAvatar}
+                                        isPremium={authorIsPremium}
+                                        customBorder={authorCustomBorder}
+                                    />
+                                </div>
+                            );
+                        })()}
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <div className="flex-1 min-w-0">
                             {isEditingThis ? (
                                 <div className="relative">

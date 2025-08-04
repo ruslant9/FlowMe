@@ -92,7 +92,13 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         const fetchCommentingOptions = async () => {
             if (!currentUser || !activePost) return;
             
-            const personalProfile = { _id: currentUser._id, name: currentUser.fullName || currentUser.username, avatar: currentUser.avatar, type: 'user' };
+            const personalProfile = { 
+                _id: currentUser._id, 
+                name: currentUser.fullName || currentUser.username, 
+                username: currentUser.username,
+                avatar: currentUser.avatar, 
+                type: 'user' 
+            };
             let options = [personalProfile];
 
             try {
@@ -533,7 +539,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                     selectionMode={commentSelectionMode} 
                                                     onToggleSelect={(id) => setSelectedComments(p=>p.includes(id)?p.filter(i=>i!==id):[...p,id])} 
                                                     isSelected={(id) => selectedComments.includes(id)} 
-                                                    highlightCommentId={highlightCommentId}
                                                 />
                                             )) : <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-10">Комментариев пока нет.</div>}
                                         </div>
@@ -555,10 +560,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                           <div className="relative">
                                                               <Listbox.Button className="focus:outline-none">
                                                                   <Avatar 
-                                                      username={commentAs.name || commentAs.username}
-                                                      avatarUrl={commentAs.avatar} // Используем напрямую
-                                                      size="sm"
-                                                  />
+                                                                        username={commentAs.type === 'user' ? commentAs.username : commentAs.name}
+                                                                        fullName={commentAs.name}
+                                                                        avatarUrl={getImageUrl(commentAs.avatar)}
+                                                                        size="sm"
+                                                                    />
                                                               </Listbox.Button>
                                                               <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
                                                                   <Listbox.Options className="absolute bottom-full mb-2 w-56 max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-20">
@@ -566,7 +572,12 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                                           <Listbox.Option key={option._id || 'personal'} className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`} value={option}>
                                                                               {({ selected }) => (
                                                                                   <>
-                                                                                      <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{option.name}</span>
+                                                                                      <div className="flex items-center space-x-2">
+                                                                                          <Avatar username={option.username || option.name} avatarUrl={getImageUrl(option.avatar)} size="sm" />
+                                                                                          <div className="flex flex-col items-start">
+                                                                                              <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{option.name}</span>
+                                                                                          </div>
+                                                                                      </div>
                                                                                       {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-white"><Check className="h-5 w-5" aria-hidden="true" /></span> : null}
                                                                                   </>
                                                                               )}
@@ -578,11 +589,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                       </Listbox>
                                                   ) : (
                                                       <Avatar 
-                                          username={currentUser?.username} 
-                                          fullName={currentUser?.fullName} 
-                                          avatarUrl={currentUser?.avatar} // Используем напрямую
-                                          size="sm" 
-                                      />
+                                                          username={currentUser?.username} 
+                                                          fullName={currentUser?.fullName} 
+                                                          avatarUrl={getImageUrl(currentUser?.avatar)}
+                                                          size="sm" 
+                                                      />
                                                   )
                                               )}
                                               <div className="relative flex-1">

@@ -1,4 +1,4 @@
-// backend/utils/posts_.js
+// backend/utils/posts.js
 
 const mongoose = require('mongoose');
 const Post = require('../models/Post');
@@ -9,36 +9,23 @@ const { isAllowedByPrivacy } = require('./privacy');
 
 async function getPopulatedPost(postId, requesterId) {
     const post = await Post.findById(postId)
-        .populate('user', 'username fullName avatar privacySettings friends blacklist')
-        .populate('likes', 'username fullName avatar _id')
+        .populate('user', 'username fullName avatar privacySettings friends blacklist premium premiumCustomization')
+        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+        .populate('likes', 'username fullName avatar _id premium premiumCustomization')
         .populate('community', 'name avatar visibility members postingPolicy owner')
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        .populate({
-            path: 'attachedTrack',
-            populate: [
-                { path: 'artist', select: 'name _id' },
-                { path: 'album', select: 'title coverArtUrl' }
-            ]
-        })
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        .populate('attachedTrack')
         .populate({ path: 'poll.options.votes', select: 'username fullName avatar' })
         .lean();
 
     if (!post) return null;
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-    // Добавляем обложку альбома, если у трека нет своей
-    if (post.attachedTrack && post.attachedTrack.album && post.attachedTrack.album.coverArtUrl && !post.attachedTrack.albumArtUrl) {
-        post.attachedTrack.albumArtUrl = post.attachedTrack.album.coverArtUrl;
-    }
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
     const commentIds = await Comment.find({ post: postId }).select('_id').lean();
     const allCommentIds = commentIds.map(c => c._id);
 
     if (allCommentIds.length > 0) {
         let allComments = await Comment.find({ _id: { $in: allCommentIds } })
-            .populate('likes', 'username fullName avatar _id')
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            .populate('likes', 'username fullName avatar _id premium premiumCustomization')
             .populate({
                 path: 'parent',
                 select: 'author authorModel text',
