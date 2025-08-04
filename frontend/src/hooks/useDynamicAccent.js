@@ -58,7 +58,6 @@ export const useDynamicAccent = (imageUrl) => {
                         textColor: getContrastingTextColor(dominantColor)
                     });
                 } else {
-                    // Для светлой темы делаем градиент полупрозрачным и светлым
                     setAccent({
                         gradient: `linear-gradient(to bottom, rgba(${r}, ${g}, ${b}, 0.3), rgba(${r}, ${g}, ${b}, 0.1))`,
                         dominantColor: `rgb(${r}, ${g}, ${b})`,
