@@ -20,7 +20,7 @@ import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
 import AnimatedAccent from './AnimatedAccent';
-import { useCachedImage } from '../../hooks/useCachedImage'; 
+import { useCachedImage } from '../hooks/useCachedImage'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
