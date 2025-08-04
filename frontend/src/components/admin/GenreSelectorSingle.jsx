@@ -3,13 +3,13 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { musicGenresRu } from '../../data/genres';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react'; // <-- ИЗМЕНЕНИЕ: Импортируем иконку X
 
-const GENRE_DISPLAY_LIMIT = 18; // <-- КОЛИЧЕСТВО ЖАНРОВ ДЛЯ ОТОБРАЖЕНИЯ
+const GENRE_DISPLAY_LIMIT = 18;
 
 const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" }) => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [isExpanded, setIsExpanded] = useState(false); // <-- НОВОЕ СОСТОЯНИЕ
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const filteredGenres = useMemo(() => {
         if (!searchQuery) {
@@ -20,11 +20,9 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
         );
     }, [searchQuery]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика для отображения ограниченного списка ---
     const displayedGenres = useMemo(() => {
         return isExpanded ? filteredGenres : filteredGenres.slice(0, GENRE_DISPLAY_LIMIT);
     }, [filteredGenres, isExpanded]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handleSelectGenre = (genre) => {
         if (selectedGenre === genre) {
@@ -37,6 +35,26 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
     return (
         <div>
             <label className="text-sm font-semibold block mb-2">{label} *</label>
+
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Блок для отображения выбранного жанра --- */}
+            {selectedGenre && (
+                <div className="mb-3">
+                    <label className="text-sm font-semibold block mb-1 text-slate-500">Выбранный жанр</label>
+                    <div className="flex items-center justify-between p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                        <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedGenre}</span>
+                        <button 
+                            type="button" 
+                            onClick={() => onGenreChange('')} 
+                            className="p-1 rounded-full text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800/50"
+                            title="Сбросить жанр"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
             <div className="relative mb-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
@@ -49,7 +67,6 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
             </div>
             <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg">
                 <div className="flex flex-wrap gap-2">
-                    {/* --- ИСПРАВЛЕНИЕ: Используем displayedGenres вместо filteredGenres --- */}
                     {displayedGenres.map(genre => {
                         const isSelected = selectedGenre === genre;
                         return (
@@ -70,7 +87,6 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
                         );
                     })}
                 </div>
-                 {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка для раскрытия списка --- */}
                 {filteredGenres.length > GENRE_DISPLAY_LIMIT && (
                     <div className="mt-3 text-center">
                         <button
@@ -82,7 +98,6 @@ const GenreSelectorSingle = ({ selectedGenre, onGenreChange, label = "Жанр" 
                         </button>
                     </div>
                 )}
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             </div>
         </div>
     );

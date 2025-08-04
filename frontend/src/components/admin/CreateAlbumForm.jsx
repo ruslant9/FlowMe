@@ -112,7 +112,7 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
     };
 
     return (
-        <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow ${isDragging ? 'shadow-xl' : ''}`}>
+        <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow ${isDragging ? 'shadow-xl opacity-50' : ''}`}>
             <div className="flex items-center space-x-2 min-w-0">
                 <span className="font-bold text-slate-500 w-6 text-center">{index}</span>
                 <div {...attributes} {...listeners} className="cursor-grab touch-none p-1 text-slate-500">
@@ -397,7 +397,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                 Выберите файл
                             </button>
                             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
-                            <span className="text-sm text-slate-500">{coverArt?.name || 'Файл не выбран'}</span>
+                            <span className="flex-1 min-w-0 text-sm text-slate-500 truncate">
+                                {coverArt?.name || 'Файл не выбран'}
+                            </span>
                             {coverPreview && <CachedImage src={coverPreview} />}
                         </div>
                     </div>

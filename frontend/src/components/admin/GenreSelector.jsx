@@ -3,13 +3,13 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { musicGenresRu } from '../../data/genres';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react'; // <-- ИЗМЕНЕНИЕ: Импортируем иконку X
 
-const GENRE_DISPLAY_LIMIT = 18; // <-- КОЛИЧЕСТВО ЖАНРОВ ДЛЯ ОТОБРАЖЕНИЯ
+const GENRE_DISPLAY_LIMIT = 18;
 
 const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [isExpanded, setIsExpanded] = useState(false); // <-- НОВОЕ СОСТОЯНИЕ
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const filteredGenres = useMemo(() => {
         if (!searchQuery) {
@@ -20,11 +20,9 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
         );
     }, [searchQuery]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика для отображения ограниченного списка ---
     const displayedGenres = useMemo(() => {
         return isExpanded ? filteredGenres : filteredGenres.slice(0, GENRE_DISPLAY_LIMIT);
     }, [filteredGenres, isExpanded]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handleSelectGenre = (genre) => {
         const isSelected = selectedGenres.includes(genre);
@@ -39,6 +37,28 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
         <div>
             <label className="text-sm font-semibold block mb-2">{label} *</label>
 
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Блок для отображения выбранных жанров --- */}
+            {selectedGenres.length > 0 && (
+                <div className="mb-3">
+                    <label className="text-sm font-semibold block mb-1 text-slate-500">Выбранные жанры ({selectedGenres.length})</label>
+                    <div className="flex flex-wrap gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                        {selectedGenres.map(genre => (
+                            <div key={genre} className="flex items-center space-x-2 bg-blue-100 dark:bg-blue-900/50 rounded-full py-1 pl-3 pr-1">
+                                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">{genre}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSelectGenre(genre)}
+                                    className="p-0.5 rounded-full text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800/50"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
             <div className="relative mb-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
@@ -52,7 +72,6 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
             
             <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg">
                 <div className="flex flex-wrap gap-2">
-                    {/* --- ИСПРАВЛЕНИЕ: Используем displayedGenres вместо filteredGenres --- */}
                     {displayedGenres.map(genre => {
                         const isSelected = selectedGenres.includes(genre);
                         return (
@@ -73,7 +92,6 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
                         );
                     })}
                 </div>
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка для раскрытия списка --- */}
                 {filteredGenres.length > GENRE_DISPLAY_LIMIT && (
                     <div className="mt-3 text-center">
                         <button
@@ -85,7 +103,6 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
                         </button>
                     </div>
                 )}
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             </div>
         </div>
     );

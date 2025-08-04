@@ -170,9 +170,11 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                         </div>
                     </div>
                     
-                    <div className="flex-1 flex flex-col justify-between">
+                    {/* --- ИЗМЕНЕНИЕ: Основная часть теперь скроллится, а футер зафиксирован внизу --- */}
+                    <div className="flex-1 flex flex-col min-h-0">
                         <LayoutGroup>
-                            <nav className={`flex flex-col space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center'}`}>
+                            {/* Scrollable navigation area */}
+                            <nav className={`flex-1 overflow-y-auto -mr-4 pr-4 space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center flex flex-col'}`}>
                                 <NavItem
                                     to="/premium"
                                     icon={user?.premium?.isActive ? Crown : Sparkles}
@@ -271,9 +273,13 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                         isExpanded={isExpanded || isMobileNavOpen}
                                     />
                                 ))}
-                                
                             </nav>
-                            
+                        </LayoutGroup>
+                    </div>
+                    
+                    {/* Static footer area */}
+                    <div className="flex-shrink-0 pt-2">
+                        <LayoutGroup>
                             <div className={`flex flex-col space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center'}`}>
                                 <NavItem
                                     to="/settings"
@@ -283,33 +289,32 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     isExpanded={isExpanded || isMobileNavOpen}
                                 />
                             </div>
-                        </LayoutGroup>
-                    </div>
-                    
-                    <div className={`flex flex-col space-y-2 pt-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center'}`}>
-                        <Tippy
-                            disabled={isExpanded || isMobileNavOpen}
-                            placement="right"
-                            delay={[300, 0]}
-                            render={attrs => <Tooltip text="Выйти" attrs={attrs} />}
-                        >
-                            <TippyWrapper>
-                                <button 
-                                  onClick={handleLogout} 
-                                  className={`
-                                    flex items-center transition-colors duration-200 relative w-full
-                                    ${isExpanded || isMobileNavOpen ? 'py-2.5 px-3' : 'w-12 h-12 justify-center'}
-                                    text-red-600 dark:text-red-400 
-                                    hover:bg-red-100 dark:hover:bg-red-500/20 
-                                    hover:text-red-700 dark:hover:text-red-300
-                                    rounded-lg 
-                                  `}
+                            <div className={`flex flex-col space-y-2 pt-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center'}`}>
+                                <Tippy
+                                    disabled={isExpanded || isMobileNavOpen}
+                                    placement="right"
+                                    delay={[300, 0]}
+                                    render={attrs => <Tooltip text="Выйти" attrs={attrs} />}
                                 >
-                                    <LogOut className="w-5 h-5 flex-shrink-0" />
-                                    <span className={`whitespace-nowrap transition-all duration-200 ${isExpanded || isMobileNavOpen ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>Выйти</span>
-                                </button>
-                            </TippyWrapper>
-                        </Tippy>
+                                    <TippyWrapper>
+                                        <button 
+                                          onClick={handleLogout} 
+                                          className={`
+                                            flex items-center transition-colors duration-200 relative w-full
+                                            ${isExpanded || isMobileNavOpen ? 'py-2.5 px-3' : 'w-12 h-12 justify-center'}
+                                            text-red-600 dark:text-red-400 
+                                            hover:bg-red-100 dark:hover:bg-red-500/20 
+                                            hover:text-red-700 dark:hover:text-red-300
+                                            rounded-lg 
+                                          `}
+                                        >
+                                            <LogOut className="w-5 h-5 flex-shrink-0" />
+                                            <span className={`whitespace-nowrap transition-all duration-200 ${isExpanded || isMobileNavOpen ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>Выйти</span>
+                                        </button>
+                                    </TippyWrapper>
+                                </Tippy>
+                            </div>
+                        </LayoutGroup>
                     </div>
                 </div>
             </div>

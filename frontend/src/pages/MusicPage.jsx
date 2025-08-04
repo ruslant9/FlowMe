@@ -174,6 +174,18 @@ const MusicPage = () => {
         return () => clearTimeout(debounce);
     }, [searchQuery, activeTab, fetchDataForTab]);
     
+    useEffect(() => {
+        const handleMyMusicUpdate = () => {
+            if (activeTab === 'my-music') {
+                fetchDataForTab('my-music');
+            }
+        };
+        window.addEventListener('myMusicUpdated', handleMyMusicUpdate);
+        return () => {
+            window.removeEventListener('myMusicUpdated', handleMyMusicUpdate);
+        };
+    }, [activeTab, fetchDataForTab]);
+
     const handleSelectTrack = useCallback((track) => {
         let currentPlaylist = [];
         if (activeTab === 'my-music') currentPlaylist = myMusicTracks;

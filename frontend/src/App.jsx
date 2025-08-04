@@ -127,7 +127,7 @@ const MainLayout = ({ children }) => {
 
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm"
+        className={`md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen ? 'hidden' : 'block'}`}
       >
         <Menu />
       </button>
@@ -171,7 +171,7 @@ const MainLayout = ({ children }) => {
           isMobileNavOpen={isMobileNavOpen}
           onMobileNavClose={() => setIsMobileNavOpen(false)}
         />
-        <div className="flex-1 relative overflow-y-auto">
+        <div className="flex-1 relative overflow-y-auto pt-20 md:pt-0">
           {children}
         </div>
       </div>
