@@ -18,6 +18,7 @@ const TrackSchema = new Schema({
     reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     playCount: { type: Number, default: 0, index: true },
     user: { type: Schema.Types.ObjectId, ref: 'User' },
+    sourceId: { type: Schema.Types.ObjectId, ref: 'Track', index: true }, // ID of the original library_track
     youtubeId: { type: String },
     spotifyId: { type: String },
     type: { type: String, enum: ['saved', 'recent', 'library_track'], index: true },

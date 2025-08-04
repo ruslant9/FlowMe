@@ -21,7 +21,7 @@ const TrackList = ({
                         isCurrent={track._id === currentPlayingTrackId}
                         isPlaying={isPlaying}
                         onToggleSave={onToggleSave}
-                        isSaved={myMusicTrackIds.has(track.youtubeId || track._id)}
+                        isSaved={myMusicTrackIds.has(track._id)}
                         onRemoveFromPlaylist={showRemoveButtons ? onRemoveFromPlaylist : null}
                     />
                 </React.Fragment>

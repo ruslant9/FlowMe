@@ -53,7 +53,6 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, []);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Сохраняем youtubeId (или _id как фолбэк) в Set ---
     const fetchMyMusicIds = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
@@ -62,14 +61,13 @@ export const MusicPlayerProvider = ({ children }) => {
                 return;
             }
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-            // Поле youtubeId в сохраненных треках содержит уникальный идентификатор контента
-            const contentIds = res.data.map(track => track.youtubeId || track.spotifyId).filter(Boolean);
-            setMyMusicTrackIds(new Set(contentIds));
+            // Теперь мы используем sourceId, который ссылается на _id оригинального library_track
+            const sourceIds = res.data.map(track => track.sourceId).filter(Boolean);
+            setMyMusicTrackIds(new Set(sourceIds));
         } catch (error) {
             console.error("Не удалось обновить список сохраненной музыки");
         }
     }, []);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
     useEffect(() => {
         fetchMyMusicIds();
@@ -77,16 +75,14 @@ export const MusicPlayerProvider = ({ children }) => {
         return () => window.removeEventListener('myMusicUpdated', fetchMyMusicIds);
     }, [fetchMyMusicIds]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Проверяем лайк по уникальному ID контента ---
     useEffect(() => {
         if (currentTrack) {
-            const uniqueContentId = currentTrack.youtubeId || currentTrack._id;
-            setIsLiked(myMusicTrackIds.has(uniqueContentId));
+            // Проверяем, есть ли _id текущего трека (library_track) в нашем сете sourceId's
+            setIsLiked(myMusicTrackIds.has(currentTrack._id));
         } else {
             setIsLiked(false);
         }
     }, [currentTrack, myMusicTrackIds]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
     
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
@@ -285,20 +281,20 @@ export const MusicPlayerProvider = ({ children }) => {
         });
     }, []);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Оптимистичное обновление по уникальному ID контента ---
     const onToggleLike = useCallback(async (trackData) => {
         if (!trackData) return;
         
-        const uniqueContentId = trackData.youtubeId || trackData._id;
-        if (!uniqueContentId) return;
+        // ID трека в библиотеке, который мы лайкаем
+        const libraryTrackId = trackData._id;
+        if (!libraryTrackId) return;
 
-        const wasLiked = myMusicTrackIds.has(uniqueContentId);
+        const wasLiked = myMusicTrackIds.has(libraryTrackId);
         
         const newSet = new Set(myMusicTrackIds);
         if (wasLiked) {
-            newSet.delete(uniqueContentId);
+            newSet.delete(libraryTrackId);
         } else {
-            newSet.add(uniqueContentId);
+            newSet.add(libraryTrackId);
         }
         setMyMusicTrackIds(newSet);
         
@@ -318,7 +314,6 @@ export const MusicPlayerProvider = ({ children }) => {
             toast.error('Ошибка при изменении статуса трека.');
         }
     }, [myMusicTrackIds, currentTrack, logMusicAction, fetchMyMusicIds]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 
     const contextValue = {
         currentTrack,

@@ -107,7 +107,7 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
 
         const existingSavedTrack = await Track.findOne({ 
             user: userId, 
-            youtubeId: existingLibraryTrack.youtubeId, 
+            sourceId: existingLibraryTrack._id, 
             type: 'saved' 
         });
 
@@ -120,6 +120,7 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
                 _id: new mongoose.Types.ObjectId(),
                 user: userId,
                 type: 'saved',
+                sourceId: existingLibraryTrack._id, 
                 savedAt: new Date(),
             });
             await newSavedTrack.save();
@@ -140,6 +141,7 @@ router.get('/saved', authMiddleware, async (req, res) => {
             .sort({ savedAt: -1 })
             .populate('artist', 'name')
             .populate('album', 'title coverArtUrl')
+            .select('-__v') 
             .lean();
 
         const processedTracks = savedTracks.map(track => {
