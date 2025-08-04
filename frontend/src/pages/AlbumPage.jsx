@@ -55,6 +55,8 @@ const AlbumPage = () => {
         return <div className="flex-1 p-8 flex items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-slate-400" /></div>;
     }
 
+    const isSingle = album.tracks.length === 1;
+
     const totalDurationMs = album.tracks.reduce((acc, track) => acc + (track.durationMs || 0), 0);
     const totalMinutes = Math.floor(totalDurationMs / 60000);
 
@@ -62,7 +64,7 @@ const AlbumPage = () => {
         <main className="flex-1 overflow-y-auto">
             <div className="relative">
                 <div 
-className="p-6 md:p-8 pt-32 pb-32 transition-all duration-500"
+                    className="p-6 md:p-8 pt-32 pb-32 transition-all duration-500"
                     style={{ backgroundImage: gradient }}
                 >
                     <button onClick={() => navigate(-1)} className="absolute top-10 left-6 flex items-center space-x-2 text-sm text-white/80 hover:text-white z-10 transition-colors">
@@ -75,7 +77,9 @@ className="p-6 md:p-8 pt-32 pb-32 transition-all duration-500"
                             <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                            <span className="text-sm font-bold" style={{ color: textColor, opacity: 0.8 }}>Альбом</span>
+                            <span className="text-sm font-bold" style={{ color: textColor, opacity: 0.8 }}>
+                                {isSingle ? 'Сольный трек (сингл)' : 'Альбом'}
+                            </span>
                             <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{album.title}</h1>
                             <div className="flex items-center space-x-2 mt-4 text-sm" style={{ color: textColor }}>
                                 <Link to={`/artist/${album.artist._id}`}>

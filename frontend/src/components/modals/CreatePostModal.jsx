@@ -498,13 +498,13 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
             </div>
         ))
     ) : (
-        commentingOptions.map(option => {
+        myCommunities.map(option => { {/* ИЗМЕНЕНО: commentingOptions -> myCommunities */}
             const isSelected = selectedCommunity?._id === option._id;
             return (
                 <button
                     key={option._id || 'personal'}
                     type="button"
-                    onClick={() => setCommentAs(option)}
+                    onClick={() => setSelectedCommunity(option)}
                     className={`w-28 flex-shrink-0 p-3 rounded-xl flex flex-col items-center text-center transition-all duration-200
                         ${isSelected
                             ? 'bg-blue-600/20 ring-2 ring-blue-500'

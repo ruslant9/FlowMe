@@ -98,15 +98,24 @@ const FullScreenPlayer = () => {
                     </div>
 
                     <div className="flex-1 flex items-center justify-center w-full max-w-md">
-                        <motion.img 
-                            key={track._id}
-                            src={track.albumArtUrl} 
-                            alt={track.title} 
-                            className="w-full aspect-square rounded-2xl object-cover shadow-2xl" 
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5, ease: 'easeOut' }}
-                        />
+                        <motion.div
+                            animate={{ scale: isPlaying ? [1, 1.03, 1] : 1 }}
+                            transition={{
+                                duration: 1.2,
+                                repeat: isPlaying ? Infinity : 0,
+                                ease: "easeInOut"
+                            }}
+                        >
+                            <motion.img 
+                                key={track._id}
+                                src={track.albumArtUrl} 
+                                alt={track.title} 
+                                className="w-full aspect-square rounded-2xl object-cover shadow-2xl" 
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                            />
+                        </motion.div>
                     </div>
                     
                     <div className="w-full max-w-md">

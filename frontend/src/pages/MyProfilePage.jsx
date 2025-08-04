@@ -340,38 +340,37 @@ const MyProfilePage = () => {
                             }
                             renderContent={(accentTextColor) => (
                                 <div className="text-center pt-4 pb-6">
-                                    <div className="relative flex-shrink-0 mx-auto mb-4">
-                                        {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
-                                        <Avatar 
-                                            username={user.username} 
-                                            fullName={user.fullName} 
-                                            avatarUrl={user.avatar} 
-                                            size="xl" 
-                                            isPremium={user.premium?.isActive} 
-                                            customBorder={user.premiumCustomization?.avatarBorder}
-                                            onClick={() => {}}
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                {user.avatar && (
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); handleAvatarDelete(); }} 
-                                                        title="Удалить аватар" 
-                                                        className="p-2 bg-red-500/50 rounded-full hover:bg-red-500/70"
-                                                    >
-                                                        <Trash2 size={20} className="text-white" />
-                                                    </button>
-                                                )}
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); avatarInputRef.current.click(); }} 
-                                                    title="Изменить аватар" 
-                                                    className="p-2 bg-white/20 rounded-full hover:bg-white/40"
-                                                >
-                                                    <Upload size={20} className="text-white" />
-                                                </button>
-                                            </div>
-                                        </Avatar>
-                                        <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={handleAvatarUpload} />
-                                    </div>
+                                    <div className="relative group flex-shrink-0 mx-auto mb-4 w-24 h-24">
+    <Avatar
+        username={user.username}
+        fullName={user.fullName}
+        avatarUrl={user.avatar}
+        size="xl"
+        isPremium={user.premium?.isActive}
+        customBorder={user.premiumCustomization?.avatarBorder}
+    />
+    
+    {/* Оверлей и кнопки теперь находятся снаружи компонента Avatar */}
+    <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2 cursor-pointer">
+        {user.avatar && (
+            <button 
+                onClick={handleAvatarDelete} 
+                title="Удалить аватар" 
+                className="p-2 bg-red-500/50 rounded-full hover:bg-red-500/70"
+            >
+                <Trash2 size={20} className="text-white" />
+            </button>
+        )}
+        <button 
+            onClick={() => avatarInputRef.current.click()} 
+            title="Изменить аватар" 
+            className="p-2 bg-white/20 rounded-full hover:bg-white/40"
+        >
+            <Upload size={20} className="text-white" />
+        </button>
+    </div>
+    <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={handleAvatarUpload} />
+</div>
                                     <div className="flex items-center justify-center">
                                         <h1 className="text-2xl font-bold">{user.fullName || user.username}</h1>
                                         {user.premiumCustomization?.usernameEmoji?.url && (
