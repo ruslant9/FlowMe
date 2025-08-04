@@ -56,7 +56,7 @@ export function useCachedImage(src) {
       } catch (error) {
         console.error(`Не удалось загрузить или кешировать изображение: ${src}`, error);
         if (isMounted) {
-          setFinalSrc(src); // В случае ошибки показываем оригинальный URL
+          setFinalSrc(src);
         }
       } finally {
         if (isMounted) {
