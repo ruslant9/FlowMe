@@ -204,11 +204,11 @@ const CommunitiesPage = () => {
             <main className="flex-1 p-4 md:p-8">
                 <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
                     <div className="flex items-center justify-between mb-6">
-                        <h1 className="text-3xl font-bold">Сообщества</h1>
+                       <h1 className="text-2xl sm:text-3xl font-bold">Сообщества</h1>
                         {activeTab === 'created' && (
                             <button 
                                 onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center space-x-3 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+                                className="flex items-center space-x-2 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-2 sm:px-4 rounded-lg transition-colors"
                             >
                                 <PlusCircle size={18} /> <span>Создать сообщество</span>
                             </button>

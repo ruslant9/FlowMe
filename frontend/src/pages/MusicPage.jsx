@@ -248,11 +248,11 @@ const MusicPage = () => {
             <EditPlaylistModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} playlist={playlistToEdit} onPlaylistUpdated={() => fetchDataForTab('playlists')} />
             <UploadContentModal isOpen={isUploadModalOpen} onClose={() => setUploadModalOpen(false)} />
             <div 
-                className="p-6 md:p-8 pt-20 text-white min-h-[350px] flex flex-col justify-end transition-all duration-300"
+                className="sticky top-0 z-10 p-6 md:p-8 pt-20 text-white min-h-[350px] flex flex-col justify-end transition-all duration-300"
                 style={{ backgroundImage: gradient }}
             >
                  <div className="absolute inset-0 bg-black/30 backdrop-blur-lg"></div>
-                <div className="relative z-10 flex items-center justify-between mb-6">
+                <div className="relative z-20 flex items-center justify-between mb-6">
                     <div className="flex-col">
                         <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>
                             Музыка
@@ -266,8 +266,8 @@ const MusicPage = () => {
                     </button>
                 </div>
             </div>
-            <div className="p-6 md:p-8 bg-slate-100 dark:bg-slate-900">
-                 <div className="flex items-center space-x-2 border-b border-slate-300 dark:border-slate-700 mb-6 -mt-6">
+            <div className="p-6 md:p-8 bg-slate-100 dark:bg-slate-900 relative z-20">
+                 <div className="flex items-center space-x-2 border-b border-slate-300 dark:border-slate-700 mb-6">
                     <TabButton active={activeTab === 'recommendations'} onClick={() => setActiveTab('recommendations')}><Star size={16}/><span>Главная</span></TabButton>
                     <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')}><Search size={16}/><span>Поиск</span></TabButton>
                     <TabButton active={activeTab === 'my-music'} onClick={() => setActiveTab('my-music')}><Music size={16}/><span>Моя музыка</span></TabButton>

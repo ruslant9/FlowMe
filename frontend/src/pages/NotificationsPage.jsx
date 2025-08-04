@@ -257,14 +257,14 @@ const NotificationsPage = () => {
             )}
             <main className="flex-1 p-4 md:p-8">
                 <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
-                    <div className="flex items-center justify-between mb-6">
+                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <div className="flex items-center space-x-3">
                             <Bell size={28} />
                             <h1 className="text-3xl font-bold">Уведомления</h1>
                         </div>
                         {notificationsData[activeTab].list.length > 0 && (
-                            <button onClick={handleDeleteAll} className="flex items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10">
-                                <Trash2 size={16} /><span>Очистить все</span>
+                            <button onClick={handleDeleteAll} className="flex-shrink-0 flex items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10">
+                                <Trash2 size={16} /><span className="whitespace-nowrap">Очистить все</span>
                             </button>
                         )}
                     </div>
@@ -274,7 +274,7 @@ const NotificationsPage = () => {
                         <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
                     </div>
 
-                    <div className="flex items-center flex-wrap gap-2 mb-6">
+                    <div className="flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
                         {subTabs.map(tab => (
                             <SubTabButton key={tab.id} active={activeFilter === tab.id} onClick={() => setActiveFilter(tab.id)}>
                                 <tab.icon size={14} /> <span>{tab.name}</span>

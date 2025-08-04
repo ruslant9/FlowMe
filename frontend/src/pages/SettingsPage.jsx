@@ -107,7 +107,7 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
             <div className="flex items-center space-x-4">
                 {children}
                 <Listbox value={value} onChange={onChange}>
-                    <div className="relative w-48">
+                    <div className="relative w-40 sm:w-48">
                         <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                             <span className="block truncate">{options.find(opt => opt.id === value)?.name}</span>
                             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" /></span>

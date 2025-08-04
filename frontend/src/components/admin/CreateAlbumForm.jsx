@@ -1,5 +1,3 @@
-// frontend/components/admin/CreateAlbumForm.jsx
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -8,7 +6,7 @@ import { useUser } from '../../context/UserContext';
 import GenreSelector from './GenreSelector';
 import Avatar from '../Avatar';
 import { useModal } from '../../hooks/useModal';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useCachedImage } from '../../hooks/useCachedImage';
@@ -95,7 +93,7 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
-const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack, mainArtistId }) => {
+const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
     const {
         attributes,
         listeners,
@@ -111,16 +109,6 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack, mainArtis
         zIndex: isDragging ? 10 : 'auto',
     };
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика для отображения фитов ---
-    const featureArtists = useMemo(() => {
-        if (!track.artist || !Array.isArray(track.artist) || !mainArtistId) return '';
-        return track.artist
-            .filter(a => a._id !== mainArtistId)
-            .map(a => a.name)
-            .join(', ');
-    }, [track.artist, mainArtistId]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
     return (
         <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow ${isDragging ? 'shadow-xl opacity-50' : ''}`}>
             <div className="flex items-center space-x-2 min-w-0">
@@ -129,16 +117,7 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack, mainArtis
                     <GripVertical size={16} />
                 </div>
                 <Music size={16} className="text-slate-500 flex-shrink-0" />
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Отображаем фиты --- */}
-                <div className="flex-1 min-w-0">
-                    <span className="font-semibold text-sm truncate">{track.title}</span>
-                    {featureArtists && (
-                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate block">
-                            feat. {featureArtists}
-                        </span>
-                    )}
-                </div>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                <span className="font-semibold text-sm truncate">{track.title}</span>
                 {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full">E</span>}
             </div>
             <div className="flex items-center space-x-1 flex-shrink-0">
@@ -152,6 +131,29 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack, mainArtis
         </div>
     );
 };
+
+// Статичный компонент для DragOverlay
+// Этот компонент используется для визуального представления перетаскиваемого элемента
+const TrackItem = ({ track, index }) => {
+    return (
+        <div className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg shadow-xl">
+            <div className="flex items-center space-x-2 min-w-0">
+                <span className="font-bold text-slate-500 w-6 text-center">{index}</span>
+                <div className="cursor-grabbing touch-none p-1 text-slate-500">
+                    <GripVertical size={16} />
+                </div>
+                <Music size={16} className="text-slate-500 flex-shrink-0" />
+                <span className="font-semibold text-sm truncate">{track.title}</span>
+                {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full">E</span>}
+            </div>
+            <div className="flex items-center space-x-1 flex-shrink-0">
+                <div className="p-1.5"><Edit size={14} /></div>
+                <div className="p-1.5 text-red-500"><Trash2 size={14} /></div>
+            </div>
+        </div>
+    );
+};
+
 
 const MonthYearPicker = ({ value, onChange }) => {
     const currentYear = new Date().getFullYear();
@@ -215,16 +217,10 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [loading, setLoading] = useState(false);
     const [coverPreview, setCoverPreview] = useState('');
     const [albumTracks, setAlbumTracks] = useState([]);
+    const [activeTrack, setActiveTrack] = useState(null);
     
     const fileInputRef = useRef(null);
     const batchFileInputRef = useRef(null);
-
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Определяем основного артиста альбома ---
-    const mainArtistId = useMemo(() => {
-        const albumArtist = artists.find(a => a._id === artistId);
-        return albumArtist?._id || null;
-    }, [artistId, artists]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
     const sensors = useSensors(
@@ -283,9 +279,17 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         });
     };
 
+    const handleDragStart = (event) => {
+        const { active } = event;
+        const track = albumTracks.find(t => t._id === active.id);
+        const index = albumTracks.findIndex(t => t._id === active.id);
+        setActiveTrack({ ...track, originalIndex: index });
+    };
+
     const handleDragEnd = async (event) => {
+        setActiveTrack(null);
         const { active, over } = event;
-        if (active.id !== over.id) {
+        if (over && active.id !== over.id) {
             const oldIndex = albumTracks.findIndex((t) => t._id === active.id);
             const newIndex = albumTracks.findIndex((t) => t._id === over.id);
             const reorderedTracks = arrayMove(albumTracks, oldIndex, newIndex);
@@ -378,16 +382,11 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const token = localStorage.getItem('token');
             const res = await axios[method](endpoint, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
             toast.success(res.data.message || successMessage, { id: toastId });
-            // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика для закрытия/не закрытия окна ---
-            if (isEditMode) {
-                onSuccess(false); // Не закрываем модальное окно
-                fetchAlbumTracks(); // Обновляем список треков внутри
-            } else {
+            if (!isEditMode) {
                 setTitle(''); setArtistId(''); setGenre([]); setReleaseDate(new Date()); setCoverArt(null); setCoverPreview(''); 
                 e.target.reset();
-                onSuccess(); // Закрываем (поведение по умолчанию)
             }
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+            onSuccess();
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при отправке заявки.", { id: toastId });
         } finally { setLoading(false); }
@@ -445,7 +444,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                 <h4 className="font-bold text-md">Треки в альбоме ({albumTracks.length})</h4>
                                 <button 
                                     type="button" 
-                                    onClick={() => batchFileInputRef.current.click()}
+                                    onClick={() => batchFileInputRef.current?.click()}
                                     className="flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-500/20 dark:text-green-300 dark:hover:bg-green-500/30"
                                 >
                                 <PlusCircle size={14} /> <span>Добавить еще треки</span>
@@ -453,7 +452,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                 <input ref={batchFileInputRef} type="file" accept="audio/*" multiple onChange={handleBatchUpload} className="hidden" />
                             </div>
                             {albumTracks.length > 0 ? (
-                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                                     <SortableContext items={albumTracks} strategy={verticalListSortingStrategy}>
                                         <div className="space-y-2 overflow-y-auto pr-2 flex-1">
                                             {albumTracks.map((track, index) => (
@@ -463,11 +462,15 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                                     index={index + 1}
                                                     onEditTrack={onEditTrack} 
                                                     onDeleteTrack={handleDeleteTrack} 
-                                                    mainArtistId={mainArtistId}
                                                 />
                                             ))}
                                         </div>
                                     </SortableContext>
+                                    <DragOverlay>
+                                        {activeTrack ? (
+                                            <TrackItem track={activeTrack} index={activeTrack.originalIndex + 1} />
+                                        ) : null}
+                                    </DragOverlay>
                                 </DndContext>
                             ) : (
                                 <p className="text-center text-sm text-slate-500 py-4">В этом альбоме пока нет треков.</p>

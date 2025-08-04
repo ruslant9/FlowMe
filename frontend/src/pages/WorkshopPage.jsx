@@ -298,7 +298,7 @@ const WorkshopPage = () => {
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold">Мастерская</h1>
                     {activeTab === 'my' && (
-                        <button onClick={handleCreatePack} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                        <button onClick={handleCreatePack} className="flex items-center space-x-2 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-2 sm:px-4 rounded-lg transition-colors">
                             <PlusCircle size={18} /><span>Создать пак</span>
                         </button>
                     )}

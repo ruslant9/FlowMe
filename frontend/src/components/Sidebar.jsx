@@ -262,6 +262,8 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     />
                                 )}
 
+                                <hr className="border-slate-200 dark:border-slate-700/50 my-2" />
+
                                 {menuItems.map(item => (
                                     <NavItem
                                         key={item.name}
