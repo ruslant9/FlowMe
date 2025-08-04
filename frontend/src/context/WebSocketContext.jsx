@@ -23,6 +23,7 @@ export const WebSocketProvider = ({ children }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [userStatuses, setUserStatuses] = useState({});
     const reconnectTimeoutRef = useRef(null);
+    const reconnectAttemptsRef = useRef(0);
     const { token, updateUserToken, currentUser, refetchUser } = useUser();
     
     const isConnectionInitialized = useRef(false);
@@ -111,6 +112,8 @@ export const WebSocketProvider = ({ children }) => {
     socket.onopen = () => {
         console.log('WebSocket: Соединение установлено.');
         setIsConnected(true);
+        reconnectAttemptsRef.current = 0;
+        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
         const wsToken = localStorage.getItem('token');
         if (wsToken) {
             socket.send(JSON.stringify({ type: 'auth', token: wsToken }));
@@ -147,12 +150,9 @@ export const WebSocketProvider = ({ children }) => {
                             window.dispatchEvent(new CustomEvent('myProfileDataUpdated'));
                         }
                         window.dispatchEvent(new CustomEvent('userDataUpdated', { detail: { userId: message.userId } }));
-                        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
-                        // Обновляем паки, если обновился текущий пользователь
                         if (currentUserRef.current && message.userId === currentUserRef.current._id) {
                              window.dispatchEvent(new CustomEvent('packsUpdated'));
                         }
-                        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                         break;
                     case 'POST_UPDATED':
                         if (message.payload) {
@@ -227,8 +227,12 @@ export const WebSocketProvider = ({ children }) => {
             ws.current = null;
             
             if (event.code !== 1000) { 
+                reconnectAttemptsRef.current++;
+                const delay = Math.min(3000 + reconnectAttemptsRef.current * 2000, 10000);
+                console.log(`WebSocket: Попытка переподключения через ${delay / 1000}с... (Попытка #${reconnectAttemptsRef.current})`);
+
                 if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-                reconnectTimeoutRef.current = setTimeout(connectWebSocket, 3000); 
+                reconnectTimeoutRef.current = setTimeout(connectWebSocket, delay); 
             }
         };
 

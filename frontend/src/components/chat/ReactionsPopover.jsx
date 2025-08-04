@@ -5,12 +5,11 @@ import Tippy from '@tippyjs/react/headless';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../../context/UserContext';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Search } from 'lucide-react';
 import { regularReactions, emojiPacks, allPremiumReactionUrls } from '../../data/emojiData';
 import EmojiPreviewModal from '../modals/EmojiPreviewModal';
 import { useCachedImage } from '../../hooks/useCachedImage';
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Создаем компонент для кешированного эмодзи ---
 const CachedEmoji = ({ src, alt }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -18,7 +17,6 @@ const CachedEmoji = ({ src, alt }) => {
     }
     return <img src={finalSrc} alt={alt} className="w-8 h-8 object-contain" />;
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const preloadImages = (urls) => {
     urls.forEach(url => {
@@ -28,12 +26,17 @@ const preloadImages = (urls) => {
 
 const ReactionsPopover = ({ onSelect, children }) => {
     const [activeTab, setActiveTab] = useState('regular');
+    const [searchQuery, setSearchQuery] = useState('');
     const { currentUser, addedPacks } = useUser();
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
     const hasPreloaded = useRef(false);
     const [previewingEmoji, setPreviewingEmoji] = useState(null);
     const longPressTimerRef = useRef(null);
     const longPressTriggeredRef = useRef(false);
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Новое состояние для ручного управления видимостью ---
+    const [isPopoverVisible, setIsPopoverVisible] = useState(false);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
     
     const [activePremiumPackName, setActivePremiumPackName] = useState('');
     const [activeUserPackName, setActiveUserPackName] = useState('');
@@ -52,12 +55,14 @@ const ReactionsPopover = ({ onSelect, children }) => {
         if (premiumEmojiPacks.length > 0 && !activePremiumPackName) {
             setActivePremiumPackName(premiumEmojiPacks[0].name);
         }
+        setSearchQuery('');
     }, [premiumEmojiPacks, activePremiumPackName]);
 
     useEffect(() => {
         if (userFreeEmojiPacks.length > 0 && !activeUserPackName) {
             setActiveUserPackName(userFreeEmojiPacks[0].name);
         }
+        setSearchQuery('');
     }, [userFreeEmojiPacks, activeUserPackName]);
 
     useEffect(() => {
@@ -70,14 +75,18 @@ const ReactionsPopover = ({ onSelect, children }) => {
     const handlePremiumTabClick = () => {
         if (currentUser?.premium?.isActive) {
             setActiveTab('premium');
+            setSearchQuery('');
         } else {
             setIsPremiumModalOpen(true);
         }
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Обновляем onSelect для закрытия плашки ---
     const handleReactionSelect = (reactionUrl) => {
         onSelect(reactionUrl);
+        setIsPopoverVisible(false); // Закрываем плашку после выбора
     };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     const handleMouseDown = (item) => {
         longPressTriggeredRef.current = false;
@@ -104,30 +113,55 @@ const ReactionsPopover = ({ onSelect, children }) => {
     const activePremiumEmojis = useMemo(() => {
         if (activeTab !== 'premium') return [];
         const pack = premiumEmojiPacks.find(p => p.name === activePremiumPackName);
-        return pack?.items || pack?.emojis || [];
-    }, [activeTab, activePremiumPackName, premiumEmojiPacks]);
+        const allEmojis = pack?.items || pack?.emojis || [];
+        if (!searchQuery) return allEmojis;
+        return allEmojis.filter(emoji => emoji.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [activeTab, activePremiumPackName, premiumEmojiPacks, searchQuery]);
     
     const activeUserEmojis = useMemo(() => {
         if (activeTab !== 'user_emojis') return [];
         const pack = userFreeEmojiPacks.find(p => p.name === activeUserPackName);
-        return pack?.items || [];
-    }, [activeTab, activeUserPackName, userFreeEmojiPacks]);
+        const allEmojis = pack?.items || [];
+        if (!searchQuery) return allEmojis;
+        return allEmojis.filter(emoji => emoji.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [activeTab, activeUserPackName, userFreeEmojiPacks, searchQuery]);
 
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Новые обработчики для управления видимостью ---
+    const showPopover = () => setIsPopoverVisible(true);
+    const hidePopover = () => {
+        // Прячем, только если окно предпросмотра НЕ открыто
+        if (!previewingEmoji) {
+            setIsPopoverVisible(false);
+        }
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 
     return (
         <>
             <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
-            <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Синхронизируем закрытие --- */}
+            <EmojiPreviewModal 
+                isOpen={!!previewingEmoji} 
+                onClose={() => {
+                    setPreviewingEmoji(null);
+                    setIsPopoverVisible(false); // Закрываем и плашку тоже
+                }} 
+                emojiUrl={previewingEmoji} 
+            />
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
             <Tippy
                 interactive
                 placement="auto"
-                delay={[100, 100]}
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ 5: Управляем состоянием вручную ---
+                visible={isPopoverVisible}
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ 5 ---
                 onClickOutside={(instance, event) => {
                     const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
-                    if (isClickOnPreviewOverlay) {
+                    if (isClickOnPreviewOverlay || previewingEmoji) {
                         return false; 
                     }
-                    instance.hide();
+                    setIsPopoverVisible(false); // Закрываем плашку
                 }}
                 render={attrs => (
                     <motion.div
@@ -137,19 +171,34 @@ const ReactionsPopover = ({ onSelect, children }) => {
                         transition={{ duration: 0.15, ease: 'easeOut' }}
                         className="ios-glass-popover p-2 rounded-xl shadow-lg w-auto max-w-sm"
                         {...attrs}
+                        // --- НАЧАЛО ИСПРАВЛЕНИЯ 6: Добавляем обработчики на саму плашку ---
+                        onMouseEnter={showPopover}
+                        onMouseLeave={hidePopover}
+                        // --- КОНЕЦ ИСПРАВЛЕНИЯ 6 ---
                     >
                         <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg">
-                            <button onClick={() => setActiveTab('regular')} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'regular' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Обычные</button>
+                            <button onClick={() => { setActiveTab('regular'); setSearchQuery(''); }} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'regular' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Обычные</button>
                             {userFreeEmojiPacks.length > 0 && (
-                                <button onClick={() => setActiveTab('user_emojis')} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'user_emojis' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Эмодзи</button>
+                                <button onClick={() => { setActiveTab('user_emojis'); setSearchQuery(''); }} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'user_emojis' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Эмодзи</button>
                             )}
                             <button onClick={handlePremiumTabClick} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors flex items-center justify-center space-x-1 ${activeTab === 'premium' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>
                                 <Sparkles size={14} className="text-yellow-400" />
                                 <span>Premium</span>
                             </button>
                         </div>
-                        {/* Контейнер с фиксированной высотой для предотвращения "прыжков" */}
-                        <div className="h-[250px]">
+                        {(activeTab === 'user_emojis' || activeTab === 'premium') && (
+                            <div className="relative mb-2">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                <input
+                                    type="text"
+                                    placeholder="Поиск эмодзи..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-8 pr-2 py-1.5 text-xs bg-slate-200/50 dark:bg-slate-700/50 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
+                        )}
+                        <div className="h-[230px]">
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={activeTab}
@@ -157,7 +206,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -5 }}
                                     transition={{ duration: 0.1 }}
-                                    className="h-full flex flex-col" // Заставляем блок занимать всю высоту родителя
+                                    className="h-full flex flex-col"
                                 >
                                     {activeTab === 'regular' && ( <div className="flex items-start justify-center flex-1 pt-4">
                                           <div className="flex items-center space-x-1">
@@ -187,7 +236,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                 ))}
                                             </div>
                                             <div className="grid grid-cols-6 gap-2 overflow-y-auto p-1 flex-1 content-start">
-                                                {activeUserEmojis.map(emoji => (
+                                                {activeUserEmojis.length > 0 ? activeUserEmojis.map(emoji => (
                                                     <button
                                                         key={emoji._id}
                                                         onMouseDown={() => handleMouseDown(emoji)}
@@ -200,7 +249,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                     >
                                                         <CachedEmoji src={emoji.imageUrl} alt={emoji.name} />
                                                     </button>
-                                                ))}
+                                                )) : <p className="col-span-6 text-center text-xs text-slate-400 pt-8">Ничего не найдено</p>}
                                             </div>
                                              <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2 flex-shrink-0">
                                                 Удерживайте для предпросмотра
@@ -221,7 +270,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                 ))}
                                             </div>
                                             <div className="grid grid-cols-6 gap-2 overflow-y-auto p-1 flex-1 content-start">
-                                                {activePremiumEmojis.map(emoji => (
+                                                {activePremiumEmojis.length > 0 ? activePremiumEmojis.map(emoji => (
                                                     <button
                                                         key={emoji.id || emoji._id}
                                                         onMouseDown={() => handleMouseDown(emoji)}
@@ -234,7 +283,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                     >
                                                         <CachedEmoji src={emoji.imageUrl || emoji.url} alt={emoji.name} />
                                                     </button>
-                                                ))}
+                                                )) : <p className="col-span-6 text-center text-xs text-slate-400 pt-8">Ничего не найдено</p>}
                                             </div>
                                             <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2 flex-shrink-0">
                                                 Удерживайте для предпросмотра
@@ -247,7 +296,11 @@ const ReactionsPopover = ({ onSelect, children }) => {
                     </motion.div>
                 )}
             >
-                {children}
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 7: Оборачиваем дочерний элемент и вешаем обработчики --- */}
+                <div onMouseEnter={showPopover} onMouseLeave={hidePopover}>
+                    {children}
+                </div>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 7 --- */}
             </Tippy>
         </>
     );

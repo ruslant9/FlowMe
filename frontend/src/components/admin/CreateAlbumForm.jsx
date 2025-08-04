@@ -341,15 +341,15 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
 
     return (
         // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем основной контейнер формы ---
-        <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800">
             <div>
                 <h3 className="font-bold text-lg">{isEditMode ? `Редактирование: ${initialData.title}` : (currentUser.role === 'admin' ? 'Создать Альбом' : 'Предложить новый альбом')}</h3>
                 {currentUser.role !== 'admin' && !isEditMode && <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col md:flex-row md:space-x-6 mt-6">
                 {/* Левая колонка */}
-                <div className="space-y-4">
+                <div className="space-y-4 md:w-1/2 flex-shrink-0">
                     <div>
                         <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
                         <ArtistAutocomplete artists={artists} onSelect={setArtistId} initialArtistId={artistId} />
@@ -381,9 +381,10 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                         </div>
                     </div>
                 </div>
+                
+                <div className="hidden md:block border-l border-slate-200 dark:border-slate-700 mx-2"></div>
 
-                {/* Правая колонка */}
-                <div className="flex flex-col">
+                <div className="flex flex-col md:w-1/2 mt-6 md:mt-0">
                     {isEditMode && (
                         <div className="space-y-2 flex flex-col flex-1">
                             <div className="flex justify-between items-center mb-2">
@@ -420,7 +421,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex justify-end pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
                 <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
                     {loading && <Loader2 className="animate-spin mr-2"/>}
                     {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? 'Создать альбом' : 'Отправить на проверку')}

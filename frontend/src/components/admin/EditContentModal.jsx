@@ -30,7 +30,7 @@ const EditContentModal = ({ isOpen, onClose, item, itemType, artists, albums, on
 
     const getModalWidthClass = () => {
         if (editingTrack || itemType === 'albums') {
-            return 'max-w-4xl';
+            return 'max-w-6xl';
         }
         return 'max-w-2xl';
     };
