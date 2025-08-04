@@ -1,6 +1,6 @@
 // frontend/src/components/modals/PostViewModal.jsx
 
-import React, { useState, useEffect, useCallback, useRef, useMemo, Fragment, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense, useCallback, Fragment, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,9 +23,23 @@ import PollDisplay from '../PollDisplay';
 import Tippy from '@tippyjs/react/headless'; 
 import { format } from 'date-fns';
 import AnimatedAccent from '../AnimatedAccent';
+import { useCachedImage } from '../../hooks/useCachedImage'; // <-- 1. ИМПОРТ ХУКА
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
+
+// 2. ДОБАВЛЕНИЕ КОМПОНЕНТА ДЛЯ КЭШИРОВАНИЯ
+const CachedImage = ({ src, alt, className }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-black">
+                <Loader2 className="w-10 h-10 animate-spin text-white" />
+            </div>
+        );
+    }
+    return <img src={finalSrc} alt={alt} className={className} />;
+};
 
 const getImageUrl = (url) => {
     if (!url) return '';
@@ -135,15 +149,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         fetchCommentingOptions();
     }, [currentUser, activePost]);
 
-    const togglePicker = () => {
-        if (smileButtonRef.current) {
-            const rect = smileButtonRef.current.getBoundingClientRect();
-            if (window.innerHeight - rect.bottom < EMOJI_PICKER_HEIGHT) {
-                setPickerPosition('top');
-            } else {
-                setPickerPosition('bottom');
-            }
-        }
+    const togglePicker = () => { 
         setIsPickerVisible(v => !v);
     };
 
@@ -420,7 +426,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                 
                                 {hasImages ? (
                                     <div className="w-full md:w-3/5 bg-black flex items-center justify-center">
-                                        <img src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
+                                        <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
                                     </div>
                                 ) : null}
                                 <div className={`

@@ -4,16 +4,25 @@ import React, { useMemo, useRef, useState, forwardRef } from 'react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-import { MoreHorizontal, CornerDownRight, ChevronsRight, Check, CheckCheck, Pencil, Trash2, Pin } from 'lucide-react';
+import { MoreHorizontal, CornerDownRight, ChevronsRight, Check, CheckCheck, Pencil, Trash2, Pin, Loader2, Image as ImageIcon } from 'lucide-react';
 import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
 import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
+import { useCachedImage } from '../../hooks/useCachedImage'; // <-- 1. ИМПОРТ ХУКА
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию ---
+// 2. ДОБАВЛЕНИЕ КОМПОНЕНТА ДЛЯ КЭШИРОВАНИЯ
+const CachedImage = ({ src, alt, className, onClick }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return <div className={`${className} bg-slate-200 dark:bg-slate-700 animate-pulse`}></div>;
+    }
+    return <img src={finalSrc} alt={alt} className={className} onClick={onClick} />;
+};
+
 const getImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) {
@@ -21,7 +30,6 @@ const getImageUrl = (url) => {
     }
     return `${API_URL}/${url}`;
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const avatarColors = [
     '#F59E0B', '#F472B6', '#A78BFA', '#60A5FA', '#4ADE80', '#F87171',
@@ -55,7 +63,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
         if (!message.replyTo?.sender) return {};
 
         if (message.replyTo.imageUrl) {
-            // --- ИЗМЕНЕНИЕ ---
             return {
                 backgroundImage: `url(${getImageUrl(message.replyTo.imageUrl)})`,
                 backgroundSize: 'cover',
@@ -323,9 +330,8 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 )}
                 {message.imageUrl && (
                     <div className="relative p-1">
-                        {/* --- ИЗМЕНЕНИЕ --- */}
-                        <img 
-                            src={getImageUrl(message.imageUrl)} 
+                        <CachedImage 
+                            src={message.imageUrl} 
                             alt="Attachment" 
                             className="max-w-full h-auto rounded-xl object-cover cursor-pointer"
                             onClick={() => onImageClick && onImageClick(message.imageUrl)}
