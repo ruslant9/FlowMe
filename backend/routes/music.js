@@ -101,7 +101,13 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Трек не найден в библиотеке.' });
         }
         
-        const existingSavedTrack = await Track.findOne({ user: userId, _id: existingLibraryTrack._id, type: 'saved' });
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Ищем по youtubeId, а не по _id ---
+        const existingSavedTrack = await Track.findOne({ 
+            user: userId, 
+            youtubeId: existingLibraryTrack.youtubeId, 
+            type: 'saved' 
+        });
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         if (existingSavedTrack) {
             await Track.deleteOne({ _id: existingSavedTrack._id });
@@ -109,7 +115,7 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
         } else {
             const newSavedTrack = new Track({
                 ...existingLibraryTrack.toObject(),
-                _id: new mongoose.Types.ObjectId(),
+                _id: new mongoose.Types.ObjectId(), // Создаем новый _id для копии
                 user: userId,
                 type: 'saved',
                 savedAt: new Date(),

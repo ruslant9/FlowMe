@@ -205,7 +205,6 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
     );
 };
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Компонент выбора месяца и года ---
 const MonthYearPicker = ({ value, onChange }) => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
@@ -245,7 +244,6 @@ const MonthYearPicker = ({ value, onChange }) => {
         </div>
     );
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false, initialData = null }) => {
     const { currentUser } = useUser();
@@ -381,7 +379,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('albumId', albumId || '');
                 formData.append('genres', JSON.stringify(singleTrackData.genres || []));
                 formData.append('isExplicit', singleTrackData.isExplicit);
-                formData.append('releaseDate', singleTrackData.releaseDate.toISOString()); // ИЗМЕНЕНИЕ
+                formData.append('releaseDate', singleTrackData.releaseDate.toISOString());
                 await axios.put(`${API_URL}/api/admin/content/tracks/${initialData._id}`, formData, { headers: axiosConfig.headers });
                 toast.success("Трек успешно обновлен!", { id: toastId });
                 onSuccess();
@@ -408,7 +406,7 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 formData.append('trackFile', singleTrackData.trackFile);
                 if (singleTrackData.coverArt) formData.append('coverArt', singleTrackData.coverArt);
                 formData.append('durationMs', singleTrackData.durationMs);
-                formData.append('releaseDate', singleTrackData.releaseDate.toISOString()); // ИЗМЕНЕНИЕ
+                formData.append('releaseDate', singleTrackData.releaseDate.toISOString());
                 const endpoint = isAdmin ? `${API_URL}/api/admin/tracks` : `${API_URL}/api/submissions/tracks`;
                 await axios.post(endpoint, formData, axiosConfig);
             }
@@ -488,10 +486,14 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                             <label className="text-sm font-semibold block mb-1">Название трека *</label>
                             <input type="text" placeholder="Название" value={singleTrackData.title} onChange={e => handleSingleTrackChange('title', e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
                         </div>
-                        <div>
-                            <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
-                            <MonthYearPicker value={singleTrackData.releaseDate} onChange={(date) => handleSingleTrackChange('releaseDate', date)} />
-                        </div>
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Условный рендеринг поля даты --- */}
+                        {!albumId && (
+                            <div>
+                                <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
+                                <MonthYearPicker value={singleTrackData.releaseDate} onChange={(date) => handleSingleTrackChange('releaseDate', date)} />
+                            </div>
+                        )}
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
 
                     <div className="p-4 rounded-lg bg-slate-200 dark:bg-slate-900/50 space-y-4">

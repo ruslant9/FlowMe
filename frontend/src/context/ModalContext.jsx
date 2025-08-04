@@ -7,13 +7,15 @@ const CustomModal = ({ isOpen, onClose, title, message, children, buttons }) => 
     return (
         <AnimatePresence>
             {isOpen && (
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Увеличиваем z-index с z-50 до z-[100] ---
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
                 >
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -30,7 +32,6 @@ const CustomModal = ({ isOpen, onClose, title, message, children, buttons }) => 
                         </div>
                         <p className="text-slate-600 dark:text-white/80">{message}</p>
                         
-                        {/* --- ИЗМЕНЕНИЕ: Передаем функцию onClose (которая теперь closeModal) в children --- */}
                         {typeof children === 'function' ? children(onClose) : children}
 
                         {(!children && buttons) && (

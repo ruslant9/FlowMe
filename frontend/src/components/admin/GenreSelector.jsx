@@ -5,8 +5,11 @@ import { motion } from 'framer-motion';
 import { musicGenresRu } from '../../data/genres';
 import { Search } from 'lucide-react';
 
+const GENRE_DISPLAY_LIMIT = 18; // <-- КОЛИЧЕСТВО ЖАНРОВ ДЛЯ ОТОБРАЖЕНИЯ
+
 const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) => {
     const [searchQuery, setSearchQuery] = useState('');
+    const [isExpanded, setIsExpanded] = useState(false); // <-- НОВОЕ СОСТОЯНИЕ
 
     const filteredGenres = useMemo(() => {
         if (!searchQuery) {
@@ -16,6 +19,12 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
             genre.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [searchQuery]);
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика для отображения ограниченного списка ---
+    const displayedGenres = useMemo(() => {
+        return isExpanded ? filteredGenres : filteredGenres.slice(0, GENRE_DISPLAY_LIMIT);
+    }, [filteredGenres, isExpanded]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handleSelectGenre = (genre) => {
         const isSelected = selectedGenres.includes(genre);
@@ -41,27 +50,42 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
                 />
             </div>
             
-            {/* --- ИЗМЕНЕНИЕ: Убраны классы max-h-48 и overflow-y-auto --- */}
-            <div className="flex flex-wrap gap-2 p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg">
-                {filteredGenres.map(genre => {
-                    const isSelected = selectedGenres.includes(genre);
-                    return (
-                        <motion.button
-                            key={genre}
+            <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg">
+                <div className="flex flex-wrap gap-2">
+                    {/* --- ИСПРАВЛЕНИЕ: Используем displayedGenres вместо filteredGenres --- */}
+                    {displayedGenres.map(genre => {
+                        const isSelected = selectedGenres.includes(genre);
+                        return (
+                            <motion.button
+                                key={genre}
+                                type="button"
+                                onClick={() => handleSelectGenre(genre)}
+                                className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-center
+                                    ${isSelected 
+                                        ? 'bg-blue-600 text-white ring-2 ring-blue-400' 
+                                        : 'bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600'
+                                    }
+                                `}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                {genre}
+                            </motion.button>
+                        );
+                    })}
+                </div>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка для раскрытия списка --- */}
+                {filteredGenres.length > GENRE_DISPLAY_LIMIT && (
+                    <div className="mt-3 text-center">
+                        <button
                             type="button"
-                            onClick={() => handleSelectGenre(genre)}
-                            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200 text-center
-                                ${isSelected 
-                                    ? 'bg-blue-600 text-white ring-2 ring-blue-400' 
-                                    : 'bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600'
-                                }
-                            `}
-                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="text-sm font-semibold text-blue-500 hover:underline"
                         >
-                            {genre}
-                        </motion.button>
-                    );
-                })}
+                            {isExpanded ? 'Скрыть' : `Показать еще ${filteredGenres.length - GENRE_DISPLAY_LIMIT}`}
+                        </button>
+                    </div>
+                )}
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             </div>
         </div>
     );

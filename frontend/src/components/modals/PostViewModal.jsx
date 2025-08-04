@@ -23,23 +23,26 @@ import PollDisplay from '../PollDisplay';
 import Tippy from '@tippyjs/react/headless'; 
 import { format } from 'date-fns';
 import AnimatedAccent from '../AnimatedAccent';
-import { useCachedImage } from '../../hooks/useCachedImage'; // <-- 1. ИМПОРТ ХУКА
+import { useCachedImage } from '../../hooks/useCachedImage'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
 
-// 2. ДОБАВЛЕНИЕ КОМПОНЕНТА ДЛЯ КЭШИРОВАНИЯ
-const CachedImage = ({ src, alt, className }) => {
+// Компонент для кешированного изображения с анимацией
+const CachedMotionImage = ({ src, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
+
     if (loading) {
         return (
-            <div className="w-full h-full flex items-center justify-center bg-black">
+            <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
                 <Loader2 className="w-10 h-10 animate-spin text-white" />
-            </div>
+            </motion.div>
         );
     }
-    return <img src={finalSrc} alt={alt} className={className} />;
+
+    return <motion.img src={finalSrc} {...props} />;
 };
+
 
 const getImageUrl = (url) => {
     if (!url) return '';
@@ -444,12 +447,15 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             return (
                                                 <Link to={linkTo} onClick={onClose} className="flex items-center space-x-3 group">
                                                     <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
+                                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                                         <Avatar
                                                             username={author.name || author.username}
+                                                            fullName={author.fullName}
                                                             avatarUrl={getImageUrl(author.avatar)}
                                                             isPremium={!activePost.community && author.premium?.isActive}
                                                             customBorder={border}
                                                         />
+                                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                                     </div>
                                                     <div className="flex-grow">
                                                         {activePost.community && <p className="text-xs text-slate-400 flex items-center"><Users size={12} className="mr-1"/>Сообщество</p>}
