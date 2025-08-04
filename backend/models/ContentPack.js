@@ -16,8 +16,9 @@ const ContentPackSchema = new Schema({
     type: { type: String, enum: ['emoji', 'sticker'], required: true, index: true },
     items: [PackItemSchema],
     isPublic: { type: Boolean, default: true, index: true }, // Для поиска
-    // --- ИСПРАВЛЕНИЕ: Добавлено поле для Premium-статуса ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлено поле для Premium-статуса ---
     isPremium: { type: Boolean, default: false }
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 }, { timestamps: true });
 
 module.exports = mongoose.model('ContentPack', ContentPackSchema);

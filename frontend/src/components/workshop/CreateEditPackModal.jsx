@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ ---
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 const ToggleSwitch = ({ checked, onChange, label, description }) => (
     <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
         <div>
@@ -21,7 +21,7 @@ const ToggleSwitch = ({ checked, onChange, label, description }) => (
         </div>
     </div>
 );
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave }) => {
@@ -40,7 +40,9 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                 setName(initialData.name);
                 setType(initialData.type);
                 setExistingItems(initialData.items);
-                setIsPremiumOnly(initialData.isPremiumOnly || false);
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                setIsPremiumOnly(initialData.isPremium || false);
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             } else {
                 setName('');
                 setType('sticker');
@@ -80,11 +82,11 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
         formData.append('name', name);
         formData.append('type', type);
         
-        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         if (type === 'emoji') {
             formData.append('isPremiumOnly', isPremiumOnly);
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         if (isEditMode) {
             formData.append('itemsToDelete', JSON.stringify(itemsToDelete));
@@ -147,7 +149,7 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                 </div>
                             )}
 
-                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                             {type === 'emoji' && (
                                 <ToggleSwitch 
                                     checked={isPremiumOnly}
@@ -156,7 +158,7 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                     description="Этот пак будет доступен только пользователям с Premium-подпиской."
                                 />
                             )}
-                            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                             <div className="flex-1 overflow-y-auto -mr-2 pr-2 border-t border-b border-slate-200 dark:border-slate-700 py-4">
                                 <label className="block text-sm font-semibold mb-2">Изображения</label>

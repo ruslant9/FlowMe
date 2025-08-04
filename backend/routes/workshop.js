@@ -87,7 +87,9 @@ router.post('/packs', authMiddleware, premiumMiddleware, upload.array('items', 2
             name,
             type,
             creator: req.user.userId,
-            isPremiumOnly: type === 'emoji' ? (isPremiumOnly === 'true') : false,
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            isPremium: type === 'emoji' ? (isPremiumOnly === 'true') : false,
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             items: req.files.map(file => ({ imageUrl: file.path }))
         });
         await newPack.save();
@@ -111,7 +113,7 @@ router.get('/packs/my', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ ---
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.get('/packs/added', authMiddleware, async (req, res) => {
     try {
         const { type } = req.query;
@@ -149,7 +151,7 @@ router.get('/packs/added', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка загрузки добавленных паков.' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 router.get('/packs/search', authMiddleware, async (req, res) => {
@@ -213,9 +215,11 @@ router.put('/packs/:packId', authMiddleware, premiumMiddleware, canModifyPack, u
             const newItems = req.files.map(file => ({ imageUrl: file.path }));
             pack.items.push(...newItems);
         }
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         if (isPremiumOnly !== undefined && pack.type === 'emoji') {
-            pack.isPremiumOnly = isPremiumOnly === 'true';
+            pack.isPremium = isPremiumOnly === 'true';
         }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         await pack.save();
         res.json(pack);
     } catch (error) {
