@@ -344,16 +344,16 @@ function App() {
               <Route path="/admin" element={<AdminPage />} />
             </Route>
             
-            {/* Маршрут для страницы "Не найдено" */}
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
             <Route path="/page-not-found" element={
-                <div className="flex-1 p-8 text-center">
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 h-full">
                     <h1 className="text-4xl font-bold">404 - Страница не найдена</h1>
                     <p className="mt-4">Извините, мы не смогли найти то, что вы искали.</p>
                     <Link to="/" className="mt-6 inline-block text-blue-500 hover:underline">Вернуться на главную</Link>
                 </div>
             } />
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
-            {/* Общий "catch-all" роут теперь ведет на нашу страницу 404 */}
             <Route path="*" element={<Navigate to="/page-not-found" replace />} />
           </Route>
 

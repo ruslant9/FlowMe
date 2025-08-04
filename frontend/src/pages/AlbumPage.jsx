@@ -167,10 +167,10 @@ const AlbumPage = () => {
                         {loadingRecs ? (
                             <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400"/></div>
                         ) : (
-                            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем классы для размера карточек ---
+                            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                             <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
                                 {recommendations.map((recTrack) => (
-                                    <div key={recTrack._id} className="w-1/3 sm:w-1/4 md:w-1/5 lg:w-1/6 flex-shrink-0">
+                                    <div key={recTrack._id} className="w-1/4 sm:w-1/5 md:w-1/6 lg:w-1/8 flex-shrink-0">
                                         <RecommendationCard
                                             track={recTrack}
                                             onSelectTrack={() => playTrack(recTrack, recommendations)}
