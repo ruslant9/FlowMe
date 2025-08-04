@@ -91,44 +91,68 @@ const logMusicAction = async (req, track, action) => {
 
 // --- МАРШРУТЫ ДЛЯ "МОЕЙ МУЗЫКИ" И ИСТОРИИ ---
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Переработанная логика сохранения/удаления трека ---
 router.post('/toggle-save', authMiddleware, async (req, res) => {
     try {
-        const { _id: trackId } = req.body;
+        const clickedTrack = req.body;
         const userId = req.user.userId;
 
-        const existingLibraryTrack = await Track.findById(trackId);
-        if (!existingLibraryTrack || existingLibraryTrack.type !== 'library_track') {
-            return res.status(404).json({ message: 'Трек не найден в библиотеке.' });
+        // Шаг 1: Найти каноничный трек в библиотеке.
+        // Он может быть не найден по youtubeId, если тот null, поэтому нужен фолбэк.
+        let libraryTrack;
+        if (clickedTrack.youtubeId) {
+            libraryTrack = await Track.findOne({ type: 'library_track', youtubeId: clickedTrack.youtubeId }).lean();
         }
-        
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Ищем по youtubeId, а не по _id ---
-        const existingSavedTrack = await Track.findOne({ 
-            user: userId, 
-            youtubeId: existingLibraryTrack.youtubeId, 
-            type: 'saved' 
+        // Если по youtubeId не нашли или его не было, ищем по _id, если кликнутый трек - из библиотеки.
+        if (!libraryTrack && clickedTrack.type === 'library_track') {
+             libraryTrack = await Track.findById(clickedTrack._id).lean();
+        }
+        // Если мы до сих пор не нашли трек, значит что-то не так.
+        if (!libraryTrack) {
+            return res.status(404).json({ message: 'Оригинал трека не найден в библиотеке.' });
+        }
+
+        // Шаг 2: Определить УНИКАЛЬНЫЙ идентификатор контента.
+        // Приоритет у youtubeId, но если его нет, используем _id библиотечного трека.
+        const uniqueContentId = libraryTrack.youtubeId || libraryTrack._id.toString();
+
+        // Шаг 3: Найти, существует ли уже сохраненная копия по этому уникальному ID.
+        // Для поиска используем поле youtubeId, т.к. на нем стоит индекс.
+        const existingSavedTrack = await Track.findOne({
+            user: userId,
+            youtubeId: uniqueContentId,
+            type: 'saved'
         });
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         if (existingSavedTrack) {
+            // Трек уже сохранен -> удаляем его.
             await Track.deleteOne({ _id: existingSavedTrack._id });
             res.status(200).json({ message: 'Трек удален из Моей музыки.', saved: false });
         } else {
+            // Трек не сохранен -> создаем новую копию.
             const newSavedTrack = new Track({
-                ...existingLibraryTrack.toObject(),
-                _id: new mongoose.Types.ObjectId(), // Создаем новый _id для копии
+                ...libraryTrack, // Копируем все данные из каноничного трека
+                _id: new mongoose.Types.ObjectId(), // Новый уникальный ID для документа
                 user: userId,
                 type: 'saved',
                 savedAt: new Date(),
+                // КРИТИЧЕСКИ ВАЖНО: сохраняем наш уникальный идентификатор в поле youtubeId
+                // чтобы он соответствовал уникальному индексу в БД.
+                youtubeId: uniqueContentId,
             });
             await newSavedTrack.save();
             res.status(201).json({ message: 'Трек добавлен в Мою музыку.', saved: true });
         }
+        
+        logMusicAction(req, libraryTrack, 'like');
         broadcastToUsers(req, [userId], { type: 'MUSIC_UPDATED' });
-        logMusicAction(req, existingLibraryTrack, 'like');
+
     } catch (error) {
+        console.error("Критическая ошибка в /toggle-save:", error);
         res.status(500).json({ message: 'Ошибка сервера при обновлении трека.' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 router.get('/saved', authMiddleware, async (req, res) => {
     try {

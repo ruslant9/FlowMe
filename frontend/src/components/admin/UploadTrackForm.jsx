@@ -264,12 +264,26 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         })
     );
 
+    const mainAlbumArtistId = useMemo(() => {
+        if (!albumId) return null;
+        const album = albums.find(a => a._id === albumId);
+        return album?.artist?._id || album?.artist || null;
+    }, [albumId, albums]);
+
     useEffect(() => {
         if (isEditMode && initialData) {
-            setAlbumId(initialData.album?._id || initialData.album || null);
+            const currentAlbumId = initialData.album?._id || initialData.album || null;
+            setAlbumId(currentAlbumId);
+            
+            const mainArtistOfAlbum = currentAlbumId ? albums.find(a => a._id === currentAlbumId)?.artist?._id : null;
+            
+            const featureArtistIds = (initialData.artist || [])
+                .map(a => a._id)
+                .filter(id => id !== mainArtistOfAlbum);
+
             setSingleTrackData({
                 title: initialData.title || '',
-                artistIds: (initialData.artist || []).map(a => a._id),
+                artistIds: featureArtistIds,
                 genres: initialData.genres || [],
                 isExplicit: initialData.isExplicit || false,
                 releaseDate: initialData.releaseDate ? new Date(initialData.releaseDate) : new Date(),
@@ -278,13 +292,8 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                 durationMs: initialData.durationMs || 0,
             });
         }
-    }, [isEditMode, initialData]);
+    }, [isEditMode, initialData, albums]);
 
-    const mainAlbumArtistId = useMemo(() => {
-        if (!albumId) return null;
-        const album = albums.find(a => a._id === albumId);
-        return album?.artist?._id || null;
-    }, [albumId, albums]);
 
     useEffect(() => { if (!isEditMode) setTrackList([]); }, [albumId, isEditMode]);
 
@@ -373,13 +382,29 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         try {
             const isAdmin = currentUser.role === 'admin';
             if (isEditMode) {
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика объединения исполнителей при редактировании ---
+                const finalArtistIds = albumId && mainAlbumArtistId
+                    ? [...new Set([mainAlbumArtistId, ...singleTrackData.artistIds])]
+                    : singleTrackData.artistIds;
+
+                if (finalArtistIds.length === 0) {
+                    toast.error("Трек должен иметь хотя бы одного исполнителя.");
+                    setLoading(false);
+                    return;
+                }
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
                 const formData = new FormData();
                 formData.append('title', singleTrackData.title);
-                formData.append('artistIds', JSON.stringify(singleTrackData.artistIds));
+                formData.append('artistIds', JSON.stringify(finalArtistIds)); // <-- Используем finalArtistIds
                 formData.append('albumId', albumId || '');
                 formData.append('genres', JSON.stringify(singleTrackData.genres || []));
                 formData.append('isExplicit', singleTrackData.isExplicit);
-                formData.append('releaseDate', singleTrackData.releaseDate.toISOString());
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Отправляем дату только для синглов ---
+                if (!albumId) {
+                    formData.append('releaseDate', singleTrackData.releaseDate.toISOString());
+                }
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 await axios.put(`${API_URL}/api/admin/content/tracks/${initialData._id}`, formData, { headers: axiosConfig.headers });
                 toast.success("Трек успешно обновлен!", { id: toastId });
                 onSuccess();
@@ -478,22 +503,24 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
             ) : (
                 <div className="space-y-4">
                      <div>
-                        <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
-                        <MultiArtistAutocomplete artists={artists} selectedIds={singleTrackData.artistIds} onSelectionChange={(ids) => handleSingleTrackChange('artistIds', ids)} />
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Динамический заголовок --- */}
+                        <label className="text-sm font-semibold block mb-1">
+                            {albumId ? 'Дополнительные исполнители (фит)' : 'Исполнитель *'}
+                        </label>
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                        <MultiArtistAutocomplete artists={artists} selectedIds={singleTrackData.artistIds} onSelectionChange={(ids) => handleSingleTrackChange('artistIds', ids)} excludeIds={mainAlbumArtistId ? [mainAlbumArtistId] : []}/>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-semibold block mb-1">Название трека *</label>
                             <input type="text" placeholder="Название" value={singleTrackData.title} onChange={e => handleSingleTrackChange('title', e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
                         </div>
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Условный рендеринг поля даты --- */}
                         {!albumId && (
                             <div>
                                 <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
                                 <MonthYearPicker value={singleTrackData.releaseDate} onChange={(date) => handleSingleTrackChange('releaseDate', date)} />
                             </div>
                         )}
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
 
                     <div className="p-4 rounded-lg bg-slate-200 dark:bg-slate-900/50 space-y-4">
