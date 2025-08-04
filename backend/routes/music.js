@@ -190,6 +190,9 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
             .populate('artist', 'name avatarUrl')
             .populate({
                 path: 'tracks',
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем playCount в выборку ---
+                select: 'title artist durationMs isExplicit playCount',
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
                 populate: { path: 'artist', select: 'name _id' }
             })
             .lean();
@@ -197,12 +200,17 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
         if (!album || album.status !== 'approved') {
             return res.status(404).json({ message: 'Альбом не найден.' });
         }
+        
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Подсчитываем общее количество прослушиваний альбома ---
+        const totalPlayCount = album.tracks.reduce((sum, track) => sum + (track.playCount || 0), 0);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
+
         const processedTracks = album.tracks.map(track => ({
             ...track,
             albumArtUrl: track.albumArtUrl || album.coverArtUrl 
         }));
 
-        const finalAlbumData = { ...album, tracks: processedTracks };
+        const finalAlbumData = { ...album, tracks: processedTracks, totalPlayCount };
         
         res.json(finalAlbumData);
         
@@ -270,41 +278,35 @@ router.get('/album/:albumId/recommendations', authMiddleware, async (req, res) =
 router.get('/artist/:artistId', authMiddleware, async (req, res) => {
     try {
         const artistId = new mongoose.Types.ObjectId(req.params.artistId);
+        const requesterId = new mongoose.Types.ObjectId(req.user.userId);
+        
         const topTracksPipeline = [
             { $match: { artist: artistId, status: 'approved' } },
-            {
-                $group: {
-                    _id: { $toLower: "$title" },
-                    totalPlayCount: { $sum: "$playCount" },
-                    doc: { $first: "$$ROOT" } 
-                }
-            },
-            { $sort: { totalPlayCount: -1 } },
-            { $limit: 5 },
-            { $replaceRoot: { newRoot: "$doc" } }
+            { $group: { _id: "$_id", doc: { $first: "$$ROOT" }, totalPlayCount: { $sum: "$playCount" } } },
+            { $replaceRoot: { newRoot: "$doc" } },
+            { $sort: { playCount: -1 } },
+            { $limit: 5 }
         ];
 
-        const [artist, topTracksAggregation, albums, featuredTracks, singles] = await Promise.all([
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Добавляем агрегацию для общего числа прослушиваний ---
+        const totalPlaysPipeline = [
+            { $match: { artist: artistId, status: 'approved' } },
+            { $group: { _id: '$artist', totalPlayCount: { $sum: '$playCount' } } }
+        ];
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
+
+        const [artist, topTracksAggregation, albums, featuredTracks, singles, totalPlaysResult] = await Promise.all([
             Artist.findById(artistId).lean(),
             Track.aggregate(topTracksPipeline),
-            Album.find({ artist: artistId, status: 'approved' })
-                .populate('artist', 'name')
-                .sort({ releaseDate: -1, createdAt: -1 })
-                .lean(),
-            Track.find({ artist: artistId, status: 'approved', album: { $ne: null } })
-                 .populate({
-                     path: 'album',
-                     populate: { path: 'artist', select: 'name _id' }
-                 })
-                 .lean(),
-            Track.find({ artist: artistId, status: 'approved', album: null })
-                 .populate('artist', 'name _id')
-                 .sort({ releaseDate: -1, createdAt: -1 })
-                 .lean()
+            Album.find({ artist: artistId, status: 'approved' }).populate('artist', 'name').sort({ releaseDate: -1, createdAt: -1 }).lean(),
+            Track.find({ artist: artistId, status: 'approved', album: { $ne: null } }).populate({ path: 'album', populate: { path: 'artist', select: 'name _id' } }).lean(),
+            Track.find({ artist: artistId, status: 'approved', album: null }).populate('artist', 'name _id').sort({ releaseDate: -1, createdAt: -1 }).lean(),
+            Track.aggregate(totalPlaysPipeline) // <-- Выполняем новый запрос
         ]);
 
         await Artist.populate(topTracksAggregation, { path: 'artist', select: 'name _id' });
         await Album.populate(topTracksAggregation, { path: 'album', select: 'title coverArtUrl' });
+
         if (!artist || artist.status !== 'approved') {
             return res.status(404).json({ message: 'Артист не найден.' });
         }
@@ -327,14 +329,49 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             return acc;
         }, []);
 
-
-        res.json({ artist, topTracks: processedTopTracks, albums, featuredOn: featuredOnAlbums, singles });
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Добавляем новые данные в ответ ---
+        const totalPlayCount = totalPlaysResult.length > 0 ? totalPlaysResult[0].totalPlayCount : 0;
+        const subscriberCount = artist.subscribers?.length || 0;
+        const isSubscribed = artist.subscribers?.some(id => id.equals(requesterId)) || false;
+        
+        res.json({ artist, topTracks: processedTopTracks, albums, featuredOn: featuredOnAlbums, singles, totalPlayCount, subscriberCount, isSubscribed });
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ 4 ---
 
     } catch (error) {
         console.error("Ошибка загрузки данных артиста:", error);
         res.status(500).json({ message: 'Ошибка сервера при загрузке данных артиста.' });
     }
 });
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 5: Новые маршруты для подписки ---
+router.post('/artist/:artistId/subscribe', authMiddleware, async (req, res) => {
+    try {
+        const { artistId } = req.params;
+        const userId = req.user.userId;
+
+        await User.findByIdAndUpdate(userId, { $addToSet: { subscribedArtists: artistId } });
+        await Artist.findByIdAndUpdate(artistId, { $addToSet: { subscribers: userId } });
+
+        res.json({ message: 'Вы подписались на артиста.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при подписке.' });
+    }
+});
+
+router.post('/artist/:artistId/unsubscribe', authMiddleware, async (req, res) => {
+    try {
+        const { artistId } = req.params;
+        const userId = req.user.userId;
+
+        await User.findByIdAndUpdate(userId, { $pull: { subscribedArtists: artistId } });
+        await Artist.findByIdAndUpdate(artistId, { $pull: { subscribers: userId } });
+
+        res.json({ message: 'Вы отписались от артиста.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при отписке.' });
+    }
+});
+// --- КОНЕЦ ИСПРАВЛЕНИЯ 5 ---
 
 router.get('/search-all', authMiddleware, async (req, res) => {
     try {

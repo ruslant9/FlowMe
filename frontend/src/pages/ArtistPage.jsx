@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useTitle from '../hooks/useTitle';
-import { Loader2, Play, ArrowLeft, Shuffle, Info } from 'lucide-react';
+import { Loader2, Play, ArrowLeft, Shuffle, Info, Users, UserPlus, Check } from 'lucide-react';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
@@ -11,10 +11,9 @@ import AlbumCard from '../components/music/AlbumCard';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
 import toast from 'react-hot-toast';
 import ArtistInfoPanel from '../components/music/ArtistInfoPanel';
-import { AnimatePresence } from 'framer-motion';
 
 const API_URL = import.meta.env.VITE_API_URL;
-const INITIAL_DISPLAY_LIMIT = 8; // --- ИСПРАВЛЕНИЕ: Увеличиваем лимит для соответствия новому гриду ---
+const INITIAL_DISPLAY_LIMIT = 8;
 
 const ArtistPage = () => {
     const { artistId } = useParams();
@@ -73,12 +72,39 @@ const ArtistPage = () => {
             });
         }
     };
+    
+    const handleSubscribeToggle = async () => {
+        if (!artistData) return;
+        const wasSubscribed = artistData.isSubscribed;
+        
+        setArtistData(prev => ({
+            ...prev,
+            isSubscribed: !wasSubscribed,
+            subscriberCount: wasSubscribed ? prev.subscriberCount - 1 : prev.subscriberCount + 1
+        }));
+
+        try {
+            const token = localStorage.getItem('token');
+            const endpoint = wasSubscribed ? 'unsubscribe' : 'subscribe';
+            await axios.post(`${API_URL}/api/music/artist/${artistId}/${endpoint}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        } catch (error) {
+            toast.error('Не удалось обновить подписку.');
+            setArtistData(prev => ({
+                ...prev,
+                isSubscribed: wasSubscribed,
+                subscriberCount: wasSubscribed ? prev.subscriberCount + 1 : prev.subscriberCount - 1
+            }));
+        }
+    };
+
 
     if (loading || !artistData) {
         return <div className="flex-1 p-8 flex items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-slate-400" /></div>;
     }
 
-    const { artist, topTracks, albums, featuredOn, singles } = artistData;
+    const { artist, topTracks, albums, featuredOn, singles, totalPlayCount, subscriberCount, isSubscribed } = artistData;
     
     const displayedAlbums = showAllAlbums ? albums : albums.slice(0, INITIAL_DISPLAY_LIMIT);
     const displayedSingles = showAllSingles ? singles : singles.slice(0, INITIAL_DISPLAY_LIMIT);
@@ -92,7 +118,6 @@ const ArtistPage = () => {
                 onClose={() => setIsInfoPanelOpen(false)}
             />
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем шапку --- */}
                 <div 
                     className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300"
                     style={{ backgroundImage: gradient }}
@@ -110,17 +135,24 @@ const ArtistPage = () => {
                     </button>
                     
                     <div className="relative">
-                        <div className="flex items-center space-x-6">
-                            <div className="flex-shrink-0">
+                        <div className="flex flex-col space-y-4">
+                            <div className="flex items-center space-x-6">
                                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
-                            </div>
-                            <div>
                                 <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{artist.name}</h1>
+                            </div>
+                            <div className="flex items-center space-x-4 text-sm font-semibold" style={{ color: textColor }}>
+                                <div className="flex items-center space-x-1.5">
+                                    <Users size={16} />
+                                    <span>{subscriberCount.toLocaleString('ru-RU')} подписчиков</span>
+                                </div>
+                                <div className="flex items-center space-x-1.5">
+                                    <Play size={16} fill="currentColor" />
+                                    <span>{totalPlayCount.toLocaleString('ru-RU')} прослушиваний</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                 {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                 <div className="p-6 md:p-8 relative bg-slate-100 dark:bg-slate-900">
                     <div className="flex items-center space-x-4 mb-8">
@@ -137,6 +169,18 @@ const ArtistPage = () => {
                         </button>
                         <button onClick={() => setIsInfoPanelOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Об исполнителе">
                             <Info />
+                        </button>
+                        <button 
+                            onClick={handleSubscribeToggle}
+                            className={`px-6 py-3 font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-all duration-200 text-sm
+                                ${isSubscribed 
+                                    ? 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white' 
+                                    : 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white'
+                                }`
+                            }
+                        >
+                            {isSubscribed ? <Check size={18} /> : <UserPlus size={18} />}
+                            <span>{isSubscribed ? 'Вы подписаны' : 'Подписаться'}</span>
                         </button>
                     </div>
                     
@@ -165,9 +209,7 @@ const ArtistPage = () => {
                         <div>
                             <hr className="my-12 border-slate-200 dark:border-slate-700/50" />
                             <h2 className="text-2xl font-bold mb-4">Альбомы</h2>
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем классы грида --- */}
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 {displayedAlbums.map(album => (
                                     <AlbumCard key={album._id} album={album} />
                                 ))}
@@ -186,9 +228,7 @@ const ArtistPage = () => {
                         <div>
                             <hr className="my-12 border-slate-200 dark:border-slate-700/50" />
                             <h2 className="text-2xl font-bold mb-4">Сольные треки (синглы)</h2>
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем классы грида --- */}
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 {displayedSingles.map(single => {
                                     const singleAsAlbum = {
                                         _id: single._id,
@@ -215,9 +255,7 @@ const ArtistPage = () => {
                          <div>
                             <hr className="my-12 border-slate-200 dark:border-slate-700/50" />
                             <h2 className="text-2xl font-bold mb-4">Участие в других релизах</h2>
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем классы грида --- */}
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 {featuredOn.map(album => (
                                     <AlbumCard key={album._id} album={album} />
                                 ))}

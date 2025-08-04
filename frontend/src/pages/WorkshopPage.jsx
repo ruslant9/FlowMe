@@ -1,12 +1,12 @@
 // frontend/src/pages/WorkshopPage.jsx
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Fragment } from 'react'; // <-- НОВЫЙ ИМПОРТ
+import { Fragment } from 'react';
 import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown, Filter, ChevronDown, Check } from 'lucide-react'; // <-- НОВЫЕ ИКОНКИ
-import { Menu, Transition } from '@headlessui/react'; // <-- НОВЫЙ ИМПОРТ
+import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown, Filter, ChevronDown, Check } from 'lucide-react';
+import { Menu, Transition } from '@headlessui/react';
 import CreateEditPackModal from '../components/workshop/CreateEditPackModal';
 import PackCard from '../components/workshop/PackCard';
 import { useUser } from '../context/UserContext';
@@ -56,9 +56,7 @@ const WorkshopPage = () => {
     const { showConfirmation } = useModal();
     
     const [activeTypeFilter, setActiveTypeFilter] = useState('all');
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Новое состояние для Premium фильтра ---
-    const [premiumFilter, setPremiumFilter] = useState('all'); // 'all', 'free', 'premium'
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
+    const [premiumFilter, setPremiumFilter] = useState('all');
     
     const [myPacks, setMyPacks] = useState([]);
     const [addedPacks, setAddedPacks] = useState([]);
@@ -86,7 +84,6 @@ const WorkshopPage = () => {
         }
     }, []);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Добавляем premiumFilter в fetchData ---
     const fetchData = useCallback(async (tab, query = '', page = 1, type = 'all', premFilter = 'all') => {
         setLoading(true);
         try {
@@ -102,7 +99,7 @@ const WorkshopPage = () => {
             } else if (tab === 'search') {
                 const searchParams = new URLSearchParams({ q: query, page });
                 if (type !== 'all') searchParams.append('type', type);
-                if (premFilter !== 'all') searchParams.append('isPremium', premFilter === 'premium'); // Добавляем новый параметр
+                if (premFilter !== 'all') searchParams.append('isPremium', premFilter === 'premium');
                 
                 const res = await axios.get(`${API_URL}/api/workshop/packs/search?${searchParams.toString()}`, headers);
                 setSearchResults(res.data.packs);
@@ -115,13 +112,11 @@ const WorkshopPage = () => {
             setLoading(false);
         }
     }, [fetchAddedPacksData]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
     
     useEffect(() => {
         fetchAddedPacksData();
     }, [fetchAddedPacksData]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Добавляем premiumFilter в зависимости ---
     useEffect(() => {
         fetchData(activeTab, searchQuery, 1, activeTypeFilter, premiumFilter);
     }, [activeTab, activeTypeFilter, premiumFilter, fetchData]);
@@ -134,7 +129,6 @@ const WorkshopPage = () => {
             return () => clearTimeout(debounce);
         }
     }, [searchQuery, activeTab, activeTypeFilter, premiumFilter, fetchData]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 
     const handleCreatePack = () => {
         setEditingPack(null);
@@ -310,15 +304,14 @@ const WorkshopPage = () => {
                     )}
                 </div>
                 
-                <div className="flex space-x-2 border-b border-slate-300 dark:border-slate-700 mb-6">
+                <div className="flex flex-wrap gap-x-2 border-b border-slate-300 dark:border-slate-700 mb-6">
                     <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
                     <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
                     <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск паков</TabButton>
                 </div>
 
-                {/* --- ИЗМЕНЕНИЕ: Объединяем фильтры в одну строку --- */}
                 <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-                    <div className="flex items-center space-x-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <div className="flex items-center flex-wrap gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
                         <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
                         <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
                         <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>

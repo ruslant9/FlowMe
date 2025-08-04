@@ -13,16 +13,6 @@ import PostViewModal from '../components/modals/PostViewModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- ИЗМЕНЕНИЕ: Добавляем хелпер-функцию для изображений ---
-const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
-    }
-    return `${API_URL}/${url}`;
-};
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
 const TabButton = ({ active, onClick, children, count }) => (
     <button
         onClick={onClick}
@@ -279,12 +269,12 @@ const NotificationsPage = () => {
                         )}
                     </div>
 
-                    <div className="flex items-center space-x-2 mb-4 border-b border-slate-200 dark:border-white/10 pb-4">
+                    <div className="flex items-center flex-wrap gap-2 mb-4 border-b border-slate-200 dark:border-white/10 pb-4">
                         <TabButton active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} count={notificationsData.personal.unreadCount}><User size={16} /> <span>Личные</span></TabButton>
                         <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
                     </div>
 
-                    <div className="flex items-center space-x-2 mb-6">
+                    <div className="flex items-center flex-wrap gap-2 mb-6">
                         {subTabs.map(tab => (
                             <SubTabButton key={tab.id} active={activeFilter === tab.id} onClick={() => setActiveFilter(tab.id)}>
                                 <tab.icon size={14} /> <span>{tab.name}</span>

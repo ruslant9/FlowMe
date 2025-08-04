@@ -8,7 +8,7 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import { useDynamicAccent } from '../../hooks/useDynamicAccent';
 import Tippy from '@tippyjs/react/headless';
 import AddToPlaylistModal from '../modals/AddToPlaylistModal';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 const formatTime = (seconds) => {
     if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -80,7 +80,6 @@ const FullScreenPlayer = () => {
     const [isMenuOpen, setMenuOpen] = useState(false);
     const [isAddToPlaylistModalOpen, setAddToPlaylistModalOpen] = useState(false);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояния и рефы для параллакса ---
     const [rotate, setRotate] = useState({ x: 0, y: 0 });
     const parallaxRef = useRef(null);
 
@@ -94,9 +93,8 @@ const FullScreenPlayer = () => {
         const xPct = mouseX / width - 0.5;
         const yPct = mouseY / height - 0.5;
         
-        // Умножаем на ~30, чтобы получить максимальный наклон в 15 градусов
         setRotate({
-            x: yPct * -30, // Инвертируем X для естественного наклона
+            x: yPct * -30,
             y: xPct * 30
         });
     };
@@ -104,8 +102,6 @@ const FullScreenPlayer = () => {
     const handleMouseLeave = () => {
         setRotate({ x: 0, y: 0 });
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
 
     const { gradient } = useDynamicAccent(track?.albumArtUrl);
 
@@ -137,12 +133,11 @@ const FullScreenPlayer = () => {
                     </div>
 
                     <div className="flex-1 flex items-center justify-center w-full max-w-md">
-                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Обертка для параллакса и тени --- */}
                         <motion.div
                             ref={parallaxRef}
                             onMouseMove={handleMouseMove}
                             onMouseLeave={handleMouseLeave}
-                            style={{ perspective: '1000px' }} // Включаем 3D-перспективу
+                            style={{ perspective: '1000px' }}
                         >
                             <motion.div
                                 animate={{
@@ -155,7 +150,7 @@ const FullScreenPlayer = () => {
                                     rotateX: { type: 'spring', stiffness: 400, damping: 30 },
                                     rotateY: { type: 'spring', stiffness: 400, damping: 30 }
                                 }}
-                                style={{ transformStyle: 'preserve-3d' }} // Важно для дочерних 3D-трансформаций
+                                style={{ transformStyle: 'preserve-3d' }}
                             >
                                 <CachedImage 
                                     key={track._id}
@@ -163,7 +158,7 @@ const FullScreenPlayer = () => {
                                     alt={track.title} 
                                     className="w-full aspect-square rounded-2xl object-cover" 
                                     style={{
-                                        filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.5))' // Глубокая и мягкая тень
+                                        filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.5))'
                                     }}
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
@@ -171,7 +166,6 @@ const FullScreenPlayer = () => {
                                 />
                             </motion.div>
                         </motion.div>
-                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     </div>
                     
                     <div className="w-full max-w-md">
@@ -207,12 +201,14 @@ const FullScreenPlayer = () => {
                                     onClickOutside={() => setMenuOpen(false)}
                                     render={attrs => (
                                         <div className="ios-glass-popover w-52 rounded-xl shadow-lg p-1" {...attrs}>
+                                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                             <button 
                                                 onClick={() => { setAddToPlaylistModalOpen(true); setMenuOpen(false); }}
-                                                className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                                                className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700"
                                             >
                                                 <PlusCircle size={16}/> <span>Добавить в плейлист</span>
                                             </button>
+                                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                             <div className="tippy-arrow" data-popper-arrow></div>
                                         </div>
                                     )}

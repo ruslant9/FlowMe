@@ -1,4 +1,5 @@
 // frontend/src/pages/PlaylistPage.jsx
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -13,11 +14,10 @@ import AddTracksToPlaylistModal from '../components/modals/AddTracksToPlaylistMo
 import { useModal } from '../hooks/useModal';
 import toast from 'react-hot-toast';
 import ColorThief from 'colorthief';
-import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src, alt, className, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -266,7 +266,7 @@ const PlaylistPage = () => {
                         </div>
                     </div>
                     
-                    <div className="flex items-center justify-center space-x-4 mb-8">
+                    <div className="flex items-center justify-center flex-wrap gap-2 mb-8">
                         <button onClick={handlePlayPlaylist} className="px-6 py-3 bg-yellow-400 text-black font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
                             <Play size={24} fill="currentColor" />
                             <span>Слушать</span>
@@ -306,9 +306,9 @@ const PlaylistPage = () => {
                                 track={track}
                                 index={index + 1}
                                 onPlay={() => handleSelectTrack(track)}
-                                isCurrent={track.spotifyId === currentTrack?.spotifyId}
+                                isCurrent={track._id === currentTrack?._id}
                                 isPlaying={isPlaying}
-                                isSaved={myMusicTrackIds?.has(track.youtubeId)}
+                                isSaved={myMusicTrackIds?.has(track.sourceId || track._id)}
                                 onToggleSave={onToggleLike}
                                 onRemoveFromPlaylist={isOwner ? handleRemoveTrack : null}
                             />

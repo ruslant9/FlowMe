@@ -1,3 +1,5 @@
+// frontend/src/pages/AdminPage.jsx
+
 import React, { useState } from 'react';
 import useTitle from '../hooks/useTitle';
 import AdminSubmissionsList from '../components/admin/AdminSubmissionsList';
@@ -29,7 +31,7 @@ const AdminPage = () => {
             <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
                 <h1 className="text-3xl font-bold mb-6">Панель администратора</h1>
                 
-                <div className="flex space-x-2 border-b border-slate-300 dark:border-slate-700 mb-6">
+                <div className="flex flex-wrap space-x-2 border-b border-slate-300 dark:border-slate-700 mb-6">
                     <TabButton 
                         active={activeTab === 'submissions'} 
                         onClick={() => setActiveTab('submissions')}
@@ -37,7 +39,6 @@ const AdminPage = () => {
                     >
                         Заявки на модерацию
                     </TabButton>
-                    {/* --- ИЗМЕНЕНИЕ: Новая вкладка для просмотра контента --- */}
                     <TabButton 
                         active={activeTab === 'content'} 
                         onClick={() => setActiveTab('content')}
@@ -45,7 +46,6 @@ const AdminPage = () => {
                     >
                         Управление контентом
                     </TabButton>
-                     {/* --- НОВАЯ ВКЛАДКА --- */}
                     <TabButton 
                         active={activeTab === 'users'} 
                         onClick={() => setActiveTab('users')}
@@ -53,7 +53,6 @@ const AdminPage = () => {
                     >
                         Управление пользователями
                     </TabButton>
-                    {/* --- ИЗМЕНЕНИЕ: Переименованная вкладка для создания --- */}
                     <TabButton 
                         active={activeTab === 'create'} 
                         onClick={() => setActiveTab('create')}

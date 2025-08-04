@@ -6,25 +6,22 @@ const Playlist = require('../models/Playlist');
 const Track = require('../models/Track');
 const User = require('../models/User');
 const { sanitize } = require('../utils/sanitize');
+const mongoose = require('mongoose'); // <-- УБЕДИТЕСЬ, ЧТО MONGOOSE ИМПОРТИРОВАН
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Хелпер-функция для обновления обложки ---
 async function updatePlaylistCover(playlist) {
     if (playlist.tracks.length > 0) {
-        // Чтобы не сканировать огромные плейлисты, берем ID первых 50 треков
         const trackIdsToScan = playlist.tracks.slice(0, 50);
 
         const potentialCoverTracks = await Track.find({ '_id': { $in: trackIdsToScan } })
-            .populate('album', 'coverArtUrl') // Важно, чтобы получить обложку альбома
+            .populate('album', 'coverArtUrl')
             .select('albumArtUrl album')
-            .lean(); // .lean() для производительности
+            .lean();
 
-        // Создаем Map, чтобы сохранить порядок и быстро получать треки по ID
         const tracksMap = new Map(potentialCoverTracks.map(t => [t._id.toString(), t]));
 
         const coverUrls = [];
-        // Проходим по оригинальному списку ID, чтобы сохранить порядок
         for (const trackId of trackIdsToScan) {
-            if (coverUrls.length >= 4) break; // Нам нужно не более 4 обложек
+            if (coverUrls.length >= 4) break;
 
             const track = tracksMap.get(trackId.toString());
             if (track) {
@@ -40,7 +37,8 @@ async function updatePlaylistCover(playlist) {
     }
     return playlist;
 }
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+// ... (маршруты GET '/', POST '/', GET '/:playlistId', POST '/:playlistId/play' остаются без изменений) ...
 
 router.get('/', authMiddleware, async (req, res) => {
     try {
@@ -167,6 +165,7 @@ router.delete('/:playlistId', authMiddleware, async (req, res) => {
     }
 });
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Переработанная логика добавления треков ---
 router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
     try {
         const { trackIds } = req.body;
@@ -180,7 +179,21 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
         if (!playlist) {
             return res.status(404).json({ message: 'Плейлист не найден.' });
         }
-        const tracksToAdd = trackIds.filter(id => !playlist.tracks.some(trackId => trackId.equals(id)));
+
+        // 1. Находим все треки по ID, которые прислал клиент
+        const tracksFromClient = await Track.find({ '_id': { $in: trackIds } }).select('sourceId type').lean();
+        
+        // 2. Определяем ID оригинальных библиотечных треков
+        const libraryTrackIds = tracksFromClient.map(track => {
+            // Если у трека есть sourceId, значит это 'saved' или 'recent' копия. Используем sourceId.
+            // Иначе, это и есть оригинальный 'library_track'. Используем его _id.
+            return track.sourceId ? track.sourceId : track._id;
+        });
+
+        // 3. Отфильтровываем ID тех треков, которые уже есть в плейлисте, чтобы избежать дубликатов
+        const tracksToAdd = libraryTrackIds.filter(id => !playlist.tracks.some(trackId => trackId.equals(id)));
+        
+        // 4. Добавляем только уникальные ID библиотечных треков
         playlist.tracks.push(...tracksToAdd);
 
         await updatePlaylistCover(playlist);
@@ -189,9 +202,12 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
         const updatedPlaylist = await Playlist.findById(playlist._id).populate({ path: 'tracks', populate: { path: 'artist album' } }).populate('user', 'username fullName avatar');
         res.json(updatedPlaylist);
     } catch (error) {
+        console.error("Ошибка при добавлении треков в плейлист:", error); // Улучшенное логирование
         res.status(500).json({ message: 'Ошибка при добавлении треков в плейлист.' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
 router.delete('/:playlistId/tracks/:trackId', authMiddleware, async (req, res) => {
     try {
