@@ -284,7 +284,7 @@ const MusicPage = () => {
                                     <h2 className="text-2xl font-bold mb-4">Хиты платформы</h2>
                                      <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
                                         {mainPageData.popularHits.map(track => (
-                                            <div key={track._id} className="w-1/3 sm:w-1/4 md:w-1/5 lg:w-1/6 flex-shrink-0">
+                                            <div key={track._id} className="w-1/4 sm:w-1/5 md:w-1/6 lg:w-1/8 flex-shrink-0">
                                                 <RecommendationCard track={track} onSelectTrack={() => playTrack(track, mainPageData.popularHits)} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying && track._id === currentTrack?._id} isLoading={loadingTrackId === track._id} onPlayPause={togglePlayPause} />
                                             </div>
                                         ))}
@@ -296,7 +296,7 @@ const MusicPage = () => {
                                     <h2 className="text-2xl font-bold mb-4">Новинки для вас</h2>
                                      <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
                                         {mainPageData.newReleases.map(track => (
-                                             <div key={track._id} className="w-1/3 sm:w-1/4 md:w-1/5 lg:w-1/6 flex-shrink-0">
+                                             <div key={track._id} className="w-1/4 sm:w-1/5 md:w-1/6 lg:w-1/8 flex-shrink-0">
                                                 <RecommendationCard track={track} onSelectTrack={() => playTrack(track, mainPageData.newReleases)} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying && track._id === currentTrack?._id} isLoading={loadingTrackId === track._id} onPlayPause={togglePlayPause} />
                                             </div>
                                         ))}

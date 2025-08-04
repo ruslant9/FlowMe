@@ -670,7 +670,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
                 }
             },
             { $sort: { totalPlayCount: -1 } },
-            { $limit: 6 },
+            { $limit: 11 },
             {
                 $lookup: {
                     from: "artists",
@@ -686,6 +686,20 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
         ]);
 
         res.json({ newReleases, popularHits, popularArtists });
+
+         const uniqueNewReleasesMap = new Map();
+        newReleases.forEach(track => uniqueNewReleasesMap.set(track._id.toString(), track));
+        const uniqueNewReleases = Array.from(uniqueNewReleasesMap.values());
+
+        const uniquePopularHitsMap = new Map();
+        popularHits.forEach(track => uniquePopularHitsMap.set(track._id.toString(), track));
+        const uniquePopularHits = Array.from(uniquePopularHitsMap.values());
+
+        res.json({ 
+            newReleases: uniqueNewReleases, 
+            popularHits: uniquePopularHits, 
+            popularArtists 
+        });
 
     } catch (error) {
         console.error("Ошибка при загрузке рекомендаций:", error);
