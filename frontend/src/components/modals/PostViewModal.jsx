@@ -20,7 +20,9 @@ import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
-import Tippy from '@tippyjs/react/headless'; // --- ИСПРАВЛЕНИЕ 1: Добавлен недостающий импорт ---
+import Tippy from '@tippyjs/react/headless'; 
+import { format } from 'date-fns';
+import AnimatedAccent from '../AnimatedAccent';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
@@ -482,7 +484,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             {(activePost.text || activePost.attachedTrack || activePost.poll) && (
                                                 <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-4 py-2 mb-4 space-y-3">
                                                     {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
-                                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2 --- */}
                                                     {activePost.attachedTrack && 
                                                         <AttachedTrack 
                                                             track={{
@@ -491,7 +492,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                             }} 
                                                         />
                                                     }
-                                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                                                     {activePost.poll && <PollDisplay poll={activePost.poll} onVote={handleVote} />}
                                                 </div>
                                             )}
@@ -572,38 +572,64 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                               </div>
                                           )}
 
-                                          <form onSubmit={handleCommentSubmit} className="flex items-center space-x-2">
+                                          <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3">
                                               {commentAs && (
-                                                  <Listbox value={commentAs} onChange={setCommentAs}>
-                                                      <div className="relative">
-                                                          <Listbox.Button className="focus:outline-none">
-                                                              <Avatar 
+                                                  <Tippy
+                                                      interactive
+                                                      placement="top-start"
+                                                      disabled={commentingOptions.length <= 1}
+                                                      render={attrs => (
+                                                          <AnimatePresence>
+                                                              <motion.div
+                                                                  initial={{ opacity: 0, y: 10 }}
+                                                                  animate={{ opacity: 1, y: 0 }}
+                                                                  exit={{ opacity: 0, y: 10 }}
+                                                                  className="ios-glass-popover p-2 rounded-xl shadow-lg w-72" {...attrs}
+                                                              >
+                                                                  <div className="grid grid-cols-2 gap-2">
+                                                                      {commentingOptions.map(option => {
+                                                                          const isSelected = commentAs?._id === option._id;
+                                                                          return (
+                                                                              <button
+                                                                                  type="button"
+                                                                                  key={option._id || 'personal'}    
+                                                                                  onClick={() => setCommentAs(option)}
+                                                                                  className={`p-2 rounded-lg flex flex-col items-center justify-center text-center transition-colors ${isSelected ? 'bg-blue-600/20 ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                                                                              >
+                                                                                  <Avatar
+                                                                                      username={option.type === 'user' ? option.username : option.name}
+                                                                                      fullName={option.name}
+                                                                                      avatarUrl={getImageUrl(option.avatar)}
+                                                                                      size="md"
+                                                                                      isPremium={option.premium?.isActive}
+                                                                                      customBorder={option.premiumCustomization?.avatarBorder}
+                                                                                  />
+                                                                                  <div className="flex items-center">
+                                                                                      <span className="text-xs font-semibold mt-2 truncate">{option.name}</span>
+                                                                                      {option.type === 'user' && option.premium?.isActive && (
+                                                                                          <span className="ml-1 mt-2 premium-shimmer-text text-[10px] font-bold">Premium</span>
+                                                                                      )}
+                                                                                  </div>
+                                                                                  <span className="text-xs text-slate-500 dark:text-slate-400">{option.type === 'user' ? 'Личный профиль' : 'Сообщество'}</span>
+                                                                              </button>
+                                                                          )
+                                                                      })}
+                                                                  </div>
+                                                              </motion.div>
+                                                          </AnimatePresence>
+                                                      )}
+                                                  >
+                                                      <button type="button" className="focus:outline-none">
+                                                          <Avatar 
                                                                     username={commentAs.type === 'user' ? commentAs.username : commentAs.name}
+                                                                    fullName={commentAs.name}
                                                                     avatarUrl={getImageUrl(commentAs.avatar)}
+                                                                    isPremium={commentAs.premium?.isActive}
+                                                                    customBorder={commentAs.premiumCustomization?.avatarBorder}
                                                                     size="sm"
                                                                 />
-                                                          </Listbox.Button>
-                                                          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                                                              <Listbox.Options className="absolute bottom-full mb-2 w-56 max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-20">
-                                                                  {commentingOptions.map((option) => (
-                                                                      <Listbox.Option key={option._id || 'personal'} className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`} value={option}>
-                                                                          {({ selected }) => (
-                                                                              <>
-                                                                                  <div className="flex items-center space-x-2">
-                                                                                      <Avatar username={option.username || option.name} avatarUrl={getImageUrl(option.avatar)} size="sm" />
-                                                                                      <div className="flex flex-col items-start">
-                                                                                          <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{option.name}</span>
-                                                                                      </div>
-                                                                                  </div>
-                                                                                  {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-white"><Check className="h-5 w-5" aria-hidden="true" /></span> : null}
-                                                                              </>
-                                                                          )}
-                                                                      </Listbox.Option>
-                                                                  ))}
-                                                              </Listbox.Options>
-                                                          </Transition>
-                                                      </div>
-                                                  </Listbox>
+                                                      </button>
+                                                  </Tippy>
                                               )}
                                               <div className="relative flex-1">
                                                   <input 
@@ -617,7 +643,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                           "Добавить комментарий..."
                                                       }
                                                       disabled={!!editingCommentId || commentSelectionMode || isSendingComment}
-                                                      className="w-full bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 pr-10 border border-slate-300 dark:border-slate-700 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"/>
+                                                      className="w-full bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"/>
                                                   
                                                   {isPickerVisible && (
                                                       <div ref={pickerRef} className={`absolute z-20 right-0 ${pickerPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
