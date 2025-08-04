@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PostViewModal from './modals/PostViewModal';
 import { Listbox, Transition } from '@headlessui/react';
 import EmojiPickerPopover from './EmojiPickerPopover';
-import AttachedTrack from './AttachedTrack'; // ИСПРАВЛЕННЫЙ ПУТЬ
+import AttachedTrack from './music/AttachedTrack'; // ИСПРАВЛЕННЫЙ ПУТЬ
 import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';

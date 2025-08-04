@@ -1,4 +1,4 @@
-// frontend/src/components/AttachedTrack.jsx
+// frontend/src/components/music/AttachedTrack.jsx
 
 import React from 'react';
 import { Play, Pause, Music, Loader2 } from 'lucide-react';
