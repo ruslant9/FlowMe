@@ -115,12 +115,10 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
         });
 
         if (existingSavedTrack) {
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Удаляем ID этого трека из всех плейлистов пользователя ---
             await Playlist.updateMany(
                 { user: userId },
                 { $pull: { tracks: existingSavedTrack._id } }
             );
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             await Track.deleteOne({ _id: existingSavedTrack._id });
             res.status(200).json({ message: 'Трек удален из Моей музыки.', saved: false });
         } else {
@@ -190,9 +188,7 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
             .populate('artist', 'name avatarUrl')
             .populate({
                 path: 'tracks',
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем playCount в выборку ---
                 select: 'title artist durationMs isExplicit playCount',
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
                 populate: { path: 'artist', select: 'name _id' }
             })
             .lean();
@@ -201,9 +197,7 @@ router.get('/album/:albumId', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Альбом не найден.' });
         }
         
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Подсчитываем общее количество прослушиваний альбома ---
         const totalPlayCount = album.tracks.reduce((sum, track) => sum + (track.playCount || 0), 0);
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
         const processedTracks = album.tracks.map(track => ({
             ...track,
@@ -288,12 +282,10 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             { $limit: 5 }
         ];
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Добавляем агрегацию для общего числа прослушиваний ---
         const totalPlaysPipeline = [
             { $match: { artist: artistId, status: 'approved' } },
-            { $group: { _id: '$artist', totalPlayCount: { $sum: '$playCount' } } }
+            { $group: { _id: null, totalPlayCount: { $sum: '$playCount' } } }
         ];
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 
         const [artist, topTracksAggregation, albums, featuredTracks, singles, totalPlaysResult] = await Promise.all([
             Artist.findById(artistId).lean(),
@@ -301,7 +293,7 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             Album.find({ artist: artistId, status: 'approved' }).populate('artist', 'name').sort({ releaseDate: -1, createdAt: -1 }).lean(),
             Track.find({ artist: artistId, status: 'approved', album: { $ne: null } }).populate({ path: 'album', populate: { path: 'artist', select: 'name _id' } }).lean(),
             Track.find({ artist: artistId, status: 'approved', album: null }).populate('artist', 'name _id').sort({ releaseDate: -1, createdAt: -1 }).lean(),
-            Track.aggregate(totalPlaysPipeline) // <-- Выполняем новый запрос
+            Track.aggregate(totalPlaysPipeline)
         ]);
 
         await Artist.populate(topTracksAggregation, { path: 'artist', select: 'name _id' });
@@ -329,13 +321,11 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
             return acc;
         }, []);
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Добавляем новые данные в ответ ---
         const totalPlayCount = totalPlaysResult.length > 0 ? totalPlaysResult[0].totalPlayCount : 0;
         const subscriberCount = artist.subscribers?.length || 0;
         const isSubscribed = artist.subscribers?.some(id => id.equals(requesterId)) || false;
         
         res.json({ artist, topTracks: processedTopTracks, albums, featuredOn: featuredOnAlbums, singles, totalPlayCount, subscriberCount, isSubscribed });
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ 4 ---
 
     } catch (error) {
         console.error("Ошибка загрузки данных артиста:", error);
@@ -343,7 +333,6 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 5: Новые маршруты для подписки ---
 router.post('/artist/:artistId/subscribe', authMiddleware, async (req, res) => {
     try {
         const { artistId } = req.params;
@@ -371,7 +360,6 @@ router.post('/artist/:artistId/unsubscribe', authMiddleware, async (req, res) =>
         res.status(500).json({ message: 'Ошибка при отписке.' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 5 ---
 
 router.get('/search-all', authMiddleware, async (req, res) => {
     try {

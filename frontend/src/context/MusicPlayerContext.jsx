@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Импортируем сервис кеширования аудио ---
+import { AudioCache } from '../utils/AudioCacheService';
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -41,6 +44,9 @@ export const MusicPlayerProvider = ({ children }) => {
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
     const notificationTimeoutRef = useRef(null);
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Ref для хранения текущего blob URL для очистки ---
+    const currentObjectUrlRef = useRef(null);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const logMusicAction = useCallback(async (track, action) => {
         try {
@@ -61,7 +67,6 @@ export const MusicPlayerProvider = ({ children }) => {
                 return;
             }
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-            // Теперь мы используем sourceId, который ссылается на _id оригинального library_track
             const sourceIds = res.data.map(track => track.sourceId).filter(Boolean);
             setMyMusicTrackIds(new Set(sourceIds));
         } catch (error) {
@@ -77,18 +82,16 @@ export const MusicPlayerProvider = ({ children }) => {
 
     useEffect(() => {
         if (currentTrack) {
-            // Проверяем, есть ли _id текущего трека (library_track) в нашем сете sourceId's
             setIsLiked(myMusicTrackIds.has(currentTrack._id));
         } else {
             setIsLiked(false);
         }
     }, [currentTrack, myMusicTrackIds]);
     
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Переработанная функция playTrack с логикой кеширования ---
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
-        if (isLoadingPlayback) {
-            return;
-        }
+        if (isLoadingPlayback) return;
         if (abortControllerRef.current) {
             abortControllerRef.current.abort('New track selected');
         }
@@ -98,20 +101,46 @@ export const MusicPlayerProvider = ({ children }) => {
         setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
         setIsPlaying(false);
+        
+        // Очищаем предыдущий blob URL
+        if (currentObjectUrlRef.current) {
+            URL.revokeObjectURL(currentObjectUrlRef.current);
+            currentObjectUrlRef.current = null;
+        }
 
         try {
             const { startShuffled = false, startRepeat = false } = options;
             logMusicAction(trackData, 'listen');
             
             const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
-                headers: { Authorization: `Bearer ${token}` },
-                signal: abortControllerRef.current.signal
-            });
-
-            const streamUrl = res.data.url;
             const audio = audioRef.current;
-            audio.src = streamUrl;
+            let audioUrl;
+
+            // 1. Проверяем кеш
+            const cachedBlob = await AudioCache.getAudio(trackData._id);
+
+            if (cachedBlob) {
+                audioUrl = URL.createObjectURL(cachedBlob);
+            } else {
+                // 2. Если в кеше нет, загружаем из сети
+                const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    signal: abortControllerRef.current.signal
+                });
+
+                const streamUrl = res.data.url;
+                
+                // Используем fetch для получения Blob
+                const audioResponse = await fetch(streamUrl);
+                const audioBlob = await audioResponse.blob();
+
+                // 3. Сохраняем в кеш
+                await AudioCache.setAudio(trackData._id, audioBlob);
+                audioUrl = URL.createObjectURL(audioBlob);
+            }
+            
+            currentObjectUrlRef.current = audioUrl; // Сохраняем URL для последующей очистки
+            audio.src = audioUrl;
             audio.volume = volume;
             await audio.play();
             setIsPlaying(true);
@@ -152,6 +181,7 @@ export const MusicPlayerProvider = ({ children }) => {
             abortControllerRef.current = null;
         }
     }, [volume, logMusicAction, isLoadingPlayback]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
     const handleNextTrack = useCallback(() => {
@@ -237,9 +267,14 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
     
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем очистку blob URL при остановке плеера ---
     const stopAndClearPlayer = useCallback(() => {
         audioRef.current.pause();
         audioRef.current.src = '';
+        if (currentObjectUrlRef.current) {
+            URL.revokeObjectURL(currentObjectUrlRef.current);
+            currentObjectUrlRef.current = null;
+        }
         setIsPlaying(false);
         setCurrentTrack(null);
         setProgress(0);
@@ -248,6 +283,7 @@ export const MusicPlayerProvider = ({ children }) => {
         playlistRef.current = [];
         currentTrackIndexRef.current = -1;
     }, []);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const showPlayerNotification = (notification) => {
         if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
@@ -284,7 +320,6 @@ export const MusicPlayerProvider = ({ children }) => {
     const onToggleLike = useCallback(async (trackData) => {
         if (!trackData) return;
         
-        // ID трека в библиотеке, который мы лайкаем
         const libraryTrackId = trackData._id;
         if (!libraryTrackId) return;
 
@@ -304,12 +339,11 @@ export const MusicPlayerProvider = ({ children }) => {
 
         try {
             const token = localStorage.getItem('token');
-            // Передаем на бэкенд весь объект трека, чтобы он мог найти оригинал в библиотеке
-            await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
+            const res = await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
+            toast.success(res.data.message); // Уведомление об успехе
             if (!wasLiked) logMusicAction(trackData, 'like');
             window.dispatchEvent(new CustomEvent('myMusicUpdated'));
         } catch (error) {
-            // В случае ошибки откатываем изменения и синхронизируемся с сервером
             fetchMyMusicIds();
             toast.error('Ошибка при изменении статуса трека.');
         }

@@ -6,10 +6,8 @@ import toast from 'react-hot-toast';
 import { Loader2, Search, MicVocal, Disc, Music, ArrowUp, ArrowDown, Edit as EditIcon, Trash2 as TrashIcon } from 'lucide-react';
 import EditContentModal from './EditContentModal';
 import { useModal } from '../../hooks/useModal';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем Link для навигации ---
+import { useCachedImage } from '../../hooks/useCachedImage'; 
 import { Link } from 'react-router-dom';
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -127,12 +125,16 @@ export const AdminContentManager = () => {
         });
     };
 
-    const handleModalSuccess = () => {
-        setIsEditModalOpen(false);
-        setEditingItem(null);
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Функция теперь принимает флаг для закрытия ---
+    const handleModalSuccess = (shouldClose = true) => {
+        if (shouldClose) {
+            setIsEditModalOpen(false);
+            setEditingItem(null);
+        }
         fetchData();
         fetchAuxiliaryData();
     };
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const SortableHeader = ({ label, sortKey }) => (
         <button onClick={() => handleSort(sortKey)} className="flex items-center space-x-1 font-semibold text-slate-600 dark:text-slate-400">
@@ -159,27 +161,21 @@ export const AdminContentManager = () => {
                     </thead>
                     <tbody>
                         {items.map(item => {
-                            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Определяем путь для ссылки ---
                             const linkTo = activeType === 'artists' ? `/artist/${item._id}` :
                                            activeType === 'albums' ? `/album/${item._id}` :
                                            `/single/${item._id}`;
-                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                             
                             return (
                                 <tr key={item._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
                                     <td className="p-2">
-                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем изображение в ссылку --- */}
                                         <Link to={linkTo} target="_blank" rel="noopener noreferrer">
                                             <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
                                         </Link>
-                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     </td>
                                     <td className="p-2 font-semibold">
-                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем название в ссылку --- */}
                                         <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-blue-500 transition-colors">
                                             {item.name || item.title}
                                         </Link>
-                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     </td>
                                     {activeType !== 'artists' && (
                                         <td className="p-2 text-slate-500">

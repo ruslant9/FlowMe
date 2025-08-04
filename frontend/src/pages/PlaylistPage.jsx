@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useTitle from '../hooks/useTitle';
-import { Loader2, Play, Music, Clock, ArrowLeft, PlusCircle, Edit, Trash2, Shuffle, Repeat } from 'lucide-react';
+import { Loader2, Play, Music, Clock, ArrowLeft, PlusCircle, Edit, Trash2, Shuffle } from 'lucide-react';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 import { useUser } from '../context/UserContext';
 import Avatar from '../components/Avatar';
@@ -41,9 +41,6 @@ const PlaylistPage = () => {
 
     const imageRef = useRef(null);
     const [accentColors, setAccentColors] = useState(['#1f2937', '#111827']);
-
-    const [isShuffle, setIsShuffle] = useState(false);
-    const [isRepeat, setIsRepeat] = useState(false);
 
     const fetchPlaylist = useCallback(async () => {
         setLoading(true);
@@ -89,38 +86,18 @@ const PlaylistPage = () => {
         }
     };
 
-    const handlePlayPlaylist = () => {
+    const handlePlayPlaylist = (startShuffled = false) => {
         if (playlist && playlist.tracks.length > 0) {
             playTrack(playlist.tracks[0], playlist.tracks, {
-                playlistId: playlist._id,
-                startShuffled: isShuffle,
-                startRepeat: isRepeat
+                startShuffled: startShuffled
             });
         }
     };
 
     const handleSelectTrack = (track) => {
         playTrack(track, playlist.tracks, {
-            playlistId: playlist._id,
-            startShuffled: isShuffle,
-            startRepeat: isRepeat
+            playlistId: playlist._id
         });
-    };
-    
-    const handleToggleShuffle = () => {
-        const newShuffleState = !isShuffle;
-        setIsShuffle(newShuffleState);
-        if (newShuffleState) {
-            setIsRepeat(false);
-        }
-    };
-
-    const handleToggleRepeat = () => {
-        const newRepeatState = !isRepeat;
-        setIsRepeat(newRepeatState);
-        if (newRepeatState) {
-            setIsShuffle(false);
-        }
     };
 
     const handleAddTracks = async (trackIds) => {
@@ -236,41 +213,47 @@ const PlaylistPage = () => {
             <EditPlaylistModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} playlist={playlist} onPlaylistUpdated={handlePlaylistUpdated} />
             <AddTracksToPlaylistModal isOpen={isAddTracksModalOpen} onClose={() => setAddTracksModalOpen(false)} onAddTracks={handleAddTracks} existingTrackIds={new Set(playlist.tracks.map(t=>t._id))} />
 
-            <main className="flex-1 p-4 md:p-8">
-                <div 
-                    className="ios-glass-final rounded-3xl w-full max-w-6xl mx-auto p-6 relative dark:dynamic-gradient"
+            <main 
+                className="flex-1 overflow-y-auto"
+            >
+                <div
+                    className="sticky top-0 z-10 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300 dynamic-gradient"
                     style={{
                         '--color1': accentColors[0],
-                        '--color2': accentColors[1]
+                        '--color2': accentColors[1],
                     }}
                 >
-                    <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white z-10 transition-colors">
-                        <ArrowLeft size={16}/>
-                        <span>Назад</span>
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-lg"></div>
+                     <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">
+                        <ArrowLeft size={16}/> <span>Назад</span>
                     </button>
-
-                    <div className="flex flex-col items-center space-y-4 mb-8">
-                        <div className={`w-40 h-40 rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl ${getCoverGridClass()}`}>
-                            {renderPlaylistCover()}
+                    <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6 text-white">
+                        <div className={`w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl ${getCoverGridClass()}`}>
+                             {renderPlaylistCover()}
                         </div>
-                        <div className="flex flex-col items-center text-center mt-2">
-                            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Плейлист</span>
-                            <h1 className="text-4xl font-extrabold break-words mt-1 text-slate-900 dark:text-white">{playlist.name}</h1>
+                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                             <span className="text-sm font-bold opacity-80">Плейлист</span>
+                            <h1 className="text-4xl md:text-7xl font-extrabold break-words mt-1" style={{textShadow: '0 2px 10px rgba(0,0,0,0.5)'}}>{playlist.name}</h1>
+                            <p className="opacity-80 mt-2 max-w-lg">{playlist.description}</p>
                             <div className="flex items-center space-x-2 mt-3 text-sm">
-                                <Link to={`/profile/${playlist.user._id}`}>
-                                    <Avatar size="sm" username={playlist.user.username} fullName={playlist.user.fullName} avatarUrl={playlist.user.avatar} />
-                                </Link>
-                                <Link to={`/profile/${playlist.user._id}`} className="font-bold hover:underline text-slate-800 dark:text-white">{playlist.user.fullName || playlist.user.username}</Link>
-                                <span className="text-slate-500 dark:text-slate-400">• {playlist.tracks.length} треков, {totalMinutes} мин.</span>
+                                 <Link to={`/profile/${playlist.user._id}`}>
+                                     <Avatar size="sm" username={playlist.user.username} fullName={playlist.user.fullName} avatarUrl={playlist.user.avatar} />
+                                 </Link>
+                                 <Link to={`/profile/${playlist.user._id}`} className="font-bold hover:underline">{playlist.user.fullName || playlist.user.username}</Link>
+                                <span className="opacity-70">• {playlist.tracks.length} треков, {totalMinutes} мин.</span>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div className="p-6 md:p-8 bg-slate-100 dark:bg-slate-900">
                     
-                    <div className="flex items-center justify-center flex-wrap gap-2 mb-8">
-                        <button onClick={handlePlayPlaylist} className="px-6 py-3 bg-yellow-400 text-black font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
+                    <div className="flex items-center space-x-4 mb-8">
+                        <button onClick={() => handlePlayPlaylist(false)} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
                             <Play size={24} fill="currentColor" />
                             <span>Слушать</span>
                         </button>
+                        <button onClick={() => handlePlayPlaylist(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Слушать вперемешку"><Shuffle /></button>
                         {isOwner && (
                             <>
                                 <button onClick={() => setAddTracksModalOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Добавить треки"><PlusCircle /></button>
@@ -278,20 +261,6 @@ const PlaylistPage = () => {
                                 <button onClick={handleDeletePlaylist} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Удалить плейлист"><Trash2 /></button>
                             </>
                         )}
-                        <button 
-                            onClick={handleToggleShuffle}
-                            className={`p-3 rounded-full transition-colors ${isShuffle ? 'bg-yellow-400/80 text-black' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20'}`} 
-                            title="Перемешать"
-                        >
-                            <Shuffle />
-                        </button>
-                        <button 
-                            onClick={handleToggleRepeat}
-                            className={`p-3 rounded-full transition-colors ${isRepeat ? 'bg-yellow-400/80 text-black' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20'}`} 
-                            title="Повторять"
-                        >
-                            <Repeat />
-                        </button>
                     </div>
 
                     <div className="space-y-1">
@@ -311,6 +280,7 @@ const PlaylistPage = () => {
                                 isSaved={myMusicTrackIds?.has(track.sourceId || track._id)}
                                 onToggleSave={onToggleLike}
                                 onRemoveFromPlaylist={isOwner ? handleRemoveTrack : null}
+                                accentColor={accentColors[0]}
                             />
                         ))}
                     </div>

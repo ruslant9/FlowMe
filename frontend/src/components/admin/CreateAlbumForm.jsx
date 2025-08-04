@@ -95,7 +95,7 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
-const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
+const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack, mainArtistId }) => {
     const {
         attributes,
         listeners,
@@ -111,6 +111,16 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
         zIndex: isDragging ? 10 : 'auto',
     };
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика для отображения фитов ---
+    const featureArtists = useMemo(() => {
+        if (!track.artist || !Array.isArray(track.artist) || !mainArtistId) return '';
+        return track.artist
+            .filter(a => a._id !== mainArtistId)
+            .map(a => a.name)
+            .join(', ');
+    }, [track.artist, mainArtistId]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
     return (
         <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow ${isDragging ? 'shadow-xl opacity-50' : ''}`}>
             <div className="flex items-center space-x-2 min-w-0">
@@ -119,7 +129,16 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
                     <GripVertical size={16} />
                 </div>
                 <Music size={16} className="text-slate-500 flex-shrink-0" />
-                <span className="font-semibold text-sm truncate">{track.title}</span>
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Отображаем фиты --- */}
+                <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-sm truncate">{track.title}</span>
+                    {featureArtists && (
+                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate block">
+                            feat. {featureArtists}
+                        </span>
+                    )}
+                </div>
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full">E</span>}
             </div>
             <div className="flex items-center space-x-1 flex-shrink-0">
@@ -199,6 +218,13 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     
     const fileInputRef = useRef(null);
     const batchFileInputRef = useRef(null);
+
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Определяем основного артиста альбома ---
+    const mainArtistId = useMemo(() => {
+        const albumArtist = artists.find(a => a._id === artistId);
+        return albumArtist?._id || null;
+    }, [artistId, artists]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
     const sensors = useSensors(
@@ -352,11 +378,16 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const token = localStorage.getItem('token');
             const res = await axios[method](endpoint, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
             toast.success(res.data.message || successMessage, { id: toastId });
-            if (!isEditMode) {
+            // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика для закрытия/не закрытия окна ---
+            if (isEditMode) {
+                onSuccess(false); // Не закрываем модальное окно
+                fetchAlbumTracks(); // Обновляем список треков внутри
+            } else {
                 setTitle(''); setArtistId(''); setGenre([]); setReleaseDate(new Date()); setCoverArt(null); setCoverPreview(''); 
                 e.target.reset();
+                onSuccess(); // Закрываем (поведение по умолчанию)
             }
-            onSuccess();
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при отправке заявки.", { id: toastId });
         } finally { setLoading(false); }
@@ -432,6 +463,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                                     index={index + 1}
                                                     onEditTrack={onEditTrack} 
                                                     onDeleteTrack={handleDeleteTrack} 
+                                                    mainArtistId={mainArtistId}
                                                 />
                                             ))}
                                         </div>

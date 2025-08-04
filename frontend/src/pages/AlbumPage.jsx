@@ -85,56 +85,46 @@ const AlbumPage = () => {
     const totalMinutes = Math.floor(totalDurationMs / 60000);
 
     return (
-        <main className="flex-1 overflow-y-auto">
-            <div className="relative">
-                <div 
-                    className="p-6 md:p-8 pt-32 pb-32 transition-all duration-500"
-                    style={{ backgroundColor: dominantColor }}
-                >
-                    <button 
-                        onClick={() => navigate(-1)} 
-                        className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
-                        style={{ color: dominantColor }}
-                    >
-                        <ArrowLeft size={16} strokeWidth={2.5} />
-                        <span>Назад</span>
-                    </button>
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+            <button 
+                onClick={() => navigate(-1)} 
+                className="flex items-center space-x-2 text-sm z-10 bg-slate-200 dark:bg-slate-700/50 rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all font-semibold mb-6"
+            >
+                <ArrowLeft size={16} strokeWidth={2.5} />
+                <span>Назад</span>
+            </button>
 
-                    <div className="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                        <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl md:ml-24">
-                            <CachedImage src={album.coverArtUrl} alt={album.title} />
-                        </div>
-                        <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                            <span className="text-sm font-bold" style={{ color: textColor, opacity: 0.8 }}>
-                                {isSingle ? 'Сингл' : 'Альбом'}
+            <div className="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6 text-slate-900 dark:text-white">
+                <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">
+                    <CachedImage src={album.coverArtUrl} alt={album.title} />
+                </div>
+                <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                    <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
+                        {isSingle ? 'Сингл' : 'Альбом'}
+                    </span>
+                    <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1">{album.title}</h1>
+                    <div className="flex items-center space-x-2 mt-4 text-sm flex-wrap justify-center md:justify-start">
+                        <Link to={`/artist/${album.artist._id}`}>
+                            <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
+                        </Link>
+                        <Link to={`/artist/${album.artist._id}`} className="font-bold hover:underline text-slate-800 dark:text-white">{album.artist.name}</Link>
+                        <span className="opacity-70 text-slate-600 dark:text-slate-400">• {album.releaseDate ? format(new Date(album.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • {album.tracks.length} треков, {totalMinutes} мин.</span>
+                        {album.totalPlayCount > 0 && (
+                            <span className="opacity-70 flex items-center space-x-1 text-slate-600 dark:text-slate-400">
+                                <span>•</span>
+                                <Play size={14} fill="currentColor" />
+                                <span>{album.totalPlayCount.toLocaleString('ru-RU')}</span>
                             </span>
-                            <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{album.title}</h1>
-                            <div className="flex items-center space-x-2 mt-4 text-sm flex-wrap justify-center md:justify-start" style={{ color: textColor }}>
-                                <Link to={`/artist/${album.artist._id}`}>
-                                    <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
-                                </Link>
-                                <Link to={`/artist/${album.artist._id}`} className="font-bold hover:underline" style={{ color: textColor }}>{album.artist.name}</Link>
-                                <span className="opacity-70">• {album.releaseDate ? format(new Date(album.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • {album.tracks.length} треков, {totalMinutes} мин.</span>
-                                {album.totalPlayCount > 0 && (
-                                    <span className="opacity-70 flex items-center space-x-1">
-                                        <span>•</span>
-                                        <Play size={14} fill="currentColor" />
-                                        <span>{album.totalPlayCount.toLocaleString('ru-RU')}</span>
-                                    </span>
-                                )}
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-100 dark:from-slate-900 to-transparent pointer-events-none" />
             </div>
 
-            <div className="p-6 md:p-8 relative z-10 bg-slate-100 dark:bg-slate-900">
+            <div className="mt-8">
                 <div className="flex items-center space-x-4 mb-8">
                     <button 
                         onClick={() => handlePlayAlbum(false)} 
-                        className="px-8 py-3 font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform"
-                        style={{ backgroundColor: dominantColor, color: textColor }}
+                        className="px-8 py-3 font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform bg-blue-600 text-white"
                     >
                         <Play size={24} fill="currentColor" />
                         <span>Слушать</span>

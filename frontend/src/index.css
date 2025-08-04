@@ -421,7 +421,6 @@ html.dark .rc-slider-rail {
   50% { opacity: 0.4; } /* Делаем ярче в середине анимации */
   to { background-position: -500px -500px; opacity: 0.2; } /* Возвращаемся к исходной прозрачности */
 }
-/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */
 
 /* --- Анимация градиента для страницы плейлиста --- */
 @keyframes gradientShift {
@@ -436,11 +435,6 @@ html.dark .rc-slider-rail {
   }
 }
 
-.dynamic-gradient {
-  position: relative;
-  z-index: 0; /* Создаем контекст наложения, чтобы ::before был позади */
-}
-
 .dynamic-gradient::before {
   content: '';
   position: absolute;
@@ -448,7 +442,6 @@ html.dark .rc-slider-rail {
   left: 0;
   right: 0;
   bottom: 0;
-  border-radius: inherit; /* Наследуем скругление от родителя */
   background: linear-gradient(270deg, var(--color1), var(--color2));
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
