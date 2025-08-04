@@ -7,6 +7,9 @@ import { Loader2, Search, MicVocal, Disc, Music, ArrowUp, ArrowDown, Edit as Edi
 import EditContentModal from './EditContentModal';
 import { useModal } from '../../hooks/useModal';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем Link для навигации ---
+import { Link } from 'react-router-dom';
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -155,28 +158,46 @@ export const AdminContentManager = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map(item => (
-                            <tr key={item._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
-                                <td className="p-2">
-                                    <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
-                                </td>
-                                <td className="p-2 font-semibold">{item.name || item.title}</td>
-                                {activeType !== 'artists' && (
-                                    <td className="p-2 text-slate-500">
-                                        {Array.isArray(item.artist) 
-                                            ? item.artist.map(a => a.name).join(', ') 
-                                            : (item.artist?.name || 'N/A')}
+                        {items.map(item => {
+                            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Определяем путь для ссылки ---
+                            const linkTo = activeType === 'artists' ? `/artist/${item._id}` :
+                                           activeType === 'albums' ? `/album/${item._id}` :
+                                           `/single/${item._id}`;
+                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                            
+                            return (
+                                <tr key={item._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                    <td className="p-2">
+                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем изображение в ссылку --- */}
+                                        <Link to={linkTo} target="_blank" rel="noopener noreferrer">
+                                            <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
+                                        </Link>
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     </td>
-                                )}
-                                <td className="p-2 text-sm text-slate-500">{new Date(item.createdAt).toLocaleDateString('ru-RU')}</td>
-                                <td className="p-2">
-                                    <div className="flex items-center justify-end space-x-2">
-                                        <button onClick={() => handleEdit(item)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full" title="Редактировать"><EditIcon size={16} /></button>
-                                        <button onClick={() => handleDelete(item)} className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full" title="Удалить"><TrashIcon size={16} /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                                    <td className="p-2 font-semibold">
+                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем название в ссылку --- */}
+                                        <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-blue-500 transition-colors">
+                                            {item.name || item.title}
+                                        </Link>
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                                    </td>
+                                    {activeType !== 'artists' && (
+                                        <td className="p-2 text-slate-500">
+                                            {Array.isArray(item.artist) 
+                                                ? item.artist.map(a => a.name).join(', ') 
+                                                : (item.artist?.name || 'N/A')}
+                                        </td>
+                                    )}
+                                    <td className="p-2 text-sm text-slate-500">{new Date(item.createdAt).toLocaleDateString('ru-RU')}</td>
+                                    <td className="p-2">
+                                        <div className="flex items-center justify-end space-x-2">
+                                            <button onClick={() => handleEdit(item)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full" title="Редактировать"><EditIcon size={16} /></button>
+                                            <button onClick={() => handleDelete(item)} className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full" title="Удалить"><TrashIcon size={16} /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

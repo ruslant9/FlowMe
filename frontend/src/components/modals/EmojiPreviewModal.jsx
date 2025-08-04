@@ -36,7 +36,7 @@ const EmojiPreviewModal = ({ isOpen, onClose, emojiUrl }) => {
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         src={emojiUrl}
                         alt="Emoji Preview"
-                        className="max-w-[80vw] max-h-[80vh] object-contain rounded-lg"
+                         className="w-128 h-128 object-contain rounded-lg"
                         onClick={(e) => e.stopPropagation()}
                     />
                 </motion.div>

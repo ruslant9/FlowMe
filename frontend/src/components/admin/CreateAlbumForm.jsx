@@ -383,9 +383,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 </div>
 
                 {/* Правая колонка */}
-                <div>
+                <div className="flex flex-col">
                     {isEditMode && (
-                        <div className="space-y-2">
+                        <div className="space-y-2 flex flex-col flex-1">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-md">Треки в альбоме ({albumTracks.length})</h4>
                                 <button 
@@ -400,7 +400,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                             {albumTracks.length > 0 ? (
                                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                     <SortableContext items={albumTracks} strategy={verticalListSortingStrategy}>
-                                        <div className="space-y-2 max-h-[28rem] overflow-y-auto pr-2">
+                                        <div className="space-y-2 overflow-y-auto pr-2 flex-1">
                                             {albumTracks.map(track => (
                                                 <SortableTrackItem 
                                                     key={track._id} 

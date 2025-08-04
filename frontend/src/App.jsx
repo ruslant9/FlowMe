@@ -103,10 +103,16 @@ const MainLayout = ({ children }) => {
     return () => window.removeEventListener('resize', setViewportHeight);
   }, []);
 
+  
   const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
-    window.dispatchEvent(new Event('themeChanged'));
-  };
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    } 
+    setTheme(newTheme);
+ };
 
   return (
     <div style={{ height: 'calc(var(--vh, 1vh) * 100)' }} className={`w-full font-sans transition-colors duration-300 relative ${
