@@ -2,7 +2,7 @@
 import React, { useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, X, Image as ImageIcon } from 'lucide-react';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
