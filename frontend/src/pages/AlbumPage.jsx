@@ -73,7 +73,7 @@ const AlbumPage = () => {
                     </button>
 
                     <div className="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                        <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl md:ml-8">
+                        <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl md:ml-24">
                             <img src={album.coverArtUrl} alt={album.title} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">

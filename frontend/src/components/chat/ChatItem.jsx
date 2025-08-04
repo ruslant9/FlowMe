@@ -36,7 +36,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
     }), [interlocutor, interlocutorStatus]);
 
     const isPremium = liveInterlocutor?.premium?.isActive;
-    const customBorder = liveInterlocutor?.premiumCustomization?.avatarBorder;
     const usernameEmoji = liveInterlocutor?.premiumCustomization?.usernameEmoji;
 
     const lastMessageSenderId = lastMessage?.sender?._id || lastMessage?.sender;
@@ -240,14 +239,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
         return '';
     };
 
-    const cleanArtist = (artist) => {
-        if (!artist) return '';
-        if (artist.endsWith(' - Topic')) {
-            return artist.substring(0, artist.length - ' - Topic'.length).trim();
-        }
-        return artist;
-    };
-
     const renderLastMessage = () => {
         if (isTyping) {
             return <p className="text-sm text-green-500 animate-pulse">Печатает...</p>;
@@ -268,7 +259,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
             );
         }
         
-        // --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННЫХ ФУНКЦИЙ ---
         const content = lastMessage.text || 
                         (lastMessage.attachedTrack ? `Трек: ${formatArtistName(lastMessage.attachedTrack.artist)} - ${cleanTitle(lastMessage.attachedTrack.title)}` : "Нет сообщений");
         return (
@@ -320,15 +310,26 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                 ) : (
                     <div className="relative flex-shrink-0">
-                        {/* --- ИЗМЕНЕНИЕ: Используем `liveInterlocutor.avatar` напрямую --- */}
-                        <Avatar
-                            size="lg"
-                            username={liveInterlocutor?.username}
-                            avatarUrl={canShowAvatar ? liveInterlocutor?.avatar : ''}
-                            isPremium={isPremium}
-                            customBorder={customBorder}
-                        />
-                        {canShowOnline() && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800"></div>}
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                        {(() => {
+                            const border = liveInterlocutor?.premiumCustomization?.avatarBorder;
+                            const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
+                            const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
+
+                            return (
+                                <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
+                                    <Avatar
+                                        size="lg"
+                                        username={liveInterlocutor?.username}
+                                        avatarUrl={canShowAvatar ? liveInterlocutor?.avatar : ''}
+                                        isPremium={isPremium}
+                                        customBorder={border}
+                                    />
+                                    {canShowOnline() && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800"></div>}
+                                </div>
+                            );
+                        })()}
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
                 )}
                 <div className="flex-1 min-w-0">

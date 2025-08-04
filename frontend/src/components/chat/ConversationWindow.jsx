@@ -32,11 +32,9 @@ const MESSAGE_PAGE_LIMIT = 30;
 
 const getImageUrl = (url) => {
     if (!url) return '';
-    // Если URL уже полный (от Cloudinary), используем его как есть.
     if (url.startsWith('http')) {
         return url;
     }
-    // В противном случае, собираем URL (для старых файлов или системных)
     return `${API_URL}/${url}`;
 };
 
@@ -69,7 +67,7 @@ const formatLastSeen = (dateString) => {
 };
 
 const getContrastingTextColor = (hexColor) => {
-    if (!hexColor || hexColor.length < 7) return '#111827'; // По умолчанию темный текст
+    if (!hexColor || hexColor.length < 7) return '#111827'; 
 
     let cleanHex = hexColor.startsWith('#') ? hexColor.slice(1) : hexColor;
     if (cleanHex.length === 8) {
@@ -84,13 +82,11 @@ const getContrastingTextColor = (hexColor) => {
     const b = parseInt(cleanHex.substring(4, 6), 16);
 
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
-    return luminance > 128 ? '#111827' : '#FFFFFF'; // Если фон светлый -> текст темный, и наоборот
+    return luminance > 128 ? '#111827' : '#FFFFFF';
 };
 
 const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequest, initialScrollTop, setRef }) => {
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Создаем внутреннее состояние для диалога ---
     const [internalConversation, setInternalConversation] = useState(conversation);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -132,7 +128,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const loaderTriggerRef = useRef(null);
 
     const throttleRef = useRef(false);
-    // --- ИЗМЕНЕНИЕ: Используем внутреннее состояние ---
     const interlocutor = internalConversation.interlocutor;
     const currentUserId = currentUser?._id;
 
@@ -156,7 +151,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Функция для перезагрузки данных текущего диалога ---
     const refetchConversationDetails = useCallback(async () => {
         if (!internalConversation?._id) return;
         try {
@@ -164,14 +158,13 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             const res = await axios.get(`${API_URL}/api/messages/conversations/${internalConversation._id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setInternalConversation(res.data); // Обновляем внутреннее состояние
+            setInternalConversation(res.data); 
         } catch (error) {
             console.error("Не удалось обновить данные диалога", error);
             toast.error("Не удалось обновить данные чата.");
         }
     }, [internalConversation?._id]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Слушатель события для обновления данных собеседника ---
     useEffect(() => {
         const handleUserDataUpdated = (event) => {
             const updatedUserId = event.detail.userId;
@@ -186,11 +179,9 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         };
     }, [internalConversation, refetchConversationDetails]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Синхронизируем внутреннее состояние с пропсами ---
     useEffect(() => {
         setInternalConversation(conversation);
     }, [conversation]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     useEffect(() => {
         if (setRef) {
@@ -293,11 +284,11 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
      const chatImageUrls = useMemo(() => {
         return messages
             .filter(msg => msg.imageUrl)
-            .map(msg => getImageUrl(msg.imageUrl)); // --- ИЗМЕНЕНИЕ ---
+            .map(msg => getImageUrl(msg.imageUrl));
     }, [messages]);
 
     const handleImageClickInBubble = (clickedImageUrl) => {
-        const fullClickedUrl = getImageUrl(clickedImageUrl); // --- ИЗМЕНЕНИЕ ---
+        const fullClickedUrl = getImageUrl(clickedImageUrl);
         const index = chatImageUrls.findIndex(url => url === fullClickedUrl);
         if (index !== -1) {
             setImageViewerStartIndex(index);
@@ -319,7 +310,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     }), [interlocutor, userStatuses]);
 
     const isPremium = liveInterlocutor?.premium?.isActive;
-    const customBorder = liveInterlocutor?.premiumCustomization?.avatarBorder;
     const usernameEmoji = liveInterlocutor?.premiumCustomization?.usernameEmoji;
     
     const isBlockedByThem = liveInterlocutor?.isBlockedByThem;
@@ -1059,16 +1049,26 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                             <div className="flex items-center space-x-2">
                                 <button onClick={onDeselectConversation} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-[color:var(--chat-header-text-color,inherit)]"><CornerUpLeft size={20} /></button>
                                 <Link to={`/profile/${liveInterlocutor._id}`} className="flex items-center space-x-3 group">
-                                    <div className="relative">
-                                        <Avatar
-                                            size="md"
-                                            username={liveInterlocutor.username}
-                                            avatarUrl={canShowAvatar ? liveInterlocutor.avatar : ''}
-                                            isPremium={isPremium}
-                                            customBorder={customBorder}
-                                        />
-                                        {canShowOnlineIndicator() && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800"></div>}
-                                    </div>
+                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                                    {(() => {
+                                        const border = liveInterlocutor?.premiumCustomization?.avatarBorder;
+                                        const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
+                                        const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
+
+                                        return (
+                                            <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
+                                                <Avatar
+                                                    size="md"
+                                                    username={liveInterlocutor.username}
+                                                    avatarUrl={canShowAvatar ? liveInterlocutor.avatar : ''}
+                                                    isPremium={isPremium}
+                                                    customBorder={border}
+                                                />
+                                                {canShowOnlineIndicator() && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800"></div>}
+                                            </div>
+                                        );
+                                    })()}
+                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     <div>
                                         <h2 className="font-bold group-hover:underline flex items-center" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
                                             {liveInterlocutor.fullName || liveInterlocutor.username}

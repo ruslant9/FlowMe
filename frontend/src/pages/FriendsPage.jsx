@@ -225,17 +225,28 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
     return (
         <Link to={`/profile/${user._id}`} className="flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5">
             <div className="flex items-center space-x-4 min-w-0">
-                <div className="relative">
-                    <Avatar
-                        username={user.username}
-                        fullName={user.fullName}
-                        avatarUrl={user.avatar}
-                        isBlockedByThem={status === 'blocked_by_them'}
-                    />
-                    {canShowOnlineIndicator && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800" title="Онлайн"></div>
-                    )}
-                </div>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                {(() => {
+                    const border = user.premiumCustomization?.avatarBorder;
+                    const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
+                    const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
+                    return (
+                        <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
+                             <Avatar
+                                username={user.username}
+                                fullName={user.fullName}
+                                avatarUrl={user.avatar}
+                                size="md"
+                                isPremium={user.premium?.isActive}
+                                customBorder={border}
+                            />
+                            {canShowOnlineIndicator && (
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800" title="Онлайн"></div>
+                            )}
+                        </div>
+                    );
+                })()}
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 <div className="min-w-0">
                     <p className="font-semibold truncate">{user.fullName || user.username}</p>
                     <div className="text-sm text-slate-500 dark:text-white/60 h-4 flex items-center space-x-1.5">
@@ -279,17 +290,15 @@ const FriendsPage = () => {
     const navigate = useNavigate();
     const { currentUser } = useUser();
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
         const interval = setInterval(() => {
             setNow(new Date());
-        }, 60000); // 1 минута
+        }, 60000);
 
         return () => clearInterval(interval);
     }, []);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({ city: '', interests: [] });
