@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { useCachedImage } from '../hooks/useCachedImage';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import RecommendationCard from '../components/music/RecommendationCard'; // --- ИСПРАВЛЕНИЕ: Импортируем карточку ---
+import RecommendationCard from '../components/music/RecommendationCard';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -25,18 +25,29 @@ const CachedImage = ({ src, alt }) => {
     return <img src={finalSrc} alt={alt} className="w-full h-full object-cover" />;
 };
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новая функция для рендеринга исполнителей ---
+const renderArtistLinks = (artists) => {
+    if (!artists || artists.length === 0) return null;
+    return artists.map((artist, index) => (
+        <React.Fragment key={artist._id}>
+            <Link to={`/artist/${artist._id}`} className="font-bold hover:underline">
+                {artist.name}
+            </Link>
+            {index < artists.length - 1 && ', '}
+        </React.Fragment>
+    ));
+};
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 const SinglePage = () => {
     const { trackId } = useParams();
     const navigate = useNavigate();
     const [track, setTrack] = useState(null);
     const [loading, setLoading] = useState(true);
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новые состояния для рекомендаций ---
     const [recommendations, setRecommendations] = useState([]);
     const [loadingRecs, setLoadingRecs] = useState(false);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds, loadingTrackId, togglePlayPause } = useMusicPlayer();
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновленная функция загрузки данных ---
     const fetchTrack = useCallback(async () => {
         setLoading(true);
         setRecommendations([]);
@@ -62,7 +73,6 @@ const SinglePage = () => {
             setLoading(false);
         }
     }, [trackId, navigate]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     useEffect(() => {
         fetchTrack();
@@ -93,7 +103,6 @@ const SinglePage = () => {
                     className="p-6 md:p-8 pt-32 pb-32 transition-all duration-500"
                     style={{ backgroundImage: gradient }}
                 >
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем кнопку "Назад" --- */}
                     <button 
                         onClick={() => navigate(-1)} 
                         className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
@@ -102,7 +111,6 @@ const SinglePage = () => {
                         <ArrowLeft size={16} strokeWidth={2.5} />
                         <span>Назад</span>
                     </button>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                     <div className="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-6">
                         <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl md:ml-24">
@@ -115,7 +123,9 @@ const SinglePage = () => {
                                 <Link to={`/artist/${primaryArtist._id}`}>
                                     <Avatar size="sm" username={primaryArtist.name} avatarUrl={primaryArtist.avatarUrl} />
                                 </Link>
-                                <Link to={`/artist/${primaryArtist._id}`} className="font-bold hover:underline" style={{ color: textColor }}>{primaryArtist.name}</Link>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Используем новую функцию --- */}
+                                <div style={{ color: textColor }}>{renderArtistLinks(track.artist)}</div>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <span className="opacity-70">• {track.releaseDate ? format(new Date(track.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • 1 трек, {totalMinutes} мин.</span>
                             </div>
                         </div>
@@ -157,16 +167,16 @@ const SinglePage = () => {
                         accentColor={dominantColor}
                     />
                 </div>
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Блок с рекомендациями --- */}
                 {(loadingRecs || recommendations.length > 0) && (
                     <div className="mt-12">
                         <h2 className="text-2xl font-bold mb-4">Похожие треки</h2>
                         {loadingRecs ? (
                             <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400"/></div>
                         ) : (
-                            <div className="flex space-x-4 overflow-x-auto pb-4">
+                            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновляем классы для размера карточек ---
+                            <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
                                 {recommendations.map((recTrack) => (
-                                    <div key={recTrack._id} className="w-40 flex-shrink-0">
+                                    <div key={recTrack._id} className="w-1/3 sm:w-1/4 md:w-1/5 lg:w-1/6 flex-shrink-0">
                                         <RecommendationCard
                                             track={recTrack}
                                             onSelectTrack={() => playTrack(recTrack, recommendations)}
@@ -178,10 +188,10 @@ const SinglePage = () => {
                                     </div>
                                 ))}
                             </div>
+                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                         )}
                     </div>
                 )}
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             </div>
         </main>
     );

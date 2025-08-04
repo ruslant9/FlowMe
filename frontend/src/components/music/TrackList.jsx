@@ -21,9 +21,7 @@ const TrackList = ({
                         isCurrent={track._id === currentPlayingTrackId}
                         isPlaying={isPlaying}
                         onToggleSave={onToggleSave}
-                        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверяем лайк по youtubeId (с фолбэком на _id) ---
                         isSaved={myMusicTrackIds.has(track.youtubeId || track._id)}
-                        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                         onRemoveFromPlaylist={showRemoveButtons ? onRemoveFromPlaylist : null}
                     />
                 </React.Fragment>

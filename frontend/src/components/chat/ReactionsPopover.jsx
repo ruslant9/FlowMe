@@ -1,4 +1,4 @@
-// frontend/src/components/workshop/ReactionsPopover.jsx
+// frontend/src/components/chat/ReactionsPopover.jsx
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Tippy from '@tippyjs/react/headless';
@@ -10,6 +10,7 @@ import { regularReactions, emojiPacks, allPremiumReactionUrls } from '../../data
 import EmojiPreviewModal from '../modals/EmojiPreviewModal';
 import { useCachedImage } from '../../hooks/useCachedImage';
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Создаем компонент для кешированного эмодзи ---
 const CachedEmoji = ({ src, alt }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -17,6 +18,7 @@ const CachedEmoji = ({ src, alt }) => {
     }
     return <img src={finalSrc} alt={alt} className="w-8 h-8 object-contain" />;
 };
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const preloadImages = (urls) => {
     urls.forEach(url => {
@@ -167,8 +169,9 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                         ))}
                                     </div>
                                 )}
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем лишний div --- */}
                                 {activeTab === 'user_emojis' && (
-                                     <div>
+                                     <>
                                         <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto">
                                             {userFreeEmojiPacks.map(pack => (
                                                 <button
@@ -180,9 +183,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                 </button>
                                             ))}
                                         </div>
-                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем max-h на h и добавляем overflow-y-auto --- */}
-                                        <div className="grid grid-cols-6 gap-2 h-28 overflow-y-auto p-1">
-                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                                        <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
                                             {activeUserEmojis.map(emoji => (
                                                 <button
                                                     key={emoji._id}
@@ -201,10 +202,10 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                          <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2">
                                             Удерживайте для предпросмотра
                                         </p>
-                                    </div>
+                                    </>
                                 )}
                                 {activeTab === 'premium' && (
-                                    <div>
+                                    <>
                                         <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto">
                                             {premiumEmojiPacks.map(pack => (
                                                 <button
@@ -216,9 +217,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                 </button>
                                             ))}
                                         </div>
-                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем max-h на h и добавляем overflow-y-auto --- */}
-                                        <div className="grid grid-cols-6 gap-2 h-28 overflow-y-auto p-1">
-                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                                        <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
                                             {activePremiumEmojis.map(emoji => (
                                                 <button
                                                     key={emoji.id || emoji._id}
@@ -237,8 +236,9 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                         <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2">
                                             Удерживайте для предпросмотра
                                         </p>
-                                    </div>
+                                    </>
                                 )}
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </motion.div>
                         </AnimatePresence>
                     </motion.div>

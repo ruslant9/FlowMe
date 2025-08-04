@@ -28,6 +28,7 @@
     "ip-range-check": "^0.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.0",
+    "mongose": "^0.0.2-security",
     "multer": "^2.0.1",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.5",

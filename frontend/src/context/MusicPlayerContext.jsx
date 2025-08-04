@@ -1,3 +1,5 @@
+// frontend/src/context/MusicPlayerContext.jsx
+
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -61,7 +63,8 @@ export const MusicPlayerProvider = ({ children }) => {
             }
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
             // Поле youtubeId в сохраненных треках содержит уникальный идентификатор контента
-            setMyMusicTrackIds(new Set(res.data.map(track => track.youtubeId).filter(Boolean)));
+            const contentIds = res.data.map(track => track.youtubeId || track.spotifyId).filter(Boolean);
+            setMyMusicTrackIds(new Set(contentIds));
         } catch (error) {
             console.error("Не удалось обновить список сохраненной музыки");
         }
