@@ -1,10 +1,12 @@
 // frontend/src/pages/WorkshopPage.jsx
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Fragment } from 'react'; // <-- НОВЫЙ ИМПОРТ
 import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown } from 'lucide-react'; // Убрал неиспользуемые Sticker, Smile
+import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle, Plus, X, Crown, Filter, ChevronDown, Check } from 'lucide-react'; // <-- НОВЫЕ ИКОНКИ
+import { Menu, Transition } from '@headlessui/react'; // <-- НОВЫЙ ИМПОРТ
 import CreateEditPackModal from '../components/workshop/CreateEditPackModal';
 import PackCard from '../components/workshop/PackCard';
 import { useUser } from '../context/UserContext';
@@ -40,6 +42,12 @@ const SubTabButton = ({ active, onClick, children }) => (
         {children}
     </button>
 );
+
+const premiumFilterOptions = [
+    { id: 'all', name: 'Все' },
+    { id: 'free', name: 'Бесплатные' },
+    { id: 'premium', name: 'Premium' },
+];
 
 const WorkshopPage = () => {
     useTitle('Мастерская');
@@ -308,27 +316,55 @@ const WorkshopPage = () => {
                     <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск паков</TabButton>
                 </div>
 
-                <div className="flex items-center space-x-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                    <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
-                    <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
-                    <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
+                {/* --- ИЗМЕНЕНИЕ: Объединяем фильтры в одну строку --- */}
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+                    <div className="flex items-center space-x-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                        <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
+                        <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
+                        <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
+                    </div>
+                    {activeTab === 'search' && (
+                        <Menu as="div" className="relative inline-block text-left">
+                            <div>
+                                <Menu.Button className="inline-flex items-center gap-x-2 rounded-lg bg-slate-100 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700">
+                                    <Filter size={16} />
+                                    <span>{premiumFilterOptions.find(o => o.id === premiumFilter).name}</span>
+                                    <ChevronDown className="h-4 w-4" />
+                                </Menu.Button>
+                            </div>
+                            <Transition
+                                as={Fragment}
+                                enter="transition ease-out duration-100"
+                                enterFrom="transform opacity-0 scale-95"
+                                enterTo="transform opacity-100 scale-100"
+                                leave="transition ease-in duration-75"
+                                leaveFrom="transform opacity-100 scale-100"
+                                leaveTo="transform opacity-0 scale-95"
+                            >
+                                <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl ios-glass-popover p-1">
+                                    {premiumFilterOptions.map(option => (
+                                        <Menu.Item key={option.id}>
+                                            {({ active }) => (
+                                                <button onClick={() => setPremiumFilter(option.id)}
+                                                    className={`${ active ? 'bg-blue-500 text-white' : 'text-slate-900 dark:text-slate-200'} group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm`}>
+                                                    <span>{option.name}</span>
+                                                    {premiumFilter === option.id && <Check size={16} />}
+                                                </button>
+                                            )}
+                                        </Menu.Item>
+                                    ))}
+                                </Menu.Items>
+                            </Transition>
+                        </Menu>
+                    )}
                 </div>
 
                 {activeTab === 'search' && (
-                    <>
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Добавляем новый блок фильтров --- */}
-                        <div className="flex items-center space-x-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                            <SubTabButton active={premiumFilter === 'all'} onClick={() => setPremiumFilter('all')}>Все</SubTabButton>
-                            <SubTabButton active={premiumFilter === 'free'} onClick={() => setPremiumFilter('free')}>Бесплатные</SubTabButton>
-                            <SubTabButton active={premiumFilter === 'premium'} onClick={() => setPremiumFilter('premium')}>Premium</SubTabButton>
-                        </div>
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
-                        <div className="relative mb-6">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
-                                className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg"/>
-                        </div>
-                    </>
+                     <div className="relative mb-6">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
+                            className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg"/>
+                    </div>
                 )}
 
                 <div>{renderContent()}</div>

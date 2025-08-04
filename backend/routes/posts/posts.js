@@ -242,14 +242,30 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
         if (!isAllowedByPrivacy(targetUser.privacySettings.viewPosts, req.user.userId, targetUser)) {
             return res.status(200).json([]);
         }
+
         const posts = await Post.find({ user: req.params.userId, community: null, status: 'published' })
             .populate('user', 'username fullName avatar premiumCustomization')
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-            .populate('likes', 'username fullName avatar _id premium premiumCustomization')
-            .populate('attachedTrack')
+            .populate('likes', 'username fullName avatar _id')
+            .populate({
+                path: 'attachedTrack',
+                populate: [
+                    { path: 'artist', select: 'name _id' },
+                    { path: 'album', select: 'title coverArtUrl' }
+                ]
+            })
             .populate({ path: 'poll.options.votes', select: 'username fullName avatar' })
-            .sort({ isPinned: -1, createdAt: -1 });
-        res.json(posts);
+            .sort({ isPinned: -1, createdAt: -1 })
+            .lean(); // Используем .lean() для производительности
+
+        // Добавляем логику для использования обложки альбома, если у трека нет своей
+        const processedPosts = posts.map(post => {
+            if (post.attachedTrack && post.attachedTrack.album && post.attachedTrack.album.coverArtUrl && !post.attachedTrack.albumArtUrl) {
+                post.attachedTrack.albumArtUrl = post.attachedTrack.album.coverArtUrl;
+            }
+            return post;
+        });
+
+        res.json(processedPosts);
     } catch (e) {
         res.status(500).json({ message: 'Ошибка сервера' });
     }

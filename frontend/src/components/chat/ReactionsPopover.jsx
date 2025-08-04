@@ -1,4 +1,4 @@
-// frontend/src/components/chat/ReactionsPopover.jsx
+// frontend/src/components/workshop/ReactionsPopover.jsx
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Tippy from '@tippyjs/react/headless';
@@ -117,7 +117,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
             <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
             <Tippy
                 interactive
-                placement="top"
+                placement="auto" // <-- ИЗМЕНЕНИЕ: Автоматический выбор положения
                 delay={[100, 100]}
                 onClickOutside={(instance, event) => {
                     const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
@@ -132,7 +132,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.9 }}
                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="ios-glass-popover p-2 rounded-xl shadow-lg w-auto max-w-xs"
+                        className="ios-glass-popover p-2 rounded-xl shadow-lg w-auto max-w-sm" // <-- ИЗМЕНЕНИЕ: Увеличен размер
                         {...attrs}
                     >
                         {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Добавляем новую кнопку-вкладку "Эмодзи" --- */}

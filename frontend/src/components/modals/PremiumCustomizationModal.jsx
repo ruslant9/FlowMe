@@ -16,17 +16,14 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const avatarBorders = [
     { id: 'none', name: 'Без рамки', type: 'none', value: null },
-    // Эти две рамки - градиенты, они не используют псевдо-элементы
     { id: 'animated-1', name: 'Аврора', type: 'animated-1', value: null },
     { id: 'animated-2', name: 'Инста', type: 'animated-2', value: null },
-    // Остальные - сложные анимации через ::before/::after, им нужен флаг 'pseudo'
     { id: 'hearts', name: 'Сердца', type: 'animated-hearts', pseudo: true },
     { id: 'neon', name: 'Неон', type: 'animated-neon', pseudo: true },
     { id: 'orbit', name: 'Орбита', type: 'animated-orbit', pseudo: true },
     { id: 'fire', name: 'Огонь', type: 'animated-fire', pseudo: true },
     { id: 'glitch', name: 'Глитч', type: 'animated-glitch', pseudo: true },
     { id: 'techno', name: 'Техно', type: 'animated-tech', pseudo: true },
-    // Эта рамка анимирует сам элемент, а не псевдо-элемент
     { id: 'pulse', name: 'Пульс', type: 'animated-pulse' },
     { id: 'runes', name: 'Руны', type: 'animated-runes', pseudo: true },
     { id: 'sparks', name: 'Искры', type: 'animated-sparkle', pseudo: true },
@@ -65,20 +62,39 @@ const preloadImages = (urls) => {
     });
 };
 
-const AvatarBorderPreview = ({ border, isSelected, onClick, user }) => (
-    <div 
-        onClick={onClick}
-        className={`flex flex-col items-center space-y-2 p-2 rounded-lg cursor-pointer transition-all ${isSelected ? 'ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-    >
-        <Avatar
-            username={user.username}
-            avatarUrl={user.avatar ? `${API_URL}/${user.avatar}` : ''}
-            customBorder={border}
-            size="md"
-        />
-        <span className="text-xs text-center">{border.name}</span>
-    </div>
-);
+const AvatarBorderPreview = ({ border, isSelected, onClick, user }) => {
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
+    const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+    return (
+        <div 
+            onClick={onClick}
+            className={`flex flex-col items-center space-y-2 p-2 rounded-lg cursor-pointer transition-all ${isSelected ? 'ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+        >
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+            <div 
+                className={`relative rounded-full ${borderClass}`}
+                style={staticBorderStyle}
+            >
+                <Avatar
+                    username={user.username}
+                    avatarUrl={user.avatar ? getImageUrl(user.avatar) : ''}
+                    customBorder={border}
+                    size="md"
+                />
+            </div>
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+            <span className="text-xs text-center">{border.name}</span>
+        </div>
+    );
+};
+
+const getImageUrl = (url) => {
+    if (!url || url.startsWith('http') || url.startsWith('blob:')) return url || '';
+    return `${API_URL}/${url}`;
+};
 
 const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
     const { refetchUser } = useUser();
@@ -381,7 +397,6 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                     </div>
                                 </div>
                                     <div>
-                                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем кнопку сброса --- */}
                                         <div className="flex justify-between items-center mb-2">
                                             <label className="text-sm font-medium text-slate-600 dark:text-white/70 block">Акцент карточек</label>
                                             {customizationData.activeCardAccent && (
@@ -394,7 +409,6 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                                 </button>
                                             )}
                                         </div>
-                                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                         <div className="space-y-3">
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 <button onClick={handleCreateNewAccent} className="relative rounded-lg border-2 border-dashed border-slate-400 dark:border-slate-600 h-20 transition-all hover:border-blue-500 hover:text-blue-500 flex flex-col items-center justify-center">
