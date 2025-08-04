@@ -5,7 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Music, Edit, ChevronDown, Trash2, GripVertical, PlusCircle } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
-import GenreSelectorSingle from './GenreSelectorSingle';
+import GenreSelector from './GenreSelector';
 import Avatar from '../Avatar';
 import { useModal } from '../../hooks/useModal';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -190,7 +190,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const { showConfirmation } = useModal();
     const [title, setTitle] = useState('');
     const [artistId, setArtistId] = useState('');
-    const [genre, setGenre] = useState('');
+    const [genre, setGenre] = useState([]);
     const [releaseDate, setReleaseDate] = useState(new Date());
     const [coverArt, setCoverArt] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -221,7 +221,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         if (isEditMode && initialData) {
             setTitle(initialData.title || '');
             setArtistId(initialData.artist?._id || initialData.artist || '');
-            setGenre(initialData.genre || '');
+            setGenre(initialData.genre || []);
             setReleaseDate(initialData.releaseDate ? new Date(initialData.releaseDate) : new Date());
             setCoverPreview(initialData.coverArtUrl || '');
             fetchAlbumTracks();
@@ -331,12 +331,12 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!artistId) { toast.error("Пожалуйста, выберите артиста."); return; }
-        if (!genre) { toast.error("Пожалуйста, выберите жанр."); return; }
+        if (genre.length === 0) { toast.error("Пожалуйста, выберите хотя бы один жанр."); return; } 
         setLoading(true);
         const formData = new FormData();
         formData.append('title', title);
         formData.append('artistId', artistId);
-        formData.append('genre', genre);
+        formData.append('genre', JSON.stringify(genre));
         if (releaseDate) formData.append('releaseDate', releaseDate.toISOString());
         if (coverArt) formData.append('coverArt', coverArt);
         const isAdmin = currentUser.role === 'admin';
@@ -353,7 +353,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const res = await axios[method](endpoint, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
             toast.success(res.data.message || successMessage, { id: toastId });
             if (!isEditMode) {
-                setTitle(''); setArtistId(''); setGenre(''); setReleaseDate(new Date()); setCoverArt(null); setCoverPreview('');
+                setTitle(''); setArtistId(''); setGenre([]); setReleaseDate(new Date()); setCoverArt(null); setCoverPreview(''); 
                 e.target.reset();
             }
             onSuccess();
@@ -387,7 +387,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                         </div>
                     </div>
                     
-                    <GenreSelectorSingle selectedGenre={genre} onGenreChange={setGenre} />
+                    <GenreSelector selectedGenres={genre} onGenreChange={setGenre} />
                     
                     <div>
                         <label className="text-sm font-semibold block mb-1">Обложка альбома</label>

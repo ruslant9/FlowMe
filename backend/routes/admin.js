@@ -200,11 +200,12 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
 router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
         const { title, artistId, genre, releaseDate } = req.body;
-        
+        const parsedGenre = genre ? JSON.parse(genre) : [];
+    
         const newAlbum = new Album({
             title,
             artist: artistId,
-            genre,
+            genre: parsedGenre,
             releaseDate: releaseDate || null,
             coverArtUrl: req.file ? req.file.path : null,
             status: 'approved',
@@ -342,7 +343,8 @@ router.delete('/content/artists/:id', async (req, res) => {
 router.put('/content/albums/:id', upload.single('coverArt'), async (req, res) => {
     try {
         const { title, artistId, genre, releaseDate } = req.body;
-        const updateData = { title, artist: artistId, genre, releaseDate: releaseDate || null };
+        const parsedGenre = genre ? JSON.parse(genre) : [];
+        const updateData = { title, artist: artistId, genre: parsedGenre, releaseDate: releaseDate || null };
         
         if (req.file) {
             updateData.coverArtUrl = req.file.path;

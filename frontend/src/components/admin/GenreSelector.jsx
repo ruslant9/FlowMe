@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { musicGenresRu } from '../../data/genres';
-import { Search, X } from 'lucide-react'; // <-- ИЗМЕНЕНИЕ: Импортируем иконку X
+import { Search, X } from 'lucide-react';
+import toast from 'react-hot-toast'; // <-- 1. ИМПОРТИРУЕМ TOAST
 
 const GENRE_DISPLAY_LIMIT = 18;
 
@@ -29,6 +30,12 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
         if (isSelected) {
             onGenreChange(selectedGenres.filter(g => g !== genre));
         } else {
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем проверку на лимит ---
+            if (selectedGenres.length >= 5) {
+                toast.error('Можно выбрать не более 5 жанров.');
+                return;
+            }
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             onGenreChange([...selectedGenres, genre]);
         }
     };
@@ -40,7 +47,7 @@ const GenreSelector = ({ selectedGenres, onGenreChange, label = "Жанр" }) =>
             {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Блок для отображения выбранных жанров --- */}
             {selectedGenres.length > 0 && (
                 <div className="mb-3">
-                    <label className="text-sm font-semibold block mb-1 text-slate-500">Выбранные жанры ({selectedGenres.length})</label>
+                    <label className="text-sm font-semibold block mb-1 text-slate-500">Выбранные жанры ({selectedGenres.length}/5)</label>
                     <div className="flex flex-wrap gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
                         {selectedGenres.map(genre => (
                             <div key={genre} className="flex items-center space-x-2 bg-blue-100 dark:bg-blue-900/50 rounded-full py-1 pl-3 pr-1">

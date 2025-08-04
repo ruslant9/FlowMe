@@ -27,6 +27,7 @@ import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
+const COMMENT_PAGE_LIMIT = 5;
 
 // Компонент для кешированного изображения с анимацией
 const CachedMotionImage = ({ src, ...props }) => {
@@ -43,6 +44,19 @@ const CachedMotionImage = ({ src, ...props }) => {
     return <motion.img src={finalSrc} {...props} />;
 };
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+// Компонент для обычного кешированного изображения, которого не хватало
+const CachedImage = ({ src, alt, className }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+    if (loading) {
+        return (
+            <div className={`${className} bg-black flex items-center justify-center`}>
+                <Loader2 className="w-10 h-10 animate-spin text-white" />
+            </div>
+        );
+    }
+    return <img src={finalSrc} alt={alt} className={className} />;
+};
 
 const getImageUrl = (url) => {
     if (!url) return '';
