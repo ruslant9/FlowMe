@@ -1,408 +1,450 @@
 /* frontend/src/index.css */
+
 /* 1. Импортируем базовые стили Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* 3. Описываем наш анимированный фон /
+
+/* 3. Описываем наш анимированный фон */
 .bg-liquid-background {
-background-color: #0f172a; / Темно-синий фон по умолчанию */
+  background-color: #0f172a; /* Темно-синий фон по умолчанию */
 }
+
 .blob {
-position: absolute;
-border-radius: 50%;
-filter: blur(100px);
-z-index: 1;
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 1;
 }
+
 @keyframes move {
-0% {
-transform: translate(0, 0) scale(1);
-opacity: 0.1; /* Начинаем почти невидимыми /
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.1; /* Начинаем почти невидимыми */
+  }
+  25% {
+    transform: translate(15vw, -20vh) scale(1.2);
+  }
+  50% {
+    transform: translate(-20vw, 25vh) scale(0.9);
+    opacity: 0.5; /* Максимальная видимость в середине */
+  }
+  75% {
+    transform: translate(20vw, -10vh) scale(1.1);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.1; /* Заканчиваем почти невидимыми */
+  }
 }
-25% {
-transform: translate(15vw, -20vh) scale(1.2);
-}
-50% {
-transform: translate(-20vw, 25vh) scale(0.9);
-opacity: 0.5; / Максимальная видимость в середине /
-}
-75% {
-transform: translate(20vw, -10vh) scale(1.1);
-}
-100% {
-transform: translate(0, 0) scale(1);
-opacity: 0.1; / Заканчиваем почти невидимыми */
-}
-}
-/* --- НАЧАЛО ИЗМЕНЕНИЙ: Обновленный стиль для Liquid Glass "iOS 26" --- /
-/ Стили для стеклянного эффекта, адаптивные к теме /
+
+/* --- НАЧАЛО ИЗМЕНЕНИЙ: Обновленный стиль для Liquid Glass "iOS 26" --- */
+/* Стили для стеклянного эффекта, адаптивные к теме */
 .ios-glass-final {
-position: relative;
-background-image: url('/noise.png');
-backdrop-filter: blur(25px);
--webkit-backdrop-filter: blur(25px);
-/ --- ИЗМЕНЕНИЕ ЗДЕСЬ --- /
-background-color: #e9edf0; / Новый сплошной серый цвет для светлой темы /
-border: 1px solid #d1d5db; / Слегка заметная граница */
+  position: relative;
+  background-image: url('/noise.png');
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  /* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */
+  background-color: #e9edf0; /* Новый сплошной серый цвет для светлой темы */
+  border: 1px solid #d1d5db; /* Слегка заметная граница */
 }
-/* Стили для темной темы и страниц входа/регистрации (основной эффект здесь) /
+
+/* Стили для темной темы и страниц входа/регистрации (основной эффект здесь) */
 html.dark .ios-glass-final,
 .bg-liquid-background .ios-glass-final {
-/ 1. БАЗОВЫЙ СЛОЙ: Основное размытие фона /
-backdrop-filter: blur(50px);
--webkit-backdrop-filter: blur(50px);
-background-color: rgba(30, 41, 59, 0.2); / slate-800 с прозрачностью */
-border: none;
+  /* 1. БАЗОВЫЙ СЛОЙ: Основное размытие фона */
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  background-color: rgba(30, 41, 59, 0.2); /* slate-800 с прозрачностью */
+  border: none;
 }
-/* 2. СЛОЙ ИСКАЖЕНИЯ (::before): Сильное размытие и насыщенность по краям /
+
+/* 2. СЛОЙ ИСКАЖЕНИЯ (::before): Сильное размытие и насыщенность по краям */
 html.dark .ios-glass-final::before,
 .bg-liquid-background .ios-glass-final::before {
-content: '';
-position: absolute;
-inset: 0;
-border-radius: inherit;
-/ Эффект линзы: сильное размытие, повышенная насыщенность, легкое затемнение */
-backdrop-filter: blur(100px) saturate(180%) brightness(0.8);
--webkit-backdrop-filter: blur(100px) saturate(180%) brightness(0.8);
-/* Маска, которая "вырезает" центр, оставляя эффект только по краям */
--webkit-mask: radial-gradient(circle at center, transparent 70%, black 100%);
-mask: radial-gradient(circle at center, transparent 70%, black 100%);
-pointer-events: none;
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Эффект линзы: сильное размытие, повышенная насыщенность, легкое затемнение */
+  backdrop-filter: blur(100px) saturate(180%) brightness(0.8);
+  -webkit-backdrop-filter: blur(100px) saturate(180%) brightness(0.8);
+  
+  /* Маска, которая "вырезает" центр, оставляя эффект только по краям */
+  -webkit-mask: radial-gradient(circle at center, transparent 70%, black 100%);
+  mask: radial-gradient(circle at center, transparent 70%, black 100%);
+  
+  pointer-events: none;
 }
-/* 3. СЛОЙ ОСВЕЩЕНИЯ (::after): Тонкая рамка и внутреннее свечение /
+
+/* 3. СЛОЙ ОСВЕЩЕНИЯ (::after): Тонкая рамка и внутреннее свечение */
 html.dark .ios-glass-final::after,
 .bg-liquid-background .ios-glass-final::after {
-content: '';
-position: absolute;
-inset: -1px; / Позволяет рамке быть "снаружи" без изменения размера /
-border-radius: inherit;
-/ Тонкая, едва заметная внешняя рамка, имитирующая грань стекла /
-border: 1px solid rgba(255, 255, 255, 0.1);
-/ Внутренние тени для эффекта объема: светлая сверху, темная снизу */
-box-shadow:
-inset 0 1.5px 1px rgba(255, 255, 255, 0.15),
-inset 0 -1.5px 1px rgba(0, 0, 0, 0.4);
-pointer-events: none;
+  content: '';
+  position: absolute;
+  inset: -1px; /* Позволяет рамке быть "снаружи" без изменения размера */
+  border-radius: inherit;
+  /* Тонкая, едва заметная внешняя рамка, имитирующая грань стекла */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Внутренние тени для эффекта объема: светлая сверху, темная снизу */
+  box-shadow: 
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.15),
+    inset 0 -1.5px 1px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
 }
-/* Отключаем псевдо-элементы для светлой темы, чтобы сохранить простой вид /
+
+/* Отключаем псевдо-элементы для светлой темы, чтобы сохранить простой вид */
 .ios-glass-final::before,
 .ios-glass-final::after {
-content: none;
+  content: none;
 }
-/ --- КОНЕЦ ИЗМЕНЕНИЙ --- */
-/* ИЗМЕНЕНИЕ: Новый класс для всплывающих окон с эффектом стекла /
+/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
+
+
+/* ИЗМЕНЕНИЕ: Новый класс для всплывающих окон с эффектом стекла */
 .ios-glass-popover {
-backdrop-filter: blur(10px); / Менее интенсивное размытие для небольших элементов /
--webkit-backdrop-filter: blur(10px);
-background-color: rgba(255, 255, 255, 0.9); / Почти непрозрачный светлый фон /
-border: 1px solid rgba(0, 0, 0, 0.05);
-box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); / Легкая тень */
+  backdrop-filter: blur(10px); /* Менее интенсивное размытие для небольших элементов */
+  -webkit-backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.9); /* Почти непрозрачный светлый фон */
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Легкая тень */
 }
-/* Стили для темной темы для всплывающих окон /
+
+/* Стили для темной темы для всплывающих окон */
 html.dark .ios-glass-popover {
-background-color: rgba(30, 41, 59, 0.9); / Почти непрозрачный темный фон (slate-800) */
-border: 1px solid rgba(255, 255, 255, 0.05);
-box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  background-color: rgba(30, 41, 59, 0.9); /* Почти непрозрачный темный фон (slate-800) */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 }
+
+
 /* 5. СТИЛИ ДЛЯ АНИМИРОВАННОЙ 3D-СФЕРЫ */
 .scene {
-width: 500px;
-height: 500px;
-perspective: 1000px;
+  width: 500px;
+  height: 500px;
+  perspective: 1000px;
 }
+
 .sphere {
-width: 100%;
-height: 100%;
-position: relative;
-transform-style: preserve-3d;
-animation: rotate-scene 40s infinite linear;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: rotate-scene 40s infinite linear;
 }
+
 @keyframes rotate-scene {
-from {
-transform: rotateY(0deg) rotateX(20deg);
+  from {
+    transform: rotateY(0deg) rotateX(20deg);
+  }
+  to {
+    transform: rotateY(360deg) rotateX(20deg);
+  }
 }
-to {
-transform: rotateY(360deg) rotateX(20deg);
-}
-}
+
 .sphere-ring {
-position: absolute;
-top: 0;
-left: 0;
-box-shadow: 0 0 20px currentColor, inset 0 0 20px currentColor;
-}
+   position: absolute;
+   top: 0;
+   left: 0;
+   box-shadow: 0 0 20px currentColor, inset 0 0 20px currentColor; 
+ }
+
 .sphere-ring-1 {
-border-color: rgba(192, 132, 252, 0.5);
-transform: rotateY(20deg) rotateX(10deg);
-}
+   border-color: rgba(192, 132, 252, 0.5);
+   transform: rotateY(20deg) rotateX(10deg);
+ }
+
 .sphere-ring-2 {
-border-color: rgba(96, 165, 250, 0.5);
-transform: rotateY(-50deg) rotateX(55deg);
-}
+   border-color: rgba(96, 165, 250, 0.5);
+   transform: rotateY(-50deg) rotateX(55deg);
+ }
+
 .sphere-ring-3 {
-border-color: rgba(52, 211, 153, 0.5);
-transform: rotateY(120deg) rotateX(80deg);
-}
+   border-color: rgba(52, 211, 153, 0.5);
+   transform: rotateY(120deg) rotateX(80deg);
+ }
+ 
 .core {
-position: absolute;
-top: 50%;
-left: 50%;
-width: 100px;
-height: 100px;
-border-radius: 50%;
-transform: translate(-50%, -50%);
-background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 70%);
-filter: blur(5px);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 70%);
+  filter: blur(5px);
 }
-/* ИЗМЕНЕНИЕ: Глобальные стили для кастомного скроллбара /
-/ Для WebKit-браузеров (Chrome, Safari, Edge, Opera) /
+
+/* ИЗМЕНЕНИЕ: Глобальные стили для кастомного скроллбара */
+/* Для WebKit-браузеров (Chrome, Safari, Edge, Opera) */
 ::-webkit-scrollbar {
-width: 8px; / Ширина для вертикального скроллбара /
-height: 8px; / Высота для горизонтального скроллбара */
+  width: 8px; /* Ширина для вертикального скроллбара */
+  height: 8px; /* Высота для горизонтального скроллбара */
 }
+
 ::-webkit-scrollbar-track {
-background: transparent; /* Полностью прозрачный фон дорожки */
+  background: transparent; /* Полностью прозрачный фон дорожки */
 }
+
 ::-webkit-scrollbar-thumb {
-background-color: rgba(135, 135, 135, 0.5); /* Цвет ползунка (с небольшой прозрачностью) /
-border-radius: 10px; / Закругленные края ползунка /
-border: none; / Убираем рамку */
+  background-color: rgba(135, 135, 135, 0.5); /* Цвет ползунка (с небольшой прозрачностью) */
+  border-radius: 10px; /* Закругленные края ползунка */
+  border: none; /* Убираем рамку */
 }
+
 ::-webkit-scrollbar-thumb:hover {
-background-color: rgba(135, 135, 135, 0.7); /* Цвет ползунка при наведении */
+  background-color: rgba(135, 135, 135, 0.7); /* Цвет ползунка при наведении */
 }
+
 /* Убираем кнопки со стрелками (только для WebKit) */
 ::-webkit-scrollbar-button {
-display: none;
-width: 0;
-height: 0;
+  display: none;
+  width: 0;
+  height: 0;
 }
-{
-scrollbar-width: thin; /* "auto" | "thin" | "none" /
-scrollbar-color: rgba(135, 135, 135, 0.5) transparent; / thumb color track color */
+
+* {
+  scrollbar-width: thin; /* "auto" | "thin" | "none" */
+  scrollbar-color: rgba(135, 135, 135, 0.5) transparent; /* thumb color track color */
 }
-/* --- НАЧАЛО ИЗМЕНЕНИЯ --- /
-/ Утилита для скрытия скроллбара, но сохранения возможности скроллить /
-.no-scrollbar::-webkit-scrollbar {
-display: none;
-}
-.no-scrollbar {
--ms-overflow-style: none;
-scrollbar-width: none;
-}
-/ --- КОНЕЦ ИЗМЕНЕНИЯ --- */
+
 img,
 video {
--webkit-touch-callout: none; /* iOS Safari /
--webkit-user-select: none; / Safari /
--khtml-user-select: none; / Konqueror HTML /
--moz-user-select: none; / Old versions of Firefox /
--ms-user-select: none; / Internet Explorer/Edge /
-user-select: none; / Non-prefixed version, currently supported by Chrome, Opera and Firefox */
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none;   /* Safari */
+  -khtml-user-select: none;    /* Konqueror HTML */
+  -moz-user-select: none;      /* Old versions of Firefox */
+  -ms-user-select: none;       /* Internet Explorer/Edge */
+  user-select: none;           /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
 }
-/* ИЗМЕНЕНИЕ: Стили для Tippy.js (всплывающих окон) /
+
+/* ИЗМЕНЕНИЕ: Стили для Tippy.js (всплывающих окон) */
 .tippy-box {
-background-color: transparent; / Основной фон будет задан через ios-glass-popover */
+  background-color: transparent; /* Основной фон будет задан через ios-glass-popover */
 }
-/* Стрелка Tippy /
+
+/* Стрелка Tippy */
 .tippy-arrow {
-color: rgba(255, 255, 255, 0.9); / Цвет стрелки должен соответствовать цвету фона popover */
+  color: rgba(255, 255, 255, 0.9); /* Цвет стрелки должен соответствовать цвету фона popover */
 }
+
 html.dark .tippy-arrow {
-color: rgba(30, 41, 59, 0.9); /* Цвет стрелки для темной темы (slate-800 с прозрачностью) */
+  color: rgba(30, 41, 59, 0.9); /* Цвет стрелки для темной темы (slate-800 с прозрачностью) */
 }
-/* --- НАЧАЛО ИЗМЕНЕНИЙ: Кастомные стили для rc-slider --- /
+
+/* --- НАЧАЛО ИЗМЕНЕНИЙ: Кастомные стили для rc-slider --- */
 .rc-slider {
-position: relative;
-height: 14px;
-padding: 5px 0;
-width: 100%;
-border-radius: 6px;
-touch-action: none;
-box-sizing: border-box;
--webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  position: relative;
+  height: 14px;
+  padding: 5px 0;
+  width: 100%;
+  border-radius: 6px;
+  touch-action: none;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 .rc-slider * {
-box-sizing: border-box;
--webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
-/ --- ИСПРАВЛЕНИЕ: Возвращаем видимый фон для подложки слайдера --- /
+/* --- ИСПРАВЛЕНИЕ: Возвращаем видимый фон для подложки слайдера --- */
 .rc-slider-rail {
-position: absolute;
-width: 100%;
-background-color: #e2e8f0; / slate-200 /
-height: 4px;
-border-radius: 6px;
+  position: absolute;
+  width: 100%;
+  background-color: #e2e8f0; /* slate-200 */
+  height: 4px;
+  border-radius: 6px;
 }
-/ --- ИСПРАВЛЕНИЕ: Видимый фон для темной темы --- /
+/* --- ИСПРАВЛЕНИЕ: Видимый фон для темной темы --- */
 html.dark .rc-slider-rail {
-background-color: #475569; / slate-600 /
+    background-color: #475569; /* slate-600 */
 }
 .rc-slider-track {
-position: absolute;
-left: 0;
-height: 4px;
-border-radius: 6px;
-background-color: #3b82f6; / синий-500 /
+  position: absolute;
+  left: 0;
+  height: 4px;
+  border-radius: 6px;
+  background-color: #3b82f6; /* синий-500 */
 }
 .rc-slider-handle {
-position: absolute;
-width: 14px;
-height: 14px;
-margin-top: -5px;
-background-color: #fff;
-border: solid 2px #3b82f6; / синий-500 /
-border-radius: 50%;
-cursor: grab;
-touch-action: pan-x;
-opacity: 0; / Скрываем по умолчанию /
-transition: opacity 0.2s ease-in-out;
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  background-color: #fff;
+  border: solid 2px #3b82f6; /* синий-500 */
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: pan-x;
+  opacity: 0; /* Скрываем по умолчанию */
+  transition: opacity 0.2s ease-in-out;
 }
 .rc-slider:hover .rc-slider-handle {
-opacity: 1; / Показываем при наведении на весь слайдер /
+    opacity: 1; /* Показываем при наведении на весь слайдер */
 }
 .rc-slider-handle:focus {
-outline: none;
-box-shadow: none;
+  outline: none;
+  box-shadow: none;
 }
 .rc-slider-handle-dragging.rc-slider-handle-dragging.rc-slider-handle-dragging {
-border-color: #2563eb; / синий-600 */
-box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.2);
+  border-color: #2563eb; /* синий-600 */
+  box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.2);
 }
 .rc-slider-handle:active {
-cursor: grabbing;
+  cursor: grabbing;
 }
+
 /* --- НАЧАЛО ИЗМЕНЕНИЯ: Анимация для кнопки Play --- */
 @keyframes pulse-play {
-0% { transform: scale(1); opacity: 0.8; }
-50% { transform: scale(1.1); opacity: 1; }
-100% { transform: scale(1); opacity: 0.8; }
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
 }
+
 .animate-pulse-play {
-animation: pulse-play 1.5s infinite ease-in-out;
+  animation: pulse-play 1.5s infinite ease-in-out;
 }
 /* --- КОНЕЦ ИЗМЕНЕНИЯ --- */
+
 .premium-gradient-bg {
-/* Фиолетово-сине-розовый градиент /
-background: linear-gradient(-45deg, #8b5cf6, #3b82f6, #6366f1, #ec4899);
-/ Делаем фон в 4 раза больше, чтобы было куда двигаться */
-background-size: 400% 400%;
-animation: premium-glow 8s ease infinite;
+  /* Фиолетово-сине-розовый градиент */
+  background: linear-gradient(-45deg, #8b5cf6, #3b82f6, #6366f1, #ec4899);
+  /* Делаем фон в 4 раза больше, чтобы было куда двигаться */
+  background-size: 400% 400%;
+  animation: premium-glow 8s ease infinite;
 }
+
 @keyframes premium-glow {
-0% {
-background-position: 0% 50%;
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
-50% {
-background-position: 100% 50%;
-}
-100% {
-background-position: 0% 50%;
-}
-}
+
 /* --- Стили для премиум-элементов --- */
 .premium-gradient-text {
-background: linear-gradient(-45deg, #a78bfa, #60a5fa, #818cf8, #f472b6);
-background-size: 300% 300%;
-animation: premium-glow 6s ease infinite;
--webkit-background-clip: text;
-background-clip: text;
--webkit-text-fill-color: transparent;
+  background: linear-gradient(-45deg, #a78bfa, #60a5fa, #818cf8, #f472b6);
+  background-size: 300% 300%;
+  animation: premium-glow 6s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
+
 .premium-icon-glow {
-filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
-animation: premium-icon-pulse 3s infinite ease-in-out;
+  filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
+  animation: premium-icon-pulse 3s infinite ease-in-out;
 }
+
 @keyframes premium-icon-pulse {
-0% {
-filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
+  0% {
+    filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(96, 165, 250, 1));
+  }
+  100% {
+    filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
+  }
 }
-50% {
-filter: drop-shadow(0 0 10px rgba(96, 165, 250, 1));
-}
-100% {
-filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
-}
-}
-/* --- НОВЫЕ СТИЛИ: Анимированный золотой текст для Premium --- /
+/* --- НОВЫЕ СТИЛИ: Анимированный золотой текст для Premium --- */
 .premium-shimmer-text {
-/ Создаем золотой градиент /
-background: linear-gradient(90deg, #d4af37, #ffd700, #fff8dc, #ffd700, #d4af37);
-/ Делаем фон в 2 раза шире, чтобы анимация была плавной */
-background-size: 200% auto;
-/* Магия: обрезаем фон по форме текста */
--webkit-background-clip: text;
-background-clip: text;
-/* Делаем сам текст прозрачным, чтобы был виден фон-градиент */
--webkit-text-fill-color: transparent;
-/* Подключаем анимацию движения градиента */
-animation: premium-text-shimmer 3s linear infinite;
+  /* Создаем золотой градиент */
+  background: linear-gradient(90deg, #d4af37, #ffd700, #fff8dc, #ffd700, #d4af37);
+  /* Делаем фон в 2 раза шире, чтобы анимация была плавной */
+  background-size: 200% auto;
+  
+  /* Магия: обрезаем фон по форме текста */
+  -webkit-background-clip: text;
+  background-clip: text;
+  
+  /* Делаем сам текст прозрачным, чтобы был виден фон-градиент */
+  -webkit-text-fill-color: transparent;
+  
+  /* Подключаем анимацию движения градиента */
+  animation: premium-text-shimmer 3s linear infinite;
 }
+
 @keyframes premium-text-shimmer {
-from {
-background-position: 200% center;
+  from {
+    background-position: 200% center;
+  }
+  to {
+    background-position: -200% center;
+  }
 }
-to {
-background-position: -200% center;
-}
-}
+
 /* --- Стили для кастомных рамок аватара --- */
 .premium-border-animated-1 {
-padding: 4px;
-background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-background-size: 400% 400%;
-animation: premium-border-flow 15s ease infinite;
+  padding: 4px;
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  animation: premium-border-flow 15s ease infinite;
 }
+
 .premium-border-animated-2 {
-padding: 4px;
-background: linear-gradient(-45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #9a2b9f, #7232b5, #4a39cf, #405de6);
-background-size: 600% 600%;
-animation: premium-border-flow 10s ease infinite;
+  padding: 4px;
+  background: linear-gradient(-45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #9a2b9f, #7232b5, #4a39cf, #405de6);
+  background-size: 600% 600%;
+  animation: premium-border-flow 10s ease infinite;
 }
+
 @keyframes premium-border-flow {
-0% { background-position: 0% 50%; }
-50% { background-position: 100% 50%; }
-100% { background-position: 0% 50%; }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
+
 @keyframes premium-border-pulse {
-0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
 .premium-border-animated-pulse {
-padding: 4px;
-animation: premium-border-pulse 2s infinite;
+  padding: 4px;
+  animation: premium-border-pulse 2s infinite;
 }
+
 .profile-card-accent {
-background-size: 400px;
-animation: accent-flow 20s linear infinite;
+  background-size: 400px;
+  animation: accent-flow 20s linear infinite;
 }
 @keyframes accent-flow {
-from { background-position: 0 0; opacity: 0.2; } /* Начинаем с меньшей прозрачности /
-50% { opacity: 0.4; } / Делаем ярче в середине анимации /
-to { background-position: -500px -500px; opacity: 0.2; } / Возвращаемся к исходной прозрачности */
+  from { background-position: 0 0; opacity: 0.2; } /* Начинаем с меньшей прозрачности */
+  50% { opacity: 0.4; } /* Делаем ярче в середине анимации */
+  to { background-position: -500px -500px; opacity: 0.2; } /* Возвращаемся к исходной прозрачности */
 }
+
 /* --- Анимация градиента для страницы плейлиста --- */
 @keyframes gradientShift {
-0% {
-background-position: 0% 50%;
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
-50% {
-background-position: 100% 50%;
-}
-100% {
-background-position: 0% 50%;
-}
-}
+
 .dynamic-gradient::before {
-content: '';
-position: absolute;
-top: 0;
-left: 0;
-right: 0;
-bottom: 0;
-background: linear-gradient(270deg, var(--color1), var(--color2));
-background-size: 400% 400%;
-animation: gradientShift 15s ease infinite;
-opacity: 0.3; /* Уменьшаем интенсивность градиента /
-z-index: -1; / Помещаем псевдоэлемент за контентом */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(270deg, var(--color1), var(--color2));
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  opacity: 0.3; /* Уменьшаем интенсивность градиента */
+  z-index: -1; /* Помещаем псевдоэлемент за контентом */
 }
