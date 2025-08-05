@@ -2,16 +2,16 @@
 
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import axios from 'axios';
-import { UserDataCache } from '../utils/UserDataCacheService'; // --- ИМПОРТ
-import { jwtDecode } from 'jwt-decode'; // --- ИМПОРТ
+import { UserDataCache } from '../utils/UserDataCacheService';
+import { jwtDecode } from 'jwt-decode';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export const UserContext = createContext(null);
 
-export const useUser = () => {
-    return useContext(UserContext);
-};
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Удаляем хук useUser из этого файла ---
+// export const useUser = () => { ... } // <--- ЭТА ФУНКЦИЯ УДАЛЯЕТСЯ
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 export const UserProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
@@ -20,7 +20,6 @@ export const UserProvider = ({ children }) => {
     const [addedPacks, setAddedPacks] = useState([]);
     const [loadingPacks, setLoadingPacks] = useState(true);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Функция для фонового обновления данных ---
     const fetchFreshData = useCallback(async (currentToken) => {
         if (!currentToken) return;
         try {
@@ -37,7 +36,6 @@ export const UserProvider = ({ children }) => {
         } catch (error) {
             console.error("Ошибка фонового обновления данных пользователя:", error);
             if (error.response?.status === 401) {
-                // Если токен невалиден, выходим из системы
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 setToken(null);
@@ -48,7 +46,6 @@ export const UserProvider = ({ children }) => {
         }
     }, []);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Основной useEffect для загрузки пользователя ---
     useEffect(() => {
         let isMounted = true;
         const loadInitialData = async () => {
@@ -65,11 +62,9 @@ export const UserProvider = ({ children }) => {
                         loadedFromCache = true;
                     }
                 } catch (e) {
-                    // Невалидный токен, будет обработан в fetchFreshData
+                    // Невалидный токен
                 }
 
-                // В любом случае загружаем свежие данные. Если кеша не было, это будет основная загрузка.
-                // Если кеш был, это будет фоновое обновление.
                 await fetchFreshData(token);
 
                 if (isMounted) {
@@ -97,7 +92,6 @@ export const UserProvider = ({ children }) => {
             window.removeEventListener('packsUpdated', refetchAll);
         };
     }, [token, fetchFreshData]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
     const updateUserToken = useCallback((newToken) => {
         setToken(newToken);
@@ -108,7 +102,7 @@ export const UserProvider = ({ children }) => {
             localStorage.removeItem('user');
             setCurrentUser(null);
             setAddedPacks([]);
-            UserDataCache.clearAll(); // Очищаем кеш при выходе
+            UserDataCache.clearAll();
         }
     }, []);
 
@@ -118,10 +112,10 @@ export const UserProvider = ({ children }) => {
         loadingUser,
         token,
         updateUserToken,
-        refetchUser: () => fetchFreshData(token), // Обновляем refetchUser
+        refetchUser: () => fetchFreshData(token),
         addedPacks,
         loadingPacks,
-        refetchPacks: () => fetchFreshData(token), // Обновляем refetchPacks
+        refetchPacks: () => fetchFreshData(token),
     };
 
     return (
