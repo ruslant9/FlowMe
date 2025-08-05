@@ -216,24 +216,28 @@ const PlaylistPage = () => {
             <main 
                 className="flex-1 overflow-y-auto"
             >
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                 <div
-                    className="sticky top-0 z-10 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300 dynamic-gradient"
+                    className="sticky top-0 z-10 p-6 md:p-8 pt-16 text-white min-h-[280px] flex flex-col justify-end transition-all duration-300 dynamic-gradient"
                     style={{
                         '--color1': accentColors[0],
                         '--color2': accentColors[1],
                     }}
                 >
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-lg"></div>
                      <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">
                         <ArrowLeft size={16}/> <span>Назад</span>
                     </button>
                     <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6 text-white">
-                        <div className={`w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl ${getCoverGridClass()}`}>
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                        <div className={`w-40 h-40 md:w-48 md:h-48 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl ${getCoverGridClass()}`}>
                              {renderPlaylistCover()}
                         </div>
                          <div className="flex flex-col items-center md:items-start text-center md:text-left">
                              <span className="text-sm font-bold opacity-80">Плейлист</span>
-                            <h1 className="text-4xl md:text-7xl font-extrabold break-words mt-1" style={{textShadow: '0 2px 10px rgba(0,0,0,0.5)'}}>{playlist.name}</h1>
+                            <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{textShadow: '0 2px 10px rgba(0,0,0,0.5)'}}>{playlist.name}</h1>
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <p className="opacity-80 mt-2 max-w-lg">{playlist.description}</p>
                             <div className="flex items-center space-x-2 mt-3 text-sm">
                                  <Link to={`/profile/${playlist.user._id}`}>
