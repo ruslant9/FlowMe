@@ -397,6 +397,8 @@ router.put('/content/tracks/:id', formParser.none(), async (req, res) => {
             genres: parsedGenres,
             isExplicit: isExplicit === 'true',
             releaseDate: releaseDate || null,
+            status: 'approved',
+            type: 'library_track'
         };
 
         const updatedTrack = await Track.findByIdAndUpdate(req.params.id, updateData, { new: true });

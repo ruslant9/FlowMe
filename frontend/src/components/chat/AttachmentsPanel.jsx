@@ -5,8 +5,6 @@ import { Loader2, X, Image as ImageIcon, Music } from 'lucide-react';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import AttachedTrack from '../music/AttachedTrack';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 const CachedImage = ({ src, alt, onClick }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -15,7 +13,7 @@ const CachedImage = ({ src, alt, onClick }) => {
     return <img src={finalSrc} alt={alt} className="w-full h-full object-cover" onClick={onClick} />;
 };
 
-const TabButton = ({ active, onClick, children, count }) => (
+const TabButton = ({ active, onClick, children, count = 0 }) => (
     <button
         onClick={onClick}
         className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
@@ -29,7 +27,7 @@ const TabButton = ({ active, onClick, children, count }) => (
     </button>
 );
 
-const AttachmentsPanel = ({ activeTab, setActiveTab, attachments, counts, loading, hasMore, onLoadMore, onClose, onImageClick }) => {
+const AttachmentsPanel = ({ activeTab, setActiveTab, attachments, counts = { photos: 0, music: 0 }, loading, hasMore, onLoadMore, onClose, onImageClick }) => {
     const observer = useRef();
     const lastAttachmentElementRef = useCallback(node => {
         if (loading) return;
@@ -55,10 +53,10 @@ const AttachmentsPanel = ({ activeTab, setActiveTab, attachments, counts, loadin
                 <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X size={20} /></button>
             </header>
             <div className="flex items-center space-x-2 p-2 border-b border-slate-200 dark:border-slate-700/50">
-                <TabButton active={activeTab === 'photos'} onClick={() => setActiveTab('photos')} count={counts.photos}>
+                <TabButton active={activeTab === 'photos'} onClick={() => setActiveTab('photos')} count={counts?.photos ?? 0}>
                     <ImageIcon size={16} /><span>Фото</span>
                 </TabButton>
-                <TabButton active={activeTab === 'music'} onClick={() => setActiveTab('music')} count={counts.music}>
+                <TabButton active={activeTab === 'music'} onClick={() => setActiveTab('music')} count={counts?.music ?? 0}>
                     <Music size={16} /><span>Музыка</span>
                 </TabButton>
             </div>

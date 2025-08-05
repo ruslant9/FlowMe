@@ -113,6 +113,12 @@ export const WebSocketProvider = ({ children }) => {
         console.log('WebSocket: Соединение установлено.');
         setIsConnected(true);
         reconnectAttemptsRef.current = 0;
+        if (reconnectAttemptsRef.current > 0) {
+            toast.success('Соединение восстановлено. Обновляем страницу...');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500); 
+        }
         if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
         const wsToken = localStorage.getItem('token');
         if (wsToken) {

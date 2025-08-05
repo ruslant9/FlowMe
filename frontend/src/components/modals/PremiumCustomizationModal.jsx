@@ -362,7 +362,7 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                                             title={emoji.name}
                                                         >
                                                             {emoji.url ? (
-                                                                <img src={emoji.url} alt={emoji.name} className="w-8 h-8 object-contain" />
+                                                                <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" />
                                                             ) : (
                                                                 <span className="text-xs">Нет</span>
                                                             )}

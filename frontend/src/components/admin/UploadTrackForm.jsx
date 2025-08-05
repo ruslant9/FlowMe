@@ -231,16 +231,26 @@ const MonthYearPicker = ({ value, onChange }) => {
 
     return (
         <div className="grid grid-cols-2 gap-2">
-            <select value={selectedMonth} onChange={handleMonthChange} className="w-full p-2 rounded bg-white dark:bg-slate-700">
-                {months.map(month => (
-                    <option key={month.value} value={month.value}>{month.name}</option>
-                ))}
-            </select>
-            <select value={selectedYear} onChange={handleYearChange} className="w-full p-2 rounded bg-white dark:bg-slate-700">
-                {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                ))}
-            </select>
+            <div className="relative">
+                <select value={selectedMonth} onChange={handleMonthChange} className="w-full p-2 pr-8 rounded bg-white dark:bg-slate-700 appearance-none">
+                    {months.map(month => (
+                        <option key={month.value} value={month.value}>{month.name}</option>
+                    ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center -mr-2 px-2 text-slate-700 dark:text-slate-300">
+                    <ChevronDown size={16} />
+                </div>
+            </div>
+            <div className="relative">
+                <select value={selectedYear} onChange={handleYearChange} className="w-full p-2 pr-8 rounded bg-white dark:bg-slate-700 appearance-none">
+                    {years.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                    ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center -mr-2 px-2 text-slate-700 dark:text-slate-300">
+                    <ChevronDown size={16} />
+                </div>
+            </div>
         </div>
     );
 };
@@ -382,7 +392,6 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
         try {
             const isAdmin = currentUser.role === 'admin';
             if (isEditMode) {
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика объединения исполнителей при редактировании ---
                 const finalArtistIds = albumId && mainAlbumArtistId
                     ? [...new Set([mainAlbumArtistId, ...singleTrackData.artistIds])]
                     : singleTrackData.artistIds;
@@ -392,19 +401,16 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
                     setLoading(false);
                     return;
                 }
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
                 const formData = new FormData();
                 formData.append('title', singleTrackData.title);
-                formData.append('artistIds', JSON.stringify(finalArtistIds)); // <-- Используем finalArtistIds
+                formData.append('artistIds', JSON.stringify(finalArtistIds));
                 formData.append('albumId', albumId || '');
                 formData.append('genres', JSON.stringify(singleTrackData.genres || []));
                 formData.append('isExplicit', singleTrackData.isExplicit);
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Отправляем дату только для синглов ---
                 if (!albumId) {
                     formData.append('releaseDate', singleTrackData.releaseDate.toISOString());
                 }
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 await axios.put(`${API_URL}/api/admin/content/tracks/${initialData._id}`, formData, { headers: axiosConfig.headers });
                 toast.success("Трек успешно обновлен!", { id: toastId });
                 onSuccess();
@@ -503,11 +509,9 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
             ) : (
                 <div className="space-y-4">
                      <div>
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Динамический заголовок --- */}
                         <label className="text-sm font-semibold block mb-1">
                             {albumId ? 'Дополнительные исполнители (фит)' : 'Исполнитель *'}
                         </label>
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <MultiArtistAutocomplete artists={artists} selectedIds={singleTrackData.artistIds} onSelectionChange={(ids) => handleSingleTrackChange('artistIds', ids)} excludeIds={mainAlbumArtistId ? [mainAlbumArtistId] : []}/>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
