@@ -3,10 +3,10 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const createWindow = () => {
   const win = new BrowserWindow({
-    width: 1150, 
+    width: 750, 
     height: 900,
 
-    minWidth: 1150,
+    minWidth: 750,
     minHeight: 900,
     webPreferences: {
       devTools: false, 

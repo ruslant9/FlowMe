@@ -1,4 +1,4 @@
-// frontend/src/pages/UserProfilePage.jsx
+// frontend/src/pages/UserProfilePage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -23,6 +23,7 @@ import MusicListModal from '../components/modals/MusicListModal';
 import CommunityInviteModal from '../components/modals/CommunityInviteModal';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 import { UserDataCache } from '../utils/UserDataCacheService'; 
+import ProfileField from '../components/ProfileField'; // --- ИСПРАВЛЕНИЕ: Импортируем общий компонент ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -54,17 +55,7 @@ const formatLastSeen = (dateString) => {
 
 const Spinner = ({ size = 20 }) => <Loader2 size={20} className="animate-spin" />;
 
-const ProfileField = ({ label, value, accentTextColor }) => {
-    const labelClasses = accentTextColor ? '' : 'text-slate-500 dark:text-white/50';
-    const labelStyle = accentTextColor ? { color: accentTextColor, opacity: 0.7 } : {};
-
-    return (
-        <div>
-            <p className={`text-sm ${labelClasses}`} style={labelStyle}>{label}</p>
-            <p className="text-lg break-words">{value || 'Скрыто'}</p>
-        </div>
-    );
-};
+// --- ИСПРАВЛЕНИЕ: Удаляем локальное определение компонента ProfileField, так как он теперь импортируется ---
 
 const UserInteractionButtons = ({ status, onAction, user, isProcessing, onWriteMessage, onInvite }) => {
     const primaryButtonClasses = 'px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 bg-blue-500 text-white hover:bg-blue-600';
@@ -214,25 +205,23 @@ const UserProfilePage = () => {
 
 
     const fetchUserProfile = useCallback(async (showLoader = true) => {
-        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
         let loadedFromCache = false;
         const cachedData = await UserDataCache.getUser(userId);
         if (cachedData) {
             setProfileData(cachedData);
-            setLoading(false); // Показываем кешированные данные сразу
+            setLoading(false); 
             loadedFromCache = true;
         } else if (showLoader) {
             setLoading(true);
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         setError(null);
         const token = localStorage.getItem('token');
         try {
             const profileRes = await axios.get(`${API_URL}/api/user/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
             const freshProfileData = profileRes.data;
-            await UserDataCache.setUser(userId, freshProfileData); // Обновляем кеш
-            setProfileData(freshProfileData); // Обновляем состояние свежими данными
+            await UserDataCache.setUser(userId, freshProfileData); 
+            setProfileData(freshProfileData); 
 
             if (freshProfileData.isBlockedByThem) {
                 setPosts([]);
@@ -287,7 +276,7 @@ const UserProfilePage = () => {
             setError(err.response?.data?.message || 'Не удалось загрузить профиль.');
             toast.error(err.response?.data?.message || 'Ошибка загрузки профиля.');
         } finally {
-            if (!loadedFromCache) { // Выключаем спиннер, только если он был включен
+            if (!loadedFromCache) { 
                 setLoading(false);
             }
         }

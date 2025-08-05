@@ -1,4 +1,4 @@
-// frontend/src/pages/MyProfilePage.jsx
+// frontend/src/pages/MyProfilePage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
@@ -24,6 +24,7 @@ import StatusModal from '../components/modals/StatusModal';
 import PremiumCustomizationModal from '../components/modals/PremiumCustomizationModal';
 import AnimatedAccent from '../components/AnimatedAccent';
 import { motion, AnimatePresence } from 'framer-motion';
+import ProfileField from '../components/ProfileField'; // --- ИСПРАВЛЕНИЕ: Добавляем импорт ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -308,6 +309,7 @@ const MyProfilePage = () => {
                             )}
                             <div className="bg-slate-800 rounded-2xl p-6 space-y-4">
                                <h3 className="text-xl font-bold text-white mb-2">Основная информация</h3>
+                               {/* --- ИСПРАВЛЕНИЕ: Используем ProfileField вместо ProfileFieldDisplay --- */}
                                <ProfileField label="Местоположение" value={[user.city, user.country].filter(Boolean).join(', ')} />
                                <ProfileField label="Дата рождения" value={user.dob ? format(new Date(user.dob), 'd MMMM yyyy', { locale: ru }) : ''} />
                                <ProfileField label="Пол" value={user.gender} />
