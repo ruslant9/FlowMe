@@ -21,7 +21,8 @@
     "win": {
       "target": "portable",
       "icon": "icon.ico",
-      "sign": false
+      "certificateFile": null,
+      "certificatePassword": null
     },
     "portable": {
       "splashImage": null
