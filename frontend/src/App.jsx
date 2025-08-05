@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { Sun, Moon, Loader2, ShieldAlert, LogOut, Menu } from 'lucide-react';
-import { useUser } from '../hooks/useUser';
+import { useUser } from './hooks/useUser';
 const LiquidGlassBackground = React.lazy(() => import('./components/LiquidGlassBackground'));
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
