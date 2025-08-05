@@ -267,25 +267,23 @@ const MusicPage = () => {
                             <div className="space-y-10">
                                 <div><MusicWave onPlay={handlePlayWave} /></div>
                                 {mainPageData.popularHits.length > 0 && (
-                                    <div>
-                                        <h2 className="text-2xl font-bold mb-4">Хиты платформы</h2>
-                                         {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1 --- */}
-                                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4">
-                                            {mainPageData.popularHits.map(track => (
-                                                <RecommendationCard 
-                                                    key={track._id} 
-                                                    track={track} 
-                                                    onSelectTrack={() => playTrack(track, mainPageData.popularHits)} 
-                                                    isCurrent={track._id === currentTrack?._id} 
-                                                    isPlaying={isPlaying && track._id === currentTrack?._id} 
-                                                    isLoading={loadingTrackId === track._id} 
-                                                    onPlayPause={togglePlayPause} 
-                                                />
-                                            ))}
-                                        </div>
-                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
-                                    </div>
-                                )}
+    <div>
+        <h2 className="text-2xl font-bold mb-4">Хиты платформы</h2>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4">
+            {mainPageData.popularHits.map(track => (
+                <RecommendationCard 
+                    key={track._id} 
+                    track={track} 
+                    onSelectTrack={() => playTrack(track, mainPageData.popularHits)} 
+                    isCurrent={track._id === currentTrack?._id} 
+                    isPlaying={isPlaying && track._id === currentTrack?._id} 
+                    isLoading={loadingTrackId === track._id} 
+                    onPlayPause={togglePlayPause} 
+                />
+            ))}
+        </div>
+    </div>
+)}
                                 {mainPageData.newReleases.length > 0 && (
                                     <div>
                                         <h2 className="text-2xl font-bold mb-4">Новинки для вас</h2>

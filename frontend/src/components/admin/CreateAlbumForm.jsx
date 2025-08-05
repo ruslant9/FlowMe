@@ -514,7 +514,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                         ))}
                                     </SortableContext>
                                 </div>
-                                <DragOverlay dropAnimation={dropAnimation}>
+                                <DragOverlay dropAnimation={dropAnimation} adjustScale={true}>
                                     {activeTrack ? (
                                         <TrackItem 
                                             track={activeTrack} 

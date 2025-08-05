@@ -17,7 +17,6 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             ''
         ).trim();
     };
-
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
@@ -36,24 +35,23 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         if (!releaseDate) return null;
 
         const now = new Date();
-        const release = new Date(releaseDate);
+        now.setHours(0, 0, 0, 0); // Сбрасываем время для корректного сравнения дат
 
-        // Свежее (этот месяц)
-        if (release.getFullYear() === now.getFullYear() && release.getMonth() === now.getMonth()) {
+        const release = new Date(releaseDate);
+        release.setHours(0, 0, 0, 0);
+        
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // "Свежее": если релиз в этом месяце или в будущем
+        if (release.getFullYear() > now.getFullYear() || (release.getFullYear() === now.getFullYear() && release.getMonth() >= now.getMonth())) {
             return { text: 'Свежее', color: 'bg-lime-400 text-lime-900' };
         }
 
-        // Недавнее (прошлый месяц)
-        let lastMonth = now.getMonth() - 1;
-        let lastMonthYear = now.getFullYear();
-        if (lastMonth < 0) {
-            lastMonth = 11;
-            lastMonthYear -= 1;
-        }
-
-        if (release.getFullYear() === lastMonthYear && release.getMonth() === lastMonth) {
+        // "Недавнее": если релиз был в прошлом месяце
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        if (release.getFullYear() === lastMonth.getFullYear() && release.getMonth() === lastMonth.getMonth()) {
             return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
         }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         return null;
     };
@@ -98,7 +96,7 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </AnimatePresence>
 
             <div className="absolute top-4 right-4 z-20">
-                <button
+                 <button
                     onClick={handlePlayClick}
                     className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:scale-110 transition-transform opacity-0 group-hover:opacity-100"
                 >
