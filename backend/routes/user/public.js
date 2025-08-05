@@ -10,6 +10,7 @@ const { isAllowedByPrivacy } = require('../../utils/privacy');
 const Playlist = require('../../models/Playlist');
 const mongoose = require('mongoose');
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Копируем хелпер-функцию сюда ---
 function populateActiveAccent(userObject) {
     if (!userObject || !userObject.premiumCustomization || !userObject.premiumCustomization.activeCardAccent) {
         return userObject;
@@ -31,6 +32,7 @@ function populateActiveAccent(userObject) {
     
     return userObject;
 }
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
 router.get('/search', authMiddleware, async (req, res) => {
@@ -188,6 +190,7 @@ router.get('/:userId/friends-list', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: 'Доступ к списку друзей ограничен настройками приватности.' });
         }
         const friendsData = await User.findById(targetUserId)
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             .populate({ path: 'friends.user', select: 'username fullName avatar premium premiumCustomization' })
             .select('friends');
         if (!friendsData) return res.status(404).json({ message: 'Пользователь не найден.' });
@@ -211,6 +214,7 @@ router.get('/:userId/subscribers-list', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: 'Доступ к списку подписчиков ограничен настройками приватности.' });
         }
         const subscribersData = await User.findById(targetUserId)
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             .populate('friendRequestsReceived', 'username fullName avatar premium premiumCustomization')
             .select('friendRequestsReceived');
         if (!subscribersData) return res.status(404).json({ message: 'Пользователь не найден.' });
@@ -242,7 +246,68 @@ router.get('/:userId/communities-list', authMiddleware, async (req, res) => {
     }
 });
 
-// --- ROUTE MOVED TO THE END ---
+router.get('/:userId', authMiddleware, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const requesterId = req.user.userId;
+        const targetUser = await User.findById(userId).select('username fullName dob gender interests blacklist lastSeen createdAt avatar privacySettings friends email subscribedCommunities country city status premium premiumCustomization');
+        const requester = await User.findById(requesterId).select('blacklist friends friendRequestsSent friendRequestsReceived');
+        if (!targetUser) return res.status(404).json({ message: 'Пользователь не найден' });
+        if (targetUser._id.toString() === requesterId.toString()) {
+            let userToSend = targetUser.toObject();
+            delete userToSend.blacklist;
+            delete userToSend.friends;
+            userToSend = populateActiveAccent(userToSend);
+            return res.json({ user: userToSend, friendshipStatus: 'self', isBlockedByThem: false, mutualFriendsCount: 0 });
+        }
+        
+        const requesterFriendIds = new Set((requester.friends || []).filter(f => f && f.user).map(f => f.user.toString()));
+        const targetFriendIds = (targetUser.friends || []).filter(f => f && f.user).map(f => f.user.toString());
+        const mutualFriendsCount = targetFriendIds.filter(id => requesterFriendIds.has(id)).length;
+        
+        const targetUserBlacklistIds = (targetUser.blacklist || []).map(id => id.toString());
+        const requesterBlacklistIds = (requester.blacklist || []).map(id => id.toString());
+        const requesterFriendsIds = (requester.friends || []).map(f => f.user.toString());
+        const targetUserIdString = userId.toString();
+        const isRequesterBlockedByTarget = targetUserBlacklistIds.includes(requesterId.toString());
+        const isRequesterBlockingTarget = requesterBlacklistIds.includes(targetUserIdString);
+        if (isRequesterBlockedByTarget) {
+            return res.json({ isBlockedByThem: true, user: { _id: targetUser._id, username: targetUser.username, fullName: targetUser.fullName, avatar: null }, friendshipStatus: 'blocked_by_them', mutualFriendsCount: 0 });
+        }
+        let friendshipStatus = 'none';
+        if (isRequesterBlockingTarget) friendshipStatus = 'blocked';
+        else if (requesterFriendsIds.includes(targetUserIdString)) friendshipStatus = 'friend';
+        else if ((requester.friendRequestsSent || []).map(id => id.toString()).includes(targetUserIdString)) friendshipStatus = 'outgoing';
+        else if ((requester.friendRequestsReceived || []).map(id => id.toString()).includes(targetUserIdString)) friendshipStatus = 'incoming';
+        
+        let userToSend = targetUser.toObject();
+        delete userToSend.blacklist;
+        delete userToSend.friends;
+        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewAvatar, requesterId, targetUser)) userToSend.avatar = null;
+        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewDOB, requesterId, targetUser)) userToSend.dob = null;
+        else if (userToSend.privacySettings?.hideDOBYear && userToSend.dob) {
+            const dobDate = new Date(userToSend.dob);
+            userToSend.dob = new Date(1970, dobDate.getMonth(), dobDate.getDate());
+        }
+        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewEmail, requesterId, targetUser)) userToSend.email = 'Скрыт';
+        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewInterests, requesterId, targetUser)) userToSend.interests = [];
+        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewSubscribedCommunities, requesterId, targetUser)) delete userToSend.subscribedCommunities;
+        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewLocation, requesterId, targetUser)) {
+            userToSend.country = null;
+            userToSend.city = null;
+        }
+        
+        // --- НАЧАЛО ИЗМЕНЕНИЯ: Применяем хелпер-функцию ---
+        userToSend = populateActiveAccent(userToSend);
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+        
+        res.json({ user: userToSend, friendshipStatus, isBlockedByThem: false, mutualFriendsCount });
+
+    } catch(e) {
+        console.error('Error fetching user profile:', e);
+        res.status(500).json({ message: 'Ошибка сервера' });
+    }
+});
 
 router.get('/:userId/mutual-friends', authMiddleware, async (req, res) => {
     try {
@@ -360,6 +425,7 @@ router.get('/:userId/mutual-communities', authMiddleware, async (req, res) => {
     }
 });
 
+// --- НОВЫЙ РОУТ ---
 router.get('/:userId/playlists', authMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;
@@ -369,8 +435,10 @@ router.get('/:userId/playlists', authMiddleware, async (req, res) => {
         
         let query;
         if (isOwner) {
+            // Владелец видит все свои плейлисты
             query = { user: userId };
         } else {
+            // Другие видят только публичные и "не в поиске"
             query = { user: userId, visibility: { $in: ['public', 'unlisted'] } };
         }
         
@@ -386,68 +454,5 @@ router.get('/:userId/playlists', authMiddleware, async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера" });
     }
 });
-
-// --- START OF FIX: Moved this general route to the end ---
-router.get('/:userId', authMiddleware, async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const requesterId = req.user.userId;
-        const targetUser = await User.findById(userId).select('username fullName dob gender interests blacklist lastSeen createdAt avatar privacySettings friends email subscribedCommunities country city status premium premiumCustomization');
-        const requester = await User.findById(requesterId).select('blacklist friends friendRequestsSent friendRequestsReceived');
-        if (!targetUser) return res.status(404).json({ message: 'Пользователь не найден' });
-        if (targetUser._id.toString() === requesterId.toString()) {
-            let userToSend = targetUser.toObject();
-            delete userToSend.blacklist;
-            delete userToSend.friends;
-            userToSend = populateActiveAccent(userToSend);
-            return res.json({ user: userToSend, friendshipStatus: 'self', isBlockedByThem: false, mutualFriendsCount: 0 });
-        }
-        
-        const requesterFriendIds = new Set((requester.friends || []).filter(f => f && f.user).map(f => f.user.toString()));
-        const targetFriendIds = (targetUser.friends || []).filter(f => f && f.user).map(f => f.user.toString());
-        const mutualFriendsCount = targetFriendIds.filter(id => requesterFriendIds.has(id)).length;
-        
-        const targetUserBlacklistIds = (targetUser.blacklist || []).map(id => id.toString());
-        const requesterBlacklistIds = (requester.blacklist || []).map(id => id.toString());
-        const requesterFriendsIds = (requester.friends || []).map(f => f.user.toString());
-        const targetUserIdString = userId.toString();
-        const isRequesterBlockedByTarget = targetUserBlacklistIds.includes(requesterId.toString());
-        const isRequesterBlockingTarget = requesterBlacklistIds.includes(targetUserIdString);
-        if (isRequesterBlockedByTarget) {
-            return res.json({ isBlockedByThem: true, user: { _id: targetUser._id, username: targetUser.username, fullName: targetUser.fullName, avatar: null }, friendshipStatus: 'blocked_by_them', mutualFriendsCount: 0 });
-        }
-        let friendshipStatus = 'none';
-        if (isRequesterBlockingTarget) friendshipStatus = 'blocked';
-        else if (requesterFriendsIds.includes(targetUserIdString)) friendshipStatus = 'friend';
-        else if ((requester.friendRequestsSent || []).map(id => id.toString()).includes(targetUserIdString)) friendshipStatus = 'outgoing';
-        else if ((requester.friendRequestsReceived || []).map(id => id.toString()).includes(targetUserIdString)) friendshipStatus = 'incoming';
-        
-        let userToSend = targetUser.toObject();
-        delete userToSend.blacklist;
-        delete userToSend.friends;
-        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewAvatar, requesterId, targetUser)) userToSend.avatar = null;
-        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewDOB, requesterId, targetUser)) userToSend.dob = null;
-        else if (userToSend.privacySettings?.hideDOBYear && userToSend.dob) {
-            const dobDate = new Date(userToSend.dob);
-            userToSend.dob = new Date(1970, dobDate.getMonth(), dobDate.getDate());
-        }
-        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewEmail, requesterId, targetUser)) userToSend.email = 'Скрыт';
-        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewInterests, requesterId, targetUser)) userToSend.interests = [];
-        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewSubscribedCommunities, requesterId, targetUser)) delete userToSend.subscribedCommunities;
-        if (!isAllowedByPrivacy(userToSend.privacySettings?.viewLocation, requesterId, targetUser)) {
-            userToSend.country = null;
-            userToSend.city = null;
-        }
-        
-        userToSend = populateActiveAccent(userToSend);
-        
-        res.json({ user: userToSend, friendshipStatus, isBlockedByThem: false, mutualFriendsCount });
-
-    } catch(e) {
-        console.error('Error fetching user profile:', e);
-        res.status(500).json({ message: 'Ошибка сервера' });
-    }
-});
-// --- END OF FIX ---
 
 module.exports = router;
