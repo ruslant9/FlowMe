@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import TrackList from '../music/TrackList';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import Avatar from '../Avatar';
 import { Link } from 'react-router-dom';
 

@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Check, Loader2, Sparkles, RotateCcw, CheckCircle, ArrowLeft, Plus, Edit as EditIcon, Trash2 as TrashIcon } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
+
 import { useModal } from '../../hooks/useModal';
 import EmojiPreviewModal from './EmojiPreviewModal';
 import Avatar from '../Avatar';

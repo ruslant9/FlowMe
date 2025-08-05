@@ -7,7 +7,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import PlaylistCard from '../music/PlaylistCard';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import { useNavigate } from 'react-router-dom';
 import ColorThief from 'colorthief';
 import Avatar from '../Avatar';
