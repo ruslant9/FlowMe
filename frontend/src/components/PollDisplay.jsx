@@ -1,7 +1,7 @@
 // frontend/src/components/PollDisplay.jsx
 
 import React, { useMemo, useState } from 'react';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import { motion } from 'framer-motion';
 import { Check, Clock, EyeOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
