@@ -198,7 +198,7 @@ const AlbumPage = () => {
                         ) : (
                             <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
                                 {recommendations.map((recTrack) => (
-                                    <div key={recTrack._id} className="w-1/3 sm:w-1/4 md:w-1/5 lg:w-1/6 flex-shrink-0">
+                                    <div key={recTrack._id} className="w-1/5 sm:w-1/6 lg:w-1/12 flex-shrink-0">
                                         <RecommendationCard
                                             track={recTrack}
                                             onSelectTrack={() => playTrack(recTrack, recommendations)}

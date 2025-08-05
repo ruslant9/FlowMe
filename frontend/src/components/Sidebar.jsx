@@ -191,7 +191,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     render={attrs => <Tooltip text="Мой профиль" attrs={attrs} />}
                                 >
                                     <TippyWrapper>
-                                        <div className="mb-2"> {/* Добавлен отступ снизу */}
+                                        <div className="my-2">
                                             <NavLink
                                               to="/profile"
                                               className={({ isActive }) => `
