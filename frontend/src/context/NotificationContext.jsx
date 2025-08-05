@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useUser } from './UserContext';
+import { useUser } from '../hooks/useUser';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
