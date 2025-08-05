@@ -40,7 +40,6 @@ import FullScreenPlayer from './components/music/FullScreenPlayer';
 import { useWebSocket } from './context/WebSocketContext';
 import WorkshopPage from './pages/WorkshopPage';
 import { Link } from 'react-router-dom';
-import ResponsiveNav from './components/ResponsiveNav';
 
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
   <div className="flex items-center justify-center space-x-2 p-2 rounded-lg">
@@ -325,37 +324,6 @@ const AdminProtectedLayout = () => {
   return <Outlet />;
 };
 
-const navItems = [
-  { path: '/', label: 'Главная', icon: Home },
-  { path: '/search', label: 'Поиск', icon: Search },
-  { path: '/my-music', label: 'Моя музыка', icon: Music },
-  { path: '/playlists', label: 'Плейлисты', icon: ListMusic },
-  { path: '/favorites', label: 'Избранное', icon: Star },
-];
-
-// Компонент-обертка, чтобы получить доступ к useLocation
-const AppContent = () => {
-  const location = useLocation();
-
-  return (
-    <div className="font-sans min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
-      {/* Контент страницы */}
-      <main className="flex-1 p-4 text-center text-slate-800 dark:text-white">
-        <h1 className="text-3xl font-bold">Текущая страница</h1>
-        <p className="mt-2 bg-slate-200 dark:bg-slate-700 inline-block px-4 py-1 rounded-full">{location.pathname}</p>
-      </main>
-
-      {/* Наша навигационная панель в футере */}
-      <footer className="sticky bottom-0 p-4">
-        <ResponsiveNav 
-          items={navItems} 
-          visibleCount={3} // Показываем 2 кнопки + кнопка "Еще"
-          activePath={location.pathname}
-        />
-      </footer>
-    </div>
-  );
-};
 
 function App() {
   const location = useLocation();
@@ -363,7 +331,7 @@ function App() {
   return (
     <>
       <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+        <Routes location={location} key={location.pathname.split('/')[1]}>
 
           <Route element={<AuthLayout><PageWrapper><Outlet /></PageWrapper></AuthLayout>}>
               <Route path="/login" element={<LoginPage />} />

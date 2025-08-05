@@ -1,27 +1,30 @@
 {
-  "name": "my-site-app",
+  "name": "flow-me-app",
   "version": "1.0.0",
+  "description": "Desktop app for Flow me",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-    "build": {
-    "appId": "https://flowme-dfaj.onrender.com",
-    "productName": "Flow me",
-    "win": {
-      "target": "portable",
-      "icon": "icon.ico"
-    },
-    "portable": {
-      "splashImage": null
-    }
+    
+    "build": "electron-builder"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "devDependencies": {
-    "electron": "^37.2.5"
+    "electron": "^31.0.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.flowme.app",
+    "productName": "Flow me",
+    "win": {
+      "target": "portable",
+      "icon": "icon.ico",
+      "sign": false
+    },
+    "portable": {
+      "splashImage": null
+    }
   }
 }
