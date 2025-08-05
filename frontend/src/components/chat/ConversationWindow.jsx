@@ -12,7 +12,7 @@ import { Loader2, MoreVertical, X, ChevronsRight, Trash2, CornerUpLeft, Search, 
 import { useWebSocket } from '../../context/WebSocketContext';
 import { useModal } from '../../hooks/useModal';
 import toast from 'react-hot-toast';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'fns';
 import { ru } from 'date-fns/locale';
 import { useUser } from '../../context/UserContext';
 import SmartDateIndicator from './SmartDateIndicator';
@@ -25,6 +25,7 @@ import ImageViewer from '../ImageViewer';
 import DeletionTimerToast from './DeletionTimerToast';
 import WallpaperModal from './WallpaperModal';
 import ChatCalendarPanel from './ChatCalendarPanel';
+import { MessageCache } from '../../utils/MessageCacheService';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -85,7 +86,7 @@ const getContrastingTextColor = (hexColor) => {
     return luminance > 128 ? '#111827' : '#FFFFFF';
 };
 
-const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequest, initialScrollTop, setRef }) => {
+const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequest }) => {
     const [internalConversation, setInternalConversation] = useState(conversation);
 
     const [messages, setMessages] = useState([]);
@@ -182,12 +183,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     useEffect(() => {
         setInternalConversation(conversation);
     }, [conversation]);
-
-    useEffect(() => {
-        if (setRef) {
-            setRef(scrollContainerRef.current);
-        }
-    }, [setRef]);
 
     const [appTheme, setAppTheme] = useState(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     useEffect(() => {
@@ -409,14 +404,31 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         };
     }, [internalConversation?._id, setActiveConversationId]);
 
-    const fetchMessages = useCallback(async (pageNum, isInitialLoad = false) => {
+    const fetchMessages = useCallback(async (pageNum, isBackgroundSync = false) => {
         if (!internalConversation?._id) {
             setLoading(false);
             setMessages([]);
             setHasMore(false);
             return;
         }
-
+        
+        if (isBackgroundSync) {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(`${API_URL}/api/messages/conversations/${internalConversation._id}/messages?page=1&limit=${MESSAGE_PAGE_LIMIT}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const newMessages = res.data;
+                if (newMessages.length > 0) {
+                    const allMessages = [...messages, ...newMessages.filter(nm => !messages.some(m => m._id === nm._id))];
+                    allMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                    setMessages(allMessages);
+                    await MessageCache.saveMessages(internalConversation._id, allMessages);
+                }
+            } catch (error) { console.error("Background sync failed", error); }
+            return;
+        }
+ 
         if (pageNum > 1) {
             setLoadingMore(true);
         } else {
@@ -431,15 +443,13 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
 
             const scrollContainer = scrollContainerRef.current;
             const oldScrollHeight = scrollContainer ? scrollContainer.scrollHeight : 0;
-            const oldScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
-
-            if (isInitialLoad) {
-                setMessages(res.data);
-            } else {
-                setMessages(prev => [...res.data, ...prev]);
-            }
-
+            const oldScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;            
+ 
+            const newMessages = res.data.reverse();
+            const combined = pageNum === 1 ? newMessages : [...newMessages, ...messages];
+            setMessages(combined);
             setHasMore(res.data.length === MESSAGE_PAGE_LIMIT);
+            await MessageCache.saveMessages(internalConversation._id, combined);
             setPage(pageNum);
 
             if (pageNum > 1 && scrollContainer) {
@@ -455,7 +465,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             setLoading(false);
             setLoadingMore(false);
         }
-    }, [internalConversation?._id]);
+    }, [internalConversation?._id, messages]);
 
      const handleScrollToMessage = useCallback(async (messageId) => {
         const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
@@ -550,32 +560,32 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     }, [messages, highlightedMessageId]);
 
     useEffect(() => {
-        setMessages([]);
-        setPage(1);
-        setHasMore(true);
-        setLoading(true);
-        setIsSearching(false);
-        setSearchQuery('');
-        setSearchResults([]);
-        setCurrentResultIndex(-1);
-        setReplyingTo(null);
-        setEditingMessage(null);
-        setOpenMenuId(null);
-        setSelectionMode(false);
-        setSelectedMessages([]);
-        setAttachmentFile(null);
-        setHighlightedMessageId(null);
-        setUnreadSeparatorIndex(-1);
-        unreadPositionFoundRef.current = false;
-        initialLoadHandledRef.current = false;
-        if (internalConversation?._id) {
-            fetchMessages(1, true);
-        } else {
-            setLoading(false);
-            setMessages([]);
-            setHasMore(false);
-        }
-    }, [internalConversation?._id, internalConversation?.forceMessageRefetch, fetchMessages]);
+        const loadInitialMessages = async () => {
+            if (!internalConversation?._id) return;
+            
+            setLoading(true);
+            
+            // 1. Попробовать загрузить из кеша
+            const cachedMessages = await MessageCache.getMessages(internalConversation._id);
+            if (cachedMessages) {
+                setMessages(cachedMessages);
+                setLoading(false);
+                // 2. Тихое обновление в фоне
+                fetchMessages(1, true); 
+            } else if (internalConversation.initialMessages) {
+                // 3. Если в кеше нет, но есть pre-loaded, используем их
+                setMessages(internalConversation.initialMessages);
+                await MessageCache.saveMessages(internalConversation._id, internalConversation.initialMessages);
+                setLoading(false);
+            } else {
+                // 4. Если нет нигде, грузим с нуля
+                await fetchMessages(1);
+            }
+        };
+        
+        loadInitialMessages();
+        
+    }, [internalConversation?._id, fetchMessages, internalConversation.initialMessages]);
 
     useEffect(() => {
         if (internalConversation?._id && !loading && messages.length > 0 && (internalConversation.unreadCount > 0 || internalConversation.isMarkedAsUnread)) {
@@ -634,17 +644,21 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
 
             const isForThisConversation = 
                 (currentConv?._id && newMessage.conversation === currentConv._id) ||
-                (currentConv?.isNew && 
-                 newMessage.conversationParticipants &&
+                (currentConv?.isNew && newMessage.conversationParticipants &&
                  newMessage.conversationParticipants.includes(currentUserId) && 
                  newMessage.conversationParticipants.includes(currentConv.interlocutor._id));
 
             if (isForThisConversation) {
                 setMessages(prev => {
-                    if (prev.some(msg => msg.uuid === newMessage.uuid)) {
-                        return prev;
+                    // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика замены оптимистичного сообщения ---
+                    const existingIndex = prev.findIndex(m => m.uuid === newMessage.uuid);
+                    if (existingIndex > -1) {
+                        const newMessages = [...prev];
+                        newMessages[existingIndex] = newMessage;
+                        return newMessages;
                     }
-                    return [...prev, newMessage];
+                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+                    return [...prev, newMessage]; // Добавляем сообщение от собеседника
                 });
             }
         };
@@ -706,6 +720,19 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         setUnreadSeparatorIndex(-1);
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         window.dispatchEvent(new CustomEvent('conversationUpdated', { detail: { conversationId: internalConversation._id } }));
+    };
+
+    const handleOptimisticSend = (optimisticMessage) => {
+        setMessages(prev => [...prev, optimisticMessage]);
+        handleMessageSent();
+    };
+
+    const handleSendFail = (failedUuid) => {
+        setMessages(prev => prev.map(msg => 
+            msg.uuid === failedUuid 
+                ? { ...msg, isSending: false, isFailed: true } 
+                : msg
+        ));
     };
 
     const handleReact = async (messageId, emoji) => {
@@ -1049,7 +1076,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                             <div className="flex items-center space-x-2">
                                 <button onClick={onDeselectConversation} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-[color:var(--chat-header-text-color,inherit)]"><CornerUpLeft size={20} /></button>
                                 <Link to={`/profile/${liveInterlocutor._id}`} className="flex items-center space-x-3 group">
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                     {(() => {
                                         const border = liveInterlocutor?.premiumCustomization?.avatarBorder;
                                         const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
@@ -1068,7 +1094,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                             </div>
                                         );
                                     })()}
-                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     <div>
                                         <h2 className="font-bold group-hover:underline flex items-center" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
                                             {liveInterlocutor.fullName || liveInterlocutor.username}
@@ -1208,8 +1233,9 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             
             {selectionMode ? null : canSendMessage ? (
                 <MessageInput
-                    conversationId={internalConversation?._id} recipientId={liveInterlocutor._id} onMessageSent={handleMessageSent}
+                    conversationId={internalConversation?._id} recipientId={liveInterlocutor._id} currentUser={currentUser} onMessageSent={handleMessageSent}
                     replyingTo={replyingTo} onClearReply={() => setReplyingTo(null)} onFileSelect={(file) => setAttachmentFile(file)}
+                    onOptimisticSend={handleOptimisticSend} onSendFail={handleSendFail}
                     editingMessage={editingMessage} onCancelEdit={() => setEditingMessage(null)} onSaveEdit={handleEditMessage}
                 />
             ) : (

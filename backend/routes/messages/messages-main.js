@@ -31,7 +31,7 @@ const broadcastToUsers = (req, userIds, message) => {
 router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req, res) => {
     try {
         const senderId = new mongoose.Types.ObjectId(req.user.userId);
-        let { recipientId, text, replyToMessageId, conversationId, attachedTrackId } = req.body;
+        let { recipientId, text, replyToMessageId, conversationId, attachedTrackId, uuid } = req.body;
         // --- ИЗМЕНЕНИЕ: Очищаем текст ---
         const sanitizedText = sanitize(text);
         const recipientObjectId = new mongoose.Types.ObjectId(recipientId);
@@ -68,7 +68,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
  
         conversation.deletedBy = [];
  
-        const messageUuid = crypto.randomUUID();
+        const messageUuid = uuid || crypto.randomUUID();
  
         const messageData = {
             conversation: conversation._id,

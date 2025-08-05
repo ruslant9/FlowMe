@@ -1,7 +1,7 @@
 // frontend/src/components/music/MusicPlayerBar.jsx
 
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X, Eye } from 'lucide-react';
 import Slider from 'rc-slider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
@@ -76,12 +76,21 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
     return (
         <div className="w-full p-4 flex items-center space-x-4">
             <div className="flex items-center space-x-4 w-1/4 flex-shrink-0">
-                <CachedImage
-                    src={track.albumArtUrl}
-                    alt={track.title}
-                    className="w-16 h-16 rounded-md object-cover shadow-md cursor-pointer"
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                <div 
+                    className="relative w-16 h-16 rounded-md overflow-hidden shadow-md cursor-pointer group flex-shrink-0"
                     onClick={openFullScreenPlayer}
-                />
+                >
+                    <CachedImage
+                        src={track.albumArtUrl}
+                        alt={track.title}
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Eye size={24} className="text-white" />
+                    </div>
+                </div>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 <div className="flex flex-col min-w-0 flex-grow">
                     <p className="font-bold truncate text-lg text-slate-900 dark:text-white">{cleanTitle(track.title)}</p>
                     <p className="text-sm text-slate-700 dark:text-white/60 truncate">{formatArtistName(track.artist)}</p>

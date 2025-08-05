@@ -104,10 +104,6 @@ const MessagesPage = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const conversationData = res.data;
-            
-            if (conversationData.historyCleared) {
-                conversationData.forceMessageRefetch = true;
-            }
 
             setConversations(prev => {
                 const isAlreadyInList = prev.some(c => c._id === conversationData._id);
@@ -127,20 +123,18 @@ const MessagesPage = () => {
     
     useEffect(() => {
         const initialize = async () => {
-            const fetchedConversations = await fetchConversations(!initialLoadCompleteRef.current);
+            await fetchConversations(!initialLoadCompleteRef.current);
             initialLoadCompleteRef.current = true; 
             const conversationFromState = location.state?.conversation;
             if (userIdFromParams && !hasFetchedForParams.current) {
                 hasFetchedForParams.current = true;
                 await findOrCreateConversationWithUser(userIdFromParams);
             } else if (conversationFromState) {
-                const fullConversationData = fetchedConversations.find(c => c._id === conversationFromState._id) || conversationFromState;
-                if (conversationFromState.historyCleared) fullConversationData.forceMessageRefetch = true;
                 setConversations(prev => {
-                    const isAlreadyInList = prev.some(c => c._id === fullConversationData._id);
-                    return isAlreadyInList ? prev.map(c => c._id === fullConversationData._id ? fullConversationData : c) : [fullConversationData, ...prev];
+                    const isAlreadyInList = prev.some(c => c._id === conversationFromState._id);
+                    return isAlreadyInList ? prev.map(c => c._id === conversationFromState._id ? conversationFromState : c) : [conversationFromState, ...prev];
                 });
-                setActiveConversation(fullConversationData);
+                setActiveConversation(conversationFromState);
                 navigate(location.pathname, { replace: true, state: {} });
             }
         };

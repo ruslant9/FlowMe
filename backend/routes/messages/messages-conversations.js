@@ -335,6 +335,30 @@ router.get('/with/:interlocutorId', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Не удалось загрузить диалог.' });
         }
 
+        const messages = await Message.find({
+            conversation: conversation._id,
+            owner: selfId,
+        })
+            .populate('sender', 'username fullName avatar')
+            .populate({
+                path: 'replyTo',
+                populate: {
+                    path: 'sender',
+                    select: 'username fullName premium premiumCustomization'
+                }
+            })
+            .populate('forwardedFrom', 'username fullName')
+            .populate('attachedTrack')
+            .populate({
+                path: 'reactions.user',
+                select: 'username fullName'
+            })
+            .sort({ createdAt: -1 })
+            .limit(30)
+            .lean();
+        
+        populatedConversation.initialMessages = messages.reverse();
+
         populatedConversation.isNew = isNewConversation;
         const lastMessageForUser = await Message.findOne({ conversation: conversation._id, owner: selfId }).sort({ createdAt: -1 }).lean();
         populatedConversation.historyCleared = !lastMessageForUser;

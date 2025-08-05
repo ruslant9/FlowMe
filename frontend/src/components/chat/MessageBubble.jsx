@@ -4,17 +4,16 @@ import React, { useMemo, useRef, useState, forwardRef } from 'react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-import { MoreHorizontal, CornerDownRight, ChevronsRight, Check, CheckCheck, Pencil, Trash2, Pin, Loader2, Image as ImageIcon } from 'lucide-react';
+import { MoreHorizontal, CornerDownRight, ChevronsRight, Check, CheckCheck, Pencil, Trash2, Pin, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
 import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
-import { useCachedImage } from '../../hooks/useCachedImage'; // <-- 1. ИМПОРТ ХУКА
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// 2. ДОБАВЛЕНИЕ КОМПОНЕНТА ДЛЯ КЭШИРОВАНИЯ
 const CachedImage = ({ src, alt, className, onClick }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -141,6 +140,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
     }, [message.reactions]);
     
     const handleMenuClick = (e) => {
+        if (message.isSending || message.isFailed) return;
         e.stopPropagation();
         if (menuButtonRef.current) {
             const rect = menuButtonRef.current.getBoundingClientRect();
@@ -154,6 +154,8 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
     };
 
     const ReadReceipt = () => {
+        if (message.isSending) return <Loader2 size={16} className="animate-spin" />;
+        if (message.isFailed) return <AlertCircle size={16} className="text-red-500" />;
         if (!isOwnMessage || !message.readBy) return null;
         const isSavedMessages = message.conversation?.isSavedMessages;
         const hasBeenReadByOthers = message.readBy.length > 1;
@@ -216,7 +218,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
 
     return (
         <div
-            id={`message-${message._id}`}
+            id={`message-${message.uuid || message._id}`}
             className={`flex items-end gap-2 group relative ${isOwnMessage ? 'justify-end' : 'justify-start'} ${isConsecutive ? 'mt-2' : 'mt-4'} ${isMenuOpen ? 'z-20' : 'z-auto'}`}
             onClick={() => selectionMode && onSelect(message._id)}
         >
@@ -229,7 +231,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             )}
             
             <div className={`relative flex-shrink-0 order-2 ${isOwnMessage ? 'ml-2' : 'mr-2'}`}>
-                {!selectionMode && (
+                {!selectionMode && !message.isSending && !message.isFailed && (
                      <Tippy
                         interactive
                         placement={menuPosition === 'bottom' ? 'bottom-end' : 'top-end'}
@@ -290,7 +292,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </div>
 
             <div
-                className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative order-1 transition-colors duration-300
+                className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative order-1 transition-colors duration-300 ${message.isSending ? 'opacity-70' : ''}
                     ${isOwnMessage ? `${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
                     ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : (isOwnMessage ? 'bg-chat-bubble-own' : 'bg-chat-bubble-other')}
                 `}

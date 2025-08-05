@@ -1,7 +1,7 @@
 // frontend/src/components/chat/MessageInput.jsx
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Smile, X, Paperclip, Check, Loader2, Music, XCircle } from 'lucide-react';
+import { Send, Smile, X, Paperclip, Check, Loader2, Music } from 'lucide-react';
 import Picker from 'emoji-picker-react';
 import { useWebSocket } from '../../context/WebSocketContext';
 import axios from 'axios';
@@ -11,7 +11,7 @@ import AttachedTrack from '../music/AttachedTrack';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, onClearReply, onFileSelect, editingMessage, onCancelEdit, onSaveEdit }) => {
+const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, onClearReply, onFileSelect, editingMessage, onCancelEdit, onSaveEdit, onOptimisticSend, onSendFail, currentUser }) => {
     const [text, setText] = useState('');
     const [isPickerVisible, setPickerVisible] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -75,40 +75,58 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
             } finally {
                 setIsSending(false);
             }
-        } else {
-            const messageText = text;
-            const replyToId = replyingTo ? replyingTo._id : null;
-            const trackId = attachedTrack ? attachedTrack._id : null;
+            return;
+        }
+        
+        const optimisticMessage = {
+            uuid: crypto.randomUUID(),
+            text: text.trim(),
+            sender: {
+                _id: currentUser._id,
+                username: currentUser.username,
+                fullName: currentUser.fullName,
+                avatar: currentUser.avatar
+            },
+            createdAt: new Date().toISOString(),
+            owner: currentUser._id,
+            conversation: conversationId,
+            isSending: true,
+            replyTo: replyingTo,
+            attachedTrack,
+        };
 
-            setText('');
-            onClearReply();
-            setPickerVisible(false);
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-            setAttachedTrack(null);
-            sendTypingStatus(false);
+        onOptimisticSend(optimisticMessage);
+
+        setText('');
+        onClearReply();
+        setPickerVisible(false);
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        sendTypingStatus(false);
+        setAttachedTrack(null);
+        
+        try {
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('recipientId', recipientId);
+            formData.append('text', optimisticMessage.text);
+            formData.append('uuid', optimisticMessage.uuid); // Отправляем UUID
+            if (replyingTo) formData.append('replyToMessageId', replyingTo._id);
+            if (attachedTrack) formData.append('attachedTrackId', attachedTrack._id);
+
+            await axios.post(`${API_URL}/api/messages`, formData, {
+                headers: { 
+                    Authorization: `Bearer ${token}`, 
+                    'Content-Type': 'multipart/form-data' 
+                }
+            });
             
-            try {
-                const formData = new FormData();
-                formData.append('recipientId', recipientId);
-                formData.append('text', messageText);
-                if (replyToId) { formData.append('replyToMessageId', replyToId); }
-                if (trackId) { formData.append('attachedTrackId', trackId); }
-
-                const token = localStorage.getItem('token');
-                await axios.post(`${API_URL}/api/messages`, formData, { 
-                    headers: { 
-                        Authorization: `Bearer ${token}`, 
-                        'Content-Type': 'multipart/form-data' 
-                    } 
-                });
-                onMessageSent();
-                setTimeout(() => inputRef.current?.focus(), 0);
-            } catch (error) {
-                toast.error("Не удалось отправить сообщение.");
-                setText(messageText); // Возвращаем текст в поле ввода в случае ошибки
-            } finally {
-                setIsSending(false);
-            }
+            onMessageSent();
+            setTimeout(() => inputRef.current?.focus(), 0);
+        } catch (error) {
+            toast.error("Не удалось отправить сообщение.");
+            onSendFail(optimisticMessage.uuid); // Сообщаем об ошибке
+        } finally {
+            setIsSending(false);
         }
     };
     
