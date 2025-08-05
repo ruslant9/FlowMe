@@ -1,4 +1,5 @@
-// frontend/src/components/music/FullScreenPlayer.jsx
+// frontend/src/components/music/FullScreenPlayer.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, List, MoreHorizontal, PlusCircle, Volume2, VolumeX } from 'lucide-react';
@@ -17,7 +18,6 @@ const formatTime = (seconds) => {
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src, alt, style, className, key, initial, animate, transition }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -120,24 +120,26 @@ const FullScreenPlayer = () => {
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-                className="fixed inset-0 z-50 flex flex-col p-8 text-white"
+                className="fixed inset-0 z-50 flex flex-col p-4 md:p-8 text-white"
                 style={{ backgroundImage: gradient }}
             >
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-2xl"></div>
 
-                <div className="relative z-10 flex flex-col items-center justify-between h-full">
+                <div className="relative z-10 flex flex-col items-center h-full">
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЙ В ВЕРСТКЕ --- */}
                     <div className="w-full flex justify-end">
                         <button onClick={closeFullScreenPlayer} className="p-2 bg-black/20 rounded-full">
                             <ChevronDown size={28} />
                         </button>
                     </div>
 
-                    <div className="flex-1 flex items-center justify-center w-full max-w-md">
+                    <div className="flex-1 flex items-center justify-center w-full my-4 overflow-hidden">
                         <motion.div
                             ref={parallaxRef}
                             onMouseMove={handleMouseMove}
                             onMouseLeave={handleMouseLeave}
                             style={{ perspective: '1000px' }}
+                             className="w-full h-full flex items-center justify-center"
                         >
                             <motion.div
                                 animate={{
@@ -151,6 +153,7 @@ const FullScreenPlayer = () => {
                                     rotateY: { type: 'spring', stiffness: 400, damping: 30 }
                                 }}
                                 style={{ transformStyle: 'preserve-3d' }}
+                                className="w-full max-w-[70vw] md:max-w-md"
                             >
                                 <CachedImage 
                                     key={track._id}
@@ -168,28 +171,31 @@ const FullScreenPlayer = () => {
                         </motion.div>
                     </div>
                     
-                    <div className="w-full max-w-md">
+                    <div className="w-full max-w-md pb-4">
                         <div className="text-center mb-6">
-                            <h2 className="text-3xl font-bold truncate">{cleanTitle(track.title)}</h2>
-                            <div className="text-lg opacity-70 truncate">{formatArtistName(track.artist)}</div>
+                            <h2 className="text-2xl md:text-3xl font-bold truncate">{cleanTitle(track.title)}</h2>
+                            <div className="text-base md:text-lg opacity-70 truncate">{formatArtistName(track.artist)}</div>
                         </div>
                         
                         <div className="w-full">
                             <Slider min={0} max={duration} value={progress} onChange={seekTo} step={0.1} />
                             <div className="flex justify-between text-xs font-semibold opacity-70 mt-1">
                                 <span>{formatTime(progress)}</span>
-                                <span>{formatTime(duration)}</span>
+                                <span>-{formatTime(duration - progress)}</span>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-center space-x-6 my-6">
-                            <button onClick={toggleShuffle} className={`p-3 transition-colors ${isShuffle ? 'text-yellow-400' : 'opacity-70 hover:opacity-100'}`}><Shuffle size={24}/></button>
-                            <button onClick={prevTrack} className="p-3 opacity-90 hover:opacity-100"><SkipBack size={32}/></button>
-                            <button onClick={togglePlayPause} className="w-20 h-20 bg-white text-black rounded-full flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
-                                {isPlaying ? <Pause size={40} fill="currentColor"/> : <Play size={40} fill="currentColor" className="ml-1"/>}
+                        <div className="flex items-center justify-between my-4 px-2">
+                            <button onClick={toggleShuffle} className={`p-3 transition-colors ${isShuffle ? 'text-yellow-400' : 'opacity-70 hover:opacity-100'}`}><Shuffle size={20}/></button>
+                            <button onClick={prevTrack} className="p-3 opacity-90 hover:opacity-100"><SkipBack size={28}/></button>
+                            <button 
+                                onClick={togglePlayPause} 
+                                className="w-16 h-16 md:w-20 md:h-20 bg-white text-black rounded-full flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform flex-shrink-0"
+                            >
+                                {isPlaying ? <Pause size={32} fill="currentColor"/> : <Play size={32} fill="currentColor" className="ml-1"/>}
                             </button>
-                            <button onClick={nextTrack} className="p-3 opacity-90 hover:opacity-100"><SkipForward size={32}/></button>
-                            <button onClick={toggleRepeat} className={`p-3 transition-colors ${isRepeat ? 'text-yellow-400' : 'opacity-70 hover:opacity-100'}`}><Repeat size={24}/></button>
+                            <button onClick={nextTrack} className="p-3 opacity-90 hover:opacity-100"><SkipForward size={28}/></button>
+                            <button onClick={toggleRepeat} className={`p-3 transition-colors ${isRepeat ? 'text-yellow-400' : 'opacity-70 hover:opacity-100'}`}><Repeat size={20}/></button>
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -201,14 +207,12 @@ const FullScreenPlayer = () => {
                                     onClickOutside={() => setMenuOpen(false)}
                                     render={attrs => (
                                         <div className="ios-glass-popover w-52 rounded-xl shadow-lg p-1" {...attrs}>
-                                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                             <button 
                                                 onClick={() => { setAddToPlaylistModalOpen(true); setMenuOpen(false); }}
                                                 className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700"
                                             >
                                                 <PlusCircle size={16}/> <span>Добавить в плейлист</span>
                                             </button>
-                                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                             <div className="tippy-arrow" data-popper-arrow></div>
                                         </div>
                                     )}
@@ -221,8 +225,8 @@ const FullScreenPlayer = () => {
                                 <button className="p-3 opacity-70 hover:opacity-100"><List size={24}/></button>
                             </div>
 
-                            <div className="flex-1 flex justify-end items-center space-x-4">
-                                <div className="flex items-center space-x-2 w-32">
+                            <div className="flex-1 flex justify-end items-center space-x-2 md:space-x-4">
+                                <div className="hidden md:flex items-center space-x-2 w-32">
                                     <button onClick={() => setVolume(volume > 0 ? 0 : 0.5)} className="p-2 opacity-70 hover:opacity-100">
                                         {volume > 0 ? <Volume2 size={20} /> : <VolumeX size={20} />}
                                     </button>
@@ -234,6 +238,7 @@ const FullScreenPlayer = () => {
                             </div>
                         </div>
                     </div>
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЙ В ВЕРСТКЕ --- */}
                 </div>
             </motion.div>
         </>
