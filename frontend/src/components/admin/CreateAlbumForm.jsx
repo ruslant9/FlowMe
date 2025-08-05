@@ -313,7 +313,8 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         const { active } = event;
         const track = albumTracks.find(t => t._id === active.id);
         const index = albumTracks.findIndex(t => t._id === active.id);
-        setActiveTrack({ ...track, originalIndex: index });
+        const nodeWidth = event.active.rect.current.initial?.width;
+        setActiveTrack({ ...track, originalIndex: index, width: nodeWidth });
     };
 
     const handleDragEnd = (event) => {
@@ -493,10 +494,17 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                         </div>
                                     </SortableContext>
                                     <DragOverlay dropAnimation={dropAnimation}>
-                                        {activeTrack ? (
-                                            <TrackItem track={activeTrack} index={activeTrack.originalIndex + 1} mainArtistId={mainArtistIdForTracks}/>
-                                        ) : null}
-                                    </DragOverlay>
+    {activeTrack ? (
+        // Оберните TrackItem в div и примените стиль
+        <div style={{ width: activeTrack.width }}>
+            <TrackItem 
+                track={activeTrack} 
+                index={activeTrack.originalIndex + 1} 
+                mainArtistId={mainArtistIdForTracks}
+            />
+        </div>
+    ) : null}
+</DragOverlay>
                                 </DndContext>
                             ) : (
                                 <p className="text-center text-sm text-slate-500 py-4">В этом альбоме пока нет треков.</p>

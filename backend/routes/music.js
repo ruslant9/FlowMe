@@ -684,7 +684,6 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
             const newReleasesQuery = {
                 status: 'approved',
                 releaseDate: { $gte: new Date(`${currentYear}-01-01`) },
-                _id: { $nin: listenedTracks },
                 $or: [
                     { artist: { $in: topArtistIds } },
                     { genres: { $in: topGenres } }
