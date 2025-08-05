@@ -46,7 +46,7 @@ const StatItem = ({ label, value, onClick }) => (
 const TabButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
-        className={`relative px-4 py-3 text-sm font-semibold transition-colors ${
+        className={`relative px-4 py-3 text-sm font-semibold transition-colors flex items-center ${
             active 
             ? 'text-white' 
             : 'text-slate-400 hover:text-white'

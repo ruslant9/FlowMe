@@ -55,315 +55,315 @@ const WorkshopPage = () => {
     const { showConfirmation } = useModal();
     
     const [activeTypeFilter, setActiveTypeFilter] = useState('all');
-    const [premiumFilter, setPremiumFilter] = useState('all');
-    
-    const [myPacks, setMyPacks] = useState([]);
-    const [addedPacks, setAddedPacks] = useState([]);
-    const [searchResults, setSearchResults] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchPage, setSearchPage] = useState(1);
-    const [searchTotalPages, setSearchTotalPages] = useState(1);
-    
-    const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingPack, setEditingPack] = useState(null);
-    const [previewingPack, setPreviewingPack] = useState(null);
-    const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
+const [premiumFilter, setPremiumFilter] = useState('all');
 
-    const addedPackIds = useMemo(() => new Set(addedPacks.map(p => p._id)), [addedPacks]);
+const [myPacks, setMyPacks] = useState([]);
+const [addedPacks, setAddedPacks] = useState([]);
+const [searchResults, setSearchResults] = useState([]);
+const [searchQuery, setSearchQuery] = useState('');
+const [searchPage, setSearchPage] = useState(1);
+const [searchTotalPages, setSearchTotalPages] = useState(1);
 
-    const fetchAddedPacksData = useCallback(async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.get(`${API_URL}/api/workshop/packs/added`, headers);
-            setAddedPacks(res.data);
-        } catch (error) {
-            toast.error("Не удалось обновить список добавленных паков.");
-        }
-    }, []);
+const [loading, setLoading] = useState(true);
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [editingPack, setEditingPack] = useState(null);
+const [previewingPack, setPreviewingPack] = useState(null);
+const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
-    const fetchData = useCallback(async (tab, query = '', page = 1, type = 'all', premFilter = 'all') => {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { headers: { Authorization: `Bearer ${token}` } };
-            const typeParam = type === 'all' ? '' : `?type=${type}`;
-            
-            if (tab === 'my') {
-                const res = await axios.get(`${API_URL}/api/workshop/packs/my${typeParam}`, headers);
-                setMyPacks(res.data);
-            } else if (tab === 'added') {
-                await fetchAddedPacksData();
-            } else if (tab === 'search') {
-                const searchParams = new URLSearchParams({ q: query, page });
-                if (type !== 'all') searchParams.append('type', type);
-                if (premFilter !== 'all') searchParams.append('isPremium', premFilter === 'premium');
-                
-                const res = await axios.get(`${API_URL}/api/workshop/packs/search?${searchParams.toString()}`, headers);
-                setSearchResults(res.data.packs);
-                setSearchTotalPages(res.data.totalPages);
-                setSearchPage(res.data.currentPage);
-            }
-        } catch (error) {
-            toast.error(`Не удалось загрузить данные для вкладки "${tab}"`);
-        } finally {
-            setLoading(false);
-        }
-    }, [fetchAddedPacksData]);
-    
-    useEffect(() => {
-        fetchAddedPacksData();
-    }, [fetchAddedPacksData]);
+const addedPackIds = useMemo(() => new Set(addedPacks.map(p => p._id)), [addedPacks]);
 
-    useEffect(() => {
-        fetchData(activeTab, searchQuery, 1, activeTypeFilter, premiumFilter);
-    }, [activeTab, activeTypeFilter, premiumFilter, fetchData]);
+const fetchAddedPacksData = useCallback(async () => {
+    try {
+        const token = localStorage.getItem('token');
+        const headers = { headers: { Authorization: `Bearer ${token}` } };
+        const res = await axios.get(`${API_URL}/api/workshop/packs/added`, headers);
+        setAddedPacks(res.data);
+    } catch (error) {
+        toast.error("Не удалось обновить список добавленных паков.");
+    }
+}, []);
 
-    useEffect(() => {
-        if (activeTab === 'search') {
-            const debounce = setTimeout(() => {
-                fetchData('search', searchQuery, 1, activeTypeFilter, premiumFilter);
-            }, 300);
-            return () => clearTimeout(debounce);
-        }
-    }, [searchQuery, activeTab, activeTypeFilter, premiumFilter, fetchData]);
-
-    const handleCreatePack = () => {
-        setEditingPack(null);
-        setIsModalOpen(true);
-    };
-
-    const handleEditPack = (pack) => {
-        setEditingPack(pack);
-        setIsModalOpen(true);
-    };
-
-    const handleDeletePack = (pack) => {
-        showConfirmation({
-            title: `Удалить пак "${pack.name}"?`,
-            message: "Это действие необратимо. Пак будет удален у всех пользователей, которые его добавили.",
-            onConfirm: async () => {
-                const toastId = toast.loading('Удаление...');
-                try {
-                    const token = localStorage.getItem('token');
-                    await axios.delete(`${API_URL}/api/workshop/packs/${pack._id}`, { headers: { Authorization: `Bearer ${token}` } });
-                    toast.success('Пак удален', { id: toastId });
-                    fetchData(activeTab, searchQuery, 1, activeTypeFilter, premiumFilter);
-                    refetchPacks();
-                } catch (error) {
-                    toast.error(error.response?.data?.message || 'Ошибка удаления', { id: toastId });
-                }
-            }
-        });
-    };
-
-    const handleAddOrRemovePack = async (pack) => {
-        const isAdded = addedPackIds.has(pack._id);
-        const endpoint = `${API_URL}/api/workshop/packs/${pack._id}/add`;
-        const method = isAdded ? 'delete' : 'post';
+const fetchData = useCallback(async (tab, query = '', page = 1, type = 'all', premFilter = 'all') => {
+    setLoading(true);
+    try {
+        const token = localStorage.getItem('token');
+        const headers = { headers: { Authorization: `Bearer ${token}` } };
+        const typeParam = type === 'all' ? '' : `?type=${type}`;
         
-        try {
-            const token = localStorage.getItem('token');
-            await axios[method](endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
-            toast.success(isAdded ? 'Пак удален из вашей библиотеки' : 'Пак добавлен в вашу библиотеку');
+        if (tab === 'my') {
+            const res = await axios.get(`${API_URL}/api/workshop/packs/my${typeParam}`, headers);
+            setMyPacks(res.data);
+        } else if (tab === 'added') {
             await fetchAddedPacksData();
-            refetchPacks();
-        } catch (error) {
-            toast.error('Произошла ошибка');
+        } else if (tab === 'search') {
+            const searchParams = new URLSearchParams({ q: query, page });
+            if (type !== 'all') searchParams.append('type', type);
+            if (premFilter !== 'all') searchParams.append('isPremium', premFilter === 'premium');
+            
+            const res = await axios.get(`${API_URL}/api/workshop/packs/search?${searchParams.toString()}`, headers);
+            setSearchResults(res.data.packs);
+            setSearchTotalPages(res.data.totalPages);
+            setSearchPage(res.data.currentPage);
         }
-    };
+    } catch (error) {
+        toast.error(`Не удалось загрузить данные для вкладки "${tab}"`);
+    } finally {
+        setLoading(false);
+    }
+}, [fetchAddedPacksData]);
+
+useEffect(() => {
+    fetchAddedPacksData();
+}, [fetchAddedPacksData]);
+
+useEffect(() => {
+    fetchData(activeTab, searchQuery, 1, activeTypeFilter, premiumFilter);
+}, [activeTab, activeTypeFilter, premiumFilter, fetchData]);
+
+useEffect(() => {
+    if (activeTab === 'search') {
+        const debounce = setTimeout(() => {
+            fetchData('search', searchQuery, 1, activeTypeFilter, premiumFilter);
+        }, 300);
+        return () => clearTimeout(debounce);
+    }
+}, [searchQuery, activeTab, activeTypeFilter, premiumFilter, fetchData]);
+
+const handleCreatePack = () => {
+    setEditingPack(null);
+    setIsModalOpen(true);
+};
+
+const handleEditPack = (pack) => {
+    setEditingPack(pack);
+    setIsModalOpen(true);
+};
+
+const handleDeletePack = (pack) => {
+    showConfirmation({
+        title: `Удалить пак "${pack.name}"?`,
+        message: "Это действие необратимо. Пак будет удален у всех пользователей, которые его добавили.",
+        onConfirm: async () => {
+            const toastId = toast.loading('Удаление...');
+            try {
+                const token = localStorage.getItem('token');
+                await axios.delete(`${API_URL}/api/workshop/packs/${pack._id}`, { headers: { Authorization: `Bearer ${token}` } });
+                toast.success('Пак удален', { id: toastId });
+                fetchData(activeTab, searchQuery, 1, activeTypeFilter, premiumFilter);
+                refetchPacks();
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Ошибка удаления', { id: toastId });
+            }
+        }
+    });
+};
+
+const handleAddOrRemovePack = async (pack) => {
+    const isAdded = addedPackIds.has(pack._id);
+    const endpoint = `${API_URL}/api/workshop/packs/${pack._id}/add`;
+    const method = isAdded ? 'delete' : 'post';
     
-    const renderContent = () => {
-        let packs, emptyMessage, cardActions;
-        
-        switch (activeTab) {
-            case 'my':
-                packs = myPacks;
-                emptyMessage = 'Вы еще не создали ни одного пака.';
-                cardActions = (pack) => (
-                    <>
-                        <button onClick={() => handleEditPack(pack)} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"><Edit size={16} /></button>
-                        <button onClick={() => handleDeletePack(pack)} className="p-2 bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800"><Trash2 size={16} /></button>
-                    </>
+    try {
+        const token = localStorage.getItem('token');
+        await axios[method](endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
+        toast.success(isAdded ? 'Пак удален из вашей библиотеки' : 'Пак добавлен в вашу библиотеку');
+        await fetchAddedPacksData();
+        refetchPacks();
+    } catch (error) {
+        toast.error('Произошла ошибка');
+    }
+};
+
+const renderContent = () => {
+    let packs, emptyMessage, cardActions;
+    
+    switch (activeTab) {
+        case 'my':
+            packs = myPacks;
+            emptyMessage = 'Вы еще не создали ни одного пака.';
+            cardActions = (pack) => (
+                <>
+                    <button onClick={() => handleEditPack(pack)} className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"><Edit size={16} /></button>
+                    <button onClick={() => handleDeletePack(pack)} className="p-2 bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800"><Trash2 size={16} /></button>
+                </>
+            );
+            break;
+        case 'added':
+            packs = addedPacks;
+            emptyMessage = 'Вы еще не добавили ни одного пака. Найдите их в поиске!';
+            cardActions = (pack) => {
+                const isCreator = pack.creator._id === currentUser._id;
+                if (isCreator) return null;
+                return (
+                    <button onClick={() => handleAddOrRemovePack(pack)} className="px-3 py-2 text-sm font-semibold bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 flex items-center space-x-2">
+                        <X size={16} /><span>Удалить</span>
+                    </button>
                 );
-                break;
-            case 'added':
-                packs = addedPacks;
-                emptyMessage = 'Вы еще не добавили ни одного пака. Найдите их в поиске!';
-                cardActions = (pack) => {
-                    const isCreator = pack.creator._id === currentUser._id;
-                    if (isCreator) return null;
-                    return (
-                        <button onClick={() => handleAddOrRemovePack(pack)} className="px-3 py-2 text-sm font-semibold bg-red-100 dark:bg-red-900/50 text-red-500 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 flex items-center space-x-2">
-                            <X size={16} /><span>Удалить</span>
-                        </button>
-                    );
-                };
-                break;
-            case 'search':
-                packs = searchResults;
-                emptyMessage = searchQuery ? 'По вашему запросу ничего не найдено.' : 'Найдите стикеры и эмодзи, созданные другими пользователями.';
-                cardActions = (pack) => {
-                    const isCreator = pack.creator._id === currentUser._id;
-                    if (isCreator) {
-                        return <span className="text-xs font-semibold text-slate-500">Ваш пак</span>;
-                    }
+            };
+            break;
+        case 'search':
+            packs = searchResults;
+            emptyMessage = searchQuery ? 'По вашему запросу ничего не найдено.' : 'Найдите стикеры и эмодзи, созданные другими пользователями.';
+            cardActions = (pack) => {
+                const isCreator = pack.creator._id === currentUser._id;
+                if (isCreator) {
+                    return <span className="text-xs font-semibold text-slate-500">Ваш пак</span>;
+                }
 
-                    const isPremade = pack.creator.username === 'Flow me';
-                    const isPackPremium = isPremade || pack.isPremium;
-                    const isAdded = addedPackIds.has(pack._id);
+                const isPremade = pack.creator.username === 'Flow me';
+                const isPackPremium = isPremade || pack.isPremium;
+                const isAdded = addedPackIds.has(pack._id);
 
-                    if (isPackPremium) {
-                        if (currentUser?.premium?.isActive) {
-                            return (
-                                <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
-                                    {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
-                                    <span>{isAdded ? 'Добавлено' : 'Добавить'}</span>
-                                </button>
-                            );
-                        } else {
-                            return (
-                                <button onClick={() => setIsPremiumModalOpen(true)} className="flex items-center space-x-2 text-xs font-semibold text-yellow-500">
-                                    <Crown size={14} />
-                                    <span>Premium</span>
-                                </button>
-                            );
-                        }
-                    } else {
+                if (isPackPremium) {
+                    if (currentUser?.premium?.isActive) {
                         return (
                             <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
                                 {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
                                 <span>{isAdded ? 'Добавлено' : 'Добавить'}</span>
                             </button>
                         );
-                    }
-                };
-                break;
-            default:
-                return null;
-        }
-
-        if (loading) {
-            return <div className="flex justify-center py-20"><Loader2 className="animate-spin w-10 h-10" /></div>;
-        }
-        
-        if (packs.length === 0) {
-            return (
-                <div className="text-center py-20 text-slate-500 flex flex-col items-center">
-                    <Brush size={64} className="mb-4 text-slate-400" />
-                    <h3 className="text-xl font-bold text-slate-700 dark:text-white/80">{emptyMessage}</h3>
-                    {activeTab === 'my' && (
-                        <>
-                            <p className="mt-2 max-w-sm">Создавайте свои наборы стикеров и эмодзи, чтобы поделиться ими с друзьями.</p>
-                            <button onClick={handleCreatePack} className="mt-6 flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-                                <PlusCircle size={18} /><span>Создать свой первый пак</span>
+                    } else {
+                        return (
+                            <button onClick={() => setIsPremiumModalOpen(true)} className="flex items-center space-x-2 text-xs font-semibold text-yellow-500">
+                                <Crown size={14} />
+                                <span>Premium</span>
                             </button>
-                        </>
-                    )}
-                </div>
-            )
-        }
+                        );
+                    }
+                } else {
+                    return (
+                        <button onClick={() => handleAddOrRemovePack(pack)} className={`px-3 py-2 text-sm font-semibold rounded-lg flex items-center space-x-2 ${isAdded ? 'bg-green-100 dark:bg-green-900/50 text-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
+                            {isAdded ? <CheckCircle size={16} /> : <Plus size={16} />}
+                            <span>{isAdded ? 'Добавлено' : 'Добавить'}</span>
+                        </button>
+                    );
+                }
+            };
+            break;
+        default:
+            return null;
+    }
 
+    if (loading) {
+        return <div className="flex justify-center py-20"><Loader2 className="animate-spin w-10 h-10" /></div>;
+    }
+    
+    if (packs.length === 0) {
         return (
-            <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {packs.map(pack => 
-                        <PackCard key={pack._id} pack={pack} onLongPress={setPreviewingPack}>
-                            {cardActions(pack)}
-                        </PackCard>
-                    )}
-                </div>
-                {activeTab === 'search' && searchTotalPages > 1 && (
-                     <div className="flex justify-center items-center space-x-2 mt-8">
-                        <button onClick={() => fetchData('search', searchQuery, searchPage - 1, activeTypeFilter, premiumFilter)} disabled={searchPage === 1} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 disabled:opacity-50 font-semibold">Назад</button>
-                        <span className="font-semibold text-sm">Стр. {searchPage} из {searchTotalPages}</span>
-                        <button onClick={() => fetchData('search', searchQuery, searchPage + 1, activeTypeFilter, premiumFilter)} disabled={searchPage === searchTotalPages} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 disabled:opacity-50 font-semibold">Вперед</button>
-                    </div>
+            <div className="text-center py-20 text-slate-500 flex flex-col items-center">
+                <Brush size={64} className="mb-4 text-slate-400" />
+                <h3 className="text-xl font-bold text-slate-700 dark:text-white/80">{emptyMessage}</h3>
+                {activeTab === 'my' && (
+                    <>
+                        <p className="mt-2 max-w-sm">Создавайте свои наборы стикеров и эмодзи, чтобы поделиться ими с друзьями.</p>
+                        <button onClick={handleCreatePack} className="mt-6 flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                            <PlusCircle size={18} /><span>Создать свой первый пак</span>
+                        </button>
+                    </>
                 )}
             </div>
-        );
-    };
+        )
+    }
 
     return (
-        <main className="flex-1 p-4 md:p-8">
-            <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
-            <CreateEditPackModal 
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                isEditMode={!!editingPack}
-                initialData={editingPack}
-                onSave={() => {
-                    fetchData('my', '', 1, activeTypeFilter, premiumFilter);
-                    refetchPacks();
-                }}
-            />
-            <PackPreviewModal
-                isOpen={!!previewingPack}
-                onClose={() => setPreviewingPack(null)}
-                pack={previewingPack}
-            />
-            <div className="w-full max-w-7xl mx-auto space-y-8">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <h1 className="text-4xl font-bold">Мастерская</h1>
-                    <button onClick={handleCreatePack} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-                        <PlusCircle size={18} /><span>Создать пак</span>
-                    </button>
-                </div>
-                
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
-                    <div className="flex items-center gap-x-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg self-start md:self-center">
-                        <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
-                        <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
-                        <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск</TabButton>
-                    </div>
-
-                    <div className="flex items-center gap-x-4 w-full md:w-auto">
-                        <div className="flex items-center flex-wrap gap-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg">
-                            <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
-                            <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
-                            <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
-                        </div>
-
-                        {activeTab === 'search' && (
-                            <Menu as="div" className="relative inline-block text-left">
-                                <Menu.Button className="inline-flex items-center gap-x-2 rounded-lg bg-slate-200/70 dark:bg-black/30 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-300 dark:hover:bg-black/40">
-                                    <Filter size={16} />
-                                    <span>{premiumFilterOptions.find(o => o.id === premiumFilter).name}</span>
-                                    <ChevronDown className="h-4 w-4" />
-                                </Menu.Button>
-                                <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
-                                    <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl ios-glass-popover p-1">
-                                        {premiumFilterOptions.map(option => (
-                                            <Menu.Item key={option.id}>
-                                                {({ active }) => (
-                                                    <button onClick={() => setPremiumFilter(option.id)}
-                                                        className={`${ active ? 'bg-blue-500 text-white' : 'text-slate-900 dark:text-slate-200'} group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm`}>
-                                                        <span>{option.name}</span>
-                                                        {premiumFilter === option.id && <Check size={16} />}
-                                                    </button>
-                                                )}
-                                            </Menu.Item>
-                                        ))}
-                                    </Menu.Items>
-                                </Transition>
-                            </Menu>
-                        )}
-                    </div>
-                </div>
-
-                {activeTab === 'search' && (
-                     <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                    </div>
+        <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {packs.map(pack => 
+                    <PackCard key={pack._id} pack={pack} onLongPress={setPreviewingPack}>
+                        {cardActions(pack)}
+                    </PackCard>
                 )}
-                
-                <div>{renderContent()}</div>
             </div>
-        </main>
+            {activeTab === 'search' && searchTotalPages > 1 && (
+                 <div className="flex justify-center items-center space-x-2 mt-8">
+                    <button onClick={() => fetchData('search', searchQuery, searchPage - 1, activeTypeFilter, premiumFilter)} disabled={searchPage === 1} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 disabled:opacity-50 font-semibold">Назад</button>
+                    <span className="font-semibold text-sm">Стр. {searchPage} из {searchTotalPages}</span>
+                    <button onClick={() => fetchData('search', searchQuery, searchPage + 1, activeTypeFilter, premiumFilter)} disabled={searchPage === searchTotalPages} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 disabled:opacity-50 font-semibold">Вперед</button>
+                </div>
+            )}
+        </div>
     );
+};
+
+return (
+    <main className="flex-1 p-4 md:p-8">
+        <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
+        <CreateEditPackModal 
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            isEditMode={!!editingPack}
+            initialData={editingPack}
+            onSave={() => {
+                fetchData('my', '', 1, activeTypeFilter, premiumFilter);
+                refetchPacks();
+            }}
+        />
+        <PackPreviewModal
+            isOpen={!!previewingPack}
+            onClose={() => setPreviewingPack(null)}
+            pack={previewingPack}
+        />
+        <div className="w-full max-w-7xl mx-auto space-y-8">
+            <div className="flex items-center justify-between gap-4">
+                <h1 className="text-4xl font-bold">Мастерская</h1>
+                 <button onClick={handleCreatePack} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold p-2 md:px-4 md:py-2 rounded-lg transition-colors">
+                    <PlusCircle size={18} />
+                    <span className="hidden md:inline">Создать пак</span>
+                </button>
+            </div>
+            
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
+                <div className="flex items-center gap-x-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg w-full md:w-auto">
+                    <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
+                    <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
+                    <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск</TabButton>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-x-4 gap-y-2 w-full md:w-auto">
+                    <div className="flex items-center flex-shrink-0 gap-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg">
+                        <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
+                        <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
+                        <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
+                    </div>
+                    {activeTab === 'search' && (
+                        <Menu as="div" className="relative inline-block text-left">
+                            <Menu.Button className="inline-flex items-center gap-x-2 rounded-lg bg-slate-200/70 dark:bg-black/30 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-300 dark:hover:bg-black/40">
+                                <Filter size={16} />
+                                <span>{premiumFilterOptions.find(o => o.id === premiumFilter).name}</span>
+                                <ChevronDown className="h-4 w-4" />
+                            </Menu.Button>
+                            <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
+                                <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl ios-glass-popover p-1">
+                                    {premiumFilterOptions.map(option => (
+                                        <Menu.Item key={option.id}>
+                                            {({ active }) => (
+                                                <button onClick={() => setPremiumFilter(option.id)}
+                                                    className={`${ active ? 'bg-blue-500 text-white' : 'text-slate-900 dark:text-slate-200'} group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm`}>
+                                                    <span>{option.name}</span>
+                                                    {premiumFilter === option.id && <Check size={16} />}
+                                                </button>
+                                            )}
+                                        </Menu.Item>
+                                    ))}
+                                </Menu.Items>
+                            </Transition>
+                        </Menu>
+                    )}
+                </div>
+            </div>
+
+            {activeTab === 'search' && (
+                 <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
+                        className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+            )}
+            
+            <div>{renderContent()}</div>
+        </div>
+    </main>
+);
 };
 
 export default WorkshopPage;

@@ -177,7 +177,7 @@ const MainLayout = ({ children }) => {
           isMobileNavOpen={isMobileNavOpen}
           onMobileNavClose={() => setIsMobileNavOpen(false)}
         />
-        <div className={`flex-1 relative overflow-y-auto ${isMobileChatView ? '' : 'pt-16 md:pt-0'}`}>
+        <div className={`flex-1 relative overflow-y-auto transform-gpu transition-all duration-300 ${isMobileChatView ? '' : 'pt-16 md:pt-0'}`}>
           {children}
         </div>
       </div>

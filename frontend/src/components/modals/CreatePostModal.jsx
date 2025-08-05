@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Image as ImageIcon, Loader2, Smile, Music, XCircle, BarChart2 as PollIcon, Calendar as CalendarIcon, Text, Check, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import ImageAttachmentModal from '../chat/ImageAttachmentModal';
+import ImageAttachmentModal from './ImageAttachmentModal';
 import { Listbox, Transition } from '@headlessui/react';
-import AttachTrackModal from '../music/AttachTrackModal'; 
+import AttachTrackModal from '../music/AttachTrackModal';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { ru } from 'date-fns/locale';
 import { setHours, setMinutes, isToday } from 'date-fns';
@@ -94,7 +94,15 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         setFetchingCommunities(true);
         try {
             const token = localStorage.getItem('token');
-            const personalProfile = { _id: null, name: 'Моя страница (личный пост)', type: 'user' };
+            const personalProfile = { 
+                _id: null, 
+                name: currentUser.fullName || currentUser.username, 
+                username: currentUser.username,
+                avatar: currentUser.avatar, 
+                type: 'user',
+                premium: currentUser.premium,
+                premiumCustomization: currentUser.premiumCustomization,
+            };
             const res = await axios.get(`${API_URL}/api/communities/my`, { headers: { Authorization: `Bearer ${token}` } });
             const communitiesOptions = [personalProfile, ...res.data.map(c => ({ ...c, type: 'community' }))];
             setMyCommunities(communitiesOptions);
@@ -103,7 +111,15 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
             setSelectedCommunity(targetCommunity || personalProfile);
         } catch (error) {
             toast.error('Не удалось загрузить ваши сообщества.');
-            const personalProfile = { _id: null, name: 'Моя страница (личный пост)', type: 'user' };
+            const personalProfile = { 
+                _id: null, 
+                name: currentUser.fullName || currentUser.username, 
+                username: currentUser.username,
+                avatar: currentUser.avatar, 
+                type: 'user',
+                premium: currentUser.premium,
+                premiumCustomization: currentUser.premiumCustomization,
+            };
             setMyCommunities([personalProfile]);
             setSelectedCommunity(personalProfile);
         } finally {
@@ -216,10 +232,11 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                 <div className="flex items-center space-x-3 mb-4">
                                     <Avatar username={currentUser?.username} fullName={currentUser?.fullName} avatarUrl={currentUser?.avatar} size="md"/>
                                     <div>
-                                        <p className="font-bold">{currentUser?.fullName || currentUser?.username}</p>
                                         <Listbox value={selectedCommunity} onChange={setSelectedCommunity} disabled={fetchingCommunities}>
                                             <div className="relative">
-                                                <Listbox.Button className="flex items-center space-x-1 text-xs text-slate-500 dark:text-white/60 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                                                <Listbox.Button 
+                                                    className="flex items-center space-x-1 text-xs text-slate-500 dark:text-white/60 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                                                >
                                                     <span>Публикация в: <span className="font-semibold">{selectedCommunity?.name || '...'}</span></span>
                                                     <ChevronDown size={14} />
                                                 </Listbox.Button>
@@ -227,7 +244,28 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                     <Listbox.Options className="absolute mt-2 max-h-60 w-64 overflow-auto rounded-xl ios-glass-popover p-2 z-10">
                                                         {myCommunities.map((communityOption) => (
                                                             <Listbox.Option key={communityOption._id || 'personal'} className={({ active }) => `relative cursor-pointer select-none py-2 px-3 rounded-lg ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`} value={communityOption}>
-                                                                {({ selected }) => <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{communityOption.name}</span>}
+                                                                {({ selected }) => (
+                                                                    <div className="flex items-center space-x-3">
+                                                                        <Avatar 
+                                                                            username={communityOption.type === 'user' ? communityOption.username : communityOption.name} 
+                                                                            fullName={communityOption.name}
+                                                                            avatarUrl={communityOption.avatar}
+                                                                            size="md"
+                                                                            isPremium={communityOption.premium?.isActive}
+                                                                            customBorder={communityOption.premiumCustomization?.avatarBorder}
+                                                                        />
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center">
+                                                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{communityOption.name}</span>
+                                                                                {communityOption.type === 'user' && communityOption.premium?.isActive && (
+                                                                                    <span className="ml-1.5 premium-shimmer-text text-[10px] font-bold">Premium</span>
+                                                                                )}
+                                                                            </div>
+                                                                            <span className="text-xs text-slate-500 dark:text-slate-400">{communityOption.type === 'user' ? 'Личный профиль' : 'Сообщество'}</span>
+                                                                        </div>
+                                                                        {selected ? (<span className="text-blue-600 dark:text-white"><Check className="h-5 w-5" /></span>) : null}
+                                                                    </div>
+                                                                )}
                                                             </Listbox.Option>
                                                         ))}
                                                     </Listbox.Options>

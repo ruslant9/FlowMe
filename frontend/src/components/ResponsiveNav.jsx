@@ -1,102 +1,140 @@
 import React, { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { MoreHorizontal } from 'lucide-react';
 import MorePanel from './MorePanel';
 
-// Компонент для отдельной кнопки навигации
-const NavItem = ({ path, icon: Icon, label, isActive }) => (
-  <NavLink
-    to={path}
-    className={`flex-1 flex flex-col items-center justify-center space-y-1 p-2 rounded-lg transition-colors text-xs font-medium
+// Компонент для элемента навигации (может быть ссылкой или кнопкой)
+const NavItem = ({ item, isActive, onClick }) => {
+    const commonClasses = `flex-1 flex flex-col items-center justify-center space-y-1 p-2 rounded-lg transition-colors text-xs font-medium
       ${isActive
         ? 'text-blue-600 dark:text-blue-400'
         : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
-      }`
+      }`;
+    
+    // Исправление переноса текста: уменьшенный шрифт и межстрочный интервал
+    const labelClasses = 'text-center text-[11px] leading-tight';
+
+    // Если у элемента есть path, это навигационная ссылка
+    if (item.path) {
+        return (
+            <NavLink to={item.path} className={commonClasses}>
+                <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                <span className={labelClasses}>{item.label}</span>
+            </NavLink>
+        );
     }
-  >
-    <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-    <span>{label}</span>
-  </NavLink>
-);
+
+    // Если у элемента есть onClick, это кнопка для управления состоянием
+    if (item.onClick) {
+        return (
+            <button onClick={onClick} className={commonClasses}>
+                <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                <span className={labelClasses}>{item.label}</span>
+            </button>
+        );
+    }
+
+    return null;
+};
 
 // Компонент для кнопки "Еще"
 const MoreButton = ({ onClick, isActive }) => (
-  <button
-    onClick={onClick}
-    className={`flex-1 flex flex-col items-center justify-center space-y-1 p-2 rounded-lg transition-colors text-xs font-medium
+    <button
+        onClick={onClick}
+        className={`flex-1 flex flex-col items-center justify-center space-y-1 p-2 rounded-lg transition-colors text-xs font-medium
       ${isActive
-        ? 'text-blue-600 dark:text-blue-400'
-        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
-      }`
-    }
-  >
-    <MoreHorizontal size={22} strokeWidth={isActive ? 2.5 : 2} />
-    <span>Еще</span>
-  </button>
+            ? 'text-blue-600 dark:text-blue-400'
+            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+            }`
+        }
+    >
+        <MoreHorizontal size={22} strokeWidth={isActive ? 2.5 : 2} />
+        <span className="text-[11px] leading-tight">Еще</span>
+    </button>
 );
 
 
-const ResponsiveNav = ({ items, visibleCount = 3, activePath }) => {
-  const [isMorePanelOpen, setIsMorePanelOpen] = useState(false);
+const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
+    const [isMorePanelOpen, setIsMorePanelOpen] = useState(false);
 
-  // Определяем, какие кнопки будут видимыми, а какие скрытыми
-  const shouldShowMoreButton = items.length > visibleCount;
-  
-  const visibleItems = shouldShowMoreButton
-    ? items.slice(0, visibleCount - 1)
-    : items;
-    
-  const hiddenItems = shouldShowMoreButton
-    ? items.slice(visibleCount - 1)
-    : [];
-    
-  // Проверяем, активна ли одна из скрытых кнопок. Если да, подсвечиваем кнопку "Еще".
-  const isMoreButtonActive = hiddenItems.some(item => item.path === activePath);
+    const shouldShowMoreButton = items.length > visibleCount;
 
-  return (
-    <>
-      <div className="w-full max-w-sm mx-auto p-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-        <div className="flex items-center justify-around space-x-2">
-          {/* Отображаем видимые кнопки */}
-          {visibleItems.map(item => (
-            <NavItem
-              key={item.path}
-              path={item.path}
-              icon={item.icon}
-              label={item.label}
-              isActive={activePath === item.path}
-            />
-          ))}
+    const visibleItems = shouldShowMoreButton
+        ? items.slice(0, visibleCount - 1)
+        : items;
 
-          {/* Отображаем кнопку "Еще", если есть скрытые элементы */}
-          {shouldShowMoreButton && (
-            <MoreButton
-              onClick={() => setIsMorePanelOpen(true)}
-              isActive={isMoreButtonActive}
-            />
-          )}
-        </div>
-      </div>
-      
-      {/* Панель со скрытыми кнопками */}
-      <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
-        {hiddenItems.map(item => (
-          // Здесь используем Link, а не NavLink, для простоты
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={() => setIsMorePanelOpen(false)} // Закрываем панель при клике
-            className={`w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
-              ${activePath === item.path ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
-            `}
-          >
-            <item.icon size={22} className={activePath === item.path ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
-            <span>{item.label}</span>
-          </Link>
-        ))}
-      </MorePanel>
-    </>
-  );
+    const hiddenItems = shouldShowMoreButton
+        ? items.slice(visibleCount - 1)
+        : [];
+
+    // Единая проверка активности для кнопки "Еще"
+    const isMoreButtonActive = hiddenItems.some(item =>
+        item.path ? item.path === activePath : item.key === activeKey
+    );
+
+    return (
+        <>
+            <div className="w-full max-w-sm mx-auto p-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-around space-x-2">
+                    {visibleItems.map(item => (
+                        <NavItem
+                            key={item.path || item.key}
+                            item={item}
+                            isActive={item.path ? activePath === item.path : activeKey === item.key}
+                            onClick={item.onClick}
+                        />
+                    ))}
+                    {shouldShowMoreButton && (
+                        <MoreButton
+                            onClick={() => setIsMorePanelOpen(true)}
+                            isActive={isMoreButtonActive}
+                        />
+                    )}
+                </div>
+            </div>
+
+            <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
+                {hiddenItems.map(item => {
+                    const isActive = item.path ? activePath === item.path : activeKey === item.key;
+                    const commonClasses = `w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
+              ${isActive ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
+            `;
+                    const iconClasses = isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500';
+
+                    if (item.path) {
+                        return (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                onClick={() => setIsMorePanelOpen(false)}
+                                className={commonClasses}
+                            >
+                                <item.icon size={22} className={iconClasses} />
+                                <span>{item.label}</span>
+                            </NavLink>
+                        );
+                    }
+
+                    if (item.onClick) {
+                        return (
+                            <button
+                                key={item.key}
+                                onClick={() => {
+                                    item.onClick();
+                                    setIsMorePanelOpen(false);
+                                }}
+                                className={commonClasses}
+                            >
+                                <item.icon size={22} className={iconClasses} />
+                                <span>{item.label}</span>
+                            </button>
+                        );
+                    }
+                    return null;
+                })}
+            </MorePanel>
+        </>
+    );
 };
 
 export default ResponsiveNav;

@@ -9,6 +9,7 @@ import { WebSocketProvider } from './context/WebSocketContext.jsx';
 import { UserProvider } from './context/UserContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import { MusicPlayerProvider } from './context/MusicPlayerContext.jsx';
+import { registerCacheBuster } from './utils/cacheBuster.js';
 import axios from 'axios';
 
 import './index.css';
@@ -17,6 +18,7 @@ import './styles/cropper-custom.css';
 import './styles/datepicker-custom.css';
 import 'rc-slider/assets/index.css';
 
+registerCacheBuster();
 // Глобальная настройка Axios для отправки cookie
 axios.defaults.withCredentials = true;
 

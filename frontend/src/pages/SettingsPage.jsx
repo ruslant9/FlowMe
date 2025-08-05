@@ -96,7 +96,8 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
     const [buttonRef, position] = useDynamicPosition();
 
     return (
-        <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm flex-wrap gap-2">
+        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm flex-wrap gap-4">
             <div className="flex items-center space-x-3">
                 <Icon size={20} className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
                 <div>
@@ -104,9 +105,11 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
                     {description && <p className="text-sm text-slate-500 dark:text-white/60">{description}</p>}
                 </div>
             </div>
-            <div className="flex items-center space-x-4">
+            {/* Этот контейнер теперь будет занимать всю ширину на мобильных устройствах */}
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-end sm:justify-start">
                 {children}
                 <Listbox value={value} onChange={onChange}>
+                    {/* Этот контейнер уже имеет w-full, поэтому он растянется внутри родителя */}
                     <div className="relative w-full sm:w-48">
                         <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                             <span className="block truncate">{options.find(opt => opt.id === value)?.name}</span>
@@ -127,10 +130,11 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
                 </Listbox>
             </div>
         </div>
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     );
 };
 
-const NotificationToggle = () => { // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+const NotificationToggle = () => {
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [permission, setPermission] = useState('default');
     const [loading, setLoading] = useState(true);
@@ -260,7 +264,7 @@ const NotificationToggle = () => { // --- НАЧАЛО ИСПРАВЛЕНИЯ --
             </button>
         </div>
     );
-}; // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+};
 
 const SettingsPage = () => {
     useTitle('Настройки');
