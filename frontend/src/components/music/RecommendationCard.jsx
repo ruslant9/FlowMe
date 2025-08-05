@@ -31,12 +31,12 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         return '';
     };
 
-    const getReleaseBadge = (releaseDate) => { // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const getReleaseBadge = (releaseDate) => {
         if (!releaseDate) return null;
 
         const now = new Date();
         const release = new Date(releaseDate);
-
+        
         // Проверяем, валидна ли дата релиза
         if (isNaN(release.getTime())) return null;
 
@@ -55,7 +55,7 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         }
         
         return null;
-    }; // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    };
 
 
     const handlePlayClick = (e) => {

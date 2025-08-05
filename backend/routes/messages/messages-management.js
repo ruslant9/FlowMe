@@ -157,6 +157,7 @@ router.post('/:conversationId/archive', authMiddleware, async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера" });
     }
 });
+
 router.post('/:conversationId/wallpaper', authMiddleware, async (req, res) => {
     try {
         const { conversationId } = req.params;
@@ -271,7 +272,12 @@ router.post('/:conversationId/pin', authMiddleware, async (req, res) => {
 
         if (!isPinned) {
             const pinLimit = user.premium?.isActive ? 8 : 4;
-            const currentPinnedCount = await Conversation.countDocuments({ pinnedBy: userId });
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Исключаем заархивированные чаты из подсчета ---
+            const currentPinnedCount = await Conversation.countDocuments({ 
+                pinnedBy: userId,
+                archivedBy: { $ne: userId } // Считаем только те, что НЕ в архиве у пользователя
+            });
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             if (currentPinnedCount >= pinLimit) {
                 const message = user.premium?.isActive 

@@ -191,7 +191,7 @@ const CommunitiesPage = () => {
             />
 
             <main className="flex-1 p-4 md:p-8">
-                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
+                <div className="w-full max-w-4xl mx-auto">
                     <div className="flex items-center justify-between mb-6">
                        <h1 className="text-2xl sm:text-3xl font-bold">Сообщества</h1>
                         {activeTab === 'created' && (

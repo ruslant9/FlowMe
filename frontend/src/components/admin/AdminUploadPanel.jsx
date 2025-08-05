@@ -54,7 +54,7 @@ export const AdminUploadPanel = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center space-x-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+            <div className="flex items-center space-x-2">
                 <SubTabButton active={activeSubTab === 'artist'} onClick={() => setActiveSubTab('artist')} icon={MicVocal}>Артист</SubTabButton>
                 <SubTabButton active={activeSubTab === 'album'} onClick={() => setActiveSubTab('album')} icon={Disc}>Альбом</SubTabButton>
                 <SubTabButton active={activeSubTab === 'track'} onClick={() => setActiveSubTab('track')} icon={Music}>Трек</SubTabButton>

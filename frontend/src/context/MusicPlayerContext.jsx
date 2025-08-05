@@ -98,8 +98,6 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [currentTrack, myMusicTrackIds]);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: ПЕРЕМЕЩАЕМ ВСЕ useCallback-ФУНКЦИИ ВВЕРХ ---
-
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
         
@@ -218,9 +216,6 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
 
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
-
     useEffect(() => {
         const audio = audioRef.current;
         
@@ -254,6 +249,9 @@ export const MusicPlayerProvider = ({ children }) => {
         };
     }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+
+    // Этот useEffect устанавливает статическую информацию о треке и обработчики кнопок
     useEffect(() => {
         const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
         if (!link.parentElement) {
@@ -272,35 +270,35 @@ export const MusicPlayerProvider = ({ children }) => {
                     artwork: [{ src: currentTrack.albumArtUrl, sizes: '512x512', type: 'image/png' }]
                 });
 
-                navigator.mediaSession.setActionHandler('play', () => togglePlayPause());
-                navigator.mediaSession.setActionHandler('pause', () => togglePlayPause());
-                navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
-                navigator.mediaSession.setActionHandler('nexttrack', () => handleNextTrack());
-
-                const updatePositionState = () => {
-                    if (navigator.mediaSession.metadata) {
-                        navigator.mediaSession.setPositionState({
-                            duration: duration || 0,
-                            playbackRate: audioRef.current.playbackRate,
-                            position: progress || 0,
-                        });
-                    }
-                };
-                const positionInterval = setInterval(updatePositionState, 1000);
-                return () => clearInterval(positionInterval);
+                navigator.mediaSession.setActionHandler('play', togglePlayPause);
+                navigator.mediaSession.setActionHandler('pause', togglePlayPause);
+                navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+                navigator.mediaSession.setActionHandler('nexttrack', handleNextTrack);
             }
         } else {
             link.href = '/favicon.svg';
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = null;
-                navigator.mediaSession.playbackState = 'none';
                 navigator.mediaSession.setActionHandler('play', null);
                 navigator.mediaSession.setActionHandler('pause', null);
                 navigator.mediaSession.setActionHandler('previoustrack', null);
                 navigator.mediaSession.setActionHandler('nexttrack', null);
             }
         }
-    }, [currentTrack, progress, duration, togglePlayPause, prevTrack, handleNextTrack]);
+    }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack]);
+
+    // Этот useEffect ОБНОВЛЯЕТ позицию плеера на экране блокировки
+    useEffect(() => {
+        if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
+            navigator.mediaSession.setPositionState({
+                duration: duration || 0,
+                playbackRate: audioRef.current.playbackRate,
+                position: progress || 0,
+            });
+        }
+    }, [progress, duration]);
+
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     useEffect(() => { if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } }, [isPlaying]);
 
@@ -309,7 +307,7 @@ export const MusicPlayerProvider = ({ children }) => {
         setVolume(vol);
         localStorage.setItem('playerVolume', vol.toString());
     }, []);
-
+    
     const stopAndClearPlayer = useCallback(() => {
         audioRef.current.pause();
         audioRef.current.src = '';

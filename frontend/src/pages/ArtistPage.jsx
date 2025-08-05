@@ -138,9 +138,11 @@ const ArtistPage = () => {
                         <div className="flex flex-col space-y-4">
                             <div className="flex items-center space-x-6">
                                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
-                                <h1 className="text-5xl md:text-7xl font-extrabold" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{artist.name}</h1>
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавлен break-words --- */}
+                                <h1 className="text-5xl md:text-7xl font-extrabold break-words" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{artist.name}</h1>
                             </div>
-                            <div className="flex items-center space-x-4 text-sm font-semibold" style={{ color: textColor }}>
+                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ 2: Добавлен flex-wrap --- */}
+                            <div className="flex items-center space-x-4 text-sm font-semibold flex-wrap" style={{ color: textColor }}>
                                 <div className="flex items-center space-x-1.5">
                                     <Users size={16} />
                                     <span>{subscriberCount.toLocaleString('ru-RU')} подписчиков</span>

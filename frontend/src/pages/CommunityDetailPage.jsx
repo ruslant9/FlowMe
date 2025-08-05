@@ -8,7 +8,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Avatar from '../components/Avatar';
 import PostCard from '../components/PostCard';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../context/UserContext';
 import { useModal } from '../hooks/useModal';
 import CreatePostModal from '../components/modals/CreatePostModal';
 import EditPostModal from '../components/modals/EditPostModal';
@@ -43,7 +43,6 @@ const CommunityDetailPage = () => {
     const [imageViewerSource, setImageViewerSource] = useState([]);
     
     const mainRef = useRef(null);
-    const [isHeaderShrunk, setIsHeaderShrunk] = useState(false);
 
     useTitle(community ? community.name : 'Сообщество');
 
@@ -98,14 +97,6 @@ const CommunityDetailPage = () => {
         window.addEventListener('communityUpdated', handleCommunityUpdate);
         return () => window.removeEventListener('communityUpdated', handleCommunityUpdate);
     }, [communityId, fetchCommunityDetails]);
-
-    useEffect(() => {
-        const mainEl = mainRef.current;
-        if (!mainEl) return;
-        const handleScroll = () => setIsHeaderShrunk(mainEl.scrollTop > 50);
-        mainEl.addEventListener('scroll', handleScroll);
-        return () => mainEl.removeEventListener('scroll', handleScroll);
-    }, []);
 
     const handleJoinLeaveCommunity = () => {
         if (!community) return;
@@ -191,6 +182,7 @@ const CommunityDetailPage = () => {
             {isImageViewerOpen && <ImageViewer images={imageViewerSource} startIndex={0} onClose={() => setIsImageViewerOpen(false)} />}
 
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
+                {/* --- HEADER SECTION --- */}
                 <div className="relative">
                     <div className="h-64 md:h-80 bg-slate-300 dark:bg-slate-700 relative">
                         {community.coverImage && (
@@ -198,7 +190,7 @@ const CommunityDetailPage = () => {
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                     </div>
-                    <div className="p-4 md:p-8 pt-0">
+                    <div className="max-w-5xl mx-auto px-4 md:px-8">
                         <div className="flex flex-col md:flex-row items-center md:items-end -mt-16 md:-mt-20 relative z-10">
                             <div 
                                 onClick={() => community.avatar && (setImageViewerSource([community.avatar]), setIsImageViewerOpen(true))}
@@ -234,48 +226,49 @@ const CommunityDetailPage = () => {
                         {community.description && (
                             <p className="mt-6 text-slate-600 dark:text-white/80 max-w-3xl mx-auto text-center">{community.description}</p>
                         )}
-
-                        <div className="mt-8 max-w-2xl mx-auto w-full">
-                            {canPost && (
-                                <div className="mb-6 flex items-center space-x-4 p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
-                                    <Avatar username={currentUser.username} avatarUrl={currentUser.avatar} size="md"/>
-                                    <button onClick={() => setIsCreatePostModalOpen(true)} className="flex-1 text-left text-slate-500 dark:text-white/60 hover:text-slate-700 dark:hover:text-white">
-                                        Создать новый пост...
-                                    </button>
-                                    <button onClick={() => setIsCreatePostModalOpen(true)} className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600"><PlusCircle size={18}/></button>
-                                </div>
-                            )}
-
-                            {loadingPosts ? (
-                                <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
-                            ) : canViewContent ? (
-                                communityPosts.length > 0 ? (
-                                    <div className="space-y-6">
-                                        {communityPosts.map(post => (
-                                            <PostCard
-                                                key={post._id}
-                                                post={post}
-                                                onPostDelete={handlePostDeleteInPlace}
-                                                onPostUpdate={handlePostUpdateInPlace}
-                                                currentUser={currentUser}
-                                                isCommunityOwner={community.isOwner}
-                                                onPinPost={handlePinPost}
-                                                onEditRequest={setEditingPost}
-                                            />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-10 text-slate-500 dark:text-white/60">
-                                        <p>В этом сообществе пока нет постов.</p>
-                                    </div>
-                                )
-                            ) : (
-                                <div className="text-center py-10 text-slate-500 dark:text-white/60">
-                                    <p>Вступите в сообщество, чтобы видеть его контент.</p>
-                                </div>
-                            )}
-                        </div>
                     </div>
+                </div>
+
+                {/* --- POSTS SECTION --- */}
+                <div className="px-4 md:px-8 pt-8 pb-8 max-w-2xl mx-auto w-full">
+                    {canPost && (
+                        <div className="mb-6 flex items-center space-x-4 p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
+                            <Avatar username={currentUser.username} avatarUrl={currentUser.avatar} size="md"/>
+                            <button onClick={() => setIsCreatePostModalOpen(true)} className="flex-1 text-left text-slate-500 dark:text-white/60 hover:text-slate-700 dark:hover:text-white">
+                                Создать новый пост...
+                            </button>
+                            <button onClick={() => setIsCreatePostModalOpen(true)} className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600"><PlusCircle size={18}/></button>
+                        </div>
+                    )}
+                    
+                    {loadingPosts ? (
+                        <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+                    ) : canViewContent ? (
+                        communityPosts.length > 0 ? (
+                            <div className="space-y-6">
+                                {communityPosts.map(post => (
+                                    <PostCard
+                                        key={post._id}
+                                        post={post}
+                                        onPostDelete={handlePostDeleteInPlace}
+                                        onPostUpdate={handlePostUpdateInPlace}
+                                        currentUser={currentUser}
+                                        isCommunityOwner={community.isOwner}
+                                        onPinPost={handlePinPost}
+                                        onEditRequest={setEditingPost}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 text-slate-500 dark:text-white/60 bg-white dark:bg-slate-800 rounded-xl">
+                                <p>В этом сообществе пока нет постов.</p>
+                            </div>
+                        )
+                    ) : (
+                        <div className="text-center py-10 text-slate-500 dark:text-white/60 bg-white dark:bg-slate-800 rounded-xl">
+                            <p>Вступите в сообщество, чтобы видеть его контент.</p>
+                        </div>
+                    )}
                 </div>
             </main>
         </>

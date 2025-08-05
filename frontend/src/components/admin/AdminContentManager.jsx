@@ -213,7 +213,7 @@ export const AdminContentManager = () => {
             />
             
             <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center space-x-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center space-x-2">
                     <SubTabButton active={activeType === 'artists'} onClick={() => setActiveType('artists')} icon={MicVocal}>Артисты</SubTabButton>
                     <SubTabButton active={activeType === 'albums'} onClick={() => setActiveType('albums')} icon={Disc}>Альбомы</SubTabButton>
                     <SubTabButton active={activeType === 'tracks'} onClick={() => setActiveType('tracks')} icon={Music}>Сольные треки</SubTabButton>
