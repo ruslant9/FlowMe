@@ -9,7 +9,7 @@ const TrackSchema = new Schema({
     album: { type: Schema.Types.ObjectId, ref: 'Album' },
     genres: [{ type: String, index: true }],
     isExplicit: { type: Boolean, default: false },
-    releaseDate: { type: Date }, // ИЗМЕНЕНИЕ
+    releaseDate: { type: Date },
     storageKey: { type: String, required: true },
     albumArtUrl: { type: String },
     durationMs: { type: Number },  
@@ -18,7 +18,7 @@ const TrackSchema = new Schema({
     reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     playCount: { type: Number, default: 0, index: true },
     user: { type: Schema.Types.ObjectId, ref: 'User' },
-    sourceId: { type: Schema.Types.ObjectId, ref: 'Track', index: true }, // ID of the original library_track
+    sourceId: { type: Schema.Types.ObjectId, ref: 'Track', index: true },
     youtubeId: { type: String },
     spotifyId: { type: String },
     type: { type: String, enum: ['saved', 'recent', 'library_track'], index: true },
@@ -27,13 +27,13 @@ const TrackSchema = new Schema({
 }, { timestamps: true });
 
 TrackSchema.index(
-    { user: 1, youtubeId: 1, type: 1 },
+    { user: 1, sourceId: 1, type: 1 },
     {
         unique: true,
         partialFilterExpression: {
-            type: { $in: ['saved', 'recent'] }
+            type: { $in: ['saved', 'recent'] },
+            sourceId: { $exists: true } 
         }
     }
 );
-
 module.exports = mongoose.model('Track', TrackSchema);

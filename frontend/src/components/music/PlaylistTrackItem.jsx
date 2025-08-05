@@ -3,9 +3,11 @@ import React from 'react';
 import { Play, Pause, Heart, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Tippy from '@tippyjs/react/headless';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем хук для доступа к плееру ---
+import { useMusicPlayer } from '../../context/MusicPlayerContext';
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src, alt, className }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -14,15 +16,14 @@ const CachedImage = ({ src, alt, className }) => {
     return <img src={finalSrc} alt={alt} className={className} />;
 };
 
-
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15' }) => {
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Получаем функцию togglePlayPause напрямую из контекста ---
+    const { togglePlayPause } = useMusicPlayer();
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const cleanTitle = (title) => {
         if (!title) return '';
-        return title.replace(
-            /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
-            ''
-        ).trim();
+        return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
 
     const renderArtistLinks = (artistData) => {
@@ -64,13 +65,15 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
     return (
         <div 
             onDoubleClick={onPlay} 
-            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
+            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 px-4 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
         >
             <div className="flex items-center justify-center w-8 text-slate-600 dark:text-slate-400">
                 {isCurrent ? (
-                    <button onClick={onPlay} style={{ color: accentColor }}>
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Вызываем правильную функцию ---
+                    <button onClick={togglePlayPause} style={{ color: accentColor }}>
                         {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                     </button>
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 ) : (
                     <>
                         <span className="group-hover:hidden">{index}</span>

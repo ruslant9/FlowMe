@@ -249,7 +249,7 @@ router.get('/album/:albumId/recommendations', authMiddleware, async (req, res) =
             ]
         })
         .sort({ playCount: -1 })
-        .limit(10)
+        .limit(11)
         .populate('artist', 'name _id')
         .populate('album', 'title coverArtUrl')
         .lean();
@@ -528,7 +528,7 @@ router.get('/track/:trackId/recommendations', authMiddleware, async (req, res) =
             ]
         })
         .sort({ playCount: -1 })
-        .limit(10)
+        .limit(11)
         .populate('artist', 'name _id')
         .populate('album', 'title coverArtUrl')
         .lean();
@@ -699,7 +699,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
                 }
             },
             { $sort: { totalPlayCount: -1 } },
-            { $limit: 10 },
+            { $limit: 11 },
             {
                 $lookup: {
                     from: "artists",
