@@ -82,7 +82,6 @@ const NavItem = ({ to, end, icon: Icon, text, count, isExpanded }) => {
     );
 };
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Новый компонент для полноэкранного меню ---
 const FullScreenNav = ({ isOpen, onClose, navItems, user, summary, isExpanded }) => {
     const location = useLocation();
 
@@ -142,7 +141,6 @@ const FullScreenNav = ({ isOpen, onClose, navItems, user, summary, isExpanded })
         </AnimatePresence>
     );
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
     const [isExpanded, setIsExpanded] = useState(localStorage.getItem('sidebarExpanded') !== 'false');
@@ -153,7 +151,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
     const { logout } = useWebSocket(); 
     const { currentUser: user } = useUser();
     const { summary } = useNotifications();
-    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false); // Состояние для нового меню
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
     const handleLogout = () => {
         stopAndClearPlayer();
@@ -172,7 +170,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.pathname]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика для отображения кнопки "Ещё" ---
     const menuItems = useMemo(() => [
         { name: "Уведомления", path: "/notifications", icon: Bell, count: summary.unreadNotificationsCount },
         { name: "Лента", path: "/", icon: Newspaper, count: 0 },
@@ -191,7 +188,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
     const NAV_ITEM_LIMIT = 6;
     const shouldTruncate = allNavItems.length > NAV_ITEM_LIMIT;
     const visibleNavItems = shouldTruncate ? allNavItems.slice(0, NAV_ITEM_LIMIT - 1) : allNavItems;
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     const getActiveStylesProfile = (isActive) => isActive 
         ? 'text-slate-800 dark:text-white'
@@ -214,7 +210,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                 )}
             </AnimatePresence>
 
-            {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Рендерим новое полноэкранное меню --- */}
             <FullScreenNav
                 isOpen={isMoreMenuOpen}
                 onClose={() => setIsMoreMenuOpen(false)}
@@ -223,7 +218,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                 summary={summary}
                 isExpanded={isExpanded || isMobileNavOpen}
             />
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
             <div className={`
                 h-full flex flex-col transition-all duration-300
@@ -289,32 +283,45 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     </TippyWrapper>
                                 </Tippy>
                                 
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Отображаем усеченный или полный список --- */}
-                                {visibleNavItems.map(item => (
-                                    <NavItem
-                                        key={item.name}
-                                        to={item.path}
-                                        end={item.path === "/"}
-                                        icon={item.icon}
-                                        text={item.name}
-                                        count={item.count}
-                                        isExpanded={isExpanded || isMobileNavOpen}
-                                    />
-                                ))}
-
-                                {shouldTruncate && (
-                                    <Tippy disabled={isExpanded || isMobileNavOpen} placement="right" delay={[300, 0]} render={attrs => <Tooltip text="Ещё" attrs={attrs} />}>
-                                        <TippyWrapper>
-                                            <button
-                                                onClick={() => setIsMoreMenuOpen(true)}
-                                                className={`flex items-center transition-colors duration-200 relative text-slate-600 dark:text-white/60 hover:text-slate-800 dark:hover:text-white ${(isExpanded || isMobileNavOpen) ? 'py-2 px-3 md:py-2.5' : 'w-12 h-12 justify-center'}`}
-                                            >
-                                                <MoreHorizontal className="w-5 h-5 flex-shrink-0" />
-                                                <span className={`whitespace-nowrap transition-all duration-200 ${(isExpanded || isMobileNavOpen) ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>Ещё</span>
-                                            </button>
-                                        </TippyWrapper>
-                                    </Tippy>
-                                )}
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Разделяем отображение для десктопа и мобильных --- */}
+                                {/* Desktop: всегда полный список */}
+                                <div className="hidden md:flex md:flex-col md:space-y-2">
+                                    {allNavItems.map(item => (
+                                        <NavItem
+                                            key={item.name}
+                                            to={item.path}
+                                            end={item.path === "/"}
+                                            icon={item.icon}
+                                            text={item.name}
+                                            count={item.count}
+                                            isExpanded={isExpanded}
+                                        />
+                                    ))}
+                                </div>
+                                
+                                {/* Mobile: усеченный список с кнопкой "Ещё" */}
+                                <div className="md:hidden flex flex-col space-y-2">
+                                    {visibleNavItems.map(item => (
+                                        <NavItem
+                                            key={item.name}
+                                            to={item.path}
+                                            end={item.path === "/"}
+                                            icon={item.icon}
+                                            text={item.name}
+                                            count={item.count}
+                                            isExpanded={isMobileNavOpen}
+                                        />
+                                    ))}
+                                    {shouldTruncate && (
+                                        <button
+                                            onClick={() => setIsMoreMenuOpen(true)}
+                                            className="flex items-center transition-colors duration-200 relative text-slate-600 dark:text-white/60 hover:text-slate-800 dark:hover:text-white py-2 px-3 md:py-2.5"
+                                        >
+                                            <MoreHorizontal className="w-5 h-5 flex-shrink-0" />
+                                            <span className="whitespace-nowrap transition-all duration-200 ml-4">Ещё</span>
+                                        </button>
+                                    )}
+                                </div>
                                 {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                             </nav>
                         </LayoutGroup>

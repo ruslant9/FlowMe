@@ -307,12 +307,8 @@ const WorkshopPage = () => {
             <div className="w-full max-w-7xl mx-auto space-y-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <h1 className="text-4xl font-bold">Мастерская</h1>
-                    <button onClick={handleCreatePack} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-                        <PlusCircle size={18} /><span>Создать пак</span>
-                    </button>
                 </div>
-                
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем серый фон-обертку --- */}
+
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-x-2">
                         <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
