@@ -39,20 +39,13 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
 
         const release = new Date(releaseDate);
         release.setHours(0, 0, 0, 0);
-        
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        // "Свежее": если релиз в этом месяце или в будущем
         if (release.getFullYear() > now.getFullYear() || (release.getFullYear() === now.getFullYear() && release.getMonth() >= now.getMonth())) {
             return { text: 'Свежее', color: 'bg-lime-400 text-lime-900' };
         }
-
-        // "Недавнее": если релиз был в прошлом месяце
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         if (release.getFullYear() === lastMonth.getFullYear() && release.getMonth() === lastMonth.getMonth()) {
             return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
         }
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
         return null;
     };
 
