@@ -58,10 +58,11 @@ router.get('/:conversationId/stats', authMiddleware, async (req, res) => {
     }
 });
 
-// Получение вложений (картинок) из диалога
+// Получение вложений (фото или музыка) из диалога
 router.get('/:conversationId/attachments', authMiddleware, async (req, res) => {
     try {
         const { conversationId } = req.params;
+        const { type = 'photos' } = req.query; // 'photos' or 'music'
         const userId = new mongoose.Types.ObjectId(req.user.userId);
         const page = parseInt(req.query.page) || 1;
         const limit = 15;
@@ -70,22 +71,38 @@ router.get('/:conversationId/attachments', authMiddleware, async (req, res) => {
         const conversation = await Conversation.findOne({ _id: conversationId, participants: userId });
         if (!conversation) return res.status(403).json({ message: 'Доступ запрещен' });
 
-        const query = {
+        const baseQuery = {
             conversation: conversation._id,
-            owner: userId,
-            imageUrl: { $ne: null }
+            owner: userId
         };
+        
+        const [photoCount, musicCount] = await Promise.all([
+            Message.countDocuments({ ...baseQuery, imageUrl: { $ne: null } }),
+            Message.countDocuments({ ...baseQuery, attachedTrack: { $ne: null } })
+        ]);
 
-        const totalAttachments = await Message.countDocuments(query);
+        let query = { ...baseQuery };
+        let totalForType = 0;
+
+        if (type === 'photos') {
+            query.imageUrl = { $ne: null };
+            totalForType = photoCount;
+        } else if (type === 'music') {
+            query.attachedTrack = { $ne: null };
+            totalForType = musicCount;
+        }
+
         const attachments = await Message.find(query)
-            .select('_id imageUrl')
+            .select('_id imageUrl attachedTrack createdAt')
+            .populate({ path: 'attachedTrack', populate: { path: 'artist', select: 'name' }})
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
         res.json({
             attachments,
-            hasMore: (skip + attachments.length) < totalAttachments
+            counts: { photos: photoCount, music: musicCount },
+            hasMore: (skip + attachments.length) < totalForType
         });
 
     } catch (error) {

@@ -176,13 +176,14 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                     transition={{ duration: 0.1 }}
                                     className="h-full flex flex-col"
                                 >
-                                    {activeTab === 'regular' && ( <div className="flex flex-1 items-center justify-center">
-                                          <div className="flex items-center justify-center flex-wrap gap-x-1 gap-y-2">
+                                    {activeTab === 'regular' && (
+                                        <div className="flex-1 overflow-y-auto pt-2 -mx-1 px-1">
+                                            <div className="flex flex-wrap gap-x-1 gap-y-2 justify-center">
                                                 {regularReactions.map(emoji => (
                                                     <button
                                                         key={emoji}
                                                         onClick={() => onSelect(emoji)}
-                                                        className="p-1.5 rounded-full text-2xl transition-transform duration-100 hover:scale-125"
+                                                        className="p-1.5 rounded-full text-3xl flex items-center justify-center w-12 h-12 transition-transform duration-100 hover:scale-125"
                                                     >
                                                         {emoji}
                                                     </button>

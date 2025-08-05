@@ -285,7 +285,7 @@ router.get('/content/tracks', async (req, res) => {
     try {
         const { page = 1, limit = 15, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
         
-        const query = { status: 'approved', album: null };
+        const query = { status: 'approved', album: null, type: 'library_track' };
         if (search) {
             query.title = { $regex: search, $options: 'i' };
         }

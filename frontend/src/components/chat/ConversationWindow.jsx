@@ -31,8 +31,6 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
 
-// ... (остальные хелперы и компонент без изменений) ...
-
 const getImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) {
@@ -154,6 +152,11 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
     
+    const activeConversationRef = useRef(internalConversation);
+    useEffect(() => {
+        activeConversationRef.current = internalConversation;
+    }, [internalConversation]);
+
     const refetchConversationDetails = useCallback(async () => {
         if (!internalConversation?._id) return;
         try {
@@ -475,7 +478,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         }
     }, [internalConversation?._id]);
 
-     const handleScrollToMessage = useCallback(async (messageId) => {
+    const handleScrollToMessage = useCallback(async (messageId) => {
         const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
         
         if (isAlreadyLoaded) {
@@ -500,59 +503,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             }
         }
     }, [messages]);
-    
-    const handleScrollToDate = useCallback(async (date) => {
-        setIsCalendarOpen(false);
-        const dateString = date.toISOString().split('T')[0];
-        
-        const firstMessageOnDate = messages.find(m => m.createdAt.startsWith(dateString));
-
-        if (firstMessageOnDate) {
-            const element = document.getElementById(`message-${firstMessageOnDate._id}`);
-            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-            const toastId = toast.loading('Загрузка истории чата...');
-            try {
-                const token = localStorage.getItem('token');
-                
-                const contextRes = await axios.get(`${API_URL}/api/messages/conversations/${internalConversation._id}/messages-by-date?date=${dateString}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                const targetPage = contextRes.data.page;
-                const hasOlderMessages = contextRes.data.hasMore;
-
-                const pagePromises = [];
-                for (let i = 1; i <= targetPage; i++) {
-                    pagePromises.push(
-                        axios.get(`${API_URL}/api/messages/conversations/${internalConversation._id}/messages?page=${i}&limit=${MESSAGE_PAGE_LIMIT}`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        })
-                    );
-                }
-                
-                const pageResults = await Promise.all(pagePromises);
-                
-                const allMessages = pageResults.flatMap(res => res.data);
-
-                setMessages(allMessages);
-                setPage(targetPage);
-                setHasMore(hasOlderMessages);
-                
-                setTimeout(() => {
-                    const firstMessageOnTargetDate = allMessages.find(m => m.createdAt.startsWith(dateString));
-                    if (firstMessageOnTargetDate) {
-                        const element = document.getElementById(`message-${firstMessageOnTargetDate._id}`);
-                        element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }, 100);
-
-                toast.dismiss(toastId);
-            } catch (error) {
-                toast.error(error.response?.data?.message || 'Не удалось найти сообщения за эту дату.', { id: toastId });
-            }
-        }
-    }, [messages, internalConversation]);
 
     useLayoutEffect(() => {
         if (highlightedMessageId) {
@@ -607,26 +557,23 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     useEffect(() => {
         if (unreadSeparatorTimeoutRef.current) clearTimeout(unreadSeparatorTimeoutRef.current);
         if (!initialLoadHandledRef.current && page === 1 && messages.length > 0) {
+            initialLoadHandledRef.current = true; // Отмечаем, что начальная загрузка обработана
             const firstUnreadIndex = messages.findIndex(msg => msg.type !== 'system' && msg.sender?._id !== currentUserId && !msg.readBy.includes(currentUserId));
             if (firstUnreadIndex !== -1) {
                 setUnreadSeparatorIndex(firstUnreadIndex);
                 unreadPositionFoundRef.current = true;
                 setTimeout(() => {
                     const element = document.getElementById(`message-${messages[firstUnreadIndex]._id}`);
-                    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element?.scrollIntoView({ behavior: 'auto', block: 'center' });
                 }, 300);
                 unreadSeparatorTimeoutRef.current = setTimeout(() => { setUnreadSeparatorIndex(-1); }, 8000);
+            } else {
+                // Если нет непрочитанных сообщений, просто прокручиваем в самый низ
+                setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
             }
-            initialLoadHandledRef.current = true;
         }
         return () => { if (unreadSeparatorTimeoutRef.current) clearTimeout(unreadSeparatorTimeoutRef.current); };
     }, [messages, page, currentUserId]);
-
-    useLayoutEffect(() => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
-        }
-    }, [internalConversation?._id, messages.length]);
 
     useEffect(() => {
         const observer = new IntersectionObserver( (entries) => {
@@ -643,7 +590,12 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     useEffect(() => {
         const handleNewMessage = (e) => {
             const newMessage = e.detail;
-            const currentConv = internalConversation;
+            const currentConv = activeConversationRef.current;
+
+            const scrollContainer = scrollContainerRef.current;
+            const isScrolledToBottom = scrollContainer 
+                ? scrollContainer.scrollHeight - scrollContainer.clientHeight <= scrollContainer.scrollTop + 150 // Порог в 150px
+                : true;
 
             const isForThisConversation = 
                 (currentConv?._id && newMessage.conversation === currentConv._id) ||
@@ -661,6 +613,11 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                     }
                     return [...prev, newMessage];
                 });
+
+                // Прокручиваем вниз, только если пользователь уже был внизу
+                if (isScrolledToBottom) {
+                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }
             }
         };
         
@@ -669,22 +626,31 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         const handleTyping = (e) => { if (e.detail.conversationId === internalConversation?._id) setTypingUsers(prev => ({ ...prev, [e.detail.userId]: e.detail.isTyping })); };
         const handleMessagesDeleted = e => {
             const { conversationId, messageUuids, messageIds, forEveryone, deletedBy, newLastMessage } = e.detail;
-            if (conversationId === internalConversation?._id) {
+            if (conversationId === activeConversationRef.current?._id) {
                 setMessages(prev => {
+                    let newMessages;
                     if (forEveryone) {
-                        return prev.filter(m => !messageUuids.includes(m.uuid));
+                        newMessages = prev.filter(m => !messageUuids.includes(m.uuid));
+                    } else if (deletedBy === currentUserId) {
+                        newMessages = prev.filter(m => !messageIds.includes(m._id));
                     }
-                    if (deletedBy === currentUserId) {
-                        return prev.filter(m => !messageIds.includes(m._id));
+                    else {
+                        newMessages = prev;
                     }
-                    return prev;
+                    MessageCache.saveMessages(conversationId, newMessages); // Обновляем кеш
+                    return newMessages;
                 });
                 if (newLastMessage) {
                     setInternalConversation(prev => ({ ...prev, lastMessage: newLastMessage }));
                 }
             }
         };
-        const handleHistoryCleared = (e) => { if (e.detail.conversationId === internalConversation?._id && e.detail.clearedBy === currentUserId) setMessages([]); };
+        const handleHistoryCleared = (e) => { 
+            if (e.detail.conversationId === activeConversationRef.current?._id && e.detail.clearedBy === currentUserId) {
+                setMessages([]);
+                MessageCache.saveMessages(e.detail.conversationId, []); // Очищаем кеш
+            } 
+        };
         
         window.addEventListener('newMessage', handleNewMessage);
         window.addEventListener('messageUpdated', handleMessageUpdate);
@@ -692,6 +658,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         window.addEventListener('typing', handleTyping);
         window.addEventListener('messagesDeleted', handleMessagesDeleted);
         window.addEventListener('historyCleared', handleHistoryCleared);
+
         return () => {
             window.removeEventListener('newMessage', handleNewMessage);
             window.removeEventListener('messageUpdated', handleMessageUpdate);
@@ -699,8 +666,8 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             window.removeEventListener('typing', handleTyping);
             window.removeEventListener('messagesDeleted', handleMessagesDeleted);
             window.removeEventListener('historyCleared', handleHistoryCleared);
-        }
-    }, [internalConversation, currentUserId]);
+        };
+    }, [currentUserId]);
 
     useEffect(() => {
         const handleClickOutside = (event) => { if (menuRef.current && !menuRef.current.contains(event.target)) setMenuOpen(false); };

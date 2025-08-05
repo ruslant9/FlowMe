@@ -136,7 +136,7 @@ const SinglePage = () => {
                         <CachedImage src={track.albumArtUrl} alt={track.title} />
                     </div>
                     <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                        <span className="text-sm font-bold opacity-80" style={{ color: textColor }}>Сольный трек (сингл)</span>
+                        <span className="text-sm font-bold opacity-80" style={{ color: textColor }}>Сингл</span>
                         <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{track.title}</h1>
                         <div className="flex items-center space-x-2 mt-4 text-sm" style={{ color: textColor, opacity: 0.9 }}>
                             <Link to={`/artist/${primaryArtist._id}`} className="hover:underline">
