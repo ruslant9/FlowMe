@@ -1,7 +1,7 @@
 // frontend/src/context/WebSocketContext.jsx
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { useUser } from './UserContext';
+import { useUser } from '../hooks/useUser';
 import toast from 'react-hot-toast';
 import CustomToast from '../components/CustomToast';
 import axios from 'axios';
