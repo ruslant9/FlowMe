@@ -80,7 +80,7 @@ export const AdminContentManager = () => {
             fetchData();
         }, 300);
         return () => clearTimeout(debounce);
-    }, [search, fetchData]);
+    }, [search]);
 
     useEffect(() => {
         setPage(1);

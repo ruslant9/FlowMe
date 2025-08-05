@@ -560,6 +560,11 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             }
         }
     }, [messages]);
+
+    const scrollToBottom = useCallback(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, []);
+
     useLayoutEffect(() => {
         if (highlightedMessageId) {
             const element = document.getElementById(`message-${highlightedMessageId}`);

@@ -349,17 +349,13 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                     <div className="flex justify-between items-end mt-0.5">
                         {renderLastMessage()}
-                        <div className="flex items-center justify-end flex-shrink-0 ml-2 space-x-2">
-                            {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
-                            {conversation.isMuted && !UnreadIndicator() && (
-                                <BellOff size={14} className="text-slate-400 dark:text-slate-500" />
-                            )}
+                        <div className="flex items-center justify-end flex-shrink-0 ml-2 space-x-2">{conversation.isMuted && !UnreadIndicator() && (<BellOff size={14} className="text-slate-400 dark:text-slate-500" />)}
                             <UnreadIndicator />
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-col items-center space-y-1 flex-shrink-0">
+                 <div className="flex flex-col items-center justify-between flex-shrink-0">
                     <Tippy
                         interactive
                         placement="bottom-end"
@@ -410,6 +406,10 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                         </TippyWrapper>
                     </Tippy>
                     
+                    <div className="h-[14px]">
+                        {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
+                    </div>
+
                 </div>
             </div>
         </div>

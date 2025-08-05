@@ -33,6 +33,8 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
         if(initialArtistId && artists.length > 0) {
             const initialArtist = artists.find(a => a._id === initialArtistId);
             if(initialArtist) setQuery(initialArtist.name);
+        } else {
+            setQuery('');
         }
     }, [initialArtistId, artists]);
 
@@ -132,8 +134,6 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
     );
 };
 
-// Статичный компонент для DragOverlay
-// Этот компонент используется для визуального представления перетаскиваемого элемента
 const TrackItem = ({ track, index }) => {
     return (
         <div className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg shadow-xl">
@@ -216,6 +216,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [coverArt, setCoverArt] = useState(null);
     const [loading, setLoading] = useState(false);
     const [coverPreview, setCoverPreview] = useState('');
+    const [initialTracks, setInitialTracks] = useState([]);
     const [albumTracks, setAlbumTracks] = useState([]);
     const [activeTrack, setActiveTrack] = useState(null);
     
@@ -239,6 +240,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/admin/albums/${initialData._id}/tracks`, { headers: { Authorization: `Bearer ${token}` } });
             setAlbumTracks(res.data);
+            setInitialTracks(res.data);
         } catch (error) { toast.error("Не удалось загрузить треки альбома."); }
     }, [isEditMode, initialData]);
 
@@ -250,6 +252,11 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setReleaseDate(initialData.releaseDate ? new Date(initialData.releaseDate) : new Date());
             setCoverPreview(initialData.coverArtUrl || '');
             fetchAlbumTracks();
+        } else {
+            // Сброс полей для формы создания, чтобы избежать старых данных
+            setTitle(''); setArtistId(''); setGenre([]); setReleaseDate(new Date()); 
+            setCoverArt(null); setCoverPreview('');
+            setAlbumTracks([]); setInitialTracks([]);
         }
     }, [isEditMode, initialData, fetchAlbumTracks]);
 
@@ -289,7 +296,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         setActiveTrack({ ...track, originalIndex: index });
     };
 
-    const handleDragEnd = async (event) => {
+    const handleDragEnd = (event) => {
         setActiveTrack(null);
         const { active, over } = event;
         if (over && active.id !== over.id) {
@@ -297,20 +304,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const newIndex = albumTracks.findIndex((t) => t._id === over.id);
             const reorderedTracks = arrayMove(albumTracks, oldIndex, newIndex);
             setAlbumTracks(reorderedTracks);
-
-            const toastId = toast.loading('Сохранение порядка...');
-            try {
-                const token = localStorage.getItem('token');
-                const trackIds = reorderedTracks.map(t => t._id);
-                await axios.put(`${API_URL}/api/admin/content/albums/${initialData._id}/reorder-tracks`, 
-                    { trackIds }, 
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                toast.success('Порядок треков сохранен!', { id: toastId });
-            } catch (error) {
-                toast.error('Не удалось сохранить порядок.', { id: toastId });
-                fetchAlbumTracks();
-            }
         }
     };
     
@@ -324,8 +317,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         const formData = new FormData();
         const metadata = [];
         
-        const mainArtist = artists.find(a => a._id === artistId);
-
         for (const file of files) {
             formData.append('trackFiles', file);
             const duration = await new Promise(resolve => {
@@ -385,6 +376,18 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const token = localStorage.getItem('token');
             const res = await axios[method](endpoint, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
             toast.success(res.data.message || successMessage, { id: toastId });
+            
+            // Сохраняем новый порядок треков только после успешного обновления альбома
+            if (isEditMode && JSON.stringify(initialTracks.map(t => t._id)) !== JSON.stringify(albumTracks.map(t => t._id))) {
+                try {
+                    const trackIds = albumTracks.map(t => t._id);
+                    await axios.put(`${API_URL}/api/admin/content/albums/${initialData._id}/reorder-tracks`, { trackIds }, { headers: { Authorization: `Bearer ${token}` } });
+                    toast.success('Порядок треков сохранен!');
+                } catch (error) {
+                    toast.error('Не удалось сохранить новый порядок треков.');
+                }
+            }
+
             if (!isEditMode) {
                 setTitle(''); setArtistId(''); setGenre([]); setReleaseDate(new Date()); setCoverArt(null); setCoverPreview(''); 
                 e.target.reset();

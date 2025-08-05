@@ -745,13 +745,37 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
             }
         ]);
 
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем дубликаты по названию и артисту ---
+        const getPrimaryArtistName = (artistData) => {
+            if (!artistData) return '';
+            if (Array.isArray(artistData) && artistData.length > 0) {
+                const mainArtist = artistData.find(a => a && a.name);
+                return mainArtist ? mainArtist.name : '';
+            }
+            if (typeof artistData === 'object' && artistData.name) {
+                return artistData.name;
+            }
+            return '';
+        };
+
         const uniqueNewReleasesMap = new Map();
-        newReleases.forEach(track => uniqueNewReleasesMap.set(track._id.toString(), track));
+        newReleases.forEach(track => {
+            const key = `${track.title.toLowerCase().trim()}|${getPrimaryArtistName(track.artist).toLowerCase().trim()}`;
+            if (!uniqueNewReleasesMap.has(key)) {
+                uniqueNewReleasesMap.set(key, track);
+            }
+        });
         const uniqueNewReleases = Array.from(uniqueNewReleasesMap.values());
 
         const uniquePopularHitsMap = new Map();
-        popularHits.forEach(track => uniquePopularHitsMap.set(track._id.toString(), track));
+        popularHits.forEach(track => {
+            const key = `${track.title.toLowerCase().trim()}|${getPrimaryArtistName(track.artist).toLowerCase().trim()}`;
+            if (!uniquePopularHitsMap.has(key)) {
+                uniquePopularHitsMap.set(key, track);
+            }
+        });
         const uniquePopularHits = Array.from(uniquePopularHitsMap.values());
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         res.json({ 
             newReleases: uniqueNewReleases, 

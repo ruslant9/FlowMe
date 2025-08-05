@@ -183,7 +183,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                     <button
                                                         key={emoji}
                                                         onClick={() => onSelect(emoji)}
-                                                        className="p-1.5 rounded-full text-3xl flex items-center justify-center w-12 h-12 transition-transform duration-100 hover:scale-125"
+                                                        className="p-1.5 rounded-full text-2xl flex items-center justify-center w-9 h-9 transition-transform duration-100 hover:scale-125"
                                                     >
                                                         {emoji}
                                                     </button>
