@@ -14,7 +14,7 @@ import Picker from 'emoji-picker-react';
 import LikesPopover from '../LikesPopover';
 import ImageEditorModal from './ImageEditorModal';
 import { Link } from 'react-router-dom';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import Comment from '../Comment';
 import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
