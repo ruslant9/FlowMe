@@ -1,0 +1,27 @@
+{
+  "name": "my-site-app",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+    "build": {
+    "appId": "https://flowme-dfaj.onrender.com",
+    "productName": "Flow me",
+    "win": {
+      "target": "portable",
+      "icon": "icon.ico"
+    },
+    "portable": {
+      "splashImage": null
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^37.2.5"
+  }
+}
