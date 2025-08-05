@@ -1,5 +1,3 @@
-// frontend/src/pages/FriendsPage.jsx
-
 import React, { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
 import axios from 'axios';
 import useTitle from '../hooks/useTitle';
@@ -61,11 +59,9 @@ const UserCardSkeleton = () => (
     </div>
 );
 const TabButton = ({ children, active, onClick, count }) => (
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Уменьшаем горизонтальные отступы и пространство между элементами ---
-    <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${ active ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10' }`}>
-    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
+    <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${ active ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10' }`}>
         {children}
-        {typeof count === 'number' && count > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>}
+        {typeof count === 'number' && count > 0 && <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${active ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>}
     </button>
 );
 
@@ -85,10 +81,10 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
     const renderButton = (actionName, label, Icon, customClasses = '') => (
         <button
             onClick={(e) => handleClick(e, actionName, user)}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${customClasses}`}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${customClasses}`}
             disabled={isProcessing}
         >
-            {isProcessing ? <Spinner size={18} /> : Icon && <Icon size={18} />}
+            {isProcessing ? <Spinner size={16} /> : Icon && <Icon size={16} />}
             <span>{label}</span>
         </button>
     );
@@ -96,11 +92,11 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
     const renderSecondaryButton = (actionName, label, Icon, customClasses = '') => (
         <button
             onClick={(e) => handleClick(e, actionName, user)}
-            className={`p-2.5 rounded-lg transition-colors ${customClasses}`}
+            className={`p-2 rounded-lg transition-colors ${customClasses}`}
             title={label}
             disabled={isProcessing}
         >
-            {isProcessing ? <Spinner size={18} /> : Icon && <Icon size={18} />}
+            {isProcessing ? <Spinner size={16} /> : Icon && <Icon size={16} />}
         </button>
     );
 
@@ -119,7 +115,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
             case 'friend':
                 mainButtons = (
                     <>
-                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors" title="Написать сообщение">
+                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors" title="Написать сообщение">
                             <MessageSquare size={18} />
                         </button>
                         {renderSecondaryButton('remove', 'В друзьях', UserCheck, 'bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-600 dark:text-white/70')}
@@ -129,9 +125,6 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
             case 'incoming':
                 mainButtons = (
                     <>
-                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Написать сообщение">
-                            <MessageSquare size={18} />
-                        </button>
                         {renderButton('accept', 'Принять', UserCheck, 'bg-green-500 text-white hover:bg-green-600')}
                         {renderButton('decline', 'Отклонить', UserX, 'bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20')}
                     </>
@@ -140,7 +133,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
             case 'outgoing':
                 mainButtons = (
                     <>
-                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors" title="Написать сообщение">
+                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors" title="Написать сообщение">
                             <MessageSquare size={18} />
                         </button>
                         {renderButton('cancel', 'Отменить', Clock, 'bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20')}
@@ -151,7 +144,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
                 mainButtons = (
                      <>
                         {renderButton('add', 'Добавить', UserPlus, 'bg-blue-500 text-white hover:bg-blue-600')}
-                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Написать сообщение">
+                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Написать сообщение">
                             <MessageSquare size={18} />
                         </button>
                     </>
@@ -218,49 +211,52 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
         return privacySetting === 'everyone' || (privacySetting === 'friends' && status === 'friend');
     }, [user.privacySettings, status, userStatuses, currentUser]);
 
-
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Полностью переработанная структура карточки для адаптивности ---
     return (
-        <Link to={`/profile/${user._id}`} className="flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5">
-            <div className="flex items-center space-x-4 min-w-0">
-                {(() => {
-                    const border = user.premiumCustomization?.avatarBorder;
-                    const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
-                    const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
-                    return (
-                        <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
-                             <Avatar
-                                username={user.username}
-                                fullName={user.fullName}
-                                avatarUrl={user.avatar}
-                                size="md"
-                                isPremium={user.premium?.isActive}
-                                customBorder={border}
-                            />
-                            {canShowOnlineIndicator && (
-                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800" title="Онлайн"></div>
+        <Link to={`/profile/${user._id}`} className="block p-3 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center space-x-4 min-w-0">
+                    {(() => {
+                        const border = user.premiumCustomization?.avatarBorder;
+                        const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
+                        const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
+                        return (
+                            <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
+                                 <Avatar
+                                    username={user.username}
+                                    fullName={user.fullName}
+                                    avatarUrl={user.avatar}
+                                    size="md"
+                                    isPremium={user.premium?.isActive}
+                                    customBorder={border}
+                                />
+                                {canShowOnlineIndicator && (
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800" title="Онлайн"></div>
+                                )}
+                            </div>
+                        );
+                    })()}
+                    <div className="min-w-0">
+                        <p className="font-semibold truncate">{user.fullName || user.username}</p>
+                        <div className="text-sm text-slate-500 dark:text-white/60 h-4 flex items-center space-x-1.5">
+                            <span className="truncate">{getStatusText()}</span>
+                            {user.city && (
+                                <>
+                                    <span className="opacity-50">•</span>
+                                    <span className="truncate">{user.city}</span>
+                                </>
                             )}
                         </div>
-                    );
-                })()}
-                <div className="min-w-0">
-                    <p className="font-semibold truncate">{user.fullName || user.username}</p>
-                    <div className="text-sm text-slate-500 dark:text-white/60 h-4 flex items-center space-x-1.5">
-                        <span className="truncate">{getStatusText()}</span>
-                        {user.city && (
-                            <>
-                                <span className="opacity-50">•</span>
-                                <span className="truncate">{user.city}</span>
-                            </>
-                        )}
                     </div>
                 </div>
-            </div>
-            <div className="flex items-center space-x-2 flex-shrink-0">
-                {renderButtons()}
+                <div className="flex items-center space-x-2 flex-shrink-0 self-end sm:self-center">
+                    {renderButtons()}
+                </div>
             </div>
         </Link>
     );
 };
+// --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
 const FriendsPage = () => {
     useTitle('Друзья');
@@ -659,9 +655,7 @@ const FriendsPage = () => {
                     ))}
                 </div>
 
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Уменьшаем `space-x` для мобильной навигации --- */}
                 <div className="md:hidden flex items-center space-x-1 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                     {visibleItems.map(item => (
                         <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
                             <item.icon size={16} /><span>{item.label}</span>
