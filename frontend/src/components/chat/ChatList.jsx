@@ -6,7 +6,7 @@ import { Loader2, Search, Archive, ChevronDown, AlertCircle } from 'lucide-react
 import { motion, AnimatePresence } from 'framer-motion';
 import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 
 const ChatList = ({ activeConversations, archivedConversations, onSelectConversation, activeConversationId, loading, searchQuery, setSearchQuery, onUpdateList, typingStatuses, unreadArchivedCount, onDeleteRequest, pinnedCount, pinLimit, onOpenPremiumModal, onOptimisticPinUpdate }) => {
     const [showArchived, setShowArchived] = useState(false);

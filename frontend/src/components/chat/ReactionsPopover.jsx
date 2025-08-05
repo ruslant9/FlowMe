@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Tippy from '@tippyjs/react/headless';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 import { Sparkles, Loader2, Search } from 'lucide-react';
 import { regularReactions, emojiPacks, allPremiumReactionUrls } from '../../data/emojiData';

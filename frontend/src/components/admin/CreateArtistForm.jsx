@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Trash2, Image as ImageIcon } from 'lucide-react';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;

@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Trash2, X, GripVertical, ChevronDown } from 'lucide-react';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import GenreSelector from './GenreSelector';
 import Avatar from '../Avatar';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';

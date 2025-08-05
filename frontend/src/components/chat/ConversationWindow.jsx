@@ -14,7 +14,7 @@ import { useModal } from '../../hooks/useModal';
 import toast from 'react-hot-toast';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import SmartDateIndicator from './SmartDateIndicator';
 import { AnimatePresence, motion } from 'framer-motion';
 import SystemMessage from './SystemMessage';

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Music, Edit, ChevronDown, Trash2, GripVertical, PlusCircle } from 'lucide-react';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import GenreSelector from './GenreSelector';
 import Avatar from '../Avatar';
 import { useModal } from '../../hooks/useModal';

@@ -5,7 +5,7 @@ import { X, Check, Image as ImageIcon, Paintbrush, Plus, Trash2, Loader2, Palett
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useModal } from '../../hooks/useModal';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
