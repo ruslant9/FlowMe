@@ -7,7 +7,8 @@ import Avatar from '../Avatar';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
