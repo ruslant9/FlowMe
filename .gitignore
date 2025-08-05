@@ -1,0 +1,13 @@
+# Исключаем зависимости Node.js
+node_modules/
+
+# Кэш-папки
+dist/
+build/
+.cache/
+
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
