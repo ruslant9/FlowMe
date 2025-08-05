@@ -166,8 +166,8 @@ router.get('/saved', authMiddleware, async (req, res) => {
     }
 });
 
- router.get('/history', authMiddleware, async (req, res) => {
-     try {
+router.get('/history', authMiddleware, async (req, res) => {
+    try {
         // Aggregation pipeline to get only the most recent entry for each unique track
         const historyAggregation = await Track.aggregate([
             { $match: { user: new mongoose.Types.ObjectId(req.user.userId), type: 'recent' } },
@@ -188,19 +188,19 @@ router.get('/saved', authMiddleware, async (req, res) => {
             { path: 'artist', select: 'name _id' },
             { path: 'album', select: 'title coverArtUrl' }
         ]);
-             
+            
         const processedHistory = historyAggregation.map(track => {
-             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
-                 return { ...track, albumArtUrl: track.album.coverArtUrl };
-             }
-             return track;
-         });
-         res.json(processedHistory);
-     } catch (error) {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                return { ...track, albumArtUrl: track.album.coverArtUrl };
+            }
+            return track;
+        });
+        res.json(processedHistory);
+    } catch (error) {
         console.error("Error fetching history:", error);
-         res.status(500).json({ message: 'Ошибка при получении истории.' });
-     }
- });
+        res.status(500).json({ message: 'Ошибка при получении истории.' });
+    }
+});
 
 // --- МАРШРУТЫ ДЛЯ СТРАНИЦ АРТИСТОВ И АЛЬБОМОВ ---
 router.get('/album/:albumId', authMiddleware, async (req, res) => {
@@ -295,58 +295,55 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
         const artistId = new mongoose.Types.ObjectId(req.params.artistId);
         const requesterId = new mongoose.Types.ObjectId(req.user.userId);
         
-        const topTracksPipeline = [
-            { $match: { artist: artistId, status: 'approved' } },
-            { $group: { _id: "$_id", doc: { $first: "$$ROOT" }, totalPlayCount: { $sum: "$playCount" } } },
-            { $replaceRoot: { newRoot: "$doc" } },
-            { $sort: { playCount: -1 } },
-            { $limit: 5 }
-        ];
-
-        const totalPlaysPipeline = [
-            { $match: { artist: artistId, status: 'approved' } },
-            { $group: { _id: null, totalPlayCount: { $sum: '$playCount' } } }
-        ];
-
-        const [artist, topTracksAggregation, albums, featuredTracks, singles, totalPlaysResult] = await Promise.all([
+        const [artist, allTracksByArtist] = await Promise.all([
             Artist.findById(artistId).lean(),
-            Track.aggregate(topTracksPipeline),
-            Album.find({ artist: artistId, status: 'approved' }).populate('artist', 'name').sort({ releaseDate: -1, createdAt: -1 }).lean(),
-            Track.find({ artist: artistId, status: 'approved', album: { $ne: null } }).populate({ path: 'album', populate: { path: 'artist', select: 'name _id' } }).lean(),
-            Track.find({ artist: artistId, status: 'approved', album: null }).populate('artist', 'name _id').sort({ releaseDate: -1, createdAt: -1 }).lean(),
-            Track.aggregate(totalPlaysPipeline)
+            Track.find({ artist: artistId, status: 'approved' })
+                 .populate('artist', 'name _id')
+                 .populate({ path: 'album', populate: { path: 'artist', select: 'name _id' }})
+                 .sort({ releaseDate: -1, createdAt: -1 })
+                 .lean()
         ]);
-
-        await Artist.populate(topTracksAggregation, { path: 'artist', select: 'name _id' });
-        await Album.populate(topTracksAggregation, { path: 'album', select: 'title coverArtUrl' });
 
         if (!artist || artist.status !== 'approved') {
             return res.status(404).json({ message: 'Артист не найден.' });
         }
+
+        // 1. TOP TRACKS
+        const topTracks = [...allTracksByArtist]
+            .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
+            .slice(0, 5)
+            .map(track => {
+                if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                    return { ...track, albumArtUrl: track.album.coverArtUrl };
+                }
+                return track;
+            });
+            
+        // 2. ALBUMS
+        const albums = await Album.find({ artist: artistId, status: 'approved' })
+            .populate('artist', 'name')
+            .sort({ releaseDate: -1, createdAt: -1 })
+            .lean();
+
+        // 3. SINGLES (solo tracks)
+        const singles = allTracksByArtist.filter(track => !track.album);
+
+        // 4. FEATURED ON
+        const featuredOnAlbums = allTracksByArtist
+            .filter(track => track.album && track.album.artist._id.toString() !== artistId.toString())
+            .reduce((acc, track) => {
+                if (track.album && !acc.some(a => a._id.toString() === track.album._id.toString())) {
+                    acc.push(track.album);
+                }
+                return acc;
+            }, []);
         
-        const processedTopTracks = topTracksAggregation.map(track => {
-            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
-                return { ...track, albumArtUrl: track.album.coverArtUrl };
-            }
-            return track;
-        });
-
-        const actualFeaturedTracks = featuredTracks.filter(track => 
-            track.album && track.album.artist && track.album.artist._id.toString() !== artistId.toString()
-        );
-
-        const featuredOnAlbums = actualFeaturedTracks.reduce((acc, track) => {
-            if (track.album && !acc.some(a => a._id.toString() === track.album._id.toString())) {
-                acc.push(track.album);
-            }
-            return acc;
-        }, []);
-
-        const totalPlayCount = totalPlaysResult.length > 0 ? totalPlaysResult[0].totalPlayCount : 0;
+        // 5. STATS
+        const totalPlayCount = allTracksByArtist.reduce((sum, track) => sum + (track.playCount || 0), 0);
         const subscriberCount = artist.subscribers?.length || 0;
         const isSubscribed = artist.subscribers?.some(id => id.equals(requesterId)) || false;
         
-        res.json({ artist, topTracks: processedTopTracks, albums, featuredOn: featuredOnAlbums, singles, totalPlayCount, subscriberCount, isSubscribed });
+        res.json({ artist, topTracks, albums, featuredOn: featuredOnAlbums, singles, totalPlayCount, subscriberCount, isSubscribed });
 
     } catch (error) {
         console.error("Ошибка загрузки данных артиста:", error);
@@ -471,7 +468,6 @@ router.get('/albums/all', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
     try {
         const trackId = req.params.id;
@@ -511,15 +507,12 @@ router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
             );
         }
         
-        // Отвечаем немедленно, не дожидаясь всех операций с БД
         res.sendStatus(202); 
     } catch (error) {
-        // Логируем ошибку, но не отправляем клиенту, чтобы не прерывать воспроизведение
         console.error("Ошибка при логировании прослушивания:", error);
-        res.sendStatus(202); // Все равно отправляем успешный статус
+        res.sendStatus(202);
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 router.get('/track/:trackId', authMiddleware, async (req, res) => {
     try {
         const track = await Track.findById(req.params.trackId)

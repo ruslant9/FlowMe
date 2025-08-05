@@ -206,16 +206,16 @@ app.use((req, res, next) => {
 // --- НАЧАЛО ИЗМЕНЕНИЯ: ДОБАВЛЕН ОБЩИЙ ОГРАНИЧИТЕЛЬ ЗАПРОСОВ ---
 // Общий ограничитель для всех API-запросов для базовой защиты от DoS
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 минут
+    windowMs: 3 * 60 * 1000, // 15 минут
     max: 200, // Ограничение для каждого IP: 200 запросов за 15 минут
     standardHeaders: true,
     legacyHeaders: false,
-    message: { message: 'Слишком много запросов с этого IP, пожалуйста, попробуйте снова через 15 минут.' }
+    message: { message: 'Слишком много запросов с этого IP, пожалуйста, попробуйте снова через 3 минуты.' }
 });
 // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: { message: 'Слишком много попыток. Пожалуйста, попробуйте снова через 15 минут.' } });
-const codeLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { message: 'Слишком много запросов на отправку кода. Попробуйте позже.' } });
+const authLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: { message: 'Слишком много попыток. Пожалуйста, попробуйте снова через 1 минуту.' } });
+const codeLimiter = rateLimit({ windowMs: 3 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { message: 'Слишком много запросов на отправку кода. Попробуйте позже.' } });
 
 // --- НАЧАЛО ИЗМЕНЕНИЯ: ПРИМЕНЕНИЕ ОБЩЕГО ОГРАНИЧИТЕЛЯ ---
 app.use('/api/', apiLimiter); // Применяем ко всем маршрутам, начинающимся с /api/
