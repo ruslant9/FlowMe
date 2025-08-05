@@ -12,7 +12,7 @@ import { Loader2, MoreVertical, X, ChevronsRight, Trash2, CornerUpLeft, Search, 
 import { useWebSocket } from '../../context/WebSocketContext';
 import { useModal } from '../../hooks/useModal';
 import toast from 'react-hot-toast';
-import { format, formatDistanceToNow } from 'fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useUser } from '../../context/UserContext';
 import SmartDateIndicator from './SmartDateIndicator';
