@@ -197,7 +197,9 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                               className={({ isActive }) => `
                                                 flex items-center transition-colors duration-200
                                                 ${getActiveStylesProfile(isActive)}
-                                                ${user?.premium?.isActive ? 'p-0.5 premium-gradient-bg rounded-full' : (isExpanded || isMobileNavOpen ? '' : 'w-12 h-12 justify-center')}
+                                                 ${(isExpanded || isMobileNavOpen)
+                                                    ? (user?.premium?.isActive ? 'p-0.5 premium-gradient-bg rounded-full' : '')
+                                                    : 'w-12 h-12 justify-center'}
                                               `}
                                             >
                                                 {({ isActive }) => (

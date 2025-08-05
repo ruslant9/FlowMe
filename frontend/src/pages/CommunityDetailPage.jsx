@@ -190,23 +190,28 @@ const CommunityDetailPage = () => {
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                     </div>
-                    {/* --- ИЗМЕНЕНИЕ: Добавлен контейнер для выравнивания --- */}
                     <div className="max-w-5xl mx-auto px-4 md:px-8">
-                        <div className="flex flex-col md:flex-row items-center md:items-end -mt-16 md:-mt-20 relative z-10">
-                            <div 
-                                onClick={() => community.avatar && (setImageViewerSource([community.avatar]), setIsImageViewerOpen(true))}
-                                className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0 cursor-pointer"
-                            >
-                                <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
-                            </div>
-                            <div className="md:ml-6 mt-4 md:mt-0 flex-1 min-w-0 text-center md:text-left">
-                                <h1 className="text-3xl md:text-4xl font-bold truncate">{community.name}</h1>
-                                <div className="flex items-center justify-center md:justify-start space-x-3 text-sm text-slate-500 dark:text-white/60 mt-2">
-                                    <div className="flex items-center space-x-1">{renderVisibilityIcon(community.visibility)} <span>{pluralizeMembers(community.memberCount)}</span></div>
-                                    <span className="opacity-50">•</span>
-                                    <span>{community.topic}</span>
+                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Переработанная структура для правильного выравнивания --- */}
+                        <div className="flex flex-col md:flex-row md:justify-between items-center md:items-end -mt-16 md:-mt-20 relative z-10">
+                            {/* Левая часть: Аватар + Имя/Метаданные */}
+                            <div className="flex flex-col md:flex-row items-center text-center md:text-left">
+                                <div 
+                                    onClick={() => community.avatar && (setImageViewerSource([community.avatar]), setIsImageViewerOpen(true))}
+                                    className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0 cursor-pointer"
+                                >
+                                    <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
+                                </div>
+                                <div className="md:ml-6 mt-4 md:mt-0">
+                                    <h1 className="text-3xl md:text-4xl font-bold truncate">{community.name}</h1>
+                                    <div className="flex items-center justify-center md:justify-start space-x-3 text-sm text-slate-500 dark:text-white/60 mt-2">
+                                        <div className="flex items-center space-x-1">{renderVisibilityIcon(community.visibility)} <span>{pluralizeMembers(community.memberCount)}</span></div>
+                                        <span className="opacity-50">•</span>
+                                        <span>{community.topic}</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Правая часть: Кнопка управления/вступления */}
                             <div className="flex items-center space-x-2 mt-4 md:mt-0 flex-shrink-0">
                                 {community.isOwner ? (
                                     <Link to={`/communities/${community._id}/manage`} className="px-4 py-2 text-sm font-semibold rounded-lg bg-green-500 text-white hover:bg-green-600 flex items-center space-x-2"><ShieldQuestion size={18} /><span>Управление</span></Link>
@@ -223,6 +228,7 @@ const CommunityDetailPage = () => {
                                 )}
                             </div>
                         </div>
+                         {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     </div>
                 </div>
 

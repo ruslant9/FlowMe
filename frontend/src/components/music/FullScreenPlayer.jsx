@@ -18,6 +18,13 @@ const formatTime = (seconds) => {
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
+// --- ИЗМЕНЕНИЕ 1: Добавлены хелперы для свайпа ---
+const swipeConfidenceThreshold = 10000;
+const swipePower = (offset, velocity) => {
+  return Math.abs(offset) * velocity;
+};
+// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
+
 const CachedImage = ({ src, alt, style, className, key, initial, animate, transition }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -34,12 +41,13 @@ const cleanTitle = (title) => {
     ).trim();
 };
 
-const formatArtistName = (artistData) => {
+// --- ИЗМЕНЕНИЕ 2: Функция теперь принимает `closePlayer` для закрытия плеера ---
+const formatArtistName = (artistData, closePlayer) => {
     if (!artistData) return '';
     if (Array.isArray(artistData)) {
         return artistData.map((artist, index) => (
             <React.Fragment key={artist._id || index}>
-                <Link to={`/artist/${artist._id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
+                <Link to={`/artist/${artist._id}`} className="hover:underline" onClick={(e) => { e.stopPropagation(); closePlayer(); }}>
                     {(artist.name || '').replace(' - Topic', '').trim()}
                 </Link>
                 {index < artistData.length - 1 && ', '}
@@ -48,13 +56,15 @@ const formatArtistName = (artistData) => {
     }
     if (typeof artistData === 'object' && artistData.name) {
         return (
-            <Link to={`/artist/${artistData._id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
+            <Link to={`/artist/${artistData._id}`} className="hover:underline" onClick={(e) => { e.stopPropagation(); closePlayer(); }}>
                 {artistData.name.replace(' - Topic', '').trim()}
             </Link>
         );
     }
     return <span>{artistData.toString()}</span>;
 };
+// --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
+
 
 const FullScreenPlayer = () => {
     const {
@@ -126,7 +136,6 @@ const FullScreenPlayer = () => {
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-2xl"></div>
 
                 <div className="relative z-10 flex flex-col items-center h-full">
-                    {/* --- НАЧАЛО ИЗМЕНЕНИЙ В ВЕРСТКЕ --- */}
                     <div className="w-full flex justify-end">
                         <button onClick={closeFullScreenPlayer} className="p-2 bg-black/20 rounded-full">
                             <ChevronDown size={28} />
@@ -152,6 +161,19 @@ const FullScreenPlayer = () => {
                                     rotateX: { type: 'spring', stiffness: 400, damping: 30 },
                                     rotateY: { type: 'spring', stiffness: 400, damping: 30 }
                                 }}
+                                // --- ИЗМЕНЕНИЕ 1 (продолжение): Добавлены свойства для свайпа ---
+                                drag="x"
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={0.5}
+                                onDragEnd={(e, { offset, velocity }) => {
+                                    const swipe = swipePower(offset.x, velocity.x);
+                                    if (swipe < -swipeConfidenceThreshold) {
+                                        nextTrack();
+                                    } else if (swipe > swipeConfidenceThreshold) {
+                                        prevTrack();
+                                    }
+                                }}
+                                // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
                                 style={{ transformStyle: 'preserve-3d' }}
                                 className="w-full max-w-[70vw] md:max-w-md"
                             >
@@ -174,7 +196,8 @@ const FullScreenPlayer = () => {
                     <div className="w-full max-w-md pb-4">
                         <div className="text-center mb-6">
                             <h2 className="text-2xl md:text-3xl font-bold truncate">{cleanTitle(track.title)}</h2>
-                            <div className="text-base md:text-lg opacity-70 truncate">{formatArtistName(track.artist)}</div>
+                            {/* --- ИЗМЕНЕНИЕ 2 (продолжение): Передаем `closeFullScreenPlayer` в функцию форматирования */}
+                            <div className="text-base md:text-lg opacity-70 truncate">{formatArtistName(track.artist, closeFullScreenPlayer)}</div>
                         </div>
                         
                         <div className="w-full">
@@ -238,7 +261,6 @@ const FullScreenPlayer = () => {
                             </div>
                         </div>
                     </div>
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЙ В ВЕРСТКЕ --- */}
                 </div>
             </motion.div>
         </>
