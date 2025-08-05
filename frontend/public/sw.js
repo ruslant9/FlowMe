@@ -1,5 +1,7 @@
 // public/sw.js --- ОБНОВЛЕННЫЙ ФАЙЛ ---
 
+// --- СУЩЕСТВУЮЩАЯ ЛОГИКА КЕШИРОВАНИЯ (ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ) ---
+
 const CACHE_NAME = 'flow-me-cache-v2'; // Увеличиваем версию кеша, чтобы он обновился у пользователей
 
 // Список всех статических ресурсов приложения для кеширования
@@ -106,3 +108,58 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+
+// --- НАЧАЛО ИЗМЕНЕНИЙ: НОВАЯ ЛОГИКА ДЛЯ PUSH-УВЕДОМЛЕНИЙ ---
+
+// Этот обработчик срабатывает, когда браузер получает push-сообщение от сервера.
+// Его задача - показать системное уведомление.
+self.addEventListener('push', event => {
+  const data = event.data.json();
+  
+  const options = {
+    body: data.body,
+    icon: data.icon || '/favicon.svg', // Иконка по умолчанию, если сервер не прислал
+    badge: '/favicon.svg', // Маленькая монохромная иконка для Android
+    vibrate: [200, 100, 200], // Паттерн вибрации
+    data: {
+      url: data.data.url, // URL, который нужно открыть по клику
+    },
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Этот обработчик срабатывает, когда пользователь нажимает на уведомление.
+// Его задача - открыть нужную страницу приложения.
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  
+  const urlToOpen = event.notification.data.url;
+
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then(clientList => {
+      // Если вкладка с приложением уже открыта, просто фокусируемся на ней и переходим по ссылке
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        const clientUrl = new URL(client.url);
+        const notificationUrl = new URL(urlToOpen, self.location.origin);
+
+        if (clientUrl.origin === notificationUrl.origin && 'focus' in client) {
+          client.navigate(urlToOpen); // Переходим на нужный URL
+          return client.focus();
+        }
+      }
+      // Если открытых вкладок нет, открываем новую
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+// --- КОНЕЦ ИЗМЕНЕНИЙ ---

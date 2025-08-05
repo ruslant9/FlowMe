@@ -21,9 +21,6 @@ const { createStorage, cloudinary } = require('../config/cloudinary');
 // Создаем хранилище для файлов, которые загружает админ.
 const adminStorage = createStorage('music');
 const upload = multer({ storage: adminStorage });
-
-
-// Защищаем все роуты в этом файле - только для авторизованных админов
 router.use(authMiddleware, adminMiddleware);
 
 // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
@@ -65,8 +62,6 @@ router.get('/all-pinned-chats', async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
 // --- РОУТЫ ДЛЯ МОДЕРАЦИИ ---
 
