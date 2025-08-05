@@ -42,9 +42,11 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
 
         // Нормализуем даты до полуночи по UTC, чтобы игнорировать время и часовые пояса
         const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-        const utcRelease = Date.UTC(release.getUTCFullYear(), release.getUTCMonth(), release.getUTCDate());
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        release.setHours(0, 0, 0, 0);
 
-        const diffDays = (utcNow - utcRelease) / (1000 * 60 * 60 * 24);
+        const diffDays = (today.getTime() - release.getTime()) / (1000 * 60 * 60 * 24);
 
         if (diffDays >= 0 && diffDays <= 14) {
             return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };

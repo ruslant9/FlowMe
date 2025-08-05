@@ -55,7 +55,7 @@ const Section = ({ title, icon: Icon, children, isInitiallyOpen = false }) => {
     return (
         <section className="mb-4">
             <button className="w-full flex justify-between items-center p-4 rounded-lg bg-slate-100/50 dark:bg-slate-800/50 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors group" onClick={() => setIsOpen(v => !v)}>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 w-full sm:w-auto">
                     <Icon size={22} className="text-slate-500 dark:text-white/70" />
                     <div>
                         <h2 className="text-lg font-bold text-left">{title}</h2>
@@ -107,7 +107,7 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
             <div className="flex items-center space-x-4">
                 {children}
                 <Listbox value={value} onChange={onChange}>
-                    <div className="relative w-full sm:w-48">
+                    <div className="relative flex-1">
                         <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                             <span className="block truncate">{options.find(opt => opt.id === value)?.name}</span>
                             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" /></span>

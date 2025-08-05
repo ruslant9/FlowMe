@@ -29,7 +29,7 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                             currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
                         }`}
                     >
-                        <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
+                        <header className="flex items-center justify-between p-4 pl-16 md:pl-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                             <h3 className="font-bold text-lg">Об исполнителе</h3>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X size={20} /></button>
                         </header>
