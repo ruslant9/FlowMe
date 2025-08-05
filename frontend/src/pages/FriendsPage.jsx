@@ -17,8 +17,6 @@ import MorePanel from '../components/MorePanel';
 const API_URL = import.meta.env.VITE_API_URL;
 const MAX_HISTORY_ITEMS = 5;
 
-// ... (Остальные хелперы и компоненты внутри FriendsPage остаются без изменений) ...
-
 const customRuLocaleForDistance = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -58,6 +56,7 @@ const UserCardSkeleton = () => (
         <div className="h-8 w-20 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
     </div>
 );
+
 const TabButton = ({ children, active, onClick, count }) => (
     <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${ active ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10' }`}>
         {children}
@@ -211,7 +210,6 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
         return privacySetting === 'everyone' || (privacySetting === 'friends' && status === 'friend');
     }, [user.privacySettings, status, userStatuses, currentUser]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Полностью переработанная структура карточки для адаптивности ---
     return (
         <Link to={`/profile/${user._id}`} className="block p-3 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -256,7 +254,6 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
         </Link>
     );
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
 const FriendsPage = () => {
     useTitle('Друзья');
@@ -667,28 +664,29 @@ const FriendsPage = () => {
                         </TabButton>
                     )}
                 </div>
-                <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
-                    {hiddenItems.map(item => (
-                        <button
-                            key={item.key}
-                            onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
-                              ${activeTab === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
-                            `}
-                        >
-                            <div className="flex items-center space-x-4">
-                                <item.icon size={22} className={activeTab === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
-                                <span>{item.label}</span>
-                            </div>
-                            {item.count > 0 && 
-                                <span className="px-2 py-0.5 rounded-full text-xs bg-slate-200 dark:bg-white/10">{item.count > 9 ? '9+' : item.count}</span>
-                            }
-                        </button>
-                    ))}
-                </MorePanel>
                 
                 <div>{renderTabContent()}</div>
             </div>
+            
+            <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
+                {hiddenItems.map(item => (
+                    <button
+                        key={item.key}
+                        onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
+                        className={`w-full flex items-center justify-between p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
+                          ${activeTab === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
+                        `}
+                    >
+                        <div className="flex items-center space-x-4">
+                            <item.icon size={22} className={activeTab === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
+                            <span>{item.label}</span>
+                        </div>
+                        {item.count > 0 && 
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-slate-200 dark:bg-white/10">{item.count > 9 ? '9+' : item.count}</span>
+                        }
+                    </button>
+                ))}
+            </MorePanel>
         </main>
     );
 };
