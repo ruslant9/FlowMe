@@ -292,9 +292,9 @@ const MessagesPage = () => {
     const pinLimit = currentUser?.premium?.isActive ? 8 : 4;
 
     const handleSelectConversation = (conv) => {
-        const targetUserId = conv.isSavedMessages ? currentUser._id : conv.interlocutor._id;
-        findOrCreateConversationWithUser(targetUserId);
-        navigate(`/messages/${targetUserId}`, { replace: true });
+        const newPath = conv.isSavedMessages ? '/messages' : `/messages/${conv.interlocutor._id}`;
+        navigate(newPath, { replace: true });
+        setActiveConversation(conv);
     };
 
     return (

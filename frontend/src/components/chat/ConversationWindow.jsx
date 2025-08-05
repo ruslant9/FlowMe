@@ -184,6 +184,29 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         setInternalConversation(conversation);
     }, [conversation]);
 
+    useEffect(() => {
+        const handlePaste = (event) => {
+            // Проверяем, есть ли активный диалог
+            if (!internalConversation?._id) return;
+
+            const items = event.clipboardData.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        event.preventDefault();
+                        setAttachmentFile(file); // Эта функция открывает модальное окно
+                        break; 
+                    }
+                }
+            }
+        };
+        document.addEventListener('paste', handlePaste);
+        return () => document.removeEventListener('paste', handlePaste);
+    }, [internalConversation?._id]);
+
     const [appTheme, setAppTheme] = useState(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     useEffect(() => {
         const updateTheme = () => {
