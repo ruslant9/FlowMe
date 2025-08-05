@@ -457,3 +457,37 @@ html.dark .rc-slider-rail {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+.profile-hero-banner {
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  transition: background 0.5s ease-in-out;
+}
+
+.profile-hero-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, 
+    var(--hero-bg-color, #f1f5f9) 0%, 
+    transparent 50%
+  );
+  z-index: 2;
+}
+
+html.dark .profile-hero-banner::before {
+  background: linear-gradient(to top, 
+    var(--hero-bg-color, #0f172a) 0%, 
+    transparent 60%
+  );
+}
+
+.parallax-container {
+  perspective: 1000px;
+}
+
+.parallax-content {
+  transform-style: preserve-3d;
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}

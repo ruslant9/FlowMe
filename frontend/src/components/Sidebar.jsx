@@ -227,7 +227,9 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                 ${isExpanded ? 'w-64' : 'md:w-20'}
             `}>
                 <div className="ios-glass-final h-full flex flex-col p-4">
-                    <div className="flex items-center justify-between mb-6 px-2">
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                    <div className="flex items-center justify-between mb-6">
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                         <Tippy
                             placement="right"
                             delay={[300, 0]}
@@ -283,8 +285,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     </TippyWrapper>
                                 </Tippy>
                                 
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Разделяем отображение для десктопа и мобильных --- */}
-                                {/* Desktop: всегда полный список */}
                                 <div className="hidden md:flex md:flex-col md:space-y-2">
                                     {allNavItems.map(item => (
                                         <NavItem
@@ -299,7 +299,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     ))}
                                 </div>
                                 
-                                {/* Mobile: усеченный список с кнопкой "Ещё" */}
                                 <div className="md:hidden flex flex-col space-y-2">
                                     {visibleNavItems.map(item => (
                                         <NavItem
@@ -322,7 +321,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                         </button>
                                     )}
                                 </div>
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                             </nav>
                         </LayoutGroup>
                     </div>

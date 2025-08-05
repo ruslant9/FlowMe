@@ -34,7 +34,9 @@ export const MusicPlayerProvider = ({ children }) => {
     const [playerNotification, setPlayerNotification] = useState(null);
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Создаем ref для AbortController ---
     const abortControllerRef = useRef(null); 
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
@@ -101,10 +103,12 @@ export const MusicPlayerProvider = ({ children }) => {
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
         
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Отменяем предыдущий запрос ---
         if (abortControllerRef.current) {
             abortControllerRef.current.abort('New track selected');
         }
         abortControllerRef.current = new AbortController();
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
@@ -122,10 +126,12 @@ export const MusicPlayerProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             const audio = audioRef.current;
             
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем signal в запрос ---
             const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
                 headers: { Authorization: `Bearer ${token}` },
                 signal: abortControllerRef.current.signal
             });
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             const streamUrl = res.data.url;
             if (!streamUrl) throw new Error("Stream URL not found.");
@@ -160,15 +166,19 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsShuffle(startShuffled);
             setIsRepeat(startRepeat);
         } catch (error) {
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверяем, была ли ошибка отменой ---
             if (axios.isCancel(error)) {
                 console.log("Загрузка предыдущего трека отменена.");
             } else {
                 toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
                 setCurrentTrack(null);
             }
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         } finally {
             setLoadingTrackId(null);
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Очищаем контроллер ---
             abortControllerRef.current = null;
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         }
     }, [volume, logMusicAction]);
 
