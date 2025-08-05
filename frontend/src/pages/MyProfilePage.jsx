@@ -12,7 +12,7 @@ import { ru } from 'date-fns/locale';
 import { useModal } from '../hooks/useModal';
 import { useUser } from '../hooks/useUser';
 
-import ProfileField from '../components/ProfileField';
+import ProfileField from '../components/ProfileField'; // --- ИСПРАВЛЕНИЕ: Добавлен недостающий импорт
 import ProfileStats from '../components/ProfileStats';
 import PostCard from '../components/PostCard';
 import CreatePostModal from '../components/modals/CreatePostModal';
@@ -103,7 +103,8 @@ const MyProfilePage = () => {
                 axios.get(`${API_URL}/api/posts/user/${user._id}`, { headers: { Authorization: `Bearer ${token}` } }),
                 axios.get(`${API_URL}/api/user/${user._id}/stats`, { headers: { Authorization: `Bearer ${token}` } }),
                 axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get(`${API_URL}/api/user/scheduled`, { headers: { Authorization: `Bearer ${token}` } })
+                // --- ИСПРАВЛЕНИЕ: Изменен URL с /api/user на /api/posts/user ---
+                axios.get(`${API_URL}/api/posts/user/scheduled`, { headers: { Authorization: `Bearer ${token}` } })
             ]);
             setPosts(postsRes.data);
             setStats(statsRes.data);

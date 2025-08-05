@@ -69,6 +69,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '1y' // Кешировать на 1 год
 }));
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+// Обслуживание статических файлов из сборки фронтенда
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 // WebSocket server
 const wss = new WebSocketServer({ server });
 const clients = new Map();
@@ -237,6 +242,14 @@ app.use('/api/playlists', authMiddleware, banMiddleware, playlistRoutes);
 app.use('/api/submissions', authMiddleware, banMiddleware, submissionsRoutes); 
 app.use('/api/admin', adminRoutes); // Админ-роуты защищены своим middleware
 app.use('/api/workshop', workshopRoutes);
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+// "Catch-all" обработчик: для любого запроса, который не совпал с API или статическим файлом,
+// отправляем основной HTML-файл фронтенда.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
+});
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const PORT = process.env.PORT || 5000;
 
