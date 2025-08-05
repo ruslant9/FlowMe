@@ -1,4 +1,4 @@
-// frontend/src/context/MusicPlayerContext.jsx
+// frontend/src/context/MusicPlayerContext.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
@@ -98,6 +98,8 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [currentTrack, myMusicTrackIds]);
     
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: ПЕРЕМЕЩАЕМ ВСЕ useCallback-ФУНКЦИИ ВВЕРХ ---
+
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
         
@@ -191,6 +193,34 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [isShuffle, playTrack, currentTrack, progress, duration, logMusicAction]);
 
+    const togglePlayPause = useCallback(() => {
+        if (!currentTrack) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+    }, [currentTrack, isPlaying]);
+
+    const seekTo = useCallback((time) => {
+        audioRef.current.currentTime = time;
+        setProgress(time);
+    }, []);
+
+    const prevTrack = useCallback(() => {
+        if (progress > 3) {
+            seekTo(0);
+        } else {
+            if (playlistRef.current.length === 0) return;
+            const prevIndex = (currentTrackIndexRef.current - 1 + playlistRef.current.length) % playlistRef.current.length;
+            playTrack(playlistRef.current[prevIndex], playlistRef.current);
+        }
+    }, [progress, seekTo, playTrack]);
+
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+
     useEffect(() => {
         const audio = audioRef.current;
         
@@ -274,37 +304,12 @@ export const MusicPlayerProvider = ({ children }) => {
     
     useEffect(() => { if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } }, [isPlaying]);
 
-    const togglePlayPause = useCallback(() => {
-        if (!currentTrack) return;
-        if (isPlaying) {
-            audioRef.current.pause();
-        } else {
-            audioRef.current.play();
-        }
-        setIsPlaying(!isPlaying);
-    }, [currentTrack, isPlaying]);
-
-    const seekTo = useCallback((time) => {
-        audioRef.current.currentTime = time;
-        setProgress(time);
-    }, []);
-
     const setVolumeAndSave = useCallback((vol) => {
         audioRef.current.volume = vol;
         setVolume(vol);
         localStorage.setItem('playerVolume', vol.toString());
     }, []);
 
-    const prevTrack = useCallback(() => {
-        if (progress > 3) {
-            seekTo(0);
-        } else {
-            if (playlistRef.current.length === 0) return;
-            const prevIndex = (currentTrackIndexRef.current - 1 + playlistRef.current.length) % playlistRef.current.length;
-            playTrack(playlistRef.current[prevIndex], playlistRef.current);
-        }
-    }, [progress, seekTo, playTrack]);
-    
     const stopAndClearPlayer = useCallback(() => {
         audioRef.current.pause();
         audioRef.current.src = '';
