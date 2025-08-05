@@ -22,7 +22,7 @@ import { useMusicPlayer } from '../context/MusicPlayerContext';
 import MusicListModal from '../components/modals/MusicListModal';
 import CommunityInviteModal from '../components/modals/CommunityInviteModal';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
-import { UserDataCache } from '../utils/UserDataCacheService'; // --- ИМПОРТ
+import { UserDataCache } from '../utils/UserDataCacheService'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
 

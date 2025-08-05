@@ -2,9 +2,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src, alt, className }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -16,7 +15,6 @@ const CachedImage = ({ src, alt, className }) => {
 const PackCard = ({ pack, children, onLongPress }) => {
     const isSticker = pack.type === 'sticker';
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем обработчики для долгого нажатия ---
     let pressTimer;
 
     const handleMouseDown = () => {
@@ -24,7 +22,7 @@ const PackCard = ({ pack, children, onLongPress }) => {
             if (onLongPress) {
                 onLongPress(pack);
             }
-        }, 300); // 500ms для долгого нажатия
+        }, 300);
     };
 
     const handleMouseUp = () => {
@@ -34,7 +32,6 @@ const PackCard = ({ pack, children, onLongPress }) => {
     const handleMouseLeave = () => {
         clearTimeout(pressTimer);
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return (
         <motion.div
@@ -43,16 +40,14 @@ const PackCard = ({ pack, children, onLongPress }) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
-            className="ios-glass-final rounded-2xl p-4 flex flex-col select-none cursor-pointer" // Добавляем cursor-pointer и select-none
-            // --- НАЧАЛО ИЗМЕНЕНИЯ: Привязываем обработчики ---
+            className="ios-glass-final rounded-2xl p-4 flex flex-col select-none cursor-pointer group" // --- ДОБАВЛЯЕМ "group" ---
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseLeave}
-            onTouchStart={handleMouseDown} // Для мобильных устройств
+            onTouchStart={handleMouseDown}
             onTouchEnd={handleMouseUp}
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         >
-            <div className="flex-1 mb-4 pointer-events-none"> {/* Добавляем pointer-events-none, чтобы события проходили к родителю */}
+            <div className="flex-1 mb-4 pointer-events-none">
                 <div className="flex justify-between items-start">
                     <div>
                         <h3 className="font-bold text-lg truncate">{pack.name}</h3>
@@ -76,9 +71,17 @@ const PackCard = ({ pack, children, onLongPress }) => {
                     )}
                 </div>
             </div>
-            <div className="flex items-center justify-end space-x-2">
-                {children}
+            
+            {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+            <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Удерживайте для предпросмотра
+                </p>
+                <div className="flex items-center justify-end space-x-2">
+                    {children}
+                </div>
             </div>
+            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
         </motion.div>
     );
 };

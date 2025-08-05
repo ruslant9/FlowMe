@@ -12,7 +12,7 @@ import { ru } from 'date-fns/locale';
 import { useModal } from '../hooks/useModal';
 import { useUser } from '../hooks/useUser';
 
-import { useWebSocket } from '../context/WebSocketContext';
+import ProfileField from '../components/ProfileField';
 import ProfileStats from '../components/ProfileStats';
 import PostCard from '../components/PostCard';
 import CreatePostModal from '../components/modals/CreatePostModal';
