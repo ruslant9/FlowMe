@@ -31,6 +31,8 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
 
+// ... (остальные хелперы и компонент без изменений) ...
+
 const getImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) {
@@ -183,29 +185,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     useEffect(() => {
         setInternalConversation(conversation);
     }, [conversation]);
-
-    useEffect(() => {
-        const handlePaste = (event) => {
-            // Проверяем, есть ли активный диалог
-            if (!internalConversation?._id) return;
-
-            const items = event.clipboardData.items;
-            if (!items) return;
-
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    const file = items[i].getAsFile();
-                    if (file) {
-                        event.preventDefault();
-                        setAttachmentFile(file); // Эта функция открывает модальное окно
-                        break; 
-                    }
-                }
-            }
-        };
-        document.addEventListener('paste', handlePaste);
-        return () => document.removeEventListener('paste', handlePaste);
-    }, [internalConversation?._id]);
 
     const [appTheme, setAppTheme] = useState(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     useEffect(() => {
@@ -610,7 +589,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         
         loadInitialMessages();
         
-    }, [internalConversation?._id, fetchMessages, internalConversation.initialMessages]);
+    }, [internalConversation?._id, internalConversation.initialMessages, fetchMessages]);
 
     useEffect(() => {
         if (internalConversation?._id && !loading && messages.length > 0 && (internalConversation.unreadCount > 0 || internalConversation.isMarkedAsUnread)) {
@@ -644,11 +623,10 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     }, [messages, page, currentUserId]);
 
     useLayoutEffect(() => {
-        const shouldScrollToBottom = page === 1 && !unreadPositionFoundRef.current;
-        if (shouldScrollToBottom && messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView();
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
         }
-    }, [messages, page]);
+    }, [internalConversation?._id, messages.length]);
 
     useEffect(() => {
         const observer = new IntersectionObserver( (entries) => {
@@ -690,11 +668,19 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         const handleMessagesRead = (e) => { if (e.detail.conversationId === internalConversation?._id) { const readerId = e.detail.readerId; setMessages(prevMessages => prevMessages.map(msg => { const isAlreadyRead = msg.readBy && msg.readBy.includes(readerId); if (isAlreadyRead) return msg; const newReadBy = [...(msg.readBy || []), readerId]; return { ...msg, readBy: newReadBy }; })); }};
         const handleTyping = (e) => { if (e.detail.conversationId === internalConversation?._id) setTypingUsers(prev => ({ ...prev, [e.detail.userId]: e.detail.isTyping })); };
         const handleMessagesDeleted = e => {
-            if (e.detail.conversationId === internalConversation?._id) {
-                if (e.detail.forEveryone) {
-                    setMessages(prev => prev.filter(m => !e.detail.messageUuids.includes(m.uuid)));
-                } else if (e.detail.deletedBy === currentUserId) {
-                    setMessages(prev => prev.filter(m => !e.detail.messageIds.includes(m._id)));
+            const { conversationId, messageUuids, messageIds, forEveryone, deletedBy, newLastMessage } = e.detail;
+            if (conversationId === internalConversation?._id) {
+                setMessages(prev => {
+                    if (forEveryone) {
+                        return prev.filter(m => !messageUuids.includes(m.uuid));
+                    }
+                    if (deletedBy === currentUserId) {
+                        return prev.filter(m => !messageIds.includes(m._id));
+                    }
+                    return prev;
+                });
+                if (newLastMessage) {
+                    setInternalConversation(prev => ({ ...prev, lastMessage: newLastMessage }));
                 }
             }
         };

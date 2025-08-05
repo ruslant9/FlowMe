@@ -40,45 +40,47 @@ const AdminPage = () => {
 
     return (
         <main className="flex-1 p-4 md:p-8">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold">Панель администратора</h1>
-            </div>
-            
-            {/* Горизонтальная панель навигации */}
-            <div className="flex flex-wrap border-b border-slate-300 dark:border-slate-700 mb-6">
-                <TabButton 
-                    active={activeTab === 'submissions'} 
-                    onClick={() => setActiveTab('submissions')}
-                    icon={CheckCircle}
-                >
-                    Заявки на модерацию
-                </TabButton>
-                <TabButton 
-                    active={activeTab === 'content'} 
-                    onClick={() => setActiveTab('content')}
-                    icon={Database}
-                >
-                    Управление контентом
-                </TabButton>
-                <TabButton 
-                    active={activeTab === 'users'} 
-                    onClick={() => setActiveTab('users')}
-                    icon={Users}
-                >
-                    Управление пользователями
-                </TabButton>
-                <TabButton 
-                    active={activeTab === 'create'} 
-                    onClick={() => setActiveTab('create')}
-                    icon={UploadCloud}
-                >
-                    Создать контент
-                </TabButton>
-            </div>
-
-            {/* Область для отображения контента активной вкладки */}
-            <div className="mt-6">
-                {renderContent()}
+            <div className="max-w-7xl mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                    <h1 className="text-3xl font-bold">Панель администратора</h1>
+                </div>
+                
+                {/* Горизонтальная панель навигации */}
+                <div className="flex flex-wrap border-b border-slate-300 dark:border-slate-700 mb-6">
+                    <TabButton 
+                        active={activeTab === 'submissions'} 
+                        onClick={() => setActiveTab('submissions')}
+                        icon={CheckCircle}
+                    >
+                        Заявки на модерацию
+                    </TabButton>
+                    <TabButton 
+                        active={activeTab === 'content'} 
+                        onClick={() => setActiveTab('content')}
+                        icon={Database}
+                    >
+                        Управление контентом
+                    </TabButton>
+                    <TabButton 
+                        active={activeTab === 'users'} 
+                        onClick={() => setActiveTab('users')}
+                        icon={Users}
+                    >
+                        Управление пользователями
+                    </TabButton>
+                    <TabButton 
+                        active={activeTab === 'create'} 
+                        onClick={() => setActiveTab('create')}
+                        icon={UploadCloud}
+                    >
+                        Создать контент
+                    </TabButton>
+                </div>
+    
+                {/* Область для отображения контента активной вкладки */}
+                <div className="mt-6">
+                    {renderContent()}
+                </div>
             </div>
         </main>
     );

@@ -176,8 +176,8 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                     transition={{ duration: 0.1 }}
                                     className="h-full flex flex-col"
                                 >
-                                    {activeTab === 'regular' && ( <div className="flex-1 pt-4">
-                                          <div className="flex items-center flex-wrap gap-x-1 gap-y-2">
+                                    {activeTab === 'regular' && ( <div className="flex flex-1 items-center justify-center">
+                                          <div className="flex items-center justify-center flex-wrap gap-x-1 gap-y-2">
                                                 {regularReactions.map(emoji => (
                                                     <button
                                                         key={emoji}

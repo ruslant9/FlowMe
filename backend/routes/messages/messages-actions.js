@@ -95,9 +95,7 @@ router.delete('/', authMiddleware, async (req, res) => {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
         let conversationId = null;
         let wasLastMessage = false;
-        // --- НАЧАЛО ИЗМЕНЕНИЯ: Собираем UUIDы для отправки ---
         const messageUuidsToDelete = [];
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         for (const messageId of messageIds) {
             const message = await Message.findById(messageId).populate('conversation');
@@ -119,10 +117,8 @@ router.delete('/', authMiddleware, async (req, res) => {
                 }
 
                 if (message.sender.equals(userId)) {
-                    // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем UUID в массив и удаляем по нему ---
                     messageUuidsToDelete.push(message.uuid);
                     await Message.deleteMany({ uuid: message.uuid });
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                 } else {
                     return res.status(403).json({ message: "Вы не можете удалить это сообщение для всех" });
                 }
@@ -133,38 +129,40 @@ router.delete('/', authMiddleware, async (req, res) => {
         
         if(conversationId) {
             const conversation = await Conversation.findById(conversationId);
+            let newLastMessage = null;
+
             if (conversation) {
                 if (wasLastMessage) {
-                     for (const participantId of conversation.participants) {
-                        const newLastMessage = await Message.findOne({
-                            conversation: conversationId,
-                            owner: participantId
-                        }).sort({ createdAt: -1 });
-                        
-                        conversation.lastMessage = newLastMessage ? newLastMessage._id : null;
-                        await conversation.save();
-                    }
+                    const lastMessageDoc = await Message.findOne({
+                        conversation: conversationId,
+                        owner: userId // Ищем последнее сообщение для текущего пользователя
+                    }).sort({ createdAt: -1 })
+                      .populate('sender', 'username fullName avatar')
+                      .populate('attachedTrack');
+                    
+                    newLastMessage = lastMessageDoc ? lastMessageDoc.toObject() : null;
+
+                    // Обновляем lastMessage для всех участников
+                    await Conversation.updateOne(
+                        { _id: conversationId },
+                        { $set: { lastMessage: lastMessageDoc ? lastMessageDoc._id : null } }
+                    );
                 }
                 
-                // --- НАЧАЛО ИЗМЕНЕНИЯ: Отправляем UUIDы вместо ID ---
                 const payload = {
                     conversationId: conversationId.toString(),
                     messageUuids: forEveryone ? messageUuidsToDelete : null,
                     messageIds: forEveryone ? null : messageIds,
-                    forEveryone
+                    forEveryone,
+                    newLastMessage // <-- Добавляем новое последнее сообщение
                 };
                 if (!forEveryone) {
                     payload.deletedBy = userId.toString();
                 }
-                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
                  broadcastToUsers(req, conversation.participants, {
                     type: 'MESSAGES_DELETED',
                     payload
-                });
-                broadcastToUsers(req, conversation.participants, {
-                    type: 'CONVERSATION_UPDATED',
-                    payload: { conversationId: conversation._id }
                 });
             }
         }
