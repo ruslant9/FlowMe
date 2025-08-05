@@ -5,7 +5,7 @@ import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import Avatar from './Avatar';
 import { LogOut, Settings, Users, Newspaper, Menu, MessageSquare, Bell, Globe, Music, Sparkles, Crown, Shield, Brush, X } from 'lucide-react';
 import { useWebSocket } from '../context/WebSocketContext';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import { useNotifications } from '../context/NotificationContext';
 import Tippy from '@tippyjs/react/headless';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
