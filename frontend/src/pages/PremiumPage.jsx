@@ -96,7 +96,9 @@ if (loadingPage) {
 }
 
 return (
-    <main className="flex-1 p-4 md:p-8 flex items-center justify-center">
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    <main className="flex-1 p-4 md:p-8 flex items-center justify-center h-full">
+    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
         {currentUser?.premium?.isActive ? (
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}

@@ -1,9 +1,9 @@
 // frontend/src/components/Sidebar.jsx
 
-import React, { useState, useEffect, forwardRef } from 'react';
+import React, { useState, useEffect, forwardRef, useMemo } from 'react';
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import Avatar from './Avatar';
-import { LogOut, Settings, Users, Newspaper, Menu, MessageSquare, Bell, Globe, Music, Sparkles, Crown, Shield, Brush, X } from 'lucide-react';
+import { LogOut, Settings, Users, Newspaper, Menu, MessageSquare, Bell, Globe, Music, Sparkles, Crown, Shield, Brush, X, MoreHorizontal } from 'lucide-react';
 import { useWebSocket } from '../context/WebSocketContext';
 import { useUser } from '../hooks/useUser';
 import { useNotifications } from '../context/NotificationContext';
@@ -27,7 +27,7 @@ TippyWrapper.displayName = 'TippyWrapper';
 
 const NavItem = ({ to, end, icon: Icon, text, count, isExpanded }) => {
     const baseStyles = "flex items-center transition-colors duration-200 relative";
-    const expandedStyles = "py-2.5 px-3";
+    const expandedStyles = "py-2 px-3 md:py-2.5"; 
     const collapsedStyles = "w-12 h-12 justify-center";
     
     const getActiveStyles = (isActive) => isActive 
@@ -82,6 +82,68 @@ const NavItem = ({ to, end, icon: Icon, text, count, isExpanded }) => {
     );
 };
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Новый компонент для полноэкранного меню ---
+const FullScreenNav = ({ isOpen, onClose, navItems, user, summary, isExpanded }) => {
+    const location = useLocation();
+
+    useEffect(() => {
+        if (isOpen) {
+            onClose();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.pathname]);
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="fixed inset-0 bg-black/60 z-[100] md:hidden"
+                >
+                    <motion.div
+                        initial={{ y: "100%" }}
+                        animate={{ y: 0 }}
+                        exit={{ y: "100%" }}
+                        transition={{ type: "spring", stiffness: 400, damping: 40 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute bottom-0 left-0 right-0 bg-slate-100 dark:bg-slate-900 rounded-t-3xl p-4 flex flex-col"
+                        style={{ height: 'calc(var(--vh, 1vh) * 75)' }}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold">Навигация</h2>
+                            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
+                        </div>
+                        <nav className="flex-1 overflow-y-auto space-y-2">
+                            <NavItem
+                                to="/premium"
+                                icon={user?.premium?.isActive ? Crown : Sparkles}
+                                text={<span className={user?.premium?.isActive ? 'premium-gradient-text font-bold' : ''}>{user?.premium?.isActive ? "Мой Premium" : "Flow PREMIUM"}</span>}
+                                count={0}
+                                isExpanded={true}
+                            />
+                            {navItems.map(item => (
+                                <NavItem
+                                    key={item.name}
+                                    to={item.path}
+                                    end={item.path === "/"}
+                                    icon={item.icon}
+                                    text={item.name}
+                                    count={item.count}
+                                    isExpanded={true}
+                                />
+                            ))}
+                        </nav>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
     const [isExpanded, setIsExpanded] = useState(localStorage.getItem('sidebarExpanded') !== 'false');
     const navigate = useNavigate();
@@ -91,6 +153,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
     const { logout } = useWebSocket(); 
     const { currentUser: user } = useUser();
     const { summary } = useNotifications();
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false); // Состояние для нового меню
 
     const handleLogout = () => {
         stopAndClearPlayer();
@@ -108,8 +171,9 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.pathname]);
-
-    const menuItems = [
+    
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика для отображения кнопки "Ещё" ---
+    const menuItems = useMemo(() => [
         { name: "Уведомления", path: "/notifications", icon: Bell, count: summary.unreadNotificationsCount },
         { name: "Лента", path: "/", icon: Newspaper, count: 0 },
         { name: "Друзья", path: "/friends", icon: Users, count: summary.friendRequestsCount },
@@ -117,7 +181,17 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
         { name: "Сообщения", path: "/messages", icon: MessageSquare, count: summary.unreadConversationsCount },
         { name: "Музыка", path: "/music", icon: Music, count: 0 },
         { name: "Мастерская", path: "/workshop", icon: Brush, count: 0 },
-    ];
+    ], [summary]);
+
+    const allNavItems = useMemo(() => [
+        ...(user?.role === 'admin' ? [{ name: "Админ-панель", path: "/admin", icon: Shield, count: summary.submissionsCount }] : []),
+        ...menuItems
+    ], [user, summary, menuItems]);
+    
+    const NAV_ITEM_LIMIT = 6;
+    const shouldTruncate = allNavItems.length > NAV_ITEM_LIMIT;
+    const visibleNavItems = shouldTruncate ? allNavItems.slice(0, NAV_ITEM_LIMIT - 1) : allNavItems;
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     const getActiveStylesProfile = (isActive) => isActive 
         ? 'text-slate-800 dark:text-white'
@@ -139,6 +213,17 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                     />
                 )}
             </AnimatePresence>
+
+            {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Рендерим новое полноэкранное меню --- */}
+            <FullScreenNav
+                isOpen={isMoreMenuOpen}
+                onClose={() => setIsMoreMenuOpen(false)}
+                navItems={allNavItems}
+                user={user}
+                summary={summary}
+                isExpanded={isExpanded || isMobileNavOpen}
+            />
+            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
             <div className={`
                 h-full flex flex-col transition-all duration-300
@@ -174,77 +259,28 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                 <NavItem
                                     to="/premium"
                                     icon={user?.premium?.isActive ? Crown : Sparkles}
-                                    text={
-                                        <span className={user?.premium?.isActive ? 'premium-gradient-text font-bold' : ''}>
-                                            {user?.premium?.isActive ? "Мой Premium" : "Flow PREMIUM"}
-                                        </span>
-                                    }
+                                    text={<span className={user?.premium?.isActive ? 'premium-gradient-text font-bold' : ''}>{user?.premium?.isActive ? "Мой Premium" : "Flow PREMIUM"}</span>}
                                     count={0}
                                     isExpanded={isExpanded || isMobileNavOpen}
                                 />
 
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
-                                <Tippy
-                                    disabled={isExpanded || isMobileNavOpen}
-                                    placement="right"
-                                    delay={[300, 0]}
-                                    render={attrs => <Tooltip text="Мой профиль" attrs={attrs} />}
-                                >
+                                <Tippy disabled={isExpanded || isMobileNavOpen} placement="right" delay={[300, 0]} render={attrs => <Tooltip text="Мой профиль" attrs={attrs} />}>
                                     <TippyWrapper>
                                         <div className="my-2">
-                                            <NavLink
-                                              to="/profile"
-                                              className={({ isActive }) => `
-                                                flex items-center transition-colors duration-200
-                                                ${getActiveStylesProfile(isActive)}
-                                                 ${(isExpanded || isMobileNavOpen)
-                                                    ? (user?.premium?.isActive ? 'p-0.5 premium-gradient-bg rounded-full' : '')
-                                                    : 'w-12 h-12 justify-center'}
-                                              `}
-                                            >
+                                            <NavLink to="/profile" className={({ isActive }) => `flex items-center transition-colors duration-200 ${getActiveStylesProfile(isActive)} ${(isExpanded || isMobileNavOpen) ? (user?.premium?.isActive ? 'p-0.5 premium-gradient-bg rounded-full' : '') : 'w-12 h-12 justify-center'}`}>
                                                 {({ isActive }) => (
-                                                    <div className={`
-                                                        relative flex items-center w-full transition-colors duration-200 rounded-full overflow-hidden
-                                                        ${isExpanded || isMobileNavOpen ? 'py-2 px-3' : 'w-12 h-12 justify-center'}
-                                                        ${!isActive && user?.premium?.isActive ? 'bg-slate-50 dark:bg-slate-900' : ''}
-                                                    `}>
-                                                        
-                                                        {isActive && (
-                                                            <>
-                                                                <div 
-                                                                    className={`absolute inset-0 opacity-15 pointer-events-none ${cardAccentClassName}`}
-                                                                    style={cardAccentStyle}
-                                                                ></div>
-                                                                
-                                                                {!user?.premium?.isActive && (
-                                                                    <motion.div
-                                                                        layoutId="active-indicator"
-                                                                        className="absolute inset-0 bg-blue-100/80 dark:bg-white/10 rounded-full"
-                                                                        transition={{ type: 'spring', stiffness: 600, damping: 35, mass: 1 }}
-                                                                    />
-                                                                )}
-                                                            </>
-                                                        )}
-
+                                                    <div className={`relative flex items-center w-full transition-colors duration-200 rounded-full overflow-hidden ${isExpanded || isMobileNavOpen ? 'py-2 px-3 md:py-2.5' : 'w-12 h-12 justify-center'} ${!isActive && user?.premium?.isActive ? 'bg-slate-50 dark:bg-slate-900' : ''}`}>
+                                                        {isActive && (<>
+                                                            <div className={`absolute inset-0 opacity-15 pointer-events-none ${cardAccentClassName}`} style={cardAccentStyle}></div>
+                                                            {!user?.premium?.isActive && (<motion.div layoutId="active-indicator" className="absolute inset-0 bg-blue-100/80 dark:bg-white/10 rounded-full" transition={{ type: 'spring', stiffness: 600, damping: 35, mass: 1 }}/>)}
+                                                        </>)}
                                                         <div className="relative">
-                                                            {user ? (
-                                                                <Avatar username={user?.username} fullName={user?.fullName} avatarUrl={user?.avatar} size="md" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} />
-                                                            ) : (
-                                                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
-                                                            )}
+                                                            {user ? (<Avatar username={user?.username} fullName={user?.fullName} avatarUrl={user?.avatar} size="md" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} />) : (<div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>)}
                                                         </div>
                                                         <div className={`flex flex-col overflow-hidden transition-all duration-200 ${isExpanded || isMobileNavOpen ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>
-                                                            {user?.premium?.isActive && (
-                                                                <span className="premium-shimmer-text font-bold text-xs uppercase tracking-wider mb-0.5">
-                                                                    Premium
-                                                                </span>
-                                                            )}
-                                                            <span className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
-                                                                {user?.fullName || user?.username || 'Профиль'}
-                                                            </span>
-                                                            <span className={`text-xs transition-colors ${isActive ? 'text-blue-800/70 dark:text-blue-200/80' : 'text-slate-500 dark:text-slate-400'}`}>
-                                                                Мой профиль
-                                                            </span>
+                                                            {user?.premium?.isActive && (<span className="premium-shimmer-text font-bold text-xs uppercase tracking-wider mb-0.5">Premium</span>)}
+                                                            <span className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>{user?.fullName || user?.username || 'Профиль'}</span>
+                                                            <span className={`text-xs transition-colors ${isActive ? 'text-blue-800/70 dark:text-blue-200/80' : 'text-slate-500 dark:text-slate-400'}`}>Мой профиль</span>
                                                         </div>
                                                     </div>
                                                 )}
@@ -252,19 +288,9 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                         </div>
                                     </TippyWrapper>
                                 </Tippy>
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                 
-                                {user?.role === 'admin' && (
-                                    <NavItem
-                                        to="/admin"
-                                        icon={Shield}
-                                        text="Админ-панель"
-                                        count={summary.submissionsCount}
-                                        isExpanded={isExpanded || isMobileNavOpen}
-                                    />
-                                )}
-
-                                {menuItems.map(item => (
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Отображаем усеченный или полный список --- */}
+                                {visibleNavItems.map(item => (
                                     <NavItem
                                         key={item.name}
                                         to={item.path}
@@ -275,6 +301,21 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                         isExpanded={isExpanded || isMobileNavOpen}
                                     />
                                 ))}
+
+                                {shouldTruncate && (
+                                    <Tippy disabled={isExpanded || isMobileNavOpen} placement="right" delay={[300, 0]} render={attrs => <Tooltip text="Ещё" attrs={attrs} />}>
+                                        <TippyWrapper>
+                                            <button
+                                                onClick={() => setIsMoreMenuOpen(true)}
+                                                className={`flex items-center transition-colors duration-200 relative text-slate-600 dark:text-white/60 hover:text-slate-800 dark:hover:text-white ${(isExpanded || isMobileNavOpen) ? 'py-2 px-3 md:py-2.5' : 'w-12 h-12 justify-center'}`}
+                                            >
+                                                <MoreHorizontal className="w-5 h-5 flex-shrink-0" />
+                                                <span className={`whitespace-nowrap transition-all duration-200 ${(isExpanded || isMobileNavOpen) ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>Ещё</span>
+                                            </button>
+                                        </TippyWrapper>
+                                    </Tippy>
+                                )}
+                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                             </nav>
                         </LayoutGroup>
                     </div>
@@ -291,24 +332,9 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                 />
                             </div>
                             <div className={`flex flex-col space-y-2 pt-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center'}`}>
-                                <Tippy
-                                    disabled={isExpanded || isMobileNavOpen}
-                                    placement="right"
-                                    delay={[300, 0]}
-                                    render={attrs => <Tooltip text="Выйти" attrs={attrs} />}
-                                >
+                                <Tippy disabled={isExpanded || isMobileNavOpen} placement="right" delay={[300, 0]} render={attrs => <Tooltip text="Выйти" attrs={attrs} />}>
                                     <TippyWrapper>
-                                        <button 
-                                          onClick={handleLogout} 
-                                          className={`
-                                            flex items-center transition-colors duration-200 relative w-full
-                                            ${isExpanded || isMobileNavOpen ? 'py-2.5 px-3' : 'w-12 h-12 justify-center'}
-                                            text-red-600 dark:text-red-400 
-                                            hover:bg-red-100 dark:hover:bg-red-500/20 
-                                            hover:text-red-700 dark:hover:text-red-300
-                                            rounded-lg 
-                                          `}
-                                        >
+                                        <button onClick={handleLogout} className={`flex items-center transition-colors duration-200 relative w-full ${isExpanded || isMobileNavOpen ? 'py-2 px-3 md:py-2.5' : 'w-12 h-12 justify-center'} text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 rounded-lg`}>
                                             <LogOut className="w-5 h-5 flex-shrink-0" />
                                             <span className={`whitespace-nowrap transition-all duration-200 ${isExpanded || isMobileNavOpen ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>Выйти</span>
                                         </button>

@@ -130,22 +130,11 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
     );
 };
 
-const NotificationToggle = () => {
+const NotificationToggle = () => { // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [permission, setPermission] = useState('default');
     const [loading, setLoading] = useState(true);
     const [subscriptionObject, setSubscriptionObject] = useState(null);
-
-    const urlBase64ToUint8Array = (base64String) => {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-        const rawData = window.atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
-        for (let i = 0; i < rawData.length; ++i) {
-            outputArray[i] = rawData.charCodeAt(i);
-        }
-        return outputArray;
-    };
 
     const checkSubscription = useCallback(async () => {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -164,6 +153,17 @@ const NotificationToggle = () => {
     useEffect(() => {
         checkSubscription();
     }, [checkSubscription]);
+
+    const urlBase64ToUint8Array = (base64String) => {
+        const padding = "=".repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    };
 
     const subscribeUser = async () => {
         setLoading(true);
@@ -233,23 +233,34 @@ const NotificationToggle = () => {
         buttonContent = <><Bell size={18} /><span>Включить</span></>;
         buttonAction = subscribeUser;
     }
-
     return (
-        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-between">
+        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg flex flex-col items-start gap-3">
             <div>
                 <p className="font-semibold text-slate-700 dark:text-white">Push-уведомления</p>
                 <p className="text-sm text-slate-500 dark:text-white/60">Получайте уведомления, даже когда сайт закрыт.</p>
+                {permission === 'denied' && (
+                    <p className="mt-2 text-xs text-red-500 dark:text-red-400">
+                        Уведомления заблокированы в настройках вашего браузера. Чтобы их включить, измените разрешения для этого сайта.
+                    </p>
+                )}
             </div>
             <button
                 onClick={buttonAction}
                 disabled={buttonDisabled}
-                className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-70
+                    ${permission === 'denied' 
+                        ? 'bg-slate-400 dark:bg-slate-600 text-white cursor-not-allowed'
+                        : isSubscribed
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }
+                `}
             >
                 {loading ? <Loader2 className="animate-spin" /> : buttonContent}
             </button>
         </div>
     );
-};
+}; // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const SettingsPage = () => {
     useTitle('Настройки');

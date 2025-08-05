@@ -15,7 +15,6 @@ import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИЗМЕНЕНИЙ: Обновленный компонент для кнопок-вкладок ---
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
         onClick={onClick}
@@ -29,7 +28,6 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
         <span>{children}</span>
     </button>
 );
-// --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
 const SubTabButton = ({ active, onClick, children }) => (
     <button
@@ -246,7 +244,6 @@ const WorkshopPage = () => {
                 return null;
         }
 
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Улучшенный пустой экран ---
         if (loading) {
             return <div className="flex justify-center py-20"><Loader2 className="animate-spin w-10 h-10" /></div>;
         }
@@ -267,7 +264,6 @@ const WorkshopPage = () => {
                 </div>
             )
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         return (
             <div>
@@ -278,6 +274,7 @@ const WorkshopPage = () => {
                         </PackCard>
                     )}
                 </div>
+                <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-4">Удерживайте пак для предпросмотра</p>
                 {activeTab === 'search' && searchTotalPages > 1 && (
                      <div className="flex justify-center items-center space-x-2 mt-8">
                         <button onClick={() => fetchData('search', searchQuery, searchPage - 1, activeTypeFilter, premiumFilter)} disabled={searchPage === 1} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 disabled:opacity-50 font-semibold">Назад</button>
@@ -307,7 +304,6 @@ const WorkshopPage = () => {
                 onClose={() => setPreviewingPack(null)}
                 pack={previewingPack}
             />
-            {/* --- НАЧАЛО ИЗМЕНЕНИЙ: Убрали общий блок .ios-glass-final --- */}
             <div className="w-full max-w-7xl mx-auto space-y-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <h1 className="text-4xl font-bold">Мастерская</h1>
@@ -316,15 +312,16 @@ const WorkshopPage = () => {
                     </button>
                 </div>
                 
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
-                    <div className="flex items-center gap-x-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg self-start md:self-center">
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем серый фон-обертку --- */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-x-2">
                         <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
                         <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
                         <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск</TabButton>
                     </div>
 
                     <div className="flex items-center gap-x-4 w-full md:w-auto">
-                        <div className="flex items-center flex-wrap gap-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg">
+                        <div className="flex items-center flex-wrap gap-2">
                             <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
                             <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
                             <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
@@ -356,6 +353,7 @@ const WorkshopPage = () => {
                         )}
                     </div>
                 </div>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                 {activeTab === 'search' && (
                      <div className="relative">
@@ -364,7 +362,6 @@ const WorkshopPage = () => {
                             className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </div>
                 )}
-                {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
 
                 <div>{renderContent()}</div>
             </div>

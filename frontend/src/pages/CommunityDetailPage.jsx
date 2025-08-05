@@ -190,14 +190,15 @@ const CommunityDetailPage = () => {
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                     </div>
-                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Контейнер для выравнивания шапки с контентом --- */}
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Переработанная структура для правильного выравнивания --- */}
                     <div className="max-w-2xl mx-auto px-4 md:px-8">
                         <div className="flex justify-between items-end -mt-16 md:-mt-20 relative z-10">
                             {/* Левая часть: Аватар + Имя/Метаданные */}
                             <div className="flex items-center text-left">
                                 <div 
                                     onClick={() => community.avatar && (setImageViewerSource([community.avatar]), setIsImageViewerOpen(true))}
-                                    className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0 cursor-pointer"
+                                    // Убираем адаптивный размер, чтобы он всегда соответствовал размеру аватара '2xl'
+                                    className="w-32 h-32 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0 cursor-pointer"
                                 >
                                     <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
                                 </div>

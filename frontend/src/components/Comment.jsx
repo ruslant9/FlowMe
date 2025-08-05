@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
 import axios from 'axios';
 import { Heart, Pencil, Trash2, CornerDownRight, MinusSquare, Smile, Check } from 'lucide-react';
 import Avatar from './Avatar';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { useModal } from '../hooks/useModal';
@@ -15,6 +15,7 @@ const Picker = React.lazy(() => import('emoji-picker-react'));
 const EMOJI_PICKER_HEIGHT = 450;
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем кастомные форматы времени ---
 const customRuLocale = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -22,6 +23,23 @@ const customRuLocale = {
         return ru.formatDistance(token, count, options);
     },
 };
+
+const formatShortDistanceToNow = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffSeconds = Math.round((now - date) / 1000);
+    const diffMinutes = Math.round(diffSeconds / 60);
+    const diffHours = Math.round(diffMinutes / 60);
+    const diffDays = Math.round(diffHours / 24);
+
+    if (diffSeconds < 60) return 'только что';
+    if (diffMinutes < 60) return `${diffMinutes}м`;
+    if (diffHours < 24) return `${diffHours}ч`;
+    if (diffDays < 7) return `${diffDays}д`;
+    return format(date, 'dd.MM');
+};
+// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
+
 
 const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommunityId, onCommentUpdate, onReply, editingCommentId, setEditingCommentId, selectionMode, onToggleSelect, isSelected }) => {
     const [localComment, setLocalComment] = useState(comment);
@@ -159,6 +177,15 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const authorIsPremium = authorModel === 'User' && authorObject.premium?.isActive;
     const authorCustomBorder = authorModel === 'User' ? authorObject.premiumCustomization?.avatarBorder : null;
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Создаем блок кнопок для переиспользования ---
+    const renderActionButtons = () => (
+        <>
+            {isCommentOwner && <button onClick={() => setEditingCommentId(localComment._id)} className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><Pencil size={14} /></button>}
+            {canDelete && <button onClick={handleDelete} className="p-1 text-slate-500 dark:text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>}
+        </>
+    );
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
+
     return (
         <div>
             <div 
@@ -178,29 +205,16 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                 }
                 <div className={`${selectionMode ? 'pl-8' : ''} comment-body w-full`}>
                     <div className="flex items-start space-x-3">
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                         {(() => {
                             const border = authorCustomBorder;
                             const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
                             const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
-
                             return (
-                                <div 
-                                    className={`relative rounded-full ${borderClass}`}
-                                    style={staticBorderStyle}
-                                >
-                                    <Avatar
-                                        size="sm"
-                                        username={authorName}
-                                        fullName={authorObject.fullName || authorName}
-                                        avatarUrl={authorAvatar}
-                                        isPremium={authorIsPremium}
-                                        customBorder={authorCustomBorder}
-                                    />
+                                <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
+                                    <Avatar size="sm" username={authorName} fullName={authorObject.fullName || authorName} avatarUrl={authorAvatar} isPremium={authorIsPremium} customBorder={authorCustomBorder}/>
                                 </div>
                             );
                         })()}
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <div className="flex-1 min-w-0">
                             {isEditingThis ? (
                                 <div className="relative">
@@ -222,43 +236,51 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                 </div>
                             ) : (
                                 <>
-                                    <div className="text-sm flex items-center space-x-2">
-                                        <Link to={authorLink} className="font-bold hover:underline">
-                                            {authorName}
-                                        </Link>
-                                        {getAuthorBadge()}
-                                        <span className="text-xs text-slate-500 dark:text-slate-400">{formatDistanceToNow(new Date(localComment.createdAt), { addSuffix: true, locale: customRuLocale })}</span>
+                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Новая верстка для хедера комментария --- */}
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm flex items-center space-x-2 min-w-0">
+                                            <Link to={authorLink} className="font-bold hover:underline truncate">{authorName}</Link>
+                                            {getAuthorBadge()}
+                                            <span className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
+                                                <span className="hidden md:inline">{formatDistanceToNow(new Date(localComment.createdAt), { addSuffix: true, locale: customRuLocale })}</span>
+                                                <span className="inline md:hidden">{formatShortDistanceToNow(localComment.createdAt)}</span>
+                                            </span>
+                                        </div>
+                                        {!selectionMode && (
+                                            <div className={`hidden md:flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ${isEditingAny ? 'hidden' : ''}`}>
+                                                {renderActionButtons()}
+                                            </div>
+                                        )}
                                     </div>
                                     <p className="text-sm break-words mt-1">{renderCommentText()}</p>
-                                    <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
-                                       <button onClick={() => onReply({ id: localComment._id, username: authorName })} disabled={isEditingAny || selectionMode} className="font-semibold hover:text-slate-800 dark:hover:text-white transition-colors disabled:text-slate-400/50 disabled:cursor-not-allowed">Ответить</button>
-                                       <LikesPopover 
-                                            likers={localComment.likes || []} 
-                                            postOwnerId={postOwnerId}
-                                        >
-                                            <span>
-                                                <button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500 transition-colors">
-                                                    <Heart size={14} fill={isLikedByMe ? '#ef4444' : 'none'} stroke={isLikedByMe ? '#ef4444' : 'currentColor'} />
-                                                    <span>{localComment.likes?.length || 0}</span>
-                                                </button>
-                                            </span>
-                                       </LikesPopover>
-                                       {hasChildren && (
-                                           <button onClick={() => { setChildrenVisible(!childrenVisible); setEditingCommentId(null); }} className="flex items-center space-x-1 hover:text-slate-800 dark:hover:text-white">
-                                               {childrenVisible ? <MinusSquare size={14} /> : <CornerDownRight size={14} />}
-                                               <span>{childrenVisible ? 'Скрыть ответы' : `Ответы (${localComment.children.length})`}</span>
-                                           </button>
-                                       )}
+                                    <div className="flex items-center justify-between mt-2">
+                                        <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
+                                           <button onClick={() => onReply({ id: localComment._id, username: authorName })} disabled={isEditingAny || selectionMode} className="font-semibold hover:text-slate-800 dark:hover:text-white transition-colors disabled:text-slate-400/50 disabled:cursor-not-allowed">Ответить</button>
+                                           <LikesPopover likers={localComment.likes || []} postOwnerId={postOwnerId}>
+                                                <span>
+                                                    <button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                                        <Heart size={14} fill={isLikedByMe ? '#ef4444' : 'none'} stroke={isLikedByMe ? '#ef4444' : 'currentColor'} />
+                                                        <span>{localComment.likes?.length || 0}</span>
+                                                    </button>
+                                                </span>
+                                           </LikesPopover>
+                                           {hasChildren && (
+                                               <button onClick={() => { setChildrenVisible(!childrenVisible); setEditingCommentId(null); }} className="flex items-center space-x-1 hover:text-slate-800 dark:hover:text-white">
+                                                   {childrenVisible ? <MinusSquare size={14} /> : <CornerDownRight size={14} />}
+                                                   <span>{childrenVisible ? 'Скрыть ответы' : `Ответы (${localComment.children.length})`}</span>
+                                               </button>
+                                           )}
+                                        </div>
+                                        {!selectionMode && (
+                                            <div className={`flex md:hidden items-center space-x-1 ${isEditingAny ? 'hidden' : ''}`}>
+                                                {renderActionButtons()}
+                                            </div>
+                                        )}
                                     </div>
+                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                                 </>
                             )}
                         </div>
-                         {!isEditingThis && !selectionMode && (
-                            <div className={`opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1 absolute top-1 right-1 ${isEditingAny ? 'hidden' : ''}`}>
-                                {isCommentOwner && <button onClick={() => setEditingCommentId(localComment._id)} className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><Pencil size={14} /></button>}
-                                {canDelete && <button onClick={handleDelete} className="p-1 text-slate-500 dark:text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
