@@ -1,3 +1,5 @@
+// CreateAlbumForm.jsx - Полностью исправленный компонент
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -95,6 +97,38 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
+// Статичный компонент для DragOverlay - к нему претензий нет, он просто рендерит данные
+const TrackItem = ({ track, index, mainArtistId }) => {
+    const featuredArtists = (track.artist || []).filter(a => a._id !== mainArtistId);
+    return (
+        <div className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg shadow-xl">
+            <div className="flex items-center space-x-2 min-w-0">
+                <span className="font-bold text-slate-500 w-6 text-center">{index}</span>
+                <div className="cursor-grabbing touch-none p-1 text-slate-500">
+                    <GripVertical size={16} />
+                </div>
+                <div className="flex items-center space-x-2 min-w-0">
+                    <Music size={16} className="text-slate-500 flex-shrink-0" />
+                    <div className="truncate">
+                        <span className="font-semibold text-sm truncate">{track.title}</span>
+                        {featuredArtists.length > 0 && <span className="text-xs text-slate-500 ml-2">(feat. {featuredArtists.map(a => a.name).join(', ')})</span>}
+                    </div>
+                    {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0">E</span>}
+                </div>
+            </div>
+            <div className="flex items-center space-x-1 flex-shrink-0">
+                <button type="button" className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600 opacity-50 cursor-not-allowed" title="Редактировать трек">
+                    <Edit size={14} />
+                </button>
+                <button type="button" className="p-1.5 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 opacity-50 cursor-not-allowed" title="Удалить трек">
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+
 const SortableTrackItem = ({ track, index, mainArtistId, onEditTrack, onDeleteTrack }) => {
     const {
         attributes,
@@ -108,13 +142,14 @@ const SortableTrackItem = ({ track, index, mainArtistId, onEditTrack, onDeleteTr
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        zIndex: isDragging ? 10 : 'auto',
+        opacity: isDragging ? 0.5 : 1, // Делаем оригинал полупрозрачным во время перетаскивания
+        zIndex: isDragging ? 0 : 'auto', // Убираем оригинал "под" оверлей
     };
 
     const featuredArtists = (track.artist || []).filter(a => a._id !== mainArtistId);
 
     return (
-        <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow ${isDragging ? 'shadow-xl opacity-50' : ''}`}>
+        <div ref={setNodeRef} style={style} className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow">
             <div className="flex items-center space-x-2 min-w-0">
                 <span className="font-bold text-slate-500 w-6 text-center">{index}</span>
                 <div {...attributes} {...listeners} className="cursor-grab touch-none p-1 text-slate-500">
@@ -140,33 +175,6 @@ const SortableTrackItem = ({ track, index, mainArtistId, onEditTrack, onDeleteTr
         </div>
     );
 };
-
-// Статичный компонент для DragOverlay
-// Этот компонент используется для визуального представления перетаскиваемого элемента
-const TrackItem = ({ track, index, mainArtistId }) => {
-    const featuredArtists = (track.artist || []).filter(a => a._id !== mainArtistId);
-    return (
-        <div className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg shadow-xl">
-            <div className="flex items-center space-x-2 min-w-0">
-                <span className="font-bold text-slate-500 w-6 text-center">{index}</span>
-                <div className="cursor-grabbing touch-none p-1 text-slate-500">
-                    <GripVertical size={16} />
-                </div>
-                <div className="flex items-center space-x-2 min-w-0">
-                    <Music size={16} className="text-slate-500 flex-shrink-0" />
-                    <span className="font-semibold text-sm truncate">{track.title}</span>
-                    {featuredArtists.length > 0 && <span className="text-xs text-slate-500 ml-2">(feat. {featuredArtists.map(a => a.name).join(', ')})</span>}
-                    {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0">E</span>}
-                </div>
-            </div>
-            <div className="flex items-center space-x-1 flex-shrink-0">
-                <div className="p-1.5"><Edit size={14} /></div>
-                <div className="p-1.5 text-red-500"><Trash2 size={14} /></div>
-            </div>
-        </div>
-    );
-};
-
 
 const MonthYearPicker = ({ value, onChange }) => {
     const currentYear = new Date().getFullYear();
@@ -231,6 +239,8 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [coverPreview, setCoverPreview] = useState('');
     const [initialTracks, setInitialTracks] = useState([]);
     const [albumTracks, setAlbumTracks] = useState([]);
+    
+    // --- ИЗМЕНЕНИЕ 1: Состояние для активного элемента ---
     const [activeTrack, setActiveTrack] = useState(null);
     
     const fileInputRef = useRef(null);
@@ -273,7 +283,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             setCoverPreview(initialData.coverArtUrl || '');
             fetchAlbumTracks();
         } else {
-            // Сброс полей для формы создания, чтобы избежать старых данных
             setTitle(''); setArtistId(''); setGenre([]); setReleaseDate(new Date()); 
             setCoverArt(null); setCoverPreview('');
             setAlbumTracks([]); setInitialTracks([]);
@@ -309,16 +318,21 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         });
     };
 
+    // --- ИЗМЕНЕНИЕ 2: Исправленный обработчик начала перетаскивания ---
     const handleDragStart = (event) => {
         const { active } = event;
         const track = albumTracks.find(t => t._id === active.id);
-        const index = albumTracks.findIndex(t => t._id === active.id);
-        const nodeWidth = event.active.rect.current.initial?.width;
-        setActiveTrack({ ...track, originalIndex: index, width: nodeWidth });
+        if (track) {
+            const index = albumTracks.findIndex(t => t._id === active.id);
+            setActiveTrack({
+                ...track,
+                originalIndex: index,
+            });
+        }
     };
 
+    // --- ИЗМЕНЕНИЕ 3: Исправленный обработчик окончания перетаскивания ---
     const handleDragEnd = (event) => {
-        setActiveTrack(null);
         const { active, over } = event;
         if (over && active.id !== over.id) {
             const oldIndex = albumTracks.findIndex((t) => t._id === active.id);
@@ -326,6 +340,8 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const reorderedTracks = arrayMove(albumTracks, oldIndex, newIndex);
             setAlbumTracks(reorderedTracks);
         }
+        // Очищаем активный трек в любом случае
+        setActiveTrack(null);
     };
     
     const handleBatchUpload = async (e) => {
@@ -398,7 +414,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const res = await axios[method](endpoint, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
             toast.success(res.data.message || successMessage, { id: toastId });
             
-            // Сохраняем новый порядок треков только после успешного обновления альбома
             if (isEditMode && JSON.stringify(initialTracks.map(t => t._id)) !== JSON.stringify(albumTracks.map(t => t._id))) {
                 try {
                     const trackIds = albumTracks.map(t => t._id);
@@ -426,6 +441,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
 
             <div className="flex flex-col md:flex-row md:space-x-6 mt-6">
                 <div className={`space-y-4 ${isEditMode ? 'md:w-1/2 flex-shrink-0' : 'w-full'}`}>
+                    {/* ... левая часть формы без изменений ... */}
                     <div>
                         <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
                         <ArtistAutocomplete artists={artists} onSelect={setArtistId} initialArtistId={artistId} />
@@ -464,8 +480,6 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                     <>
                         <div className="hidden md:block border-l border-slate-200 dark:border-slate-700 mx-2"></div>
                         <div className="flex flex-col md:w-1/2 mt-6 md:mt-0">
-                    
-                        <div className="space-y-2 flex flex-col flex-1">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-md">Треки в альбоме ({albumTracks.length})</h4>
                                 <button 
@@ -477,39 +491,39 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                 </button>
                                 <input ref={batchFileInputRef} type="file" accept="audio/*" multiple onChange={handleBatchUpload} className="hidden" />
                             </div>
-                            {albumTracks.length > 0 ? (
-                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                                    <SortableContext items={albumTracks} strategy={verticalListSortingStrategy}>
-                                        <div className="space-y-2 overflow-y-auto pr-2 flex-1">
-                                            {albumTracks.map((track, index) => (
-                                                <SortableTrackItem 
-                                                    key={track._id} 
-                                                    track={track}
-                                                    index={index + 1}
-                                                    onEditTrack={onEditTrack} 
-                                                    onDeleteTrack={handleDeleteTrack} 
-                                                    mainArtistId={mainArtistIdForTracks}
-                                                />
-                                            ))}
-                                        </div>
+                            
+                            {/* --- ИЗМЕНЕНИЕ 4: Полностью исправленный блок DndContext --- */}
+                            <DndContext 
+                                sensors={sensors} 
+                                collisionDetection={closestCenter} 
+                                onDragStart={handleDragStart} 
+                                onDragEnd={handleDragEnd}
+                            >
+                                <div className="space-y-2 overflow-y-auto pr-2 flex-1">
+                                    <SortableContext items={albumTracks.map(t => t._id)} strategy={verticalListSortingStrategy}>
+                                        {albumTracks.map((track, index) => (
+                                            <SortableTrackItem 
+                                                key={track._id} 
+                                                id={track._id} // dnd-kit-sortable требует id здесь
+                                                track={track}
+                                                index={index + 1}
+                                                onEditTrack={onEditTrack} 
+                                                onDeleteTrack={handleDeleteTrack} 
+                                                mainArtistId={mainArtistIdForTracks}
+                                            />
+                                        ))}
                                     </SortableContext>
-                                    <DragOverlay dropAnimation={dropAnimation}>
-    {activeTrack ? (
-        // Оберните TrackItem в div и примените стиль
-        <div style={{ width: activeTrack.width }}>
-            <TrackItem 
-                track={activeTrack} 
-                index={activeTrack.originalIndex + 1} 
-                mainArtistId={mainArtistIdForTracks}
-            />
-        </div>
-    ) : null}
-</DragOverlay>
-                                </DndContext>
-                            ) : (
-                                <p className="text-center text-sm text-slate-500 py-4">В этом альбоме пока нет треков.</p>
-                            )}
-                        </div>
+                                </div>
+                                <DragOverlay dropAnimation={dropAnimation}>
+                                    {activeTrack ? (
+                                        <TrackItem 
+                                            track={activeTrack} 
+                                            index={activeTrack.originalIndex + 1} 
+                                            mainArtistId={mainArtistIdForTracks}
+                                        />
+                                    ) : null}
+                                </DragOverlay>
+                            </DndContext>
                         </div>
                     </>
                 )}

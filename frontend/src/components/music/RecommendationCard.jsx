@@ -1,7 +1,7 @@
 // frontend/src/components/music/RecommendationCard.jsx
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
@@ -17,6 +17,7 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             ''
         ).trim();
     };
+
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
@@ -30,6 +31,33 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         }
         return '';
     };
+
+    const getReleaseBadge = (releaseDate) => {
+        if (!releaseDate) return null;
+
+        const now = new Date();
+        const release = new Date(releaseDate);
+
+        // Свежее (этот месяц)
+        if (release.getFullYear() === now.getFullYear() && release.getMonth() === now.getMonth()) {
+            return { text: 'Свежее', color: 'bg-lime-400 text-lime-900' };
+        }
+
+        // Недавнее (прошлый месяц)
+        let lastMonth = now.getMonth() - 1;
+        let lastMonthYear = now.getFullYear();
+        if (lastMonth < 0) {
+            lastMonth = 11;
+            lastMonthYear -= 1;
+        }
+
+        if (release.getFullYear() === lastMonthYear && release.getMonth() === lastMonth) {
+            return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
+        }
+
+        return null;
+    };
+
     const handlePlayClick = (e) => {
         e.stopPropagation();
         if (isCurrent) {
@@ -38,6 +66,9 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             onSelectTrack();
         }
     };
+
+    const badge = getReleaseBadge(track.releaseDate);
+
     return (
         <motion.div
             className="flex-shrink-0 w-full rounded-2xl flex flex-col p-4 relative overflow-hidden group aspect-[4/5] cursor-pointer"
@@ -53,8 +84,21 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </motion.div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
             
+            <AnimatePresence>
+                {badge && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold z-10 ${badge.color}`}
+                    >
+                        {badge.text}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="absolute top-4 right-4 z-20">
-                 <button
+                <button
                     onClick={handlePlayClick}
                     className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:scale-110 transition-transform opacity-0 group-hover:opacity-100"
                 >
