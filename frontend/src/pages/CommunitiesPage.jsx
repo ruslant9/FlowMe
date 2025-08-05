@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
 import axios from 'axios';
-import { PlusCircle, Search, Users, Globe, Building, Loader2, Clock } from 'lucide-react'; // ИЗМЕНЕНИЕ: Добавлен Clock
+import { PlusCircle, Search, Users, Globe, Building, Loader2, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import CreateCommunityModal from '../components/modals/CreateCommunityModal';
@@ -12,7 +12,7 @@ import CommunityCard from '../components/CommunityCard';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const COMMUNITIES_PER_PAGE = 6;
+const COMMUNITIES_PER_PAGE = 10;
 
 const TabButton = ({ children, active, onClick, count }) => (
     <button
@@ -34,15 +34,13 @@ const CommunitiesPage = () => {
     const [myCommunities, setMyCommunities] = useState([]);
     const [createdCommunities, setCreatedCommunities] = useState([]);
     const [recommendedCommunities, setRecommendedCommunities] = useState([]);
-    const [pendingSentRequests, setPendingSentRequests] = useState([]); // ИЗМЕНЕНИЕ: Новое состояние для отправленных заявок
+    const [pendingSentRequests, setPendingSentRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const { showConfirmation } = useModal();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    // ИЗМЕНЕНИЕ 2: Добавляем состояние для отслеживания текущей страницы
     const [page, setPage] = useState(1);
 
-    // ИЗМЕНЕНИЕ: Новая функция для загрузки всех типов данных сообществ
     const fetchAllCommunityData = useCallback(async (query = '') => {
         setLoading(true);
         try {
@@ -55,11 +53,10 @@ const CommunitiesPage = () => {
             setCreatedCommunities(createdRes.data);
             setRecommendedCommunities(recommendedRes.data);
 
-            // Фильтруем отправленные заявки из всех списков
             const allCommunities = [...myRes.data, ...recommendedRes.data];
             const uniquePending = Array.from(new Map(
                 allCommunities
-                    .filter(c => c.isPending && !c.isMember) // Заявка отправлена, но пользователь еще не участник
+                    .filter(c => c.isPending && !c.isMember)
                     .map(c => [c._id, c])
             ).values());
             setPendingSentRequests(uniquePending);
@@ -73,7 +70,7 @@ const CommunitiesPage = () => {
     }, []);
 
     useEffect(() => {
-        fetchAllCommunityData(searchQuery); // ИЗМЕНЕНИЕ: Вызываем новую функцию
+        fetchAllCommunityData(searchQuery);
     }, [searchQuery, fetchAllCommunityData]);
 
     const handleAction = async (action, communityId) => {
@@ -84,32 +81,43 @@ const CommunitiesPage = () => {
             if (action === 'join') {
                 response = await axios.post(`${API_URL}/api/communities/${communityId}/join`, {}, { headers: { Authorization: `Bearer ${token}` } });
                 toast.success(response.data.message, { id: toastId });
-            } else if (action === 'leave') { // Оборачиваем выход в подтверждение
+            } else if (action === 'leave') {
                 const communityToLeave = myCommunities.find(c => c._id === communityId) || createdCommunities.find(c => c._id === communityId);
-                toast.dismiss(toastId); // Скрываем "Обработка..."
+                toast.dismiss(toastId);
                 showConfirmation({
                     title: `Покинуть "${communityToLeave?.name}"?`,
                     message: "Вы уверены, что хотите покинуть это сообщество?",
                     onConfirm: async () => {
                         const leaveToastId = toast.loading('Выход из сообщества...');
-                        await axios.post(`${API_URL}/api/communities/${communityId}/leave`, {}, { headers: { Authorization: `Bearer ${token}` } });
-                        toast.success(response.data.message, { id: leaveToastId });
-                        fetchAllCommunityData(searchQuery); // ИЗМЕНЕНИЕ: Обновляем все данные
+                        const leaveResponse = await axios.post(`${API_URL}/api/communities/${communityId}/leave`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                        toast.success(leaveResponse.data.message, { id: leaveToastId });
+                        fetchAllCommunityData(searchQuery);
                     }
                 });
-                return; // Выходим из функции, чтобы не обновлять списки до подтверждения
+                return;
              }
             
-            fetchAllCommunityData(searchQuery); // ИЗМЕНЕНИЕ: Обновляем все данные
+            fetchAllCommunityData(searchQuery);
 
         } catch (error) {
             toast.error(error.response?.data?.message || 'Ошибка при действии.', { id: toastId });
         }
     };
 
-    // ИЗМЕНЕНИЕ 3: Функция для загрузки следующей страницы
-    const handleLoadMore = () => {
-        setPage(p => p + 1);
+    const debouncedSearch = useMemo(() => {
+        let timeout;
+        return (query) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                setSearchQuery(query);
+            }, 300);
+        };
+    }, []);
+
+    const handleTabSwitch = (tabName) => {
+        setActiveTab(tabName);
+        setSearchQuery('');
+        setPage(1);
     };
 
     const renderCommunityList = (list) => {
@@ -120,7 +128,7 @@ const CommunitiesPage = () => {
                 </div>
             );
         }
-        // ИЗМЕНЕНИЕ 4: Определяем, какие сообщества показывать на текущей странице
+        
         const displayedList = list.slice(0, page * COMMUNITIES_PER_PAGE);
         const hasMore = displayedList.length < list.length;
 
@@ -130,7 +138,7 @@ const CommunitiesPage = () => {
             else if (activeTab === 'created') message = 'У вас пока нет созданных сообществ. Создайте первое!';
             else if (activeTab === 'recommended' && searchQuery) message = 'Ничего не найдено по вашему запросу.';
             else if (activeTab === 'recommended') message = 'Нет рекомендаций.';
-            else if (activeTab === 'pendingSent') message = 'У вас нет активных заявок на вступление в сообщества.'; // ИЗМЕНЕНИЕ: Сообщение для новой вкладки
+            else if (activeTab === 'pendingSent') message = 'У вас нет активных заявок на вступление в сообщества.';
             
             return (
                 <div className="text-center text-slate-500 dark:text-white/60 py-10">
@@ -140,9 +148,8 @@ const CommunitiesPage = () => {
         }
         return (
             <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-4">
                     <AnimatePresence>
-                        {/* ИЗМЕНЕНИЕ 5: Отображаем только отфильтрованный список */}
                         {displayedList.map(community => (
                             <motion.div 
                                 key={community._id}
@@ -156,16 +163,15 @@ const CommunitiesPage = () => {
                                     community={community}
                                     onAction={handleAction}
                                     isMember={community.members?.includes(JSON.parse(localStorage.getItem('user'))?.id)}
-                                    isPending={community.isPending} // Используем isPending из объекта community
+                                    isPending={community.isPending}
                                 />
                             </motion.div>
                         ))}
                     </AnimatePresence>
                 </div>
-                {/* ИЗМЕНЕНИЕ 6: Показываем кнопку "Загрузить еще", если есть еще сообщества */}
                 {hasMore && (
                     <div className="mt-8 flex justify-center">
-                        <button onClick={handleLoadMore} className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                        <button onClick={() => setPage(p => p + 1)} className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                             Загрузить еще
                         </button>
                     </div>
@@ -174,30 +180,13 @@ const CommunitiesPage = () => {
         );
     };
 
-    const debouncedSearch = useMemo(() => {
-        let timeout;
-        return (query) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                setSearchQuery(query);
-            }, 300);
-        };
-    }, []);
-
-    // ИЗМЕНЕНИЕ 7: Функция для смены вкладок, которая также сбрасывает пагинацию
-    const handleTabSwitch = (tabName) => {
-        setActiveTab(tabName);
-        setSearchQuery('');
-        setPage(1); // Сбрасываем страницу на первую при смене вкладки
-    };
-
     return (
         <>
             <CreateCommunityModal 
                 isOpen={isCreateModalOpen} 
                 onClose={() => {
                     setIsCreateModalOpen(false);
-                    fetchAllCommunityData(searchQuery); // ИЗМЕНЕНИЕ: Обновляем все данные
+                    fetchAllCommunityData(searchQuery);
                 }} 
             />
 
@@ -231,7 +220,6 @@ const CommunitiesPage = () => {
                     </div>
 
                     <div className="flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
-                        {/* ИЗМЕНЕНИЕ 8: Используем новую функцию для смены вкладок */}
                         <TabButton active={activeTab === 'my'} onClick={() => handleTabSwitch('my')}>
                             <Users size={16} /> <span>Мои сообщества</span>
                         </TabButton>
@@ -241,7 +229,7 @@ const CommunitiesPage = () => {
                         <TabButton active={activeTab === 'recommended'} onClick={() => handleTabSwitch('recommended')}>
                             <Globe size={16} /> <span>Рекомендации</span>
                         </TabButton>
-                        <TabButton active={activeTab === 'pendingSent'} onClick={() => handleTabSwitch('pendingSent')} count={pendingSentRequests.length}> {/* ИЗМЕНЕНИЕ: Новая вкладка */}
+                        <TabButton active={activeTab === 'pendingSent'} onClick={() => handleTabSwitch('pendingSent')} count={pendingSentRequests.length}>
                             <Clock size={16} /> <span>Отправленные заявки</span>
                         </TabButton>
                     </div>
@@ -250,7 +238,7 @@ const CommunitiesPage = () => {
                         {activeTab === 'my' && renderCommunityList(myCommunities)}
                         {activeTab === 'created' && renderCommunityList(createdCommunities)}
                         {activeTab === 'recommended' && renderCommunityList(recommendedCommunities)}
-                        {activeTab === 'pendingSent' && renderCommunityList(pendingSentRequests)} {/* ИЗМЕНЕНИЕ: Рендерим новую вкладку */}
+                        {activeTab === 'pendingSent' && renderCommunityList(pendingSentRequests)}
                     </div>
                 </div>
             </main>
