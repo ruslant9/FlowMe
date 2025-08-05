@@ -13,6 +13,7 @@ const fs = require('fs');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
 const { getPopulatedConversation } = require('../../utils/getPopulatedConversation');
 const { createStorage, cloudinary } = require('../../config/cloudinary');
+// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
 const { sanitize } = require('../../utils/sanitize');
 
 const messageImageStorage = createStorage('messages');
@@ -31,6 +32,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
     try {
         const senderId = new mongoose.Types.ObjectId(req.user.userId);
         let { recipientId, text, replyToMessageId, conversationId, attachedTrackId, uuid } = req.body;
+        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
         const sanitizedText = sanitize(text);
         const recipientObjectId = new mongoose.Types.ObjectId(recipientId);
         
@@ -72,7 +74,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             conversation: conversation._id,
             sender: senderId,
             uuid: messageUuid,
-            text: sanitizedText || '',
+            text: sanitizedText || '', // --- ИЗМЕНЕНИЕ: Используем очищенный текст ---
             replyTo: replyToMessageId || null,
             imageUrl: req.file ? req.file.path : null,
             attachedTrack: attachedTrackId || null,
@@ -152,6 +154,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
 router.put('/:messageId', authMiddleware, async (req, res) => {
     try {
         const { text } = req.body;
+        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
         const sanitizedText = sanitize(text);
         const { messageId } = req.params;
         const userId = req.user.userId;
@@ -170,6 +173,7 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: "Вы не можете редактировать это сообщение" });
         }
 
+        // --- ИЗМЕНЕНИЕ: Используем очищенный текст ---
         await Message.updateMany({ uuid: message.uuid }, { $set: { text: sanitizedText } });
 
         const conversation = await Conversation.findById(message.conversation);
@@ -183,7 +187,7 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
                     messageId: message._id,
                     uuid: message.uuid,
                     conversationId: message.conversation,
-                    updates: { text: sanitizedText }
+                    updates: { text: sanitizedText } // --- ИЗМЕНЕНИЕ ---
                 }
             });
              broadcastToUsers(req, activeParticipants, { type: 'CONVERSATION_UPDATED', payload: { conversationId: conversation._id } });
@@ -196,6 +200,7 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
     }
 });
 
+// ... (остальные роуты без изменений)
 router.get('/:messageId/context', authMiddleware, async (req, res) => {
     try {
         const { messageId } = req.params;
@@ -252,9 +257,7 @@ router.get('/:messageId/context', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.get('/conversations/:conversationId/messages-by-date', authMiddleware, async (req, res) => {
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     try {
         const { conversationId } = req.params;
         const { date } = req.query; // date in "YYYY-MM-DD" format
