@@ -222,6 +222,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const fileInputRef = useRef(null);
     const batchFileInputRef = useRef(null);
 
+     const dropAnimation = {
+        sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.5" } } }),
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -467,7 +470,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                             ))}
                                         </div>
                                     </SortableContext>
-                                    <DragOverlay>
+                                    <DragOverlay dropAnimation={dropAnimation}>
                                         {activeTrack ? (
                                             <TrackItem track={activeTrack} index={activeTrack.originalIndex + 1} />
                                         ) : null}

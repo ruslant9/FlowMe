@@ -31,6 +31,8 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
 
+// ... (остальные хелперы и компонент без изменений) ...
+
 const getImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) {
@@ -152,10 +154,12 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
     
-    const activeConversationRef = useRef(activeConversation);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const activeConversationRef = useRef(conversation);
     useEffect(() => {
-        activeConversationRef.current = activeConversation;
-    }, [activeConversation]);
+        activeConversationRef.current = conversation;
+    }, [conversation]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const refetchConversationDetails = useCallback(async () => {
         if (!internalConversation?._id) return;

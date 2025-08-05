@@ -235,7 +235,6 @@ const MusicPage = () => {
         });
     };
     
-    // --- НАЧАЛО ИЗМЕНЕНИЙ ---
     return (
         <main className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
             <CreatePlaylistModal isOpen={isCreatePlaylistModalOpen} onClose={() => setCreatePlaylistModalOpen(false)} onPlaylistCreated={() => fetchDataForTab('playlists')} />
@@ -243,7 +242,6 @@ const MusicPage = () => {
             <UploadContentModal isOpen={isUploadModalOpen} onClose={() => setUploadModalOpen(false)} />
 
             <div className="max-w-7xl mx-auto">
-                {/* Новая, чистая шапка страницы */}
                 <div className="flex items-center justify-between px-6 md:px-8 pt-8 pb-6">
                     <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white">
                         Музыка
@@ -253,7 +251,6 @@ const MusicPage = () => {
                     </button>
                 </div>
                 
-                {/* Панель с вкладками */}
                 <div className="px-6 md:px-8 border-b border-slate-300 dark:border-slate-700">
                     <div className="flex items-center space-x-2 -mb-px">
                         <TabButton active={activeTab === 'recommendations'} onClick={() => setActiveTab('recommendations')}><Star size={16}/><span>Главная</span></TabButton>
@@ -264,7 +261,6 @@ const MusicPage = () => {
                     </div>
                 </div>
                 
-                {/* Контент активной вкладки */}
                 <div className="p-6 md:p-8">
                     {activeTab === 'recommendations' && (
                         loadingRecommendations ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
@@ -273,25 +269,41 @@ const MusicPage = () => {
                                 {mainPageData.popularHits.length > 0 && (
                                     <div>
                                         <h2 className="text-2xl font-bold mb-4">Хиты платформы</h2>
-                                         <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
+                                         {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1 --- */}
+                                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4">
                                             {mainPageData.popularHits.map(track => (
-                                                <div key={track._id} className="w-36 flex-shrink-0">
-                                                    <RecommendationCard track={track} onSelectTrack={() => playTrack(track, mainPageData.popularHits)} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying && track._id === currentTrack?._id} isLoading={loadingTrackId === track._id} onPlayPause={togglePlayPause} />
-                                                </div>
+                                                <RecommendationCard 
+                                                    key={track._id} 
+                                                    track={track} 
+                                                    onSelectTrack={() => playTrack(track, mainPageData.popularHits)} 
+                                                    isCurrent={track._id === currentTrack?._id} 
+                                                    isPlaying={isPlaying && track._id === currentTrack?._id} 
+                                                    isLoading={loadingTrackId === track._id} 
+                                                    onPlayPause={togglePlayPause} 
+                                                />
                                             ))}
                                         </div>
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
                                     </div>
                                 )}
                                 {mainPageData.newReleases.length > 0 && (
                                     <div>
                                         <h2 className="text-2xl font-bold mb-4">Новинки для вас</h2>
-                                         <div className="flex space-x-4 overflow-x-auto pb-4 -mx-6 px-6">
+                                         {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2 --- */}
+                                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4">
                                             {mainPageData.newReleases.map(track => (
-                                                 <div key={track._id} className="w-36 flex-shrink-0">
-                                                    <RecommendationCard track={track} onSelectTrack={() => playTrack(track, mainPageData.newReleases)} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying && track._id === currentTrack?._id} isLoading={loadingTrackId === track._id} onPlayPause={togglePlayPause} />
-                                                </div>
+                                                 <RecommendationCard 
+                                                    key={track._id} 
+                                                    track={track} 
+                                                    onSelectTrack={() => playTrack(track, mainPageData.newReleases)} 
+                                                    isCurrent={track._id === currentTrack?._id} 
+                                                    isPlaying={isPlaying && track._id === currentTrack?._id} 
+                                                    isLoading={loadingTrackId === track._id} 
+                                                    onPlayPause={togglePlayPause} 
+                                                />
                                             ))}
                                         </div>
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                                     </div>
                                 )}
                                  {mainPageData.popularArtists.length > 0 && (
@@ -407,7 +419,6 @@ const MusicPage = () => {
             </div>
         </main>
     );
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 };
 
 export default MusicPage;

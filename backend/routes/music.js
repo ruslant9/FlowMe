@@ -175,10 +175,10 @@ router.get('/history', authMiddleware, async (req, res) => {
             {
                 $group: {
                     _id: "$sourceId", // Group by the original library track ID
-                    latestEntry: { $first: "$$ROOT" } // Get the whole document of the most recent play
+                    doc: { $first: "$$ROOT" }
                 }
             },
-            { $replaceRoot: { newRoot: "$latestEntry" } },
+            { $replaceRoot: { newRoot: "$doc" } },
             { $sort: { playedAt: -1 } },
             { $limit: 50 }
         ]);
