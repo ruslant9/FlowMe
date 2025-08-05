@@ -8,7 +8,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Avatar from '../components/Avatar';
 import PostCard from '../components/PostCard';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../context/UserContext';
 import { useModal } from '../hooks/useModal';
 import CreatePostModal from '../components/modals/CreatePostModal';
 import EditPostModal from '../components/modals/EditPostModal';
@@ -190,11 +190,13 @@ const CommunityDetailPage = () => {
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                     </div>
+                     {/* --- ИСПРАВЛЕНИЕ 1: Добавлен контейнер для выравнивания --- */}
                     <div className="max-w-5xl mx-auto px-4 md:px-8">
                         <div className="flex flex-col md:flex-row items-center md:items-end -mt-16 md:-mt-20 relative z-10">
+                            {/* --- ИСПРАВЛЕНИЕ 2: Убран фон с контейнера аватара --- */}
                             <div 
                                 onClick={() => community.avatar && (setImageViewerSource([community.avatar]), setIsImageViewerOpen(true))}
-                                className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 bg-slate-200 dark:bg-slate-700 flex-shrink-0 cursor-pointer"
+                                className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0 cursor-pointer"
                             >
                                 <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
                             </div>
@@ -222,18 +224,19 @@ const CommunityDetailPage = () => {
                                 )}
                             </div>
                         </div>
-
-                        {community.description && (
-                            <p className="mt-6 text-slate-600 dark:text-white/80 max-w-3xl mx-auto text-center">{community.description}</p>
-                        )}
                     </div>
                 </div>
 
                 {/* --- POSTS SECTION --- */}
                 <div className="px-4 md:px-8 pt-8 pb-8 max-w-2xl mx-auto w-full">
+                    {community.description && (
+                        <p className="mb-8 text-slate-600 dark:text-white/80 text-center">{community.description}</p>
+                    )}
+
                     {canPost && (
                         <div className="mb-6 flex items-center space-x-4 p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
-                            <Avatar username={currentUser.username} avatarUrl={currentUser.avatar} size="md"/>
+                            {/* --- ИСПРАВЛЕНИЕ 3: Передаем `fullName` в Avatar --- */}
+                            <Avatar username={currentUser.username} fullName={currentUser.fullName} avatarUrl={currentUser.avatar} size="md"/>
                             <button onClick={() => setIsCreatePostModalOpen(true)} className="flex-1 text-left text-slate-500 dark:text-white/60 hover:text-slate-700 dark:hover:text-white">
                                 Создать новый пост...
                             </button>

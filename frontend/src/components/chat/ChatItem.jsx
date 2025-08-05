@@ -9,7 +9,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useModal } from '../../hooks/useModal';
 import Tippy from '@tippyjs/react/headless';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../context/UserContext';
 import { useWebSocket } from '../../context/WebSocketContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -117,31 +117,26 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
         e.stopPropagation();
         setIsMenuVisible(false);
         
-        // 1. Проверка лимита и Premium-статуса
         if (!isPinned && pinnedCount >= pinLimit) {
             if (currentUser?.premium?.isActive) {
                 toast.error(`Достигнут лимит в ${pinLimit} закрепленных чатов.`);
             } else {
-                onOpenPremiumModal(); // Открываем модальное окно
+                onOpenPremiumModal();
             }
             return;
         }
 
-        // 2. Оптимистичное обновление UI
         const originalConversation = { ...conversation };
         const optimisticallyUpdatedConversation = { ...conversation, isPinned: !isPinned };
         onOptimisticUpdate(optimisticallyUpdatedConversation);
 
-        // 3. Отправка запроса на сервер
         try {
             const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/api/messages/conversations/${conversation._id}/pin`, {}, { headers: { Authorization: `Bearer ${token}` } });
             toast.success(res.data.message);
-            // После успешного ответа, обновляем данные с сервера для полной синхронизации
             onUpdate();
         } catch (error) {
             toast.error(error.response?.data?.message || "Не удалось изменить статус закрепления");
-            // 4. Откат изменений в UI в случае ошибки
             onOptimisticUpdate(originalConversation);
         }
     };

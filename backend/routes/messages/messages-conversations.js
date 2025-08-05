@@ -142,9 +142,9 @@ router.get('/', authMiddleware, async (req, res) => {
             {
                 $lookup: {
                     from: 'messages',
-                    let: { conversationId: '$_id' },
+                    let: { cId: '$_id' },
                     pipeline: [
-                        { $match: { $expr: { $and: [ { $eq: ['$conversation', '$$conversationId'] }, { $eq: ['$owner', userId] }, { $ne: ['$sender', userId] }, { $not: { $in: [userId, { $ifNull: ['$readBy', []] }] } } ] } } },
+                        { $match: { $expr: { $and: [ { $eq: ['$conversation', '$$cId'] }, { $eq: ['$owner', userId] }, { $ne: ['$sender', userId] }, { $not: { $in: [userId, { $ifNull: ['$readBy', []] }] } } ] } } },
                         { $count: 'unreadCount' }
                     ],
                     as: 'unreadInfo'
@@ -173,13 +173,20 @@ router.get('/', authMiddleware, async (req, res) => {
                     },
                     isMuted: { $in: [userId, { $ifNull: ['$mutedBy', []] }] },
                     isArchived: { $in: [userId, { $ifNull: ['$archivedBy', []] }] },
+                    // --- НАЧАЛО ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ---
                     isPinned: {
                         $cond: {
-                            if: "$isSavedMessages",
+                            if: "$isSavedMessages", // "Избранное" никогда не может быть закреплено
                             then: false,
-                            else: { $in: [userId, { $ifNull: ['$pinnedBy', []] }] } 
+                            else: { // Для остальных чатов
+                                $and: [
+                                    { $in: [userId, { $ifNull: ['$pinnedBy', []] }] }, // ID пользователя есть в массиве закрепивших
+                                    { $not: { $in: [userId, { $ifNull: ['$archivedBy', []] }] } } // И ID пользователя НЕТ в массиве заархивировавших
+                                ]
+                            }
                         }
                     },
+                    // --- КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ---
                     isMarkedAsUnread: { $in: [userId, { $ifNull: ['$markedAsUnreadBy', []] }] },
                     updatedAt: 1,
                     unreadCount: { $ifNull: [{ $arrayElemAt: ['$unreadInfo.unreadCount', 0] }, 0] },

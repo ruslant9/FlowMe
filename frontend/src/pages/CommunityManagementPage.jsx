@@ -30,8 +30,7 @@ const memberListVisibilityOptions = [ { id: 'everyone', name: 'Все' }, { id: 
 const EditField = ({ label, name, value, onChange, type = 'text', options, onListboxChange }) => (
     <div>
         <label htmlFor={name} className="block text-sm font-semibold mb-1">{label}</label>
-        {type === 'textarea' ? (
-            <textarea id={name} name={name} value={value || ''} onChange={onChange} rows="3" className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        {type === 'textarea' ? ( <textarea id={name} name={name} value={value || ''} onChange={onChange} rows="3" className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
         ) : type === 'listbox' ? (
             <Listbox value={value} onChange={onListboxChange}>
                 <div className="relative mt-1">
@@ -46,9 +45,7 @@ const EditField = ({ label, name, value, onChange, type = 'text', options, onLis
                     </Transition>
                 </div>
             </Listbox>
-        ) : (
-            <input type={type} id={name} name={name} value={value || ''} onChange={onChange} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        )}
+        ) : ( <input type={type} id={name} name={name} value={value || ''} onChange={onChange} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /> )}
     </div>
 );
 
@@ -205,11 +202,11 @@ const CommunityManagementPage = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                 </div>
                 <div className="p-4 md:p-8 pt-0">
-                    <div className="flex items-end -mt-16 md:-mt-20 relative z-10 max-w-5xl mx-auto">
-                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 bg-slate-200 dark:bg-slate-700 flex-shrink-0">
+                    <div className="flex items-center -mt-16 md:-mt-20 relative z-10 max-w-5xl mx-auto">
+                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0">
                             <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
                         </div>
-                        <div className="ml-6 flex-1 min-w-0">
+                        <div className="md:ml-8 mt-auto mb-2 flex-1 min-w-0">
                             <Link to={`/communities/${communityId}`} className="text-sm font-semibold text-blue-500 hover:underline flex items-center space-x-1">
                                 <ArrowLeft size={14}/> <span>Вернуться в сообщество</span>
                             </Link>
@@ -284,10 +281,8 @@ const CommunityManagementPage = () => {
                     </form>
                 )}
 
-                {activeTab === 'requests' && (
-                    <div className="space-y-4">
-                        {community.pendingJoinRequests?.length > 0 ? (
-                            community.pendingJoinRequests.map(user => (
+                {activeTab === 'requests' && ( <div className="space-y-4">
+                        {community.pendingJoinRequests?.length > 0 ? ( community.pendingJoinRequests.map(user => (
                                 <div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
                                     <Link to={`/profile/${user._id}`} className="flex items-center space-x-3 group">
                                         <Avatar username={user.username} fullName={user.fullName} avatarUrl={getImageUrl(user.avatar)} />
@@ -297,50 +292,32 @@ const CommunityManagementPage = () => {
                                         <button onClick={() => handleRequestAction('approve', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}</button>
                                         <button onClick={() => handleRequestAction('deny', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}</button>
                                     </div>
-                                </div>
-                            ))
-                        ) : <p className="text-center py-10 text-slate-500">Нет активных заявок.</p>}
-                    </div>
-                )}
-                {activeTab === 'members' && (
-                    <div className="space-y-4">
-                        {community.members?.length > 0 ? (
-                            community.members.map(member => (
+                                </div> ))) : <p className="text-center py-10 text-slate-500">Нет активных заявок.</p>}
+                    </div>)}
+                {activeTab === 'members' && ( <div className="space-y-4">
+                        {community.members?.length > 0 ? ( community.members.map(member => (
                                 <div key={member._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
                                     <Link to={`/profile/${member._id}`} className="flex items-center space-x-3 group">
                                         <Avatar username={member.username} fullName={member.fullName} avatarUrl={getImageUrl(member.avatar)} />
-                                        <div>
-                                            <div className="flex items-baseline">
-                                                <p className="font-semibold group-hover:underline">{member.fullName || member.username}</p>
-                                                {member._id === community.owner._id && <span className="text-xs ml-2 text-blue-500 font-normal">(Владелец)</span>}
-                                            </div>
-                                        </div>
+                                        <div><div className="flex items-baseline"><p className="font-semibold group-hover:underline">{member.fullName || member.username}</p>{member._id === community.owner._id && <span className="text-xs ml-2 text-blue-500 font-normal">(Владелец)</span>}</div></div>
                                     </Link>
                                     {member._id !== community.owner._id && <div className="flex items-center space-x-2">{processingActionId === member._id ? <Loader2 className="animate-spin" /> : <><button onClick={() => handleMemberAction('remove', member)} title="Удалить" className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-600"><UserX size={16} /></button><button onClick={() => handleMemberAction('ban', member)} title="Забанить" className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-600"><Ban size={16} /></button></>}</div>}
-                                </div>
-                            ))
-                        ) : <p className="text-center py-10 text-slate-500">В сообществе нет участников.</p>}
-                    </div>
-                )}
-                {activeTab === 'banned' && (
-                    <div className="space-y-4">
-                        {community.bannedUsers?.length > 0 ? (
-                            community.bannedUsers.map(user => (
+                                </div> ))) : <p className="text-center py-10 text-slate-500">В сообществе нет участников.</p>}
+                    </div>)}
+                {activeTab === 'banned' && ( <div className="space-y-4">
+                        {community.bannedUsers?.length > 0 ? ( community.bannedUsers.map(user => (
                                 <div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
                                     <div className="flex items-center space-x-3">
                                         <Avatar username={user.username} fullName={user.fullName} avatarUrl={getImageUrl(user.avatar)} />
                                         <div><p className="font-semibold">{user.fullName || user.username}</p></div>
                                     </div>
                                     <div className="flex items-center space-x-2">{processingActionId === user._id ? <Loader2 className="animate-spin" /> : <button onClick={() => handleMemberAction('unban', user)} title="Разбанить" className="p-2 rounded-full text-slate-500 hover:bg-green-100 hover:text-green-600"><UserCheck size={16} /></button>}</div>
-                                </div>
-                            ))
-                        ) : <p className="text-center py-10 text-slate-500">Черный список пуст.</p>}
-                    </div>
-                )}
+                                </div> ))) : <p className="text-center py-10 text-slate-500">Черный список пуст.</p>}
+                    </div>)}
                 {activeTab === 'danger' && (
                      <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg">
                         <h3 className="text-xl font-bold text-red-600 dark:text-red-300">Опасная зона</h3>
-                        <p className="mt-2 mb-4 text-sm text-red-700 dark:text-red-200">Удаление сообщества — необратимое действие. Все посты, комментарии и участники будут потеряны.</p>
+                        <p className="mt-2 mb-4 text-sm text-red-700 dark:text-red-200">Удаление сообщества — необратимое действие. Все посты, комментарии и участники будут удалены навсегда.</p>
                         <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"><Trash2 size={18} /><span>Удалить сообщество</span></button>
                     </div>
                 )}

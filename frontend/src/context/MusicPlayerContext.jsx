@@ -249,8 +249,6 @@ export const MusicPlayerProvider = ({ children }) => {
         };
     }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-
     // Этот useEffect устанавливает статическую информацию о треке и обработчики кнопок
     useEffect(() => {
         const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
@@ -274,6 +272,12 @@ export const MusicPlayerProvider = ({ children }) => {
                 navigator.mediaSession.setActionHandler('pause', togglePlayPause);
                 navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
                 navigator.mediaSession.setActionHandler('nexttrack', handleNextTrack);
+                
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                navigator.mediaSession.setActionHandler('seekto', (details) => {
+                    seekTo(details.seekTime);
+                });
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             }
         } else {
             link.href = '/favicon.svg';
@@ -283,9 +287,12 @@ export const MusicPlayerProvider = ({ children }) => {
                 navigator.mediaSession.setActionHandler('pause', null);
                 navigator.mediaSession.setActionHandler('previoustrack', null);
                 navigator.mediaSession.setActionHandler('nexttrack', null);
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                navigator.mediaSession.setActionHandler('seekto', null);
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             }
         }
-    }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack]);
+    }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack, seekTo]); // Добавляем seekTo в зависимости
 
     // Этот useEffect ОБНОВЛЯЕТ позицию плеера на экране блокировки
     useEffect(() => {
@@ -297,8 +304,6 @@ export const MusicPlayerProvider = ({ children }) => {
             });
         }
     }, [progress, duration]);
-
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     useEffect(() => { if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } }, [isPlaying]);
 

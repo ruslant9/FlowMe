@@ -5,7 +5,7 @@ require('dotenv').config();
 const Conversation = require('./models/Conversation');
 
 const fixGhostPins = async () => {
-    console.log('\x1b[36m%s\x1b[0m', '--- Запуск скрипта для исправления "призрачных" закреплений ---');
+    console.log('\x1b[36m%s\x1b[0m', '--- Запуск скрипта для исправления "призрачных" закреплений (v2) ---');
     try {
         console.log('1. Подключение к MongoDB...');
         await mongoose.connect(process.env.MONGO_URI);
@@ -13,11 +13,28 @@ const fixGhostPins = async () => {
 
         console.log('2. Поиск заархивированных, но все еще закрепленных чатов...');
         const result = await Conversation.updateMany(
-            // Найти все диалоги, где ID пользователя есть ОДНОВРЕМЕННО
-            // и в списке закрепивших, и в списке заархивировавших
-            { $expr: { $gt: [{ $size: { $setIntersection: ["$pinnedBy", "$archivedBy"] } }, 0] } },
-            // Убрать ID этого пользователя из списка закрепивших
-            [ { $set: { pinnedBy: { $setDifference: ["$pinnedBy", "$archivedBy"] } } } ]
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем проверку на null с помощью $ifNull ---
+            // Найти все диалоги, где пересечение массивов pinnedBy и archivedBy не пустое.
+            // Если какого-то из полей нет, оно будет считаться пустым массивом [].
+            { 
+                $expr: { 
+                    $gt: [
+                        { $size: { $setIntersection: [ { $ifNull: ["$pinnedBy", []] }, { $ifNull: ["$archivedBy", []] } ] } }, 
+                        0
+                    ] 
+                } 
+            },
+            // Убрать из массива pinnedBy все ID, которые также есть в массиве archivedBy.
+            [ 
+              { 
+                $set: { 
+                    pinnedBy: { 
+                        $setDifference: [ { $ifNull: ["$pinnedBy", []] }, { $ifNull: ["$archivedBy", []] } ] 
+                    } 
+                } 
+              } 
+            ]
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         );
 
         console.log('\x1b[32m%s\x1b[0m', `   Завершено. Найдено и исправлено некорректных записей: ${result.modifiedCount}`);
