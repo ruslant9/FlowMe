@@ -8,7 +8,7 @@ import { useUser } from '../../context/UserContext';
 import GenreSelector from './GenreSelector';
 import Avatar from '../Avatar';
 import { useModal } from '../../hooks/useModal';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useCachedImage } from '../../hooks/useCachedImage';
@@ -97,6 +97,38 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
+// Статичный компонент для DragOverlay
+const TrackItem = ({ track, index, mainArtistId }) => {
+    const featuredArtists = (track.artist || []).filter(a => a._id !== mainArtistId);
+    return (
+        <div className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg shadow-xl">
+            <div className="flex items-center space-x-2 min-w-0">
+                <span className="font-bold text-slate-500 w-6 text-center">{index}</span>
+                <div className="cursor-grabbing touch-none p-1 text-slate-500">
+                    <GripVertical size={16} />
+                </div>
+                <div className="flex items-center space-x-2 min-w-0">
+                    <Music size={16} className="text-slate-500 flex-shrink-0" />
+                    <div className="truncate">
+                        <span className="font-semibold text-sm truncate">{track.title}</span>
+                        {featuredArtists.length > 0 && <span className="text-xs text-slate-500 ml-2">(feat. {featuredArtists.map(a => a.name).join(', ')})</span>}
+                    </div>
+                    {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0">E</span>}
+                </div>
+            </div>
+            <div className="flex items-center space-x-1 flex-shrink-0">
+                <button type="button" className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600">
+                    <Edit size={14} />
+                </button>
+                <button type="button" className="p-1.5 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50">
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+
 const SortableTrackItem = ({ track, index, mainArtistId, onEditTrack, onDeleteTrack }) => {
     const {
         attributes,
@@ -110,8 +142,7 @@ const SortableTrackItem = ({ track, index, mainArtistId, onEditTrack, onDeleteTr
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 10 : 'auto',
+        opacity: isDragging ? 0.4 : 1,
     };
 
     const featuredArtists = (track.artist || []).filter(a => a._id !== mainArtistId);
@@ -207,13 +238,17 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const [coverPreview, setCoverPreview] = useState('');
     const [initialTracks, setInitialTracks] = useState([]);
     const [albumTracks, setAlbumTracks] = useState([]);
-    
+    const [activeTrack, setActiveTrack] = useState(null);
     const fileInputRef = useRef(null);
     const batchFileInputRef = useRef(null);
 
     const mainArtistIdForTracks = useMemo(() => {
         return initialData?.artist?._id || initialData?.artist;
     }, [initialData]);
+
+    const dropAnimation = {
+        sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.5" } } }),
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -279,6 +314,12 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
         });
     };
 
+    const handleDragStart = (event) => {
+        const { active } = event;
+        const track = albumTracks.find(t => t._id === active.id);
+        setActiveTrack(track);
+    };
+
     const handleDragEnd = (event) => {
         const { active, over } = event;
         if (over && active.id !== over.id) {
@@ -287,6 +328,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const reorderedTracks = arrayMove(albumTracks, oldIndex, newIndex);
             setAlbumTracks(reorderedTracks);
         }
+        setActiveTrack(null);
     };
     
     const handleBatchUpload = async (e) => {
@@ -439,6 +481,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                             <DndContext 
                                 sensors={sensors} 
                                 collisionDetection={closestCenter} 
+                                onDragStart={handleDragStart} 
                                 onDragEnd={handleDragEnd}
                             >
                                 <div className="space-y-2 overflow-y-auto pr-2 flex-1">
@@ -456,6 +499,15 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                         ))}
                                     </SortableContext>
                                 </div>
+                                <DragOverlay dropAnimation={dropAnimation}>
+                                    {activeTrack ? (
+                                        <TrackItem 
+                                            track={activeTrack} 
+                                            index={albumTracks.findIndex(t => t._id === activeTrack._id) + 1} 
+                                            mainArtistId={mainArtistIdForTracks}
+                                        />
+                                    ) : null}
+                                </DragOverlay>
                             </DndContext>
                         </div>
                     </>

@@ -173,7 +173,13 @@ router.get('/', authMiddleware, async (req, res) => {
                     },
                     isMuted: { $in: [userId, { $ifNull: ['$mutedBy', []] }] },
                     isArchived: { $in: [userId, { $ifNull: ['$archivedBy', []] }] },
-                    isPinned: { $in: [userId, { $ifNull: ['$pinnedBy', []] }] },
+                    isPinned: {
+                        $cond: {
+                            if: "$isSavedMessages",
+                            then: false,
+                            else: { $in: [userId, { $ifNull: ['$pinnedBy', []] }] } 
+                        }
+                    },
                     isMarkedAsUnread: { $in: [userId, { $ifNull: ['$markedAsUnreadBy', []] }] },
                     updatedAt: 1,
                     unreadCount: { $ifNull: [{ $arrayElemAt: ['$unreadInfo.unreadCount', 0] }, 0] },

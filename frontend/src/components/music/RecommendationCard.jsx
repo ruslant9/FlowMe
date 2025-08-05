@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
-const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack }) => {
+const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack, isHit }) => {
     
     // Используем хук для получения кешированного URL
     const { finalSrc, loading: imageLoading } = useCachedImage(track.albumArtUrl);
@@ -31,23 +31,26 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         return '';
     };
 
-    const getReleaseBadge = (releaseDate) => {
+    const getReleaseBadge = (releaseDate) => { // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         if (!releaseDate) return null;
 
         const now = new Date();
-        now.setHours(0, 0, 0, 0); // Сбрасываем время для корректного сравнения дат
-
         const release = new Date(releaseDate);
-        release.setHours(0, 0, 0, 0);
-        if (release.getFullYear() > now.getFullYear() || (release.getFullYear() === now.getFullYear() && release.getMonth() >= now.getMonth())) {
-            return { text: 'Свежее', color: 'bg-lime-400 text-lime-900' };
+        
+        const diffTime = now.getTime() - release.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+        if (diffDays <= 14 && diffDays >= 0) {
+            return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
         }
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        if (release.getFullYear() === lastMonth.getFullYear() && release.getMonth() === lastMonth.getMonth()) {
+
+        if (diffDays > 14 && diffDays <= 60) {
             return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
         }
+        
         return null;
-    };
+    }; // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const handlePlayClick = (e) => {
         e.stopPropagation();
@@ -58,7 +61,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         }
     };
 
-    const badge = getReleaseBadge(track.releaseDate);
+    const dateBadge = getReleaseBadge(track.releaseDate);
+    const finalBadge = isHit ? { text: 'Хит', color: 'bg-red-500 text-white' } : dateBadge;
 
     return (
         <motion.div
@@ -76,14 +80,14 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
             
             <AnimatePresence>
-                {badge && (
+                {finalBadge && (
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold z-10 ${badge.color}`}
+                        className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold z-10 ${finalBadge.color}`}
                     >
-                        {badge.text}
+                        {finalBadge.text}
                     </motion.div>
                 )}
             </AnimatePresence>

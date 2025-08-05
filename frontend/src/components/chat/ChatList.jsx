@@ -4,11 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import ChatItem from './ChatItem';
 import { Loader2, Search, Archive, ChevronDown, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Tippy from '@tippyjs/react/headless'; // --- ИЗМЕНЕНИЕ: Импортируем Headless Tippy ---
+import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
 import { useUser } from '../../context/UserContext';
 
-const ChatList = ({ activeConversations, archivedConversations, onSelectConversation, activeConversationId, loading, searchQuery, setSearchQuery, onUpdateList, typingStatuses, unreadArchivedCount, onDeleteRequest, pinnedCount, pinLimit }) => {
+// --- ИЗМЕНЕНИЕ: Добавляем onOpenPremiumModal и onOptimisticPinUpdate в список пропсов ---
+const ChatList = ({ activeConversations, archivedConversations, onSelectConversation, activeConversationId, loading, searchQuery, setSearchQuery, onUpdateList, typingStatuses, unreadArchivedCount, onDeleteRequest, pinnedCount, pinLimit, onOpenPremiumModal, onOptimisticPinUpdate }) => {
     const [showArchived, setShowArchived] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null);
     const chatListRef = useRef(null);
@@ -59,6 +60,9 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
                                     isPinned={conv.isPinned}
                                     pinnedCount={pinnedCount}
                                     pinLimit={pinLimit}
+                                    // --- ИЗМЕНЕНИЕ: Пробрасываем новые пропсы ---
+                                    onOpenPremiumModal={onOpenPremiumModal}
+                                    onOptimisticUpdate={onOptimisticPinUpdate}
                                 />
                                 {index < pinned.length - 1 && <hr className="my-1 border-slate-200/50 dark:border-slate-700/50" />}
                             </React.Fragment>
@@ -80,6 +84,9 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
                         isPinned={conv.isPinned}
                         pinnedCount={pinnedCount}
                         pinLimit={pinLimit}
+                        // --- ИЗМЕНЕНИЕ: Пробрасываем новые пропсы ---
+                        onOpenPremiumModal={onOpenPremiumModal}
+                        onOptimisticUpdate={onOptimisticPinUpdate}
                     />
                 ))}
             </>
@@ -92,7 +99,6 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
 
     return (
         <div className="h-full flex flex-col">
-            {/* --- ИЗМЕНЕНИЕ: Добавлен padding-bottom (pb-4) --- */}
             <div className="p-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
                 <h1 className="text-2xl font-bold mb-4">Чаты</h1>
                 
@@ -106,11 +112,9 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
                         className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
-                {/* --- ИЗМЕНЕНИЕ: Убран margin-top, теперь позиция регулируется паддингом родителя --- */}
                 {pinnedCount > 0 && (
                     <div className="flex items-center justify-center space-x-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
                         <span>Закреплено {pinnedCount} из {pinLimit}</span>
-                        {/* --- ИЗМЕНЕНИЕ: Используем Headless Tippy для кастомного стиля --- */}
                         <Tippy
                             placement="bottom"
                             render={attrs => (

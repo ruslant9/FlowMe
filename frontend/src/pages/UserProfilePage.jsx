@@ -1,4 +1,5 @@
 // frontend/src/pages/UserProfilePage.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -21,6 +22,7 @@ import { useMusicPlayer } from '../context/MusicPlayerContext';
 import MusicListModal from '../components/modals/MusicListModal';
 import CommunityInviteModal from '../components/modals/CommunityInviteModal';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
+import { UserDataCache } from '../utils/UserDataCacheService'; // --- ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -212,13 +214,27 @@ const UserProfilePage = () => {
 
 
     const fetchUserProfile = useCallback(async (showLoader = true) => {
-        if(showLoader) setLoading(true);
+        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        let loadedFromCache = false;
+        const cachedData = await UserDataCache.getUser(userId);
+        if (cachedData) {
+            setProfileData(cachedData);
+            setLoading(false); // Показываем кешированные данные сразу
+            loadedFromCache = true;
+        } else if (showLoader) {
+            setLoading(true);
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
+        setError(null);
         const token = localStorage.getItem('token');
         try {
             const profileRes = await axios.get(`${API_URL}/api/user/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
-            setProfileData(profileRes.data);
+            const freshProfileData = profileRes.data;
+            await UserDataCache.setUser(userId, freshProfileData); // Обновляем кеш
+            setProfileData(freshProfileData); // Обновляем состояние свежими данными
 
-            if (profileRes.data.isBlockedByThem) {
+            if (freshProfileData.isBlockedByThem) {
                 setPosts([]);
                 setStats(null);
                 setError(null);
@@ -271,7 +287,9 @@ const UserProfilePage = () => {
             setError(err.response?.data?.message || 'Не удалось загрузить профиль.');
             toast.error(err.response?.data?.message || 'Ошибка загрузки профиля.');
         } finally {
-            if(showLoader) setLoading(false);
+            if (!loadedFromCache) { // Выключаем спиннер, только если он был включен
+                setLoading(false);
+            }
         }
     }, [userId]);
     
@@ -280,9 +298,7 @@ const UserProfilePage = () => {
             try {
                 const token = localStorage.getItem('token');
                 const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
-                 // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                 setMyMusicTrackIds(new Set(res.data.map(track => track.sourceId)));
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             } catch (error) {
                 console.error("Could not fetch my music for like status");
             }

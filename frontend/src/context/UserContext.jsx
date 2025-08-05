@@ -2,6 +2,8 @@
 
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import axios from 'axios';
+import { UserDataCache } from '../utils/UserDataCacheService'; // --- ИМПОРТ
+import { jwtDecode } from 'jwt-decode'; // --- ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -15,93 +17,87 @@ export const UserProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loadingUser, setLoadingUser] = useState(true);
     const [token, setToken] = useState(() => localStorage.getItem('token'));
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const [addedPacks, setAddedPacks] = useState([]);
     const [loadingPacks, setLoadingPacks] = useState(true);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-    const fetchUser = useCallback(async (showLoader = true) => {
-        if (token) {
-            if (showLoader) {
-                setLoadingUser(true);
-            }
-            try {
-                const res = await axios.get(`${API_URL}/api/user/profile`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const userData = res.data;
-                const isBanned = userData.banInfo?.isBanned;
-                const banExpires = userData.banInfo?.banExpires ? new Date(userData.banInfo.banExpires) : null;
-                
-                setCurrentUser(userData);
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Функция для фонового обновления данных ---
+    const fetchFreshData = useCallback(async (currentToken) => {
+        if (!currentToken) return;
+        try {
+            const userPromise = axios.get(`${API_URL}/api/user/profile`, { headers: { Authorization: `Bearer ${currentToken}` } });
+            const packsPromise = axios.get(`${API_URL}/api/workshop/packs/added`, { headers: { Authorization: `Bearer ${currentToken}` } });
+            const [userRes, packsRes] = await Promise.all([userPromise, packsPromise]);
 
-            } catch (error) {
-                if (error.response?.status !== 403 && error.response?.status !== 401) {
-                    console.error("Failed to fetch user in context", error);
-                }
-                
-                if (error.response?.status === 401) {
-                    setCurrentUser(null);
-                }
-            } finally {
-                if (showLoader) {
-                    setLoadingUser(false);
-                }
-            }
-        } else {
-            setLoadingUser(false);
-            setCurrentUser(null);
-        }
-    }, [token]);
+            const userData = userRes.data;
+            const profileDataToCache = { user: userData, friendshipStatus: 'self' };
+            await UserDataCache.setUser(userData._id, profileDataToCache);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
-    const fetchAddedPacks = useCallback(async (showLoader = true) => {
-        if (token) {
-            if (showLoader) setLoadingPacks(true);
-            try {
-                const res = await axios.get(`${API_URL}/api/workshop/packs/added`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setAddedPacks(res.data);
-            } catch (error) {
-                console.error("Failed to fetch added packs:", error);
+            setCurrentUser(userData);
+            setAddedPacks(packsRes.data);
+        } catch (error) {
+            console.error("Ошибка фонового обновления данных пользователя:", error);
+            if (error.response?.status === 401) {
+                // Если токен невалиден, выходим из системы
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setToken(null);
+                setCurrentUser(null);
                 setAddedPacks([]);
-            } finally {
-                if (showLoader) setLoadingPacks(false);
+                UserDataCache.clearAll();
             }
-        } else {
-            setAddedPacks([]);
-            setLoadingPacks(false);
         }
-    }, [token]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    }, []);
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Основной useEffect для загрузки пользователя ---
     useEffect(() => {
-        fetchUser(true);
-        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
-        fetchAddedPacks(true);
-        
-        const handleProfileUpdate = () => {
-            fetchUser(false); 
-        };
-        
-        // Отдельный обработчик для паков, чтобы не перезагружать профиль лишний раз
-        const handlePacksUpdate = () => {
-            fetchAddedPacks(false);
-        };
-        
-        window.addEventListener('myProfileDataUpdated', handleProfileUpdate);
-        window.addEventListener('packsUpdated', handlePacksUpdate); 
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-        
-        return () => {
-            window.removeEventListener('myProfileDataUpdated', handleProfileUpdate);
-            // --- НАЧАЛО ИЗМЕНЕНИЯ ---
-            window.removeEventListener('packsUpdated', handlePacksUpdate);
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+        let isMounted = true;
+        const loadInitialData = async () => {
+            if (token) {
+                setLoadingUser(true);
+                setLoadingPacks(true);
+
+                let loadedFromCache = false;
+                try {
+                    const decodedToken = jwtDecode(token);
+                    const cachedProfile = await UserDataCache.getUser(decodedToken.userId);
+                    if (cachedProfile && isMounted) {
+                        setCurrentUser(cachedProfile.user);
+                        loadedFromCache = true;
+                    }
+                } catch (e) {
+                    // Невалидный токен, будет обработан в fetchFreshData
+                }
+
+                // В любом случае загружаем свежие данные. Если кеша не было, это будет основная загрузка.
+                // Если кеш был, это будет фоновое обновление.
+                await fetchFreshData(token);
+
+                if (isMounted) {
+                    setLoadingUser(false);
+                    setLoadingPacks(false);
+                }
+
+            } else {
+                setLoadingUser(false);
+                setLoadingPacks(false);
+                setCurrentUser(null);
+                setAddedPacks([]);
+            }
         };
 
-    }, [fetchUser, fetchAddedPacks]);
+        loadInitialData();
+
+        const refetchAll = () => fetchFreshData(localStorage.getItem('token'));
+        window.addEventListener('myProfileDataUpdated', refetchAll);
+        window.addEventListener('packsUpdated', refetchAll);
+
+        return () => {
+            isMounted = false;
+            window.removeEventListener('myProfileDataUpdated', refetchAll);
+            window.removeEventListener('packsUpdated', refetchAll);
+        };
+    }, [token, fetchFreshData]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
     const updateUserToken = useCallback((newToken) => {
         setToken(newToken);
@@ -111,9 +107,8 @@ export const UserProvider = ({ children }) => {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             setCurrentUser(null);
-            // --- НАЧАЛО ИЗМЕНЕНИЯ ---
-            setAddedPacks([]); // Очищаем паки при выходе
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+            setAddedPacks([]);
+            UserDataCache.clearAll(); // Очищаем кеш при выходе
         }
     }, []);
 
@@ -123,12 +118,10 @@ export const UserProvider = ({ children }) => {
         loadingUser,
         token,
         updateUserToken,
-        refetchUser: () => fetchUser(false),
-        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        refetchUser: () => fetchFreshData(token), // Обновляем refetchUser
         addedPacks,
         loadingPacks,
-        refetchPacks: () => fetchAddedPacks(false),
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+        refetchPacks: () => fetchFreshData(token), // Обновляем refetchPacks
     };
 
     return (

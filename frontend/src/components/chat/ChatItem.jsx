@@ -19,7 +19,8 @@ const TippyWrapper = forwardRef((props, ref) => {
 });
 TippyWrapper.displayName = 'TippyWrapper';
 
-const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDeleteRequest, isPinned, pinnedCount, pinLimit }) => {
+// --- ИЗМЕНЕНИЕ: Добавляем onOpenPremiumModal и onOptimisticUpdate в пропсы ---
+const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDeleteRequest, isPinned, pinnedCount, pinLimit, onOpenPremiumModal, onOptimisticUpdate }) => {
     const interlocutor = conversation.interlocutor;
     const lastMessage = conversation.lastMessage;
     const isSavedMessages = conversation.isSavedMessages;
@@ -113,29 +114,40 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
         }
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Полностью переработанная функция ---
     const handlePinToggle = async (e) => {
         e.stopPropagation();
         setIsMenuVisible(false);
         
+        // 1. Проверка лимита и Premium-статуса
         if (!isPinned && pinnedCount >= pinLimit) {
             if (currentUser?.premium?.isActive) {
                 toast.error(`Достигнут лимит в ${pinLimit} закрепленных чатов.`);
             } else {
-                toast.error(`Лимит в ${pinLimit} чата достигнут. Premium-пользователи могут закреплять до 8.`);
+                onOpenPremiumModal(); // Открываем модальное окно
             }
             return;
         }
 
-        const toastId = toast.loading(isPinned ? "Открепление..." : "Закрепление...");
+        // 2. Оптимистичное обновление UI
+        const originalConversation = { ...conversation };
+        const optimisticallyUpdatedConversation = { ...conversation, isPinned: !isPinned };
+        onOptimisticUpdate(optimisticallyUpdatedConversation);
+
+        // 3. Отправка запроса на сервер
         try {
             const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/api/messages/conversations/${conversation._id}/pin`, {}, { headers: { Authorization: `Bearer ${token}` } });
-            toast.success(res.data.message, { id: toastId });
+            toast.success(res.data.message);
+            // После успешного ответа, обновляем данные с сервера для полной синхронизации
             onUpdate();
         } catch (error) {
-            toast.error(error.response?.data?.message || "Не удалось изменить статус закрепления", { id: toastId });
+            toast.error(error.response?.data?.message || "Не удалось изменить статус закрепления");
+            // 4. Откат изменений в UI в случае ошибки
+            onOptimisticUpdate(originalConversation);
         }
     };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const handleDeleteClick = (e) => {
         e.stopPropagation();
@@ -310,7 +322,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                 ) : (
                     <div className="relative flex-shrink-0">
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                         {(() => {
                             const border = liveInterlocutor?.premiumCustomization?.avatarBorder;
                             const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
@@ -329,7 +340,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                                 </div>
                             );
                         })()}
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
@@ -379,10 +389,14 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                                     {conversation.isMuted ? <Bell size={14} /> : <BellOff size={14} />}
                                     <span>{conversation.isMuted ? 'Включить увед.' : 'Отключить увед.'}</span>
                                 </button>
-                                <button onClick={handlePinToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                                    <Pin size={14}/>
-                                    <span>{isPinned ? 'Открепить' : 'Закрепить'}</span>
-                                </button>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем условие !isSavedMessages --- */}
+                                {!isSavedMessages && (
+                                    <button onClick={handlePinToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                                        <Pin size={14}/>
+                                        <span>{isPinned ? 'Открепить' : 'Закрепить'}</span>
+                                    </button>
+                                )}
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 {!isSavedMessages && (
                                     <button onClick={handleArchiveToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                                         {conversation.isArchived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
