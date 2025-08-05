@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, Fragment } fr
 import axios from 'axios';
 import useTitle from '../hooks/useTitle';
 import Avatar from '../components/Avatar';
-import { Search, UserPlus, UserCheck, UserX, Clock, Loader2, ShieldOff, History, Trash2 as TrashIcon, MessageSquare, Filter, ChevronDown, Check, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-react'; // --- ИЗМЕНЕНИЕ: Добавлена иконка
+import { Search, UserPlus, UserCheck, UserX, Clock, Loader2, ShieldOff, History, Trash2 as TrashIcon, MessageSquare, Filter, ChevronDown, Check, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useModal } from '../hooks/useModal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,7 +14,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
 import { useUser } from '../hooks/useUser';
-import MorePanel from '../components/MorePanel'; // --- ИЗМЕНЕНИЕ: Импорт панели
+import MorePanel from '../components/MorePanel';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const MAX_HISTORY_ITEMS = 5;
@@ -61,7 +61,9 @@ const UserCardSkeleton = () => (
     </div>
 );
 const TabButton = ({ children, active, onClick, count }) => (
-    <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${ active ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10' }`}>
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Уменьшаем горизонтальные отступы и пространство между элементами ---
+    <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${ active ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10' }`}>
+    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
         {children}
         {typeof count === 'number' && count > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>}
     </button>
@@ -284,9 +286,7 @@ const FriendsPage = () => {
     const navigate = useNavigate();
     const { currentUser } = useUser();
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const [isMorePanelOpen, setIsMorePanelOpen] = useState(false);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const [now, setNow] = useState(new Date());
 
@@ -567,7 +567,6 @@ const FriendsPage = () => {
         }
     };
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const navItems = [
         { key: 'friends', label: 'Мои друзья', icon: UserCheck, count: allFriends.length, onClick: () => handleTabClick('friends') },
         { key: 'incoming', label: 'Входящие', icon: UserPlus, count: incoming.length, onClick: () => handleTabClick('incoming') },
@@ -578,8 +577,7 @@ const FriendsPage = () => {
     const visibleItems = navItems.slice(0, visibleCount);
     const hiddenItems = navItems.slice(visibleCount);
     const isMoreButtonActive = hiddenItems.some(item => item.key === activeTab);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
+    
     const renderTabContent = () => {
         if (loading) return (<div className="space-y-2">{[...Array(3)].map((_, i) => <UserCardSkeleton key={i} />)}</div>);
         let list, status, emptyMessage;
@@ -653,8 +651,6 @@ const FriendsPage = () => {
                         {isDropdownVisible && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">{renderDropdownContent()}</motion.div>}
                     </AnimatePresence>                </div>
                 
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
-                {/* Навигация для десктопа */}
                 <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
                     {navItems.map(item => (
                         <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
@@ -663,8 +659,9 @@ const FriendsPage = () => {
                     ))}
                 </div>
 
-                {/* Адаптивная навигация для мобильных */}
-                <div className="md:hidden flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Уменьшаем `space-x` для мобильной навигации --- */}
+                <div className="md:hidden flex items-center space-x-1 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                     {visibleItems.map(item => (
                         <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
                             <item.icon size={16} /><span>{item.label}</span>
@@ -695,7 +692,6 @@ const FriendsPage = () => {
                         </button>
                     ))}
                 </MorePanel>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 
                 <div>{renderTabContent()}</div>
             </div>
