@@ -4,7 +4,7 @@ require('dotenv').config();
 
 // --- НАСТРОЙКИ СКРИПТА ---
 // Почта пользователя, которому нужно выдать права администратора
-const TARGET_EMAIL = 'vmireclashroyaleiclashofclans@gmail.com';
+const TARGET_EMAIL = 'ruslanmailhome1@gmail.com'; // vmireclashroyaleiclashofclans@gmail.com \ ruslanmailhome1@gmail.com
 // -------------------------
 
 const grantAdminRole = async () => {

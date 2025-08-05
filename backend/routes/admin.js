@@ -13,7 +13,7 @@ const Track = require('../models/Track');
 const Submission = require('../models/Submission');
 const User = require('../models/User');
 const Playlist = require('../models/Playlist');
-const Conversation = require('../models/Conversation'); // <-- НОВЫЙ ИМПОРТ
+const Conversation = require('../models/Conversation'); 
 
 const multer = require('multer');
 const { createStorage, cloudinary } = require('../config/cloudinary');
@@ -26,7 +26,7 @@ const upload = multer({ storage: adminStorage });
 // Защищаем все роуты в этом файле - только для авторизованных админов
 router.use(authMiddleware, adminMiddleware);
 
-// --- НОВЫЙ РОУТ ДЛЯ АДМИНА ---
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.get('/all-pinned-chats', async (req, res) => {
     try {
         const userId = req.user._id;
@@ -34,18 +34,29 @@ router.get('/all-pinned-chats', async (req, res) => {
             .populate({
                 path: 'participants',
                 select: 'username fullName avatar',
-                match: { _id: { $ne: userId } }
+                // Убираем match, чтобы получить всех участников и отфильтровать на сервере
             })
             .lean();
         
         const results = conversations.map(conv => {
-            const interlocutor = conv.participants.length > 0 ? conv.participants[0] : null;
+            // Правильно определяем "Избранное": это чат, где только один участник - сам пользователь
+            const isSavedMessages = conv.participants.length === 1 && conv.participants[0]._id.equals(userId);
+            
+            // Находим собеседника, если это не "Избранное"
+            const interlocutor = !isSavedMessages
+                ? conv.participants.find(p => p && !p._id.equals(userId))
+                : null;
+            
             return {
                 _id: conv._id,
-                isSavedMessages: conv.participants.length === 1,
-                interlocutor: interlocutor,
+                isSavedMessages: isSavedMessages,
+                interlocutor: interlocutor || null, // Если собеседник не найден (удален), будет null
                 isArchivedForAdmin: conv.archivedBy.some(id => id.equals(userId))
             };
+        }).filter(conv => {
+            // Фильтруем "призрачные" чаты:
+            // Оставляем чат, если это "Избранное" ИЛИ если у него есть действительный собеседник
+            return conv.isSavedMessages || conv.interlocutor;
         });
 
         res.json(results);
@@ -54,7 +65,7 @@ router.get('/all-pinned-chats', async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
-// --- КОНЕЦ НОВОГО РОУТА ---
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 // --- РОУТЫ ДЛЯ МОДЕРАЦИИ ---
@@ -469,7 +480,6 @@ router.delete('/content/tracks/:id', async (req, res) => {
             await Album.updateOne({ _id: track.album }, { $pull: { tracks: track._id } });
         }
         
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Удаляем трек из всех плейлистов ---
         await Playlist.updateMany({}, { $pull: { tracks: track._id } });
         
         await Track.findByIdAndDelete(req.params.id);

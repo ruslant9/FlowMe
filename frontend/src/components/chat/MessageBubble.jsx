@@ -230,7 +230,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 </div>
             )}
             
-            <div className={`relative flex-shrink-0 order-2 ${isOwnMessage ? 'ml-2' : 'mr-2'}`}>
+            <div className={`relative flex-shrink-0 ${isOwnMessage ? 'order-1' : 'order-2'}`}>
                 {!selectionMode && !message.isSending && !message.isFailed && (
                      <Tippy
                         interactive
@@ -292,11 +292,11 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </div>
 
             <div
-                className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative order-1 transition-colors duration-300 ${message.isSending ? 'opacity-70' : ''}
-                    ${isOwnMessage ? `${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
-                    ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : (isOwnMessage ? 'bg-chat-bubble-own' : 'bg-chat-bubble-other')}
-                `}
-            >
+    className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
+        ${isOwnMessage ? `${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
+        ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : (isOwnMessage ? 'bg-chat-bubble-own' : 'bg-chat-bubble-other')}
+    `}
+>
                 
                 <div className="pt-2"> 
                     {message.forwardedFrom && (

@@ -5,7 +5,7 @@ const User = require('../models/User'); // Убедитесь, что путь �
 require('dotenv').config();
 
 // --- НАСТРОЙКИ СКРИПТА ---
-const TARGET_EMAIL = 'vmireclashroyaleiclashofclans@gmail.com'; // Email пользователя, которому выдаем премиум
+const TARGET_EMAIL = 'ruslanmailhome1@gmail.com'; // vmireclashroyaleiclashofclans@gmail.com \ ruslanmailhome1@gmail.com
 const DURATION_DAYS = 30; // Длительность подписки в днях (1 месяц)
 // -------------------------
 
