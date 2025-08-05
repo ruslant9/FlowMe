@@ -1,4 +1,4 @@
-// frontend/src/components/ProfileField.jsx --- НОВЫЙ ФАЙЛ ---
+// frontend/src/components/ProfileField.jsx
 
 import React from 'react';
 import { format } from 'date-fns';

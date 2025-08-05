@@ -23,6 +23,7 @@ import MusicListModal from '../components/modals/MusicListModal';
 import CommunityInviteModal from '../components/modals/CommunityInviteModal';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 import { UserDataCache } from '../utils/UserDataCacheService'; 
+import ProfileField from '../components/ProfileField'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -53,18 +54,6 @@ const formatLastSeen = (dateString) => {
 };
 
 const Spinner = ({ size = 20 }) => <Loader2 size={20} className="animate-spin" />;
-
-const ProfileField = ({ label, value, accentTextColor }) => {
-    const labelClasses = accentTextColor ? '' : 'text-slate-500 dark:text-white/50';
-    const labelStyle = accentTextColor ? { color: accentTextColor, opacity: 0.7 } : {};
-
-    return (
-        <div>
-            <p className={`text-sm ${labelClasses}`} style={labelStyle}>{label}</p>
-            <p className="text-lg break-words">{value || 'Скрыто'}</p>
-        </div>
-    );
-};
 
 const UserInteractionButtons = ({ status, onAction, user, isProcessing, onWriteMessage, onInvite }) => {
     const primaryButtonClasses = 'px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 bg-blue-500 text-white hover:bg-blue-600';
