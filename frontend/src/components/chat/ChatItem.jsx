@@ -9,7 +9,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useModal } from '../../hooks/useModal';
 import Tippy from '@tippyjs/react/headless';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../hooks/useUser';
 import { useWebSocket } from '../../context/WebSocketContext';
 
 const API_URL = import.meta.env.VITE_API_URL;
