@@ -462,16 +462,23 @@ router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
         const trackId = req.params.id;
         const userId = req.user.userId;
 
-        // 1. Асинхронно увеличиваем счетчик прослушиваний, не ждем завершения
-        Track.updateOne({ _id: trackId }, { $inc: { playCount: 1 } }).exec();
+        const playedTrack = await Track.findById(trackId).select('sourceId').lean();
+        if (!playedTrack) {
+            return res.sendStatus(202); // Fail silently, don't interrupt playback
+        }
 
-        // 2. Получаем данные библиотечного трека для создания/обновления истории
-        const libraryTrack = await Track.findById(trackId).lean();
+        const libraryTrackId = playedTrack.sourceId || playedTrack._id;
+
+        Track.updateOne({ _id: libraryTrackId }, { $inc: { playCount: 1 } }).exec();
+
+        const libraryTrack = await Track.findById(libraryTrackId).populate('album', 'coverArtUrl').lean();
         if (libraryTrack) {
             // 3. Записываем действие для системы рекомендаций
             logMusicAction(req, libraryTrack, 'listen');
 
-            // 4. Создаем или обновляем запись в истории прослушиваний (upsert)
+            const coverUrl = libraryTrack.albumArtUrl || libraryTrack.album?.coverArtUrl;
+
+            const { _id, __v, ...trackObject } = libraryTrack;
             const historyEntry = {
                 ...libraryTrack,
                 _id: undefined, // Удаляем старый _id, чтобы MongoDB сгенерировал новый при создании
@@ -479,6 +486,7 @@ router.post('/track/:id/log-play', authMiddleware, async (req, res) => {
                 type: 'recent',
                 sourceId: libraryTrack._id, // Ссылка на оригинальный трек
                 playedAt: new Date(),
+                albumArtUrl: coverUrl,
             };
             
             await Track.findOneAndUpdate(

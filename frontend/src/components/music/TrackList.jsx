@@ -4,12 +4,13 @@ import React from 'react';
 import PlaylistTrackItem from './PlaylistTrackItem';
 
 const TrackList = ({ 
-    tracks, onSelectTrack, currentPlayingTrackId, isPlaying, 
+    tracks, onSelectTrack, currentTrack, isPlaying, 
     onToggleSave, myMusicTrackIds, progress, duration, onSeek, 
     loadingTrackId, buffered, onPlayPauseToggle, 
     showDeleteButtons = false, onDeleteFromHistory,
     showRemoveButtons = false, onRemoveFromPlaylist
 }) => {
+    const currentPlayingTrackId = currentTrack?._id;
     return (
         <div className="space-y-1">
             {tracks.map((track, index) => {
