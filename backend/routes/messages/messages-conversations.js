@@ -19,89 +19,30 @@ const broadcastToUsers = (req, userIds, message) => {
     });
 };
 
-
-// --- START OF FIX: Reordered routes to be more specific first ---
-
-// Route to get a conversation with a specific user (find or create)
-// Path is '/with/:interlocutorId', which is more specific than '/:conversationId'
-router.get('/with/:interlocutorId', authMiddleware, async (req, res) => {
+router.get('/:conversationId', authMiddleware, async (req, res) => {
     try {
-        const { interlocutorId } = req.params;
-        const selfId = new mongoose.Types.ObjectId(req.user.userId);
-        
-        if (interlocutorId === selfId.toString()) {
-            const savedConv = await Conversation.findOneAndUpdate(
-                { participants: { $eq: [selfId] } },
-                { $setOnInsert: { participants: [selfId] } },
-                { upsert: true, new: true }
-            );
-            const populatedSavedConv = await getPopulatedConversation(savedConv._id, selfId);
-            return res.json(populatedSavedConv);
-        }
+        const { conversationId } = req.params;
+        const userId = req.user.userId;
 
-        const interlocutorObjectId = new mongoose.Types.ObjectId(interlocutorId);
-        let isNewConversation = false;
- 
-        let conversation = await Conversation.findOne({
-            participants: { $all: [selfId, interlocutorObjectId], $size: 2 }
-        });
- 
+        const conversation = await Conversation.findOne({ _id: conversationId, participants: userId });
         if (!conversation) {
-            const interlocutor = await User.findById(interlocutorObjectId);
-             if (!interlocutor) {
-                return res.status(404).json({ message: 'Собеседник не найден.' });
-            }
-            conversation = new Conversation({ participants: [selfId, interlocutorObjectId] });
-            await conversation.save();
-            isNewConversation = true;
+            return res.status(403).json({ message: 'Доступ к диалогу запрещен.' });
         }
-        
-        const populatedConversation = await getPopulatedConversation(conversation._id, selfId);
 
+        const populatedConversation = await getPopulatedConversation(conversationId, userId);
         if (!populatedConversation) {
-            return res.status(404).json({ message: 'Не удалось загрузить диалог.' });
+            return res.status(404).json({ message: 'Диалог не найден.' });
         }
-
-        const messages = await Message.find({
-            conversation: conversation._id,
-            owner: selfId,
-        })
-            .populate('sender', 'username fullName avatar')
-            .populate({
-                path: 'replyTo',
-                populate: {
-                    path: 'sender',
-                    select: 'username fullName premium premiumCustomization'
-                }
-            })
-            .populate('forwardedFrom', 'username fullName')
-            .populate('attachedTrack')
-            .populate({
-                path: 'reactions.user',
-                select: 'username fullName'
-            })
-            .sort({ createdAt: -1 })
-            .limit(30)
-            .lean();
         
-        populatedConversation.initialMessages = messages.reverse();
-
-        populatedConversation.isNew = isNewConversation;
-        const lastMessageForUser = await Message.findOne({ conversation: conversation._id, owner: selfId }).sort({ createdAt: -1 }).lean();
-        populatedConversation.historyCleared = !lastMessageForUser;
-
-
         res.json(populatedConversation);
-
     } catch (error) {
-        console.error('Find/Create Conversation Error:', error);
-        res.status(500).json({ message: "Ошибка сервера при поиске/создании чата." });
+        console.error('Error fetching single conversation:', error);
+        res.status(500).json({ message: 'Ошибка сервера' });
     }
 });
 
 
-// Route to get a list of all conversations for the user
-// Path is '/', which is specific and won't conflict with parameterized routes
+// 1. Получить список всех диалогов пользователя
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
@@ -232,18 +173,20 @@ router.get('/', authMiddleware, async (req, res) => {
                     },
                     isMuted: { $in: [userId, { $ifNull: ['$mutedBy', []] }] },
                     isArchived: { $in: [userId, { $ifNull: ['$archivedBy', []] }] },
+                    // --- НАЧАЛО ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ---
                     isPinned: {
                         $cond: {
-                            if: "$isSavedMessages",
+                            if: "$isSavedMessages", // "Избранное" никогда не может быть закреплено
                             then: false,
-                            else: {
+                            else: { // Для остальных чатов
                                 $and: [
-                                    { $in: [userId, { $ifNull: ['$pinnedBy', []] }] },
-                                    { $not: { $in: [userId, { $ifNull: ['$archivedBy', []] }] } }
+                                    { $in: [userId, { $ifNull: ['$pinnedBy', []] }] }, // ID пользователя есть в массиве закрепивших
+                                    { $not: { $in: [userId, { $ifNull: ['$archivedBy', []] }] } } // И ID пользователя НЕТ в массиве заархивировавших
                                 ]
                             }
                         }
                     },
+                    // --- КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ---
                     isMarkedAsUnread: { $in: [userId, { $ifNull: ['$markedAsUnreadBy', []] }] },
                     updatedAt: 1,
                     unreadCount: { $ifNull: [{ $arrayElemAt: ['$unreadInfo.unreadCount', 0] }, 0] },
@@ -302,31 +245,6 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
-
-// Route to get a specific conversation by ID
-router.get('/:conversationId', authMiddleware, async (req, res) => {
-    try {
-        const { conversationId } = req.params;
-        const userId = req.user.userId;
-
-        const conversation = await Conversation.findOne({ _id: conversationId, participants: userId });
-        if (!conversation) {
-            return res.status(403).json({ message: 'Доступ к диалогу запрещен.' });
-        }
-
-        const populatedConversation = await getPopulatedConversation(conversationId, userId);
-        if (!populatedConversation) {
-            return res.status(404).json({ message: 'Диалог не найден.' });
-        }
-        
-        res.json(populatedConversation);
-    } catch (error) {
-        console.error('Error fetching single conversation:', error);
-        res.status(500).json({ message: 'Ошибка сервера' });
-    }
-});
-
-// Route to get messages for a specific conversation
 router.get('/:conversationId/messages', authMiddleware, async (req, res) => {
     try {
         const { conversationId } = req.params;
@@ -391,7 +309,83 @@ router.get('/:conversationId/messages', authMiddleware, async (req, res) => {
     }
 });
 
-// Route to delete a conversation (for the current user)
+
+router.get('/with/:interlocutorId', authMiddleware, async (req, res) => {
+    try {
+        const { interlocutorId } = req.params;
+        const selfId = new mongoose.Types.ObjectId(req.user.userId);
+        
+        if (interlocutorId === selfId.toString()) {
+            const savedConv = await Conversation.findOneAndUpdate(
+                { participants: { $eq: [selfId] } },
+                { $setOnInsert: { participants: [selfId] } },
+                { upsert: true, new: true }
+            );
+            const populatedSavedConv = await getPopulatedConversation(savedConv._id, selfId);
+            return res.json(populatedSavedConv);
+        }
+
+        const interlocutorObjectId = new mongoose.Types.ObjectId(interlocutorId);
+        let isNewConversation = false;
+ 
+        let conversation = await Conversation.findOne({
+            participants: { $all: [selfId, interlocutorObjectId], $size: 2 }
+        });
+ 
+        if (!conversation) {
+            const interlocutor = await User.findById(interlocutorObjectId);
+             if (!interlocutor) {
+                return res.status(404).json({ message: 'Собеседник не найден.' });
+            }
+            conversation = new Conversation({ participants: [selfId, interlocutorObjectId] });
+            await conversation.save();
+            isNewConversation = true;
+        }
+        
+        const populatedConversation = await getPopulatedConversation(conversation._id, selfId);
+
+        if (!populatedConversation) {
+            return res.status(404).json({ message: 'Не удалось загрузить диалог.' });
+        }
+
+        const messages = await Message.find({
+            conversation: conversation._id,
+            owner: selfId,
+        })
+            .populate('sender', 'username fullName avatar')
+            .populate({
+                path: 'replyTo',
+                populate: {
+                    path: 'sender',
+                    select: 'username fullName premium premiumCustomization'
+                }
+            })
+            .populate('forwardedFrom', 'username fullName')
+            .populate('attachedTrack')
+            .populate({
+                path: 'reactions.user',
+                select: 'username fullName'
+            })
+            .sort({ createdAt: -1 })
+            .limit(30)
+            .lean();
+        
+        populatedConversation.initialMessages = messages.reverse();
+
+        populatedConversation.isNew = isNewConversation;
+        const lastMessageForUser = await Message.findOne({ conversation: conversation._id, owner: selfId }).sort({ createdAt: -1 }).lean();
+        populatedConversation.historyCleared = !lastMessageForUser;
+
+
+        res.json(populatedConversation);
+
+    } catch (error) {
+        console.error('Find/Create Conversation Error:', error);
+        res.status(500).json({ message: "Ошибка сервера при поиске/создании чата." });
+    }
+});
+
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем обработку addToBlacklist ---
 router.delete('/:conversationId', authMiddleware, async (req, res) => {
     try {
         const { conversationId } = req.params;
@@ -408,6 +402,7 @@ router.delete('/:conversationId', authMiddleware, async (req, res) => {
             if (interlocutorId) {
                 await User.updateOne({ _id: userId }, { $addToSet: { blacklist: interlocutorId } });
                 
+                // Отправляем уведомления обоим пользователям об изменении их "статуса отношений"
                 const userIdsToNotify = [userId.toString(), interlocutorId.toString()];
                 userIdsToNotify.forEach(id => {
                     req.broadcastMessage({ type: 'USER_DATA_UPDATED', userId: id });
@@ -460,7 +455,6 @@ router.delete('/:conversationId', authMiddleware, async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера" });
     }
 });
-// --- END OF FIX ---
-
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 module.exports = router;
