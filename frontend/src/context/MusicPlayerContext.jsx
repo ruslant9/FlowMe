@@ -120,9 +120,7 @@ export const MusicPlayerProvider = ({ children }) => {
             } else {
                 const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
                     headers: { Authorization: `Bearer ${token}` },
-                    // --- НАЧАЛО ИЗМЕНЕНИЙ: Передаем сигнал контроллера в запрос ---
                     signal: abortControllerRef.current.signal
-                    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
                 });
 
                 const streamUrl = res.data.url;
@@ -130,7 +128,8 @@ export const MusicPlayerProvider = ({ children }) => {
 
                 audio.src = streamUrl;
 
-                (async () => {
+                const cacheAudioInBackground = async () => {
+                    audio.removeEventListener('canplay', cacheAudioInBackground);
                     try {
                         const audioResponse = await fetch(streamUrl);
                         if (!audioResponse.ok) throw new Error('Failed to fetch audio for caching');
@@ -139,7 +138,8 @@ export const MusicPlayerProvider = ({ children }) => {
                     } catch (cacheError) {
                         console.error(`Failed to cache track ${trackData._id}:`, cacheError);
                     }
-                })();
+                };
+                audio.addEventListener('canplay', cacheAudioInBackground, { once: true });
             }
             
             audio.volume = volume;

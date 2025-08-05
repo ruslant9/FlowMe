@@ -128,7 +128,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
 
     return (
         <>
-            {/* OVERLAY FOR MOBILE */}
             <AnimatePresence>
                 {isMobileNavOpen && (
                     <motion.div
@@ -141,7 +140,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                 )}
             </AnimatePresence>
 
-            {/* SIDEBAR CONTAINER */}
             <div className={`
                 h-full flex flex-col transition-all duration-300
                 fixed inset-y-0 left-0 z-40 transform 
@@ -170,10 +168,8 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                         </div>
                     </div>
                     
-                    {/* --- ИЗМЕНЕНИЕ: Основная часть теперь скроллится, а футер зафиксирован внизу --- */}
                     <div className="flex-1 flex flex-col min-h-0">
                         <LayoutGroup>
-                            {/* Scrollable navigation area */}
                             <nav className={`flex-1 overflow-y-auto -mr-4 pr-4 space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center flex flex-col'}`}>
                                 <NavItem
                                     to="/premium"
@@ -187,6 +183,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     isExpanded={isExpanded || isMobileNavOpen}
                                 />
 
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
                                 <Tippy
                                     disabled={isExpanded || isMobileNavOpen}
                                     placement="right"
@@ -194,70 +191,73 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     render={attrs => <Tooltip text="Мой профиль" attrs={attrs} />}
                                 >
                                     <TippyWrapper>
-                                        <NavLink
-                                          to="/profile"
-                                          className={({ isActive }) => `
-                                            flex items-center transition-colors duration-200
-                                            ${getActiveStylesProfile(isActive)}
-                                            ${user?.premium?.isActive ? 'p-0.5 premium-gradient-bg rounded-full' : (isExpanded || isMobileNavOpen ? '' : 'w-12 h-12 justify-center')}
-                                          `}
-                                        >
-                                            {({ isActive }) => (
-                                                <div className={`
-                                                    relative flex items-center w-full transition-colors duration-200 rounded-full overflow-hidden
-                                                    ${isExpanded || isMobileNavOpen ? 'py-2 px-3' : 'w-12 h-12 justify-center'}
-                                                    ${!isActive && user?.premium?.isActive ? 'bg-slate-50 dark:bg-slate-900' : ''}
-                                                `}>
-                                                    
-                                                    {isActive && (
-                                                        <>
-                                                            <div 
-                                                                className={`absolute inset-0 opacity-15 pointer-events-none ${cardAccentClassName}`}
-                                                                style={cardAccentStyle}
-                                                            ></div>
-                                                            
-                                                            {!user?.premium?.isActive && (
-                                                                <motion.div
-                                                                    layoutId="active-indicator"
-                                                                    className="absolute inset-0 bg-blue-100/80 dark:bg-white/10 rounded-full"
-                                                                    transition={{ type: 'spring', stiffness: 600, damping: 35, mass: 1 }}
-                                                                />
-                                                            )}
-                                                        </>
-                                                    )}
+                                        <div className="mb-2"> {/* Добавлен отступ снизу */}
+                                            <NavLink
+                                              to="/profile"
+                                              className={({ isActive }) => `
+                                                flex items-center transition-colors duration-200
+                                                ${getActiveStylesProfile(isActive)}
+                                                ${user?.premium?.isActive ? 'p-0.5 premium-gradient-bg rounded-full' : (isExpanded || isMobileNavOpen ? '' : 'w-12 h-12 justify-center')}
+                                              `}
+                                            >
+                                                {({ isActive }) => (
+                                                    <div className={`
+                                                        relative flex items-center w-full transition-colors duration-200 rounded-full overflow-hidden
+                                                        ${isExpanded || isMobileNavOpen ? 'py-2 px-3' : 'w-12 h-12 justify-center'}
+                                                        ${!isActive && user?.premium?.isActive ? 'bg-slate-50 dark:bg-slate-900' : ''}
+                                                    `}>
+                                                        
+                                                        {isActive && (
+                                                            <>
+                                                                <div 
+                                                                    className={`absolute inset-0 opacity-15 pointer-events-none ${cardAccentClassName}`}
+                                                                    style={cardAccentStyle}
+                                                                ></div>
+                                                                
+                                                                {!user?.premium?.isActive && (
+                                                                    <motion.div
+                                                                        layoutId="active-indicator"
+                                                                        className="absolute inset-0 bg-blue-100/80 dark:bg-white/10 rounded-full"
+                                                                        transition={{ type: 'spring', stiffness: 600, damping: 35, mass: 1 }}
+                                                                    />
+                                                                )}
+                                                            </>
+                                                        )}
 
-                                                    <div className="relative">
-                                                        {user ? (
-                                                            <Avatar username={user?.username} fullName={user?.fullName} avatarUrl={user?.avatar} size="md" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} />
-                                                        ) : (
-                                                            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
-                                                        )}
-                                                    </div>
-                                                    <div className={`flex flex-col overflow-hidden transition-all duration-200 ${isExpanded || isMobileNavOpen ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>
-                                                        {user?.premium?.isActive && (
-                                                            <span className="premium-shimmer-text font-bold text-xs uppercase tracking-wider mb-0.5">
-                                                                Premium
+                                                        <div className="relative">
+                                                            {user ? (
+                                                                <Avatar username={user?.username} fullName={user?.fullName} avatarUrl={user?.avatar} size="md" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} />
+                                                            ) : (
+                                                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
+                                                            )}
+                                                        </div>
+                                                        <div className={`flex flex-col overflow-hidden transition-all duration-200 ${isExpanded || isMobileNavOpen ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>
+                                                            {user?.premium?.isActive && (
+                                                                <span className="premium-shimmer-text font-bold text-xs uppercase tracking-wider mb-0.5">
+                                                                    Premium
+                                                                </span>
+                                                            )}
+                                                            <span className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
+                                                                {user?.fullName || user?.username || 'Профиль'}
                                                             </span>
-                                                        )}
-                                                        <span className={`text-sm font-semibold truncate ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
-                                                            {user?.fullName || user?.username || 'Профиль'}
-                                                        </span>
-                                                        <span className={`text-xs transition-colors ${isActive ? 'text-blue-800/70 dark:text-blue-200/80' : 'text-slate-500 dark:text-slate-400'}`}>
-                                                            Мой профиль
-                                                        </span>
+                                                            <span className={`text-xs transition-colors ${isActive ? 'text-blue-800/70 dark:text-blue-200/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                                Мой профиль
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </NavLink>
+                                                )}
+                                            </NavLink>
+                                        </div>
                                     </TippyWrapper>
                                 </Tippy>
+                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                 
                                 {user?.role === 'admin' && (
                                     <NavItem
                                         to="/admin"
                                         icon={Shield}
                                         text="Админ-панель"
-                                        count={summary.submissionsCount} // Используем новое поле
+                                        count={summary.submissionsCount}
                                         isExpanded={isExpanded || isMobileNavOpen}
                                     />
                                 )}
@@ -277,7 +277,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                         </LayoutGroup>
                     </div>
                     
-                    {/* Static footer area */}
                     <div className="flex-shrink-0 pt-2">
                         <LayoutGroup>
                             <div className={`flex flex-col space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center'}`}>
