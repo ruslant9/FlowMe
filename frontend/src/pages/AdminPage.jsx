@@ -1,12 +1,15 @@
 // frontend/src/pages/AdminPage.jsx
 
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import useTitle from '../hooks/useTitle';
+import { useModal } from '../hooks/useModal';
+import { AudioCache } from '../utils/AudioCacheService';
 import AdminSubmissionsList from '../components/admin/AdminSubmissionsList';
 import AdminUploadPanel from '../components/admin/AdminUploadPanel';
 import AdminContentManager from '../components/admin/AdminContentManager';
 import AdminUserManager from '../components/admin/AdminUserManager';
-import { CheckCircle, UploadCloud, Database, Users } from 'lucide-react';
+import { CheckCircle, UploadCloud, Database, Users, Trash2 } from 'lucide-react';
 
 // Возвращаем стильный компонент для горизонтальных вкладок
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
@@ -26,6 +29,7 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
 const AdminPage = () => {
     useTitle('Панель администратора');
     const [activeTab, setActiveTab] = useState('submissions');
+    const { showConfirmation } = useModal();
 
     // Компоненты для каждой вкладки
     const renderContent = () => {
@@ -38,9 +42,34 @@ const AdminPage = () => {
         }
     };
 
+    const handleClearCache = () => {
+        showConfirmation({
+            title: 'Очистить аудио-кеш?',
+            message: 'Это действие удалит все кешированные треки из вашего браузера. При следующем прослушивании они будут загружены заново. Продолжить?',
+            onConfirm: async () => {
+                const toastId = toast.loading('Очистка кеша...');
+                try {
+                    await AudioCache.clearAllAudio();
+                    toast.success('Аудио-кеш успешно очищен!', { id: toastId });
+                } catch (error) {
+                    toast.error('Не удалось очистить кеш.', { id: toastId });
+                }
+            }
+        });
+    };
+
     return (
         <main className="flex-1 p-4 md:p-8">
-            <h1 className="text-3xl font-bold mb-6">Панель администратора</h1>
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold">Панель администратора</h1>
+                <button 
+                    onClick={handleClearCache}
+                    className="flex items-center space-x-2 text-xs sm:text-sm bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-semibold px-3 py-2 sm:px-4 rounded-lg transition-colors"
+                >
+                    <Trash2 size={16} />
+                    <span>Очистить аудио-кеш</span>
+                </button>
+            </div>
             
             {/* Горизонтальная панель навигации */}
             <div className="flex flex-wrap border-b border-slate-300 dark:border-slate-700 mb-6">

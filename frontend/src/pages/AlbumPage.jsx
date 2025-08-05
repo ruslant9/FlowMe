@@ -104,11 +104,11 @@ const AlbumPage = () => {
     const totalMinutes = Math.floor(totalDurationMs / 60000);
 
     return (
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Полностью переработанная структура для лучшего вида ---
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
             {/* Новая "липкая" шапка */}
             <div 
-                className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300"
+                className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[420px] flex flex-col justify-end transition-all duration-300"
                 style={{ backgroundImage: gradient }}
             >
                 {/* Эффект размытия при скролле */}

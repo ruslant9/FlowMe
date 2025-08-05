@@ -3,9 +3,7 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Импортируем сервис кеширования аудио ---
 import { AudioCache } from '../utils/AudioCacheService';
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -37,16 +35,15 @@ export const MusicPlayerProvider = ({ children }) => {
     const [playerNotification, setPlayerNotification] = useState(null);
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
 
-    const [isLoadingPlayback, setIsLoadingPlayback] = useState(false);
+    // --- НАЧАЛО ИЗМЕНЕНИЙ: Убираем isLoadingPlayback и добавляем AbortController ---
     const abortControllerRef = useRef(null); 
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
     const notificationTimeoutRef = useRef(null);
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Ref для хранения текущего blob URL для очистки ---
     const currentObjectUrlRef = useRef(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const logMusicAction = useCallback(async (track, action) => {
         try {
@@ -88,21 +85,20 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [currentTrack, myMusicTrackIds]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Переработанная функция playTrack с логикой кеширования ---
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
-        if (isLoadingPlayback) return;
+        
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Отменяем предыдущий запрос, если он есть ---
         if (abortControllerRef.current) {
             abortControllerRef.current.abort('New track selected');
         }
         abortControllerRef.current = new AbortController();
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
-        setIsLoadingPlayback(true);
         setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
         setIsPlaying(false);
         
-        // Очищаем предыдущий blob URL
         if (currentObjectUrlRef.current) {
             URL.revokeObjectURL(currentObjectUrlRef.current);
             currentObjectUrlRef.current = null;
@@ -114,33 +110,38 @@ export const MusicPlayerProvider = ({ children }) => {
             
             const token = localStorage.getItem('token');
             const audio = audioRef.current;
-            let audioUrl;
-
-            // 1. Проверяем кеш
+            
             const cachedBlob = await AudioCache.getAudio(trackData._id);
 
             if (cachedBlob) {
-                audioUrl = URL.createObjectURL(cachedBlob);
+                const audioUrl = URL.createObjectURL(cachedBlob);
+                currentObjectUrlRef.current = audioUrl;
+                audio.src = audioUrl;
             } else {
-                // 2. Если в кеше нет, загружаем из сети
                 const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
                     headers: { Authorization: `Bearer ${token}` },
+                    // --- НАЧАЛО ИЗМЕНЕНИЙ: Передаем сигнал контроллера в запрос ---
                     signal: abortControllerRef.current.signal
+                    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
                 });
 
                 const streamUrl = res.data.url;
-                
-                // Используем fetch для получения Blob
-                const audioResponse = await fetch(streamUrl);
-                const audioBlob = await audioResponse.blob();
+                if (!streamUrl) throw new Error("Stream URL not found.");
 
-                // 3. Сохраняем в кеш
-                await AudioCache.setAudio(trackData._id, audioBlob);
-                audioUrl = URL.createObjectURL(audioBlob);
+                audio.src = streamUrl;
+
+                (async () => {
+                    try {
+                        const audioResponse = await fetch(streamUrl);
+                        if (!audioResponse.ok) throw new Error('Failed to fetch audio for caching');
+                        const audioBlob = await audioResponse.blob();
+                        await AudioCache.setAudio(trackData._id, audioBlob);
+                    } catch (cacheError) {
+                        console.error(`Failed to cache track ${trackData._id}:`, cacheError);
+                    }
+                })();
             }
             
-            currentObjectUrlRef.current = audioUrl; // Сохраняем URL для последующей очистки
-            audio.src = audioUrl;
             audio.volume = volume;
             await audio.play();
             setIsPlaying(true);
@@ -169,20 +170,19 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsShuffle(startShuffled);
             setIsRepeat(startRepeat);
         } catch (error) {
+            // --- НАЧАЛО ИЗМЕНЕНИЙ: Обрабатываем ошибку отмены, чтобы не показывать ее пользователю ---
             if (axios.isCancel(error)) {
                 console.log("Загрузка предыдущего трека отменена.");
             } else {
                 toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
                 setCurrentTrack(null);
             }
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
         } finally {
-            setIsLoadingPlayback(false);
             setLoadingTrackId(null);
             abortControllerRef.current = null;
         }
-    }, [volume, logMusicAction, isLoadingPlayback]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
+    }, [volume, logMusicAction]);
 
     const handleNextTrack = useCallback(() => {
         if (currentTrack && progress > 0 && duration > 0 && progress < duration * 0.9) {
@@ -267,7 +267,6 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем очистку blob URL при остановке плеера ---
     const stopAndClearPlayer = useCallback(() => {
         audioRef.current.pause();
         audioRef.current.src = '';
@@ -283,7 +282,6 @@ export const MusicPlayerProvider = ({ children }) => {
         playlistRef.current = [];
         currentTrackIndexRef.current = -1;
     }, []);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const showPlayerNotification = (notification) => {
         if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
@@ -340,7 +338,7 @@ export const MusicPlayerProvider = ({ children }) => {
         try {
             const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
-            toast.success(res.data.message); // Уведомление об успехе
+            toast.success(res.data.message);
             if (!wasLiked) logMusicAction(trackData, 'like');
             window.dispatchEvent(new CustomEvent('myMusicUpdated'));
         } catch (error) {

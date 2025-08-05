@@ -113,10 +113,10 @@ const SinglePage = () => {
     const totalMinutes = Math.floor((track.durationMs || 0) / 60000);
 
     return (
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Полностью переработанная структура, аналогичная AlbumPage ---
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
             <div 
-                className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[300px] flex flex-col justify-end transition-all duration-300"
+                className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[420px] flex flex-col justify-end transition-all duration-300"
                 style={{ backgroundImage: gradient }}
             >
                 <div 
@@ -165,7 +165,7 @@ const SinglePage = () => {
                         <Shuffle />
                     </button>
                 </div>
-        // --- КОНЕЦ ИЗМЕНЕНИЙ В СТРУКТУРЕ ---
+        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                 <div className="space-y-1">
                     <div className="grid grid-cols-[auto_1fr_auto] gap-x-4 px-4 text-sm text-slate-500 dark:text-slate-400 border-b border-slate-300 dark:border-white/10 pb-2">

@@ -1,4 +1,4 @@
-// frontend/src/utils/AudioCacheService.js --- НОВЫЙ ФАЙЛ ---
+// frontend/src/utils/AudioCacheService.js
 
 import { openDB } from 'idb';
 
@@ -64,7 +64,28 @@ async function setAudio(key, blob) {
   }
 }
 
+/**
+ * Полностью очищает аудио-кеш (IndexedDB и память).
+ * @returns {Promise<void>}
+ */
+async function clearAllAudio() {
+  try {
+    // 1. Очищаем хранилище в IndexedDB
+    const db = await dbPromise;
+    await db.clear(STORE_NAME);
+
+    // 2. Очищаем кеш в памяти
+    memoryCache.clear();
+
+    console.log("Аудио-кеш успешно очищен.");
+  } catch (error) {
+    console.error("Ошибка при полной очистке аудио-кеша:", error);
+    throw new Error("Не удалось очистить аудио-кеш.");
+  }
+}
+
 export const AudioCache = {
   getAudio,
   setAudio,
+  clearAllAudio, // Экспортируем новую функцию
 };

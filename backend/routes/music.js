@@ -171,17 +171,23 @@ router.get('/history', authMiddleware, async (req, res) => {
         const history = await Track.find({ user: req.user.userId, type: 'recent' })
             .sort({ playedAt: -1 })
             .limit(50)
-            .populate('artist', 'name')
-            .populate('album', 'title');
-        res.json(history);
+            .populate('artist', 'name _id')
+            .populate('album', 'title coverArtUrl')
+            .lean();
+            
+        const processedHistory = history.map(track => {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                return { ...track, albumArtUrl: track.album.coverArtUrl };
+            }
+            return track;
+        });
+        res.json(processedHistory);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при получении истории.' });
     }
 });
 
-
 // --- МАРШРУТЫ ДЛЯ СТРАНИЦ АРТИСТОВ И АЛЬБОМОВ ---
-
 router.get('/album/:albumId', authMiddleware, async (req, res) => {
     try {
         const album = await Album.findById(req.params.albumId)
