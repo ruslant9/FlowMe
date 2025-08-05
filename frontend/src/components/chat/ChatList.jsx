@@ -7,12 +7,42 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
 import { useUser } from '../../hooks/useUser';
+import axios from 'axios'; // <-- НОВЫЙ ИМПОРТ
+import toast from 'react-hot-toast'; // <-- НОВЫЙ ИМПОРТ
+import Avatar from '../Avatar'; // <-- НОВЫЙ ИМПОРТ
+import { Link } from 'react-router-dom'; // <-- НОВЫЙ ИМПОРТ
+import { Bookmark } from 'lucide-react'; // <-- НОВЫЙ ИМПОРТ
+
+const API_URL = import.meta.env.VITE_API_URL; // <-- НОВАЯ КОНСТАНТА
 
 const ChatList = ({ activeConversations, archivedConversations, onSelectConversation, activeConversationId, loading, searchQuery, setSearchQuery, onUpdateList, typingStatuses, unreadArchivedCount, onDeleteRequest, pinnedCount, pinLimit, onOpenPremiumModal, onOptimisticPinUpdate }) => {
     const [showArchived, setShowArchived] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null);
     const chatListRef = useRef(null);
     const { currentUser } = useUser();
+
+    // --- НАЧАЛО ИЗМЕНЕНИЙ: Состояния для админской модалки ---
+    const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+    const [adminPinnedList, setAdminPinnedList] = useState([]);
+    const [isAdminListLoading, setIsAdminListLoading] = useState(false);
+
+    const handleAdminViewClick = async () => {
+        setIsAdminModalOpen(true);
+        setIsAdminListLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/api/admin/all-pinned-chats`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setAdminPinnedList(res.data);
+        } catch (error) {
+            toast.error('Не удалось загрузить список.');
+        } finally {
+            setIsAdminListLoading(false);
+        }
+    };
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
 
     const handleMenuToggle = (id) => setOpenMenuId(prevId => (prevId === id ? null : id));
 
@@ -96,6 +126,53 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
 
     return (
         <div className="h-full flex flex-col">
+            {/* --- НАЧАЛО ИЗМЕНЕНИЙ: Модальное окно для админа --- */}
+            <AnimatePresence>
+                {isAdminModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsAdminModalOpen(false)}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: -20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="ios-glass-final w-full max-w-md p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[80vh]"
+                        >
+                            <h2 className="text-xl font-bold mb-4">Все закрепленные чаты</h2>
+                            <div className="flex-1 overflow-y-auto -mr-2 pr-2 space-y-2">
+                                {isAdminListLoading ? (
+                                    <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin" /></div>
+                                ) : (
+                                    adminPinnedList.map(conv => {
+                                        const linkTo = conv.isSavedMessages ? '/messages' : `/messages/${conv.interlocutor._id}`;
+                                        return (
+                                        <Link key={conv._id} to={linkTo} onClick={() => setIsAdminModalOpen(false)} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                                            <div className="flex items-center space-x-3">
+                                                {conv.isSavedMessages ? (
+                                                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                                                        <Bookmark size={20} className="text-white" fill="white" />
+                                                    </div>
+                                                ) : (
+                                                    <Avatar size="md" username={conv.interlocutor.username} avatarUrl={conv.interlocutor.avatar} />
+                                                )}
+                                                <span className="font-semibold">{conv.isSavedMessages ? 'Избранное' : (conv.interlocutor.fullName || conv.interlocutor.username)}</span>
+                                            </div>
+                                            {conv.isArchivedForAdmin && <span className="text-xs font-bold text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded-full">В архиве</span>}
+                                        </Link>
+                                    )})
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
+
             <div className="p-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
                 <h1 className="text-2xl font-bold mb-4">Чаты</h1>
                 
@@ -128,6 +205,13 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
                                 <AlertCircle size={14} className="cursor-help" />
                             </button>
                         </Tippy>
+                        {/* --- НАЧАЛО ИЗМЕНЕНИЙ: Кнопка для админа --- */}
+                        {currentUser?.role === 'admin' && (
+                             <button onClick={handleAdminViewClick} className="focus:outline-none text-red-500" title="Показать все закрепленные (Admin)">
+                                <AlertCircle size={14} className="cursor-pointer" />
+                            </button>
+                        )}
+                        {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
                     </div>
                 )}
             </div>

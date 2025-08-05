@@ -781,7 +781,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
         popularHits.forEach(track => {
             const key = `${track.title.toLowerCase().trim()}|${getPrimaryArtistName(track.artist).toLowerCase().trim()}`;
             if (!uniquePopularHitsMap.has(key)) {
-                uniquePopularHitsMap.set(key, { ...track, isHit: true });
+                uniquePopularHitsMap.set(key, { ...track, isHit: index === 0 });
             }
         });
         const uniquePopularHits = Array.from(uniquePopularHitsMap.values());

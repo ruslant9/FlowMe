@@ -170,7 +170,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                     
                     <div className="flex-1 flex flex-col min-h-0">
                         <LayoutGroup>
-                            <nav className={`flex-1 overflow-y-auto overflow-x-hidden -mr-4 pr-4 space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center flex flex-col'}`}>
+                            <nav className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mr-4 pr-4 space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center flex flex-col'}`}>
                                 <NavItem
                                     to="/premium"
                                     icon={user?.premium?.isActive ? Crown : Sparkles}

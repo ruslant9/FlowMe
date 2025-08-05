@@ -13,6 +13,7 @@ const Track = require('../models/Track');
 const Submission = require('../models/Submission');
 const User = require('../models/User');
 const Playlist = require('../models/Playlist');
+const Conversation = require('../models/Conversation'); // <-- НОВЫЙ ИМПОРТ
 
 const multer = require('multer');
 const { createStorage, cloudinary } = require('../config/cloudinary');
@@ -24,6 +25,37 @@ const upload = multer({ storage: adminStorage });
 
 // Защищаем все роуты в этом файле - только для авторизованных админов
 router.use(authMiddleware, adminMiddleware);
+
+// --- НОВЫЙ РОУТ ДЛЯ АДМИНА ---
+router.get('/all-pinned-chats', async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const conversations = await Conversation.find({ pinnedBy: userId })
+            .populate({
+                path: 'participants',
+                select: 'username fullName avatar',
+                match: { _id: { $ne: userId } }
+            })
+            .lean();
+        
+        const results = conversations.map(conv => {
+            const interlocutor = conv.participants.length > 0 ? conv.participants[0] : null;
+            return {
+                _id: conv._id,
+                isSavedMessages: conv.participants.length === 1,
+                interlocutor: interlocutor,
+                isArchivedForAdmin: conv.archivedBy.some(id => id.equals(userId))
+            };
+        });
+
+        res.json(results);
+    } catch (error) {
+        console.error("Ошибка при получении всех закрепленных чатов:", error);
+        res.status(500).json({ message: 'Ошибка сервера' });
+    }
+});
+// --- КОНЕЦ НОВОГО РОУТА ---
+
 
 // --- РОУТЫ ДЛЯ МОДЕРАЦИИ ---
 

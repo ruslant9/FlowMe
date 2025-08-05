@@ -147,14 +147,17 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
             </div>
 
             <div className="flex md:hidden items-center space-x-1">
-                <motion.button onClick={() => onToggleLike(track)} className={`p-2 ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60'}`} whileTap={{ scale: 1.3 }}>
-                    <Heart size={22} fill={isLiked ? 'currentColor' : 'none'}/>
-                </motion.button>
-                <button onClick={onPlayPauseToggle} className="p-2 text-slate-800 dark:text-white">
-                    {isPlaying ? <Pause size={28}/> : <Play size={28}/>}
-                </button>
-                <button onClick={onNext} className="p-2 text-slate-800 dark:text-white"><SkipForward size={22}/></button>
-            </div>
+    <motion.button onClick={() => onToggleLike(track)} className={`p-2 ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60'}`} whileTap={{ scale: 1.3 }}>
+        <Heart size={22} fill={isLiked ? 'currentColor' : 'none'}/>
+    </motion.button>
+    <button onClick={onPlayPauseToggle} className="p-2 text-slate-800 dark:text-white">
+        {isPlaying ? <Pause size={28}/> : <Play size={28}/>}
+    </button>
+    <button onClick={onNext} className="p-2 text-slate-800 dark:text-white"><SkipForward size={22}/></button>
+    <button onClick={stopAndClearPlayer} className="p-2 text-slate-700 dark:text-white/60 hover:text-red-500 dark:hover:text-red-400" title="Закрыть плеер">
+        <X size={22} />
+    </button>
+</div>
         </div>
     );
 };

@@ -9,6 +9,7 @@ import { useModal } from '../hooks/useModal';
 import { Loader2, ArrowLeft, Save, Trash2, Image as ImageIcon, Check, X, UserX, Ban, UserCheck, ChevronDown, Settings as SettingsIcon, Users, UserPlus as UserRequestIcon, ShieldAlert } from 'lucide-react';
 import Avatar from '../components/Avatar';
 import { Listbox, Transition } from '@headlessui/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -49,12 +50,15 @@ const EditField = ({ label, name, value, onChange, type = 'text', options, onLis
     </div>
 );
 
-const TabButton = ({ active, onClick, children, count }) => (
+// --- НАЧАЛО ИЗМЕНЕНИЯ 2: Исправляем компонент кнопки и добавляем иконку ---
+const TabButton = ({ active, onClick, children, icon: Icon, count }) => (
     <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${ active ? 'border-blue-500 text-blue-500' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white' }`}>
-        {children}
+        <Icon size={18} />
+        <span>{children}</span>
         {typeof count === 'number' && count > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-white text-blue-600' : 'bg-slate-200 dark:bg-white/10'}`}>{count}</span>}
     </button>
 );
+// --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
 const CommunityManagementPage = () => {
     const { communityId } = useParams();
@@ -206,12 +210,14 @@ const CommunityManagementPage = () => {
                         <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0">
                             <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
                         </div>
-                        <div className="md:ml-8 mt-auto mb-2 flex-1 min-w-0">
-                            <Link to={`/communities/${communityId}`} className="text-sm font-semibold text-blue-500 hover:underline flex items-center space-x-1">
+                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Поднимаем кнопку "Вернуться" --- */}
+                        <div className="md:ml-8 flex-1 min-w-0 flex flex-col justify-end self-end mb-2">
+                            <Link to={`/communities/${communityId}`} className="text-sm font-semibold text-blue-500 hover:underline flex items-center space-x-1 mb-2">
                                 <ArrowLeft size={14}/> <span>Вернуться в сообщество</span>
                             </Link>
                             <h1 className="text-2xl md:text-3xl font-bold truncate">{community.name}</h1>
                         </div>
+                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ 1 --- */}
                     </div>
                 </div>
             </div>
@@ -227,100 +233,112 @@ const CommunityManagementPage = () => {
                     </div>
                 </div>
                 
-                {activeTab === 'settings' && (
-                    <form onSubmit={handleSave} className="space-y-6">
-                        <EditField label="Название сообщества" name="name" value={formData.name} onChange={handleChange} />
-                        <EditField label="Описание" name="description" value={formData.description} onChange={handleChange} type="textarea" />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <EditField label="Тематика" type="listbox" value={formData.topic} onListboxChange={(value) => setFormData(p => ({ ...p, topic: value }))} options={topics} />
-                            <EditField label="Видимость" type="listbox" value={formData.visibility} onListboxChange={(value) => setFormData(p => ({ ...p, visibility: value }))} options={visibilityOptions} />
-                            <EditField label="Политика вступления" type="listbox" value={formData.joinPolicy} onListboxChange={(value) => setFormData(p => ({ ...p, joinPolicy: value }))} options={joinPolicyOptions} />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-semibold mb-2">Аватар</label>
-                                <div className="flex items-center space-x-4">
-                                    <Avatar username={formData.name} avatarUrl={avatarFile.removed ? '' : avatarFile.preview} size="lg" />
-                                    <div className="flex flex-col space-y-2">
-                                        <button type="button" onClick={() => avatarInputRef.current.click()} className="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center"><ImageIcon size={16} className="mr-2" /> Загрузить новый</button>
-                                        {(community.avatar || avatarFile.file) && !avatarFile.removed && (
-                                            <button type="button" onClick={() => handleRemoveImage('avatar')} className="px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center"><Trash2 size={16} className="mr-2" /> Удалить</button>
-                                        )}
-                                    </div>
-                                    <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем анимацию смены вкладок --- */}
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={activeTab}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        {activeTab === 'settings' && (
+                            <form onSubmit={handleSave} className="space-y-6">
+                                <EditField label="Название сообщества" name="name" value={formData.name} onChange={handleChange} />
+                                <EditField label="Описание" name="description" value={formData.description} onChange={handleChange} type="textarea" />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <EditField label="Тематика" type="listbox" value={formData.topic} onListboxChange={(value) => setFormData(p => ({ ...p, topic: value }))} options={topics} />
+                                    <EditField label="Видимость" type="listbox" value={formData.visibility} onListboxChange={(value) => setFormData(p => ({ ...p, visibility: value }))} options={visibilityOptions} />
+                                    <EditField label="Политика вступления" type="listbox" value={formData.joinPolicy} onListboxChange={(value) => setFormData(p => ({ ...p, joinPolicy: value }))} options={joinPolicyOptions} />
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold mb-2">Обложка</label>
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-32 h-20 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0 flex items-center justify-center">                                    
-                                        {coverFile.preview && !coverFile.removed ? <img src={coverFile.preview} alt="Cover Preview" className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-slate-400" />}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-2">Аватар</label>
+                                        <div className="flex items-center space-x-4">
+                                            <Avatar username={formData.name} avatarUrl={avatarFile.removed ? '' : avatarFile.preview} size="lg" />
+                                            <div className="flex flex-col space-y-2">
+                                                <button type="button" onClick={() => avatarInputRef.current.click()} className="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center"><ImageIcon size={16} className="mr-2" /> Загрузить новый</button>
+                                                {(community.avatar || avatarFile.file) && !avatarFile.removed && (
+                                                    <button type="button" onClick={() => handleRemoveImage('avatar')} className="px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center"><Trash2 size={16} className="mr-2" /> Удалить</button>
+                                                )}
+                                            </div>
+                                            <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col space-y-2">
-                                        <button type="button" onClick={() => coverInputRef.current.click()} className="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center"><ImageIcon size={16} className="mr-2" /> Загрузить новую</button>
-                                        {(community.coverImage || coverFile.file) && !coverFile.removed && (
-                                            <button type="button" onClick={() => handleRemoveImage('cover')} className="px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center"><Trash2 size={16} className="mr-2" /> Удалить</button>
-                                        )}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-2">Обложка</label>
+                                        <div className="flex items-center space-x-4">
+                                            <div className="w-32 h-20 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0 flex items-center justify-center">                                    
+                                                {coverFile.preview && !coverFile.removed ? <img src={coverFile.preview} alt="Cover Preview" className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-slate-400" />}
+                                            </div>
+                                            <div className="flex flex-col space-y-2">
+                                                <button type="button" onClick={() => coverInputRef.current.click()} className="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center"><ImageIcon size={16} className="mr-2" /> Загрузить новую</button>
+                                                {(community.coverImage || coverFile.file) && !coverFile.removed && (
+                                                    <button type="button" onClick={() => handleRemoveImage('cover')} className="px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center"><Trash2 size={16} className="mr-2" /> Удалить</button>
+                                                )}
+                                            </div>
+                                            <input type="file" ref={coverInputRef} hidden accept="image/*" onChange={(e) => handleFileChange(e, 'cover')} />
+                                        </div>
                                     </div>
-                                    <input type="file" ref={coverInputRef} hidden accept="image/*" onChange={(e) => handleFileChange(e, 'cover')} />
                                 </div>
-                            </div>
-                        </div>
-                        <hr className="border-slate-200 dark:border-white/10 my-2" />
-                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">Настройки публикаций и видимости</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <EditField label="Кто может публиковать посты" type="listbox" value={formData.postingPolicy} onListboxChange={(value) => setFormData(p => ({ ...p, postingPolicy: value }))} options={postingPolicyOptions} />
-                            <EditField label="Кто видит администратора" type="listbox" value={formData.adminVisibility} onListboxChange={(value) => setFormData(p => ({ ...p, adminVisibility: value }))} options={adminVisibilityOptions} />
-                            <EditField label="Кто видит участников" type="listbox" value={formData.memberListVisibility} onListboxChange={(value) => setFormData(p => ({ ...p, memberListVisibility: value }))} options={memberListVisibilityOptions} />
-                        </div>
-                        <div className="flex justify-end pt-4">
-                            <button type="submit" disabled={!haveSettingsChanged() || isSaving} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                                {isSaving && <Loader2 className="animate-spin" />}<span>Сохранить изменения</span>
-                            </button>
-                        </div>
-                    </form>
-                )}
+                                <hr className="border-slate-200 dark:border-white/10 my-2" />
+                                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Настройки публикаций и видимости</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <EditField label="Кто может публиковать посты" type="listbox" value={formData.postingPolicy} onListboxChange={(value) => setFormData(p => ({ ...p, postingPolicy: value }))} options={postingPolicyOptions} />
+                                    <EditField label="Кто видит администратора" type="listbox" value={formData.adminVisibility} onListboxChange={(value) => setFormData(p => ({ ...p, adminVisibility: value }))} options={adminVisibilityOptions} />
+                                    <EditField label="Кто видит участников" type="listbox" value={formData.memberListVisibility} onListboxChange={(value) => setFormData(p => ({ ...p, memberListVisibility: value }))} options={memberListVisibilityOptions} />
+                                </div>
+                                <div className="flex justify-end pt-4">
+                                    <button type="submit" disabled={!haveSettingsChanged() || isSaving} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        {isSaving && <Loader2 className="animate-spin" />}<span>Сохранить изменения</span>
+                                    </button>
+                                </div>
+                            </form>
+                        )}
 
-                {activeTab === 'requests' && ( <div className="space-y-4">
-                        {community.pendingJoinRequests?.length > 0 ? ( community.pendingJoinRequests.map(user => (
-                                <div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                                    <Link to={`/profile/${user._id}`} className="flex items-center space-x-3 group">
-                                        <Avatar username={user.username} fullName={user.fullName} avatarUrl={getImageUrl(user.avatar)} />
-                                        <div><p className="font-semibold group-hover:underline">{user.fullName || user.username}</p></div>
-                                    </Link>
-                                    <div className="flex items-center space-x-2">
-                                        <button onClick={() => handleRequestAction('approve', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}</button>
-                                        <button onClick={() => handleRequestAction('deny', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}</button>
-                                    </div>
-                                </div> ))) : <p className="text-center py-10 text-slate-500">Нет активных заявок.</p>}
-                    </div>)}
-                {activeTab === 'members' && ( <div className="space-y-4">
-                        {community.members?.length > 0 ? ( community.members.map(member => (
-                                <div key={member._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                                    <Link to={`/profile/${member._id}`} className="flex items-center space-x-3 group">
-                                        <Avatar username={member.username} fullName={member.fullName} avatarUrl={getImageUrl(member.avatar)} />
-                                        <div><div className="flex items-baseline"><p className="font-semibold group-hover:underline">{member.fullName || member.username}</p>{member._id === community.owner._id && <span className="text-xs ml-2 text-blue-500 font-normal">(Владелец)</span>}</div></div>
-                                    </Link>
-                                    {member._id !== community.owner._id && <div className="flex items-center space-x-2">{processingActionId === member._id ? <Loader2 className="animate-spin" /> : <><button onClick={() => handleMemberAction('remove', member)} title="Удалить" className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-600"><UserX size={16} /></button><button onClick={() => handleMemberAction('ban', member)} title="Забанить" className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-600"><Ban size={16} /></button></>}</div>}
-                                </div> ))) : <p className="text-center py-10 text-slate-500">В сообществе нет участников.</p>}
-                    </div>)}
-                {activeTab === 'banned' && ( <div className="space-y-4">
-                        {community.bannedUsers?.length > 0 ? ( community.bannedUsers.map(user => (
-                                <div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                                    <div className="flex items-center space-x-3">
-                                        <Avatar username={user.username} fullName={user.fullName} avatarUrl={getImageUrl(user.avatar)} />
-                                        <div><p className="font-semibold">{user.fullName || user.username}</p></div>
-                                    </div>
-                                    <div className="flex items-center space-x-2">{processingActionId === user._id ? <Loader2 className="animate-spin" /> : <button onClick={() => handleMemberAction('unban', user)} title="Разбанить" className="p-2 rounded-full text-slate-500 hover:bg-green-100 hover:text-green-600"><UserCheck size={16} /></button>}</div>
-                                </div> ))) : <p className="text-center py-10 text-slate-500">Черный список пуст.</p>}
-                    </div>)}
-                {activeTab === 'danger' && (
-                     <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg">
-                        <h3 className="text-xl font-bold text-red-600 dark:text-red-300">Опасная зона</h3>
-                        <p className="mt-2 mb-4 text-sm text-red-700 dark:text-red-200">Удаление сообщества — необратимое действие. Все посты, комментарии и участники будут удалены навсегда.</p>
-                        <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"><Trash2 size={18} /><span>Удалить сообщество</span></button>
-                    </div>
-                )}
+                        {activeTab === 'requests' && ( <div className="space-y-4">
+                                {community.pendingJoinRequests?.length > 0 ? ( community.pendingJoinRequests.map(user => (
+                                        <div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                            <Link to={`/profile/${user._id}`} className="flex items-center space-x-3 group">
+                                                <Avatar username={user.username} fullName={user.fullName} avatarUrl={getImageUrl(user.avatar)} />
+                                                <div><p className="font-semibold group-hover:underline">{user.fullName || user.username}</p></div>
+                                            </Link>
+                                            <div className="flex items-center space-x-2">
+                                                <button onClick={() => handleRequestAction('approve', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}</button>
+                                                <button onClick={() => handleRequestAction('deny', user._id)} disabled={!!processingActionId} className="p-2 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/30">{processingActionId === user._id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}</button>
+                                            </div>
+                                        </div> ))) : <p className="text-center py-10 text-slate-500">Нет активных заявок.</p>}
+                            </div>)}
+                        {activeTab === 'members' && ( <div className="space-y-4">
+                                {community.members?.length > 0 ? ( community.members.map(member => (
+                                        <div key={member._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                            <Link to={`/profile/${member._id}`} className="flex items-center space-x-3 group">
+                                                <Avatar username={member.username} fullName={member.fullName} avatarUrl={getImageUrl(member.avatar)} />
+                                                <div><div className="flex items-baseline"><p className="font-semibold group-hover:underline">{member.fullName || member.username}</p>{member._id === community.owner._id && <span className="text-xs ml-2 text-blue-500 font-normal">(Владелец)</span>}</div></div>
+                                            </Link>
+                                            {member._id !== community.owner._id && <div className="flex items-center space-x-2">{processingActionId === member._id ? <Loader2 className="animate-spin" /> : <><button onClick={() => handleMemberAction('remove', member)} title="Удалить" className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-600"><UserX size={16} /></button><button onClick={() => handleMemberAction('ban', member)} title="Забанить" className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-600"><Ban size={16} /></button></>}</div>}
+                                        </div> ))) : <p className="text-center py-10 text-slate-500">В сообществе нет участников.</p>}
+                            </div>)}
+                        {activeTab === 'banned' && ( <div className="space-y-4">
+                                {community.bannedUsers?.length > 0 ? ( community.bannedUsers.map(user => (
+                                        <div key={user._id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                            <div className="flex items-center space-x-3">
+                                                <Avatar username={user.username} fullName={user.fullName} avatarUrl={getImageUrl(user.avatar)} />
+                                                <div><p className="font-semibold">{user.fullName || user.username}</p></div>
+                                            </div>
+                                            <div className="flex items-center space-x-2">{processingActionId === user._id ? <Loader2 className="animate-spin" /> : <button onClick={() => handleMemberAction('unban', user)} title="Разбанить" className="p-2 rounded-full text-slate-500 hover:bg-green-100 hover:text-green-600"><UserCheck size={16} /></button>}</div>
+                                        </div> ))) : <p className="text-center py-10 text-slate-500">Черный список пуст.</p>}
+                            </div>)}
+                        {activeTab === 'danger' && (
+                             <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg">
+                                <h3 className="text-xl font-bold text-red-600 dark:text-red-300">Опасная зона</h3>
+                                <p className="mt-2 mb-4 text-sm text-red-700 dark:text-red-200">Удаление сообщества — необратимое действие. Все посты, комментарии и участники будут удалены навсегда.</p>
+                                <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"><Trash2 size={18} /><span>Удалить сообщество</span></button>
+                            </div>
+                        )}
+                    </motion.div>
+                </AnimatePresence>
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
             </div>
         </main>
     );

@@ -138,10 +138,10 @@ const ArtistPage = () => {
                         <div className="flex flex-col space-y-4">
                             <div className="flex items-center space-x-6">
                                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавлен break-words --- */}
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавлен break-words для переноса длинных имён --- */}
                                 <h1 className="text-5xl md:text-7xl font-extrabold break-words" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{artist.name}</h1>
                             </div>
-                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ 2: Добавлен flex-wrap --- */}
+                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ 2: Добавлен flex-wrap для переноса статистики --- */}
                             <div className="flex items-center space-x-4 text-sm font-semibold flex-wrap" style={{ color: textColor }}>
                                 <div className="flex items-center space-x-1.5">
                                     <Users size={16} />
@@ -157,7 +157,8 @@ const ArtistPage = () => {
                 </div>
 
                 <div className="p-6 md:p-8 relative bg-slate-100 dark:bg-slate-900">
-                    <div className="flex items-center space-x-4 mb-8">
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавлен flex-wrap и gap-4 для корректного переноса кнопок --- */}
+                    <div className="flex items-center flex-wrap gap-4 mb-8">
                         <button 
                             onClick={() => handlePlayTopTracks(false)} 
                             className="px-8 py-3 font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform"
