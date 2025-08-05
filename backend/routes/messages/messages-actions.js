@@ -96,26 +96,14 @@ router.delete('/', authMiddleware, async (req, res) => {
         let conversationId = null;
         let wasLastMessage = false;
         const messageUuidsToDelete = [];
-
         for (const messageId of messageIds) {
             const message = await Message.findById(messageId).populate('conversation');
-            if (!message) continue;
-            
+            if (!message) continue;     
             conversationId = message.conversation._id;
             if (message.conversation.lastMessage?.equals(message._id)) {
                 wasLastMessage = true;
             }
-
             if (forEveryone) {
-                const conversation = message.conversation;
-                const requester = await User.findById(userId).select('blacklist');
-                const otherParticipantId = conversation.participants.find(p => !p.equals(userId));
-                const otherParticipant = await User.findById(otherParticipantId).select('blacklist');
-                
-                if (requester.blacklist.some(id => id.equals(otherParticipantId)) || otherParticipant.blacklist.some(id => id.equals(userId))) {
-                     return res.status(403).json({ message: "Невозможно удалить сообщение для всех при активной блокировке." });
-                }
-
                 if (message.sender.equals(userId)) {
                     messageUuidsToDelete.push(message.uuid);
                     await Message.deleteMany({ uuid: message.uuid });
@@ -126,47 +114,38 @@ router.delete('/', authMiddleware, async (req, res) => {
                 await Message.deleteOne({ _id: messageId, owner: userId });
             }
         }
-        
         if(conversationId) {
             const conversation = await Conversation.findById(conversationId);
             let newLastMessage = null;
 
-            if (conversation) {
-                if (wasLastMessage) {
-                    const lastMessageDoc = await Message.findOne({
-                        conversation: conversationId,
-                        owner: userId // Ищем последнее сообщение для текущего пользователя
-                    }).sort({ createdAt: -1 })
-                      .populate('sender', 'username fullName avatar')
-                      .populate('attachedTrack');
-                    
-                    newLastMessage = lastMessageDoc ? lastMessageDoc.toObject() : null;
-
-                    // Обновляем lastMessage для всех участников
-                    await Conversation.updateOne(
-                        { _id: conversationId },
-                        { $set: { lastMessage: lastMessageDoc ? lastMessageDoc._id : null } }
-                    );
-                }
-                
-                const payload = {
-                    conversationId: conversationId.toString(),
-                    messageUuids: forEveryone ? messageUuidsToDelete : null,
-                    messageIds: forEveryone ? null : messageIds,
-                    forEveryone,
-                    newLastMessage // <-- Добавляем новое последнее сообщение
-                };
-                if (!forEveryone) {
-                    payload.deletedBy = userId.toString();
-                }
-
-                 broadcastToUsers(req, conversation.participants, {
-                    type: 'MESSAGES_DELETED',
-                    payload
-                });
+            if (conversation && wasLastMessage) {
+                const lastMessageDoc = await Message.findOne({
+                    conversation: conversationId,
+                    owner: userId 
+                }).sort({ createdAt: -1 })
+                  .populate('sender', 'username fullName avatar')
+                  .populate('attachedTrack');
+                newLastMessage = lastMessageDoc ? lastMessageDoc.toObject() : null;
+                await Conversation.updateOne(
+                    { _id: conversationId },
+                    { $set: { lastMessage: lastMessageDoc ? lastMessageDoc._id : null } }
+                );
             }
+            const payload = {
+                conversationId: conversationId.toString(),
+                messageUuids: forEveryone ? messageUuidsToDelete : null,
+                messageIds: forEveryone ? null : messageIds,
+                forEveryone,
+                newLastMessage
+            };
+            if (!forEveryone) {
+                payload.deletedBy = userId.toString();
+            }
+             broadcastToUsers(req, conversation.participants, {
+                type: 'MESSAGES_DELETED',
+                payload
+            });
         }
-
         res.status(200).json({ message: 'Сообщения удалены' });
     } catch (error) {
         console.error("Delete messages error:", error);

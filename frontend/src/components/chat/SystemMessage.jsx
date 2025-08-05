@@ -1,11 +1,10 @@
 // frontend/src/components/chat/SystemMessage.jsx
 
-import React, { forwardRef } from 'react'; // 1. Импортируем forwardRef
+import React, { forwardRef, useState, useRef } from 'react'; // 1. ИМПОРТИРУЕМ useState и useRef
 import { Pin, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useModal } from '../../hooks/useModal';
 import Tippy from '@tippyjs/react/headless';
 
-// 2. Создаем компонент-обертку, который перенаправляет ref
 const TippyWrapper = forwardRef((props, ref) => {
     return (
         <button ref={ref} {...props}>
@@ -13,11 +12,31 @@ const TippyWrapper = forwardRef((props, ref) => {
         </button>
     );
 });
-TippyWrapper.displayName = 'TippyWrapper'; // Рекомендуется для удобства отладки
+TippyWrapper.displayName = 'TippyWrapper';
 
 const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, selectionMode }) => {
     const { showConfirmation } = useModal();
     const isMenuOpen = openMenuId === message._id;
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const menuButtonRef = useRef(null);
+    const [menuPosition, setMenuPosition] = useState('bottom');
+
+    const handleMenuClick = (e) => {
+        e.stopPropagation();
+        if (menuButtonRef.current) {
+            const rect = menuButtonRef.current.getBoundingClientRect();
+            // Если до низа экрана меньше 150px, открываем вверх
+            if (window.innerHeight - rect.bottom < 150) {
+                setMenuPosition('top');
+            } else {
+                setMenuPosition('bottom');
+            }
+        }
+        onToggleMenu(isMenuOpen ? null : message._id);
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const getIcon = () => {
         const text = message.text.toLowerCase();
@@ -53,7 +72,7 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
     };
 
     return (
-        <div className="flex justify-center my-2">
+        <div className="flex justify-center my-4">
             <div className="relative group inline-flex items-center">
                 <div className="flex items-center text-xs font-semibold text-slate-800 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full px-3 py-1.5 max-w-sm text-center">
                     {getIcon()}
@@ -62,7 +81,8 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
                 {!selectionMode && (
                     <Tippy
                         interactive
-                        placement="bottom-end"
+                        // --- ИСПРАВЛЕНИЕ: Используем динамическую позицию ---
+                        placement={menuPosition === 'bottom' ? 'bottom-end' : 'top-end'}
                         visible={isMenuOpen}
                         onClickOutside={() => onToggleMenu(null)}
                         popperOptions={{ strategy: 'fixed' }}
@@ -78,12 +98,10 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
                             </div>
                         )}
                     >
-                        {/* 3. Используем нашу новую обертку вместо обычной кнопки */}
                         <TippyWrapper 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleMenu(isMenuOpen ? null : message._id);
-                            }}
+                            // --- ИСПРАВЛЕНИЕ: Привязываем ref и новый обработчик ---
+                            ref={menuButtonRef}
+                            onClick={handleMenuClick}
                             className="p-1 ml-1 rounded-full text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-200 dark:hover:bg-slate-700"
                         >
                             <MoreHorizontal size={16}/>

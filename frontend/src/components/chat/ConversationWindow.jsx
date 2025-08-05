@@ -152,7 +152,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isWallpaperModalOpen, setIsWallpaperModalOpen] = useState(false);
     const [wallpaperCssVars, setWallpaperCssVars] = useState({});
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
-
+    const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     
     // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const activeConversationRef = useRef(conversation);
@@ -980,8 +980,11 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         setTimeout(() => { throttleRef.current = false; }, 100);
 
         setOpenMenuId(null);
-
         const container = e.currentTarget;
+        const threshold = 200;
+        const isScrolledUp = container.scrollHeight - container.scrollTop - container.clientHeight > threshold;
+        setShowScrollToBottom(isScrolledUp);
+
         if (dateIndicatorTimeoutRef.current) clearTimeout(dateIndicatorTimeoutRef.current);
         dateIndicatorTimeoutRef.current = setTimeout(() => setShowDateIndicator(false), 1500);
         const dateSeparators = container.querySelectorAll('[data-date-separator]');
@@ -1214,6 +1217,20 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                                     </motion.div>
                                                 </AnimatePresence>
                                             )}
+                                            <AnimatePresence>
+                                                {showScrollToBottom && (
+                                                    <motion.button
+                                                        initial={{ opacity: 0, scale: 0.8 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.8 }}
+                                                        onClick={scrollToBottom}
+                                                        className="absolute bottom-4 right-4 z-10 w-10 h-10 bg-slate-800/80 backdrop-blur-sm text-white rounded-full flex items-center justify-center shadow-lg hover:bg-slate-700 transition-colors"
+                                                        title="Вниз"
+                                                    >
+                                                        <ChevronDown size={24} />
+                                                    </motion.button>
+                                                )}
+                                            </AnimatePresence>
                                             <div data-date={new Date(msg.createdAt).toISOString().split('T')[0]}>
                                                 {msg.type === 'system' ? (
                                                     <SystemMessage
