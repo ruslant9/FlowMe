@@ -8,7 +8,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Avatar from '../components/Avatar';
 import PostCard from '../components/PostCard';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import { useModal } from '../hooks/useModal';
 import CreatePostModal from '../components/modals/CreatePostModal';
 import EditPostModal from '../components/modals/EditPostModal';
