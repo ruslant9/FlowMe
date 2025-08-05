@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack, isHit }) => {
     
@@ -17,6 +17,7 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             ''
         ).trim();
     };
+
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
@@ -40,13 +41,12 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         // Проверяем, валидна ли дата релиза
         if (isNaN(release.getTime())) return null;
 
-        // Нормализуем даты до полуночи по UTC, чтобы игнорировать время и часовые пояса
-        const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        release.setHours(0, 0, 0, 0);
+        // Нормализуем даты до полуночи, чтобы корректно считать дни
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const releaseDay = new Date(release.getFullYear(), release.getMonth(), release.getDate());
 
-        const diffDays = (today.getTime() - release.getTime()) / (1000 * 60 * 60 * 24);
+        const diffTime = today.getTime() - releaseDay.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays >= 0 && diffDays <= 14) {
             return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
@@ -70,7 +70,9 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
     };
 
     const dateBadge = getReleaseBadge(track.releaseDate);
-    const finalBadge = isHit ? { text: 'Хит', color: 'bg-red-500 text-white' } : dateBadge;
+    const finalBadge = isHit 
+        ? { text: 'Хит', color: 'premium-gradient-bg text-white' } 
+        : dateBadge;
 
     return (
         <motion.div
