@@ -4,7 +4,7 @@ import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X, Eye } from 'lucide-react';
 import Slider from 'rc-slider';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 import { Link } from 'react-router-dom';
 
 // Компонент для кешированного изображения
@@ -37,48 +37,52 @@ const NotificationToast = ({ message }) => (
         )}
     </AnimatePresence>
 );
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем openFullScreenPlayer в пропсы ---
+
+const cleanTitle = (title) => {
+    if (!title) return '';
+    return title.replace(
+        /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
+        ''
+    ).trim();
+};
+const formatArtistName = (artistData) => {
+    if (!artistData) return '';
+    if (Array.isArray(artistData)) {
+        return artistData.map((artist, index) => (
+            <React.Fragment key={artist._id || index}>
+                <Link to={`/artist/${artist._id}`} className="hover:underline">
+                    {(artist.name || '').replace(' - Topic', '').trim()}
+                </Link>
+                {index < artistData.length - 1 && ', '}
+            </React.Fragment>
+        ));
+    }
+    if (typeof artistData === 'object' && artistData.name) {
+        return (
+            <Link to={`/artist/${artistData._id}`} className="hover:underline">
+                {artistData.name.replace(' - Topic', '').trim()}
+            </Link>
+        );
+    }
+    return <span>{artistData.toString()}</span>;
+};
+
 const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification, openFullScreenPlayer }) => {
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
     if (!track) {
         return null;
     }
-    const cleanTitle = (title) => {
-        if (!title) return '';
-        return title.replace(
-            /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
-            ''
-        ).trim();
-    };
-    const formatArtistName = (artistData) => {
-        if (!artistData) return '';
-        if (Array.isArray(artistData)) {
-            return artistData.map((artist, index) => (
-                <React.Fragment key={artist._id || index}>
-                    <Link to={`/artist/${artist._id}`} className="hover:underline">
-                        {(artist.name || '').replace(' - Topic', '').trim()}
-                    </Link>
-                    {index < artistData.length - 1 && ', '}
-                </React.Fragment>
-            ));
-        }
-        if (typeof artistData === 'object' && artistData.name) {
-            return (
-                <Link to={`/artist/${artistData._id}`} className="hover:underline">
-                    {artistData.name.replace(' - Topic', '').trim()}
-                </Link>
-            );
-        }
-        return <span>{artistData.toString()}</span>;
-    };
     const currentProgress = progress || 0;
     const totalDuration = duration || 1;
     return (
-        <div className="w-full p-4 flex items-center space-x-4">
-            <div className="flex items-center space-x-4 w-1/4 flex-shrink-0">
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+        <div className="w-full p-2 md:p-4 flex items-center justify-between md:space-x-4 relative">
+            <div className="absolute top-0 left-0 right-0 h-1 md:hidden">
+                <div className="absolute top-0 left-0 h-full bg-slate-300 dark:bg-slate-600 transition-all duration-200" style={{ width: `${buffered * 100}%` }} />
+                <div className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-200" style={{ width: `${(currentProgress / totalDuration) * 100}%` }} />
+            </div>
+
+            <div className="flex items-center space-x-3 md:space-x-4 w-1/2 md:w-1/4 flex-shrink-0">
                 <div 
-                    className="relative w-16 h-16 rounded-md overflow-hidden shadow-md cursor-pointer group flex-shrink-0"
+                    className="relative w-14 h-14 md:w-16 md:h-16 rounded-md overflow-hidden shadow-md cursor-pointer group flex-shrink-0"
                     onClick={openFullScreenPlayer}
                 >
                     <CachedImage
@@ -90,16 +94,15 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
                         <Eye size={24} className="text-white" />
                     </div>
                 </div>
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 <div className="flex flex-col min-w-0 flex-grow">
-                    <p className="font-bold truncate text-lg text-slate-900 dark:text-white">{cleanTitle(track.title)}</p>
-                    <p className="text-sm text-slate-700 dark:text-white/60 truncate">{formatArtistName(track.artist)}</p>
+                    <p className="font-bold truncate text-sm md:text-lg text-slate-900 dark:text-white">{cleanTitle(track.title)}</p>
+                    <div className="text-xs md:text-sm text-slate-700 dark:text-white/60 truncate hidden md:block">{formatArtistName(track.artist)}</div>
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center min-w-0">
+            <div className="hidden md:flex flex-1 flex-col items-center justify-center min-w-0">
                 <div className="flex items-center justify-center space-x-4 mb-2">
-                    <motion.button onClick={onToggleLike} className={`p-2 transition-colors ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60 hover:text-red-400'}`} title="Нравится" whileTap={{ scale: 1.3, transition: { type: 'spring', stiffness: 400, damping: 10 } }}>
+                    <motion.button onClick={() => onToggleLike(track)} className={`p-2 transition-colors ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60 hover:text-red-400'}`} title="Нравится" whileTap={{ scale: 1.3, transition: { type: 'spring', stiffness: 400, damping: 10 } }}>
                         <Heart size={20} fill={isLiked ? 'currentColor' : 'none'}/>
                     </motion.button>
                     
@@ -135,12 +138,22 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
                 </div>
             </div>
 
-            <div className="flex items-center space-x-2 w-48 justify-end">
+            <div className="hidden md:flex items-center space-x-2 w-48 justify-end">
                 <button onClick={() => onSetVolume(volume > 0 ? 0 : 0.5)} className="p-2 text-slate-800 dark:text-white/60 hover:text-blue-500 dark:hover:text-blue-400" title={volume > 0 ? "Выключить звук" : "Включить звук"}>
                     {volume > 0 ? <Volume2 size={20} /> : <VolumeX size={20} />}
                 </button>
                 <Slider min={0} max={1} step={0.01} value={volume} onChange={onSetVolume} className="flex-grow w-24" />
                 <button onClick={stopAndClearPlayer} className="p-2 text-slate-800 dark:text-white/60 hover:text-red-500 dark:hover:text-red-400" title="Закрыть плеер"><X size={24} /></button>
+            </div>
+
+            <div className="flex md:hidden items-center space-x-1">
+                <motion.button onClick={() => onToggleLike(track)} className={`p-2 ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60'}`} whileTap={{ scale: 1.3 }}>
+                    <Heart size={22} fill={isLiked ? 'currentColor' : 'none'}/>
+                </motion.button>
+                <button onClick={onPlayPauseToggle} className="p-2 text-slate-800 dark:text-white">
+                    {isPlaying ? <Pause size={28}/> : <Play size={28}/>}
+                </button>
+                <button onClick={onNext} className="p-2 text-slate-800 dark:text-white"><SkipForward size={22}/></button>
             </div>
         </div>
     );

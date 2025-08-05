@@ -1,9 +1,9 @@
 // frontend/src/pages/CommunityDetailPage.jsx
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import useTitle from '../hooks/useTitle';
-import { Loader2, ArrowLeft, Users, Globe, Lock, Eye, PlusCircle, UserCheck, User as UserIcon } from 'lucide-react';
+import { Loader2, ArrowLeft, Users, Globe, Lock, Eye, PlusCircle, UserCheck, ShieldQuestion } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Avatar from '../components/Avatar';
@@ -12,15 +12,9 @@ import { useUser } from '../context/UserContext';
 import { useModal } from '../hooks/useModal';
 import CreatePostModal from '../components/modals/CreatePostModal';
 import EditPostModal from '../components/modals/EditPostModal';
-import UserListModal from '../components/modals/UserListModal';
 import ImageViewer from '../components/ImageViewer';
-import ProfileCard from '../components/ProfileCard';
 
 const API_URL = import.meta.env.VITE_API_URL;
-
-const topics = [
-    { id: 'General', name: 'Общая' }, { id: 'Gaming', name: 'Игры' }, { id: 'Art', name: 'Искусство' }, { id: 'Technology', name: 'Технологии' }, { id: 'Music', name: 'Музыка' }, { id: 'Sports', name: 'Спорт' }, { id: 'Science', name: 'Наука' }, { id: 'Books', name: 'Книги' }, { id: 'Food', name: 'Еда' }, { id: 'Travel', name: 'Путешествия' }, { id: 'Fashion', name: 'Мода' }, { id: 'Photography', name: 'Фотография' }, { id: 'Health', name: 'Здоровье' }, { id: 'Education', name: 'Образование' }, { id: 'Business', name: 'Бизнес' }, { id: 'Finance', name: 'Финансы' }, { id: 'Nature', name: 'Природа' }, { id: 'Pets', name: 'Питомцы' }, { id: 'DIY', name: 'Сделай сам' }, { id: 'Cars', name: 'Автомобили' }, { id: 'Movies', name: 'Фильмы' }, { id: 'TV Shows', name: 'ТВ-шоу' }, { id: 'Anime & Manga', name: 'Аниме и Манга' }, { id: 'Comics', name: 'Комиксы' }, { id: 'History', name: 'История' }, { id: 'Philosophy', name: 'Философия' }, { id: 'Politics', name: 'Политика' }, { id: 'News', name: 'Новости' }, { id: 'Humor', name: 'Юмор' }, { id: 'Fitness', name: 'Фитнес' }, { id: 'Other', name: 'Другое' },
-];
 
 const pluralizeMembers = (count) => {
     if (!count) count = 0;
@@ -35,6 +29,7 @@ const pluralizeMembers = (count) => {
 
 const CommunityDetailPage = () => {
     const { communityId } = useParams();
+    const navigate = useNavigate();
     const { currentUser } = useUser();
     const { showConfirmation } = useModal();
     const [community, setCommunity] = useState(null);
@@ -43,12 +38,12 @@ const CommunityDetailPage = () => {
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [error, setError] = useState(null);
     const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
-    const [isUserListModalOpen, setIsUserListModalOpen] = useState(false);
-    const [userListModalTitle, setUserListModalTitle] = useState('');
     const [editingPost, setEditingPost] = useState(null);
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-    const [userForModal, setUserForModal] = useState(null);
-    const [listTypeInModal, setListTypeInModal] = useState('community-members');
+    const [imageViewerSource, setImageViewerSource] = useState([]);
+    
+    const mainRef = useRef(null);
+    const [isHeaderShrunk, setIsHeaderShrunk] = useState(false);
 
     useTitle(community ? community.name : 'Сообщество');
 
@@ -101,10 +96,16 @@ const CommunityDetailPage = () => {
         };
 
         window.addEventListener('communityUpdated', handleCommunityUpdate);
-        return () => {
-            window.removeEventListener('communityUpdated', handleCommunityUpdate);
-        };
+        return () => window.removeEventListener('communityUpdated', handleCommunityUpdate);
     }, [communityId, fetchCommunityDetails]);
+
+    useEffect(() => {
+        const mainEl = mainRef.current;
+        if (!mainEl) return;
+        const handleScroll = () => setIsHeaderShrunk(mainEl.scrollTop > 50);
+        mainEl.addEventListener('scroll', handleScroll);
+        return () => mainEl.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleJoinLeaveCommunity = () => {
         if (!community) return;
@@ -144,36 +145,6 @@ const CommunityDetailPage = () => {
         }
     };
 
-    const canShowAdmin = () => {
-        if (!community || !community.owner) return false;
-        if (community.isOwner) return true;
-        if (community.adminVisibility === 'everyone') return true;
-        if (community.adminVisibility === 'members_only' && community.isMember) return true;
-        return false;
-    };
-
-    const canShowMembers = () => {
-        if (!community) return false;
-        if (community.isOwner) return true;
-        if (community.memberListVisibility === 'everyone') return true;
-        if (community.memberListVisibility === 'members_only' && community.isMember) return true;
-        return false;
-    };
-    
-    const handleShowMembers = () => {
-        if (!community) return;
-        
-        setUserForModal(community);
-        setUserListModalTitle(`Участники: ${community.name}`);
-
-        if (!canShowMembers()) {
-            setListTypeInModal('community-members-denied');
-        } else {
-            setListTypeInModal('community-members');
-        }
-        setIsUserListModalOpen(true);
-    };
-
     const handlePostUpdateInPlace = (postId, updatedData) => {
         setCommunityPosts(prevPosts => {
             const newPosts = prevPosts.map(p => (p._id === postId ? { ...p, ...updatedData } : p));
@@ -192,190 +163,118 @@ const CommunityDetailPage = () => {
         setCommunityPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
     };
 
-    const getTranslatedTopic = (topicId) => {
-        const topic = topics.find(t => t.id === topicId);
-        return topic ? topic.name : topicId;
-    };
-
-    const renderPostsSection = () => {
-        if (!community) return null;
-    
-        const canInteract = community.isMember || (community.visibility === 'public' && community.joinPolicy === 'open');
-        const canComment = canInteract && (community.postingPolicy === 'everyone' || community.isOwner);
-    
-        if (community.isBanned) {
-            return (
-                <div className="ios-glass-final rounded-3xl p-10 text-center text-red-500 dark:text-red-400">
-                    <h3 className="text-xl font-semibold mb-2">Доступ запрещен</h3>
-                    <p>Вы заблокированы в этом сообществе и не можете просматривать его контент.</p>
-                </div>
-            );
-        }
-    
-        if (!community.isMember && !(community.visibility === 'public' && community.joinPolicy === 'open')) {
-            return (
-                <div className="ios-glass-final rounded-3xl p-10 text-center text-slate-500 dark:text-white/60">
-                    <h3 className="text-xl font-semibold mb-2">Контент для участников</h3>
-                    <p>Вступите в сообщество, чтобы просматривать и комментировать посты.</p>
-                </div>
-            );
-        }
-        
-        if (loadingPosts) {
-            return (
-                <div className="flex justify-center items-center py-20">
-                    <Loader2 className="w-10 h-10 animate-spin text-slate-400" />
-                </div>
-            );
-        }
-    
-        if (communityPosts.length === 0) {
-            return (
-                <div className="ios-glass-final rounded-3xl p-10 text-center text-slate-500 dark:text-white/60">
-                    <h3 className="text-xl font-semibold mb-2">Постов пока нет.</h3>
-                    <p>Будьте первым, кто опубликует что-нибудь в этом сообществе!</p>
-                </div>
-            );
-        }
-    
-        return communityPosts.map(post => (
-            <PostCard
-                key={post._id}
-                post={post}
-                onPostDelete={handlePostDeleteInPlace}
-                onPostUpdate={handlePostUpdateInPlace}
-                currentUser={currentUser}
-                isCommunityOwner={community.isOwner}
-                onPinPost={handlePinPost}
-                onEditRequest={setEditingPost}
-                canInteract={canInteract}
-                canComment={canComment}
-            />
-        ));
+    const renderVisibilityIcon = (visibility) => {
+        if (visibility === 'private') return <Lock size={16} title="Приватное сообщество"/>;
+        if (visibility === 'secret') return <Eye size={16} title="Секретное сообщество"/>;
+        return <Globe size={16} title="Публичное сообщество"/>;
     };
 
     if (loadingCommunity) {
-        return (
-            <main className="flex-1 p-4 md:p-8">
-                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto text-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-slate-400 mx-auto mb-4" />
-                    <p className="text-lg">Загрузка сообщества...</p>
-                </div>
-            </main>
-        );
+        return <main className="flex-1 p-8 flex justify-center items-center"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></main>;
     }
     
     if (error) {
-        return (
-            <main className="flex-1 p-4 md:p-8">
-                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto text-center text-red-500 dark:text-red-400">
-                    <p className="text-xl font-bold mb-4">Ошибка загрузки</p>
-                    <p className="mb-6">{error}</p>
-                    <Link to="/communities" className="text-blue-500 hover:underline flex items-center justify-center">
-                        <ArrowLeft size={16} className="mr-2" /> Вернуться к сообществам
-                    </Link>
-                </div>
-            </main>
-        );
+        return <main className="flex-1 p-8 text-center text-red-500 dark:text-red-400">{error}</main>;
     }
 
     if (!community) {
-        return (
-            <main className="flex-1 p-4 md:p-8">
-                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto text-center text-slate-500 dark:text-white/60">
-                    <p className="text-xl font-bold mb-4">Сообщество не найдено</p>
-                    <p className="mb-6">Возможно, оно было удалено или у вас нет доступа.</p>
-                    <Link to="/communities" className="text-blue-500 hover:underline flex items-center justify-center">
-                        <ArrowLeft size={16} className="mr-2" /> Вернуться к сообществам
-                    </Link>
-                </div>
-            </main>
-        );
+        return <main className="flex-1 p-8 text-center text-slate-500 dark:text-white/60">Сообщество не найдено.</main>;
     }
 
-    const renderVisibilityIcon = (visibility) => {
-        if (visibility === 'private') return <Lock size={16} className="text-slate-500" title="Приватное сообщество"/>;
-        if (visibility === 'secret') return <Eye size={16} className="text-red-500" title="Секретное сообщество"/>;
-        return <Globe size={16} className="text-green-500" title="Публичное сообщество"/>;
-    };
-
-    const renderJoinPolicyText = (policy) => {
-        switch (policy) {
-            case 'open': return 'Открытое';
-            case 'approval_required': return 'По заявке';
-            case 'invite_only': return 'По приглашению';
-            default: return '';
-        }
-    };
-
+    const canPost = community.isMember && (community.postingPolicy === 'everyone' || community.isOwner);
+    const canViewContent = community.isMember || community.visibility === 'public';
+    
     return (
         <>
-            <UserListModal 
-                isOpen={isUserListModalOpen} 
-                onClose={() => setIsUserListModalOpen(false)} 
-                initialTitle={userListModalTitle}
-                user={userForModal}
-                listType={listTypeInModal}
-            />
             <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => { setIsCreatePostModalOpen(false); fetchCommunityPosts(); }} communityId={community._id} />
-            <EditPostModal 
-                isOpen={!!editingPost}
-                post={editingPost}
-                onClose={() => {
-                    setEditingPost(null);
-                    fetchCommunityPosts();
-                }}
-            />
-            {isImageViewerOpen && community?.avatar && (
-                <ImageViewer images={[community.avatar]} startIndex={0} onClose={() => setIsImageViewerOpen(false)} />
-            )}
+            <EditPostModal isOpen={!!editingPost} post={editingPost} onClose={() => { setEditingPost(null); fetchCommunityPosts(); }} />
+            {isImageViewerOpen && <ImageViewer images={imageViewerSource} startIndex={0} onClose={() => setIsImageViewerOpen(false)} />}
 
-            <main className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                <div className="lg:col-span-1 flex flex-col gap-6">
-                    <ProfileCard icon={UserIcon} title="Сообщество" noHeaderMargin>
-                         <div className="text-center pt-4 pb-6">
-                            <div className="relative group flex-shrink-0 mx-auto mb-4 w-24 h-24">
-                                <Avatar username={community.name} avatarUrl={community.avatar} size="xl" onClick={() => community.avatar && setIsImageViewerOpen(true)} />
+            <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
+                <div className="relative">
+                    <div className="h-64 md:h-80 bg-slate-300 dark:bg-slate-700 relative">
+                        {community.coverImage && (
+                            <img src={community.coverImage} alt="" className="w-full h-full object-cover"/>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
+                    </div>
+                    <div className="p-4 md:p-8 pt-0">
+                        <div className="flex flex-col md:flex-row items-center md:items-end -mt-16 md:-mt-20 relative z-10">
+                            <div 
+                                onClick={() => community.avatar && (setImageViewerSource([community.avatar]), setIsImageViewerOpen(true))}
+                                className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 bg-slate-200 dark:bg-slate-700 flex-shrink-0 cursor-pointer"
+                            >
+                                <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
                             </div>
-                            <h2 className="text-2xl font-bold">{community.name}</h2>
-                            <p className="text-slate-500 dark:text-white/60">Тематика: {getTranslatedTopic(community.topic)}</p>
-                            <div className="flex items-center justify-center flex-wrap gap-x-3 gap-y-1 mt-2 text-sm text-slate-500 dark:text-white/50">
-                                <span className="flex items-center space-x-1">{renderVisibilityIcon(community.visibility)}<span>{community.visibility === 'public' ? 'Публичное' : community.visibility === 'private' ? 'Приватное' : 'Секретное'}</span></span>
-                                
-                                <button onClick={handleShowMembers} className="flex items-center space-x-1 hover:underline">
-                                    <Users size={16} />
-                                    <span>{pluralizeMembers(community.memberCount || 0)}</span>
-                                </button>
-
-                                <span className="flex items-center space-x-1"><UserCheck size={16} /><span>Вступление: {renderJoinPolicyText(community.joinPolicy)}</span></span>
-                            </div>
-                            <p className="mt-4 text-slate-600 dark:text-white/80 whitespace-pre-wrap">{community.description || 'Нет описания.'}</p>
-                             <div className="mt-4 flex justify-center">
-                                {community.isOwner ? ( <Link to={`/communities/${community._id}/manage`} className="flex items-center bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-semibold"><UserCheck size={18} className="mr-2" /> Управление</Link> ) : community.isMember ? ( <button onClick={handleJoinLeaveCommunity} className="flex items-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-semibold"><Users size={18} className="mr-2" /> Покинуть</button> ) : community.isPending ? ( <span className="flex items-center bg-slate-400 text-white px-4 py-2 rounded-lg text-sm font-semibold opacity-70"><Loader2 size={18} className="mr-2 animate-spin" /> В ожидании</span> ) : community.joinPolicy === 'open' ? ( <button onClick={handleJoinLeaveCommunity} className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-semibold"><Users size={18} className="mr-2" /> Вступить</button> ) : community.joinPolicy === 'approval_required' ? ( <button onClick={handleJoinLeaveCommunity} className="flex items-center bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-semibold"><UserCheck size={18} className="mr-2" /> Запросить</button> ) : ( <span className="flex items-center bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/70 px-4 py-2 rounded-lg text-sm font-semibold"><Lock size={18} className="mr-2" /> По приглашению</span> )}
-                            </div>
-                        </div>
-                    </ProfileCard>
-                    
-                    {canShowAdmin() && (
-                        <ProfileCard icon={UserIcon} title="Администратор">
-                            <Link to={`/profile/${community.owner._id}`} className="flex items-center space-x-3 group p-2 -m-2 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-700/50">
-                                <Avatar username={community.owner.username} fullName={community.owner.fullName} avatarUrl={community.owner.avatar} size="md" />
-                                <div>
-                                    <p className="font-bold group-hover:underline">{community.owner.fullName || community.owner.username}</p>
-                                    <p className="text-sm text-slate-500 dark:text-white/60">@{community.owner.username}</p>
+                            <div className="md:ml-6 mt-4 md:mt-0 flex-1 min-w-0 text-center md:text-left">
+                                <h1 className="text-3xl md:text-4xl font-bold truncate">{community.name}</h1>
+                                <div className="flex items-center justify-center md:justify-start space-x-3 text-sm text-slate-500 dark:text-white/60 mt-2">
+                                    <div className="flex items-center space-x-1">{renderVisibilityIcon(community.visibility)} <span>{pluralizeMembers(community.memberCount)}</span></div>
+                                    <span className="opacity-50">•</span>
+                                    <span>{community.topic}</span>
                                 </div>
-                            </Link>
-                        </ProfileCard>
-                    )}
-                </div>
-
-                <div className="lg:col-span-2 flex flex-col">
-                     <div className="ios-glass-final rounded-3xl p-6 w-full space-y-6">
-                        <div className="relative">
-                            <h2 className="text-2xl font-bold">Посты сообщества</h2>
-                            {(community.isMember || community.isOwner) && (community.postingPolicy === 'everyone' || community.isOwner) && ( <button onClick={() => setIsCreatePostModalOpen(true)} className="absolute top-1/2 -translate-y-1/2 right-0 flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-2 rounded-lg transition-colors"><PlusCircle size={18} /> <span>Новый пост</span></button> )}
+                            </div>
+                            <div className="flex items-center space-x-2 mt-4 md:mt-0 flex-shrink-0">
+                                {community.isOwner ? (
+                                    <Link to={`/communities/${community._id}/manage`} className="px-4 py-2 text-sm font-semibold rounded-lg bg-green-500 text-white hover:bg-green-600 flex items-center space-x-2"><ShieldQuestion size={18} /><span>Управление</span></Link>
+                                ) : community.isMember ? (
+                                    <button onClick={handleJoinLeaveCommunity} className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center space-x-2"><Users size={18} /><span>Покинуть</span></button>
+                                ) : community.isPending ? (
+                                    <span className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-400 text-white flex items-center space-x-2 opacity-70"><Loader2 size={18} className="animate-spin" /><span>В ожидании</span></span>
+                                ) : community.joinPolicy === 'open' ? (
+                                    <button onClick={handleJoinLeaveCommunity} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 flex items-center space-x-2"><Users size={18} /><span>Вступить</span></button>
+                                ) : community.joinPolicy === 'approval_required' ? (
+                                    <button onClick={handleJoinLeaveCommunity} className="px-4 py-2 text-sm font-semibold rounded-lg bg-orange-500 text-white hover:bg-orange-600 flex items-center space-x-2"><UserCheck size={18} /><span>Запросить</span></button>
+                                ) : (
+                                    <span className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/70 flex items-center space-x-2"><Lock size={18} /><span>По приглашению</span></span>
+                                )}
+                            </div>
                         </div>
-                        {renderPostsSection()}
+
+                        {community.description && (
+                            <p className="mt-6 text-slate-600 dark:text-white/80 max-w-3xl mx-auto text-center">{community.description}</p>
+                        )}
+
+                        <div className="mt-8 max-w-2xl mx-auto w-full">
+                            {canPost && (
+                                <div className="mb-6 flex items-center space-x-4 p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
+                                    <Avatar username={currentUser.username} avatarUrl={currentUser.avatar} size="md"/>
+                                    <button onClick={() => setIsCreatePostModalOpen(true)} className="flex-1 text-left text-slate-500 dark:text-white/60 hover:text-slate-700 dark:hover:text-white">
+                                        Создать новый пост...
+                                    </button>
+                                    <button onClick={() => setIsCreatePostModalOpen(true)} className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600"><PlusCircle size={18}/></button>
+                                </div>
+                            )}
+
+                            {loadingPosts ? (
+                                <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+                            ) : canViewContent ? (
+                                communityPosts.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {communityPosts.map(post => (
+                                            <PostCard
+                                                key={post._id}
+                                                post={post}
+                                                onPostDelete={handlePostDeleteInPlace}
+                                                onPostUpdate={handlePostUpdateInPlace}
+                                                currentUser={currentUser}
+                                                isCommunityOwner={community.isOwner}
+                                                onPinPost={handlePinPost}
+                                                onEditRequest={setEditingPost}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-10 text-slate-500 dark:text-white/60">
+                                        <p>В этом сообществе пока нет постов.</p>
+                                    </div>
+                                )
+                            ) : (
+                                <div className="text-center py-10 text-slate-500 dark:text-white/60">
+                                    <p>Вступите в сообщество, чтобы видеть его контент.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </main>

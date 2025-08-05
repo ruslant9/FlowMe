@@ -8,7 +8,6 @@ import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
 import { useUser } from '../../context/UserContext';
 
-// --- ИЗМЕНЕНИЕ: Добавляем onOpenPremiumModal и onOptimisticPinUpdate в список пропсов ---
 const ChatList = ({ activeConversations, archivedConversations, onSelectConversation, activeConversationId, loading, searchQuery, setSearchQuery, onUpdateList, typingStatuses, unreadArchivedCount, onDeleteRequest, pinnedCount, pinLimit, onOpenPremiumModal, onOptimisticPinUpdate }) => {
     const [showArchived, setShowArchived] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null);
@@ -60,7 +59,6 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
                                     isPinned={conv.isPinned}
                                     pinnedCount={pinnedCount}
                                     pinLimit={pinLimit}
-                                    // --- ИЗМЕНЕНИЕ: Пробрасываем новые пропсы ---
                                     onOpenPremiumModal={onOpenPremiumModal}
                                     onOptimisticUpdate={onOptimisticPinUpdate}
                                 />
@@ -84,7 +82,6 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
                         isPinned={conv.isPinned}
                         pinnedCount={pinnedCount}
                         pinLimit={pinLimit}
-                        // --- ИЗМЕНЕНИЕ: Пробрасываем новые пропсы ---
                         onOpenPremiumModal={onOpenPremiumModal}
                         onOptimisticUpdate={onOptimisticPinUpdate}
                     />

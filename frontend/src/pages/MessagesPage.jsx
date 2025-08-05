@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import { useUser } from '../context/UserContext';
 import { AnimatePresence } from 'framer-motion';
 import DeletionTimerToast from '../components/chat/DeletionTimerToast';
-import PremiumRequiredModal from '../components/modals/PremiumRequiredModal'; // --- ИЗМЕНЕНИЕ: Импортируем модальное окно ---
+import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -33,10 +33,7 @@ const MessagesPage = () => {
     const [pendingDeletion, setPendingDeletion] = useState(null);
     const deletionTimerRef = useRef(null);
     const countdownIntervalRef = useRef(null);
-
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем состояние для Premium модального окна ---
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const conversationsRef = useRef(conversations);
     useEffect(() => {
@@ -66,7 +63,7 @@ const MessagesPage = () => {
                     newList = [updatedConv, ...prev];
                 }
                 newList.sort((a, b) => {
-                    if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1; // --- ИСПРАВЛЕНИЕ: Добавлена сортировка по пинам ---
+                    if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
                     if (a.isSavedMessages) return -1;
                     if (b.isSavedMessages) return 1;
                     return new Date(b.lastMessage?.createdAt || b.updatedAt || 0) - new Date(a.lastMessage?.createdAt || a.updatedAt || 0)
@@ -276,7 +273,6 @@ const MessagesPage = () => {
         }, 5000);
     }, [performChatDeletion]);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Новая функция для оптимистичного обновления UI ---
     const handleOptimisticPinUpdate = useCallback((updatedConv) => {
         setConversations(prev => {
             const newList = prev.map(c => c._id === updatedConv._id ? updatedConv : c);
@@ -292,7 +288,6 @@ const MessagesPage = () => {
             return newList;
         });
     }, []);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const filteredConversations = conversations.filter(conv => {
         const lowerCaseQuery = searchQuery.toLowerCase();
@@ -320,12 +315,10 @@ const MessagesPage = () => {
 
     return (
         <div className="flex h-full relative">
-             {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Рендерим модальное окно --- */}
             <PremiumRequiredModal 
                 isOpen={isPremiumModalOpen} 
                 onClose={() => setIsPremiumModalOpen(false)} 
             />
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
             <div className={`
                 ${activeConversation ? 'hidden md:flex' : 'flex'}
                 w-full md:w-[380px] flex-col flex-shrink-0 border-r border-slate-300 dark:border-slate-700/50
@@ -344,10 +337,8 @@ const MessagesPage = () => {
                     onDeleteRequest={handleDeleteRequest}
                     pinnedCount={pinnedCount}
                     pinLimit={pinLimit}
-                    // --- НАЧАЛО ИЗМЕНЕНИЯ: Передаем новые пропсы ---
                     onOpenPremiumModal={() => setIsPremiumModalOpen(true)}
                     onOptimisticPinUpdate={handleOptimisticPinUpdate}
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                 />
             </div>
             <div className={`

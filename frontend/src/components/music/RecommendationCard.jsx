@@ -36,11 +36,17 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
 
         const now = new Date();
         const release = new Date(releaseDate);
-        
-        const diffTime = now.getTime() - release.getTime();
-        const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
-        if (diffDays <= 14 && diffDays >= 0) {
+        // Проверяем, валидна ли дата релиза
+        if (isNaN(release.getTime())) return null;
+
+        // Нормализуем даты до полуночи по UTC, чтобы игнорировать время и часовые пояса
+        const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+        const utcRelease = Date.UTC(release.getUTCFullYear(), release.getUTCMonth(), release.getUTCDate());
+
+        const diffDays = (utcNow - utcRelease) / (1000 * 60 * 60 * 24);
+
+        if (diffDays >= 0 && diffDays <= 14) {
             return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
         }
 

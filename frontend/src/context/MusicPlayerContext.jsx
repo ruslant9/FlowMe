@@ -42,6 +42,22 @@ export const MusicPlayerProvider = ({ children }) => {
     const notificationTimeoutRef = useRef(null);
     const currentObjectUrlRef = useRef(null);
 
+    const cleanTitle = (title) => {
+        if (!title) return '';
+        return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
+    };
+
+    const formatArtistNameString = (artistData) => {
+        if (!artistData) return '';
+        if (Array.isArray(artistData)) {
+            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
+        }
+        if (typeof artistData === 'object' && artistData.name) {
+            return artistData.name.replace(' - Topic', '').trim();
+        }
+        return artistData.toString();
+    };
+
     const logMusicAction = useCallback(async (track, action) => {
         try {
             const token = localStorage.getItem('token');
@@ -106,7 +122,6 @@ export const MusicPlayerProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             const audio = audioRef.current;
             
-            // Всегда запрашиваем URL для стриминга. Браузер сам кэширует ответ.
             const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
                 headers: { Authorization: `Bearer ${token}` },
                 signal: abortControllerRef.current.signal
@@ -121,7 +136,6 @@ export const MusicPlayerProvider = ({ children }) => {
             await audio.play();
             setIsPlaying(true);
             
-            // Отправляем запрос на логирование прослушивания в фоне
             axios.post(`${API_URL}/api/music/track/${trackData._id}/log-play`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             }).catch(e => console.error("Не удалось залогировать прослушивание", e));
@@ -209,6 +223,56 @@ export const MusicPlayerProvider = ({ children }) => {
             audio.removeEventListener('progress', handleProgress);
         };
     }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
+
+    useEffect(() => {
+        const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+        if (!link.parentElement) {
+            link.rel = 'icon';
+            document.head.appendChild(link);
+        }
+
+        if (currentTrack && currentTrack.albumArtUrl) {
+            link.href = currentTrack.albumArtUrl;
+
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: cleanTitle(currentTrack.title),
+                    artist: formatArtistNameString(currentTrack.artist),
+                    album: currentTrack.album?.title || '',
+                    artwork: [{ src: currentTrack.albumArtUrl, sizes: '512x512', type: 'image/png' }]
+                });
+
+                navigator.mediaSession.setActionHandler('play', () => togglePlayPause());
+                navigator.mediaSession.setActionHandler('pause', () => togglePlayPause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
+                navigator.mediaSession.setActionHandler('nexttrack', () => handleNextTrack());
+
+                const updatePositionState = () => {
+                    if (navigator.mediaSession.metadata) {
+                        navigator.mediaSession.setPositionState({
+                            duration: duration || 0,
+                            playbackRate: audioRef.current.playbackRate,
+                            position: progress || 0,
+                        });
+                    }
+                };
+                const positionInterval = setInterval(updatePositionState, 1000);
+                return () => clearInterval(positionInterval);
+            }
+        } else {
+            link.href = '/favicon.svg';
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = null;
+                navigator.mediaSession.playbackState = 'none';
+                navigator.mediaSession.setActionHandler('play', null);
+                navigator.mediaSession.setActionHandler('pause', null);
+                navigator.mediaSession.setActionHandler('previoustrack', null);
+                navigator.mediaSession.setActionHandler('nexttrack', null);
+            }
+        }
+    }, [currentTrack, progress, duration, togglePlayPause, prevTrack, handleNextTrack]);
+    
+    useEffect(() => { if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } }, [isPlaying]);
 
     const togglePlayPause = useCallback(() => {
         if (!currentTrack) return;

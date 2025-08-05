@@ -19,7 +19,6 @@ const TippyWrapper = forwardRef((props, ref) => {
 });
 TippyWrapper.displayName = 'TippyWrapper';
 
-// --- ИЗМЕНЕНИЕ: Добавляем onOpenPremiumModal и onOptimisticUpdate в пропсы ---
 const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDeleteRequest, isPinned, pinnedCount, pinLimit, onOpenPremiumModal, onOptimisticUpdate }) => {
     const interlocutor = conversation.interlocutor;
     const lastMessage = conversation.lastMessage;
@@ -114,7 +113,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
         }
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Полностью переработанная функция ---
     const handlePinToggle = async (e) => {
         e.stopPropagation();
         setIsMenuVisible(false);
@@ -147,7 +145,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
             onOptimisticUpdate(originalConversation);
         }
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const handleDeleteClick = (e) => {
         e.stopPropagation();
@@ -389,14 +386,12 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                                     {conversation.isMuted ? <Bell size={14} /> : <BellOff size={14} />}
                                     <span>{conversation.isMuted ? 'Включить увед.' : 'Отключить увед.'}</span>
                                 </button>
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем условие !isSavedMessages --- */}
                                 {!isSavedMessages && (
                                     <button onClick={handlePinToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                                         <Pin size={14}/>
                                         <span>{isPinned ? 'Открепить' : 'Закрепить'}</span>
                                     </button>
                                 )}
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 {!isSavedMessages && (
                                     <button onClick={handleArchiveToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                                         {conversation.isArchived ? <ArchiveRestore size={14} /> : <Archive size={14} />}

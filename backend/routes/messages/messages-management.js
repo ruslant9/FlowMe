@@ -40,23 +40,14 @@ const createAndBroadcastSystemMessage = async (req, conversation, text) => {
     conversation.lastMessage = newSystemMessage._id;
     await conversation.save();
 
-    const payloadForBroadcast = {
-        _id: newSystemMessage._id,
-        uuid: systemMessageUuid,
-        conversation: conversation._id,
-        text: sanitizedText,
-        type: 'system',
-        createdAt: newSystemMessage.createdAt,
-        conversationParticipants: conversation.participants 
-    };
+    const payloadForBroadcast = newSystemMessage.toObject();
+    payloadForBroadcast.conversationParticipants = conversation.participants;
     
     broadcastToUsers(req, conversation.participants, {
         type: 'NEW_MESSAGE',
         payload: payloadForBroadcast
     });
 };
-
-// ... (роуты /pin, /mute, /archive без изменений)
 
 router.post('/:conversationId/pin/:messageId', authMiddleware, async (req, res) => {
     try {
@@ -139,11 +130,22 @@ router.post('/:conversationId/archive', authMiddleware, async (req, res) => {
         const conversation = await Conversation.findOne({ _id: conversationId, participants: userId });
         if (!conversation) return res.status(404).json({ message: "Диалог не найден." });
         const isArchived = conversation.archivedBy.includes(userId);
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         if (isArchived) {
+            // Если чат уже в архиве, просто убираем его оттуда
             await Conversation.updateOne({ _id: conversationId }, { $pull: { archivedBy: userId } });
         } else {
-            await Conversation.updateOne({ _id: conversationId }, { $addToSet: { archivedBy: userId } });
+            // Если чат не в архиве, добавляем его в архив И УБИРАЕМ ИЗ ЗАКРЕПЛЕННЫХ
+            await Conversation.updateOne(
+                { _id: conversationId },
+                { 
+                    $addToSet: { archivedBy: userId },
+                    $pull: { pinnedBy: userId } // <-- Вот ключевое исправление
+                }
+            );
         }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         
         const updatedConv = await getPopulatedConversation(conversation._id, userId);
         broadcastToUsers(req, [userId], {
@@ -184,12 +186,10 @@ router.post('/:conversationId/wallpaper', authMiddleware, async (req, res) => {
 
         if (shouldSendSystemMessage) {
             const systemMessageUuid = crypto.randomUUID();
-            // --- ИЗМЕНЕНИЕ: Очищаем имя обоев перед вставкой в системное сообщение ---
             const sanitizedName = sanitize(name);
             const systemMessageText = sanitizedName 
                 ? `${user.fullName || user.username} установил(а) обои «${sanitizedName}».`
                 : `${user.fullName || user.username} изменил(а) обои в этом чате.`;
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
             const systemMessageDocs = conversation.participants.map(participantId => ({
                 conversation: conversation._id,
