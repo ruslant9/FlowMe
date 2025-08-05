@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { AudioCache } from '../utils/AudioCacheService';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -35,9 +34,7 @@ export const MusicPlayerProvider = ({ children }) => {
     const [playerNotification, setPlayerNotification] = useState(null);
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЙ: Убираем isLoadingPlayback и добавляем AbortController ---
     const abortControllerRef = useRef(null); 
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
@@ -88,12 +85,10 @@ export const MusicPlayerProvider = ({ children }) => {
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
         
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Отменяем предыдущий запрос, если он есть ---
         if (abortControllerRef.current) {
             abortControllerRef.current.abort('New track selected');
         }
         abortControllerRef.current = new AbortController();
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
@@ -111,41 +106,22 @@ export const MusicPlayerProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             const audio = audioRef.current;
             
-            const cachedBlob = await AudioCache.getAudio(trackData._id);
+            // Всегда запрашиваем URL для стриминга. Браузер сам кэширует ответ.
+            const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
+                headers: { Authorization: `Bearer ${token}` },
+                signal: abortControllerRef.current.signal
+            });
 
-            if (cachedBlob) {
-                const audioUrl = URL.createObjectURL(cachedBlob);
-                currentObjectUrlRef.current = audioUrl;
-                audio.src = audioUrl;
-            } else {
-                const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    signal: abortControllerRef.current.signal
-                });
+            const streamUrl = res.data.url;
+            if (!streamUrl) throw new Error("Stream URL not found.");
 
-                const streamUrl = res.data.url;
-                if (!streamUrl) throw new Error("Stream URL not found.");
-
-                audio.src = streamUrl;
-
-                const cacheAudioInBackground = async () => {
-                    audio.removeEventListener('canplay', cacheAudioInBackground);
-                    try {
-                        const audioResponse = await fetch(streamUrl);
-                        if (!audioResponse.ok) throw new Error('Failed to fetch audio for caching');
-                        const audioBlob = await audioResponse.blob();
-                        await AudioCache.setAudio(trackData._id, audioBlob);
-                    } catch (cacheError) {
-                        console.error(`Failed to cache track ${trackData._id}:`, cacheError);
-                    }
-                };
-                audio.addEventListener('canplay', cacheAudioInBackground, { once: true });
-            }
+            audio.src = streamUrl;
             
             audio.volume = volume;
             await audio.play();
             setIsPlaying(true);
             
+            // Отправляем запрос на логирование прослушивания в фоне
             axios.post(`${API_URL}/api/music/track/${trackData._id}/log-play`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             }).catch(e => console.error("Не удалось залогировать прослушивание", e));
@@ -170,14 +146,12 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsShuffle(startShuffled);
             setIsRepeat(startRepeat);
         } catch (error) {
-            // --- НАЧАЛО ИЗМЕНЕНИЙ: Обрабатываем ошибку отмены, чтобы не показывать ее пользователю ---
             if (axios.isCancel(error)) {
                 console.log("Загрузка предыдущего трека отменена.");
             } else {
                 toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
                 setCurrentTrack(null);
             }
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
         } finally {
             setLoadingTrackId(null);
             abortControllerRef.current = null;
