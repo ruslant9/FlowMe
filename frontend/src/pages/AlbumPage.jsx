@@ -33,10 +33,8 @@ const AlbumPage = () => {
     const [loadingRecs, setLoadingRecs] = useState(false);
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds, loadingTrackId, togglePlayPause } = useMusicPlayer();
     
-    // --- НАЧАЛО ИЗМЕНЕНИЙ ---
     const [isScrolled, setIsScrolled] = useState(false);
     const mainRef = useRef(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const fetchAlbum = useCallback(async () => {
         setLoading(true);
@@ -68,7 +66,6 @@ const AlbumPage = () => {
         fetchAlbum();
     }, [fetchAlbum]);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем отслеживание скролла для эффекта "залипания" шапки ---
     useEffect(() => {
         const mainEl = mainRef.current;
         if (!mainEl) return;
@@ -80,7 +77,6 @@ const AlbumPage = () => {
             mainEl.removeEventListener('scroll', handleScroll);
         };
     }, []);
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     useTitle(album ? `${album.title} - ${album.artist.name}` : 'Альбом');
 
@@ -104,27 +100,24 @@ const AlbumPage = () => {
     const totalMinutes = Math.floor(totalDurationMs / 60000);
 
     return (
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
-            {/* Новая "липкая" шапка */}
             <div 
-                className="sticky top-0 z-20 p-6 md:p-8 pt-20 pb-10 text-white min-h-[350px] flex flex-col justify-end transition-all duration-300"
+                className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[350px] flex flex-col justify-end transition-all duration-300"
                 style={{ backgroundImage: gradient }}
             >
-                {/* Эффект размытия при скролле */}
                 <div 
                     className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
                 />
+                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: меняем top-10 на top-6 --- */}
                 <button 
                     onClick={() => navigate(-1)} 
-                    className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
+                    className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
                     style={{ color: dominantColor }}
                 >
                     <ArrowLeft size={16} strokeWidth={2.5} />
                     <span>Назад</span>
                 </button>
                 
-                {/* Основная информация в шапке */}
                 <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
                     <div className="w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl">
                         <CachedImage src={album.coverArtUrl} alt={album.title} />
@@ -154,7 +147,6 @@ const AlbumPage = () => {
                 </div>
             </div>
 
-            {/* Контент страницы */}
             <div className="p-6 md:p-8 relative bg-slate-100 dark:bg-slate-900">
                 <div className="flex items-center space-x-4 mb-8">
                     <button 
@@ -215,7 +207,6 @@ const AlbumPage = () => {
                 )}
             </div>
         </main>
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     );
 };
 

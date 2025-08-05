@@ -45,10 +45,8 @@ const SinglePage = () => {
     const [loadingRecs, setLoadingRecs] = useState(false);
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds, loadingTrackId, togglePlayPause } = useMusicPlayer();
     
-    // --- НАЧАЛО ИЗМЕНЕНИЙ ---
     const [isScrolled, setIsScrolled] = useState(false);
     const mainRef = useRef(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const fetchTrack = useCallback(async () => {
         setLoading(true);
@@ -80,7 +78,6 @@ const SinglePage = () => {
         fetchTrack();
     }, [fetchTrack]);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем отслеживание скролла ---
     useEffect(() => {
         const mainEl = mainRef.current;
         if (!mainEl) return;
@@ -92,7 +89,6 @@ const SinglePage = () => {
             mainEl.removeEventListener('scroll', handleScroll);
         };
     }, []);
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const primaryArtist = track?.artist?.[0];
 
@@ -113,7 +109,6 @@ const SinglePage = () => {
     const totalMinutes = Math.floor((track.durationMs || 0) / 60000);
 
     return (
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
             <div 
                 className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[350px] flex flex-col justify-end transition-all duration-300"
@@ -122,9 +117,10 @@ const SinglePage = () => {
                 <div 
                     className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
                 />
+                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: меняем top-10 на top-6 --- */}
                 <button 
                     onClick={() => navigate(-1)} 
-                    className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
+                    className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
                     style={{ color: dominantColor }}
                 >
                     <ArrowLeft size={16} strokeWidth={2.5} />
@@ -165,7 +161,6 @@ const SinglePage = () => {
                         <Shuffle />
                     </button>
                 </div>
-        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                 <div className="space-y-1">
                     <div className="grid grid-cols-[auto_1fr_auto] gap-x-4 px-4 text-sm text-slate-500 dark:text-slate-400 border-b border-slate-300 dark:border-white/10 pb-2">

@@ -89,16 +89,14 @@ const handleCancelPremium = () => {
 
 if (loadingPage) {
     return (
-        <main className="flex-1 p-8 flex items-center justify-center">
+        <main className="flex-1 p-8 flex items-center justify-center h-full">
             <Loader2 size={48} className="animate-spin text-slate-400" />
         </main>
     );
 }
 
 return (
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     <main className="flex-1 p-4 md:p-8 flex items-center justify-center h-full">
-    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
         {currentUser?.premium?.isActive ? (
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -124,9 +122,10 @@ return (
                     </div>
                 )}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-sm">
+                     {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
                      <Link to="/" className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                         <Newspaper size={18} />
-                        <span>Вернуться в ленту</span>
+                        <span className="whitespace-nowrap">Вернуться в ленту</span>
                     </Link>
                     <button 
                         onClick={handleCancelPremium}
@@ -134,8 +133,9 @@ return (
                         className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-3 bg-red-600/20 text-red-400 font-semibold rounded-lg hover:bg-red-600/40 hover:text-red-300 transition-colors disabled:opacity-50"
                     >
                         {isCancelling ? <Loader2 className="animate-spin" /> : <Trash2 size={18} />}
-                        <span>Отключить Premium</span>
+                        <span className="whitespace-nowrap">Отключить Premium</span>
                     </button>
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 </div>
             </motion.div>
         ) : (
