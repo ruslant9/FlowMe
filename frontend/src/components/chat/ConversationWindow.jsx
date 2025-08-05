@@ -419,12 +419,15 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const newMessages = res.data;
-                if (newMessages.length > 0) {
-                    const allMessages = [...messages, ...newMessages.filter(nm => !messages.some(m => m._id === nm._id))];
-                    allMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-                    setMessages(allMessages);
-                    await MessageCache.saveMessages(internalConversation._id, allMessages);
-                }
+                setMessages(prevMessages => {
+                    if (newMessages.length > 0) {
+                        const allMessages = [...prevMessages, ...newMessages.filter(nm => !prevMessages.some(m => m._id === nm._id))];
+                        allMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                        MessageCache.saveMessages(internalConversation._id, allMessages);
+                        return allMessages;
+                    }
+                    return prevMessages;
+                });
             } catch (error) { console.error("Background sync failed", error); }
             return;
         }
@@ -446,10 +449,13 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             const oldScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;            
  
             const newMessages = res.data.reverse();
-            const combined = pageNum === 1 ? newMessages : [...newMessages, ...messages];
-            setMessages(combined);
+            setMessages(prevMessages => {
+                const combined = pageNum === 1 ? newMessages : [...newMessages, ...prevMessages];
+                MessageCache.saveMessages(internalConversation._id, combined);
+                return combined;
+            });
+
             setHasMore(res.data.length === MESSAGE_PAGE_LIMIT);
-            await MessageCache.saveMessages(internalConversation._id, combined);
             setPage(pageNum);
 
             if (pageNum > 1 && scrollContainer) {
@@ -465,7 +471,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             setLoading(false);
             setLoadingMore(false);
         }
-    }, [internalConversation?._id, messages]);
+    }, [internalConversation?._id]);
 
      const handleScrollToMessage = useCallback(async (messageId) => {
         const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
@@ -565,20 +571,16 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             
             setLoading(true);
             
-            // 1. Попробовать загрузить из кеша
             const cachedMessages = await MessageCache.getMessages(internalConversation._id);
             if (cachedMessages) {
                 setMessages(cachedMessages);
                 setLoading(false);
-                // 2. Тихое обновление в фоне
                 fetchMessages(1, true); 
             } else if (internalConversation.initialMessages) {
-                // 3. Если в кеше нет, но есть pre-loaded, используем их
                 setMessages(internalConversation.initialMessages);
                 await MessageCache.saveMessages(internalConversation._id, internalConversation.initialMessages);
                 setLoading(false);
             } else {
-                // 4. Если нет нигде, грузим с нуля
                 await fetchMessages(1);
             }
         };
@@ -650,22 +652,20 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
 
             if (isForThisConversation) {
                 setMessages(prev => {
-                    // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика замены оптимистичного сообщения ---
                     const existingIndex = prev.findIndex(m => m.uuid === newMessage.uuid);
                     if (existingIndex > -1) {
                         const newMessages = [...prev];
                         newMessages[existingIndex] = newMessage;
                         return newMessages;
                     }
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-                    return [...prev, newMessage]; // Добавляем сообщение от собеседника
+                    return [...prev, newMessage];
                 });
             }
         };
         
         const handleMessageUpdate = (e) => { if(e.detail.conversationId === internalConversation?._id) setMessages(prev => prev.map(m => m.uuid === e.detail.uuid ? {...m, ...e.detail.updates} : m)); };
         const handleMessagesRead = (e) => { if (e.detail.conversationId === internalConversation?._id) { const readerId = e.detail.readerId; setMessages(prevMessages => prevMessages.map(msg => { const isAlreadyRead = msg.readBy && msg.readBy.includes(readerId); if (isAlreadyRead) return msg; const newReadBy = [...(msg.readBy || []), readerId]; return { ...msg, readBy: newReadBy }; })); }};
-        const handleTyping = (e) => { if (e.detail.conversationId === internalConversation?._id) setTypingUsers(prev => ({...prev, [e.detail.userId]: e.detail.isTyping})); };
+        const handleTyping = (e) => { if (e.detail.conversationId === internalConversation?._id) setTypingUsers(prev => ({ ...prev, [e.detail.userId]: e.detail.isTyping })); };
         const handleMessagesDeleted = e => {
             if (e.detail.conversationId === internalConversation?._id) {
                 if (e.detail.forEveryone) {
