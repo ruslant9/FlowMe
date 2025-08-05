@@ -399,8 +399,8 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 {currentUser.role !== 'admin' && !isEditMode && <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>}
             </div>
 
-            <div className="flex flex-col md:flex-row md:space-x-6 mt-6">
-                <div className="space-y-4 md:w-1/2 flex-shrink-0">
+            <div className={`flex flex-col ${isEditMode ? 'md:flex-row md:space-x-6' : ''} mt-6`}>
+                <div className={`space-y-4 ${isEditMode ? 'md:w-1/2 flex-shrink-0' : 'w-full'}`}>
                     <div>
                         <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
                         <ArtistAutocomplete artists={artists} onSelect={setArtistId} initialArtistId={artistId} />
@@ -435,10 +435,11 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                     </div>
                 </div>
                 
-                <div className="hidden md:block border-l border-slate-200 dark:border-slate-700 mx-2"></div>
-
-                <div className="flex flex-col md:w-1/2 mt-6 md:mt-0">
-                    {isEditMode && (
+                {isEditMode && (
+                    <>
+                        <div className="hidden md:block border-l border-slate-200 dark:border-slate-700 mx-2"></div>
+                        <div className="flex flex-col md:w-1/2 mt-6 md:mt-0">
+                    
                         <div className="space-y-2 flex flex-col flex-1">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-md">Треки в альбоме ({albumTracks.length})</h4>
@@ -476,8 +477,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                 <p className="text-center text-sm text-slate-500 py-4">В этом альбоме пока нет треков.</p>
                             )}
                         </div>
-                    )}
-                </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             <div className="flex justify-end pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">

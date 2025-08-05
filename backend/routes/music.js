@@ -297,7 +297,7 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
         
         const [artist, allTracksByArtist] = await Promise.all([
             Artist.findById(artistId).lean(),
-            Track.find({ artist: artistId, status: 'approved' })
+            Track.find({ artist: artistId, status: 'approved', type: 'library_track' })
                  .populate('artist', 'name _id')
                  .populate({ path: 'album', populate: { path: 'artist', select: 'name _id' }})
                  .sort({ releaseDate: -1, createdAt: -1 })

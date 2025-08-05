@@ -104,7 +104,7 @@ const MessagesPage = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const conversationData = res.data;
-
+ 
             setConversations(prev => {
                 const isAlreadyInList = prev.some(c => c._id === conversationData._id);
                 if (isAlreadyInList) {
@@ -112,7 +112,7 @@ const MessagesPage = () => {
                 }
                 return [conversationData, ...prev];
             });
-            
+ 
             setActiveConversation(conversationData);
 
         } catch (error) {
@@ -229,14 +229,13 @@ const MessagesPage = () => {
         toast('Удаление отменено.', { icon: '👍' });
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Функция принимает и передает `addToBlacklist` ---
     const performChatDeletion = useCallback(async (conversationId, forEveryone, addToBlacklist) => {
         const toastId = toast.loading("Удаление чата...");
         try {
             const token = localStorage.getItem('token');
             await axios.delete(`${API_URL}/api/messages/conversations/${conversationId}`, {
                 headers: { Authorization: `Bearer ${token}` },
-                data: { forEveryone, addToBlacklist } // Передаем флаг блокировки
+                data: { forEveryone, addToBlacklist }
             });
             toast.success(forEveryone ? "Чат удален" : "История очищена", { id: toastId });
             setConversations(prev => prev.filter(c => c._id !== conversationId));
@@ -249,7 +248,6 @@ const MessagesPage = () => {
         }
     }, [navigate]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Функция принимает и передает `addToBlacklist` ---
     const handleDeleteRequest = useCallback((conversationId, forEveryone, addToBlacklist) => {
         if (deletionTimerRef.current) clearTimeout(deletionTimerRef.current);
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
@@ -271,7 +269,6 @@ const MessagesPage = () => {
             setPendingDeletion(null);
         }, 5000);
     }, [performChatDeletion]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 
     const filteredConversations = conversations.filter(conv => {
         const lowerCaseQuery = searchQuery.toLowerCase();
@@ -325,7 +322,7 @@ const MessagesPage = () => {
             `}>
                 {activeConversation ? (
                     <ConversationWindow
-                        key={activeConversation.interlocutor._id}
+                        key={activeConversation._id}
                         conversation={activeConversation}
                         onDeselectConversation={() => {
                             setActiveConversation(null);

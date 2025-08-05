@@ -334,20 +334,22 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                 )}
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                        <p className="font-bold truncate flex items-center">
+                        <p className="font-bold truncate flex items-center text-slate-800 dark:text-slate-100">
                             {isSavedMessages ? 'Избранное' : (liveInterlocutor?.fullName || liveInterlocutor?.username)}
                             {usernameEmoji?.url && (
                                 <img src={usernameEmoji.url} alt="emoji" className="w-4 h-4 ml-1.5" />
                             )}
                         </p>
-                        <div className="flex items-center space-x-1 text-xs text-slate-400 flex-shrink-0 ml-2">
-                            <ReadReceipt />
-                            <span>{lastMessageTime}</span>
+                        <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                            <div className="flex items-center space-x-1 text-xs text-slate-400">
+                                <ReadReceipt />
+                                <span>{lastMessageTime}</span>
+                            </div>
                         </div>
                     </div>
-                    <div className="flex justify-between items-end h-5">
+                    <div className="flex justify-between items-end mt-0.5">
                         {renderLastMessage()}
-                        <div className="flex items-center justify-end flex-shrink-0 ml-2 space-x-2 w-16">
+                        <div className="flex items-center justify-end flex-shrink-0 ml-2 space-x-2">
                             {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
                             {conversation.isMuted && !UnreadIndicator() && (
                                 <BellOff size={14} className="text-slate-400 dark:text-slate-500" />
