@@ -594,10 +594,11 @@ router.get('/track/:id/stream-url', authMiddleware, async (req, res) => {
     }
 });
 
-
-const processAndPopulateTracks = async (trackQuery, limit) => {
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+// Новая вспомогательная функция для DRY
+const processAndPopulateTracks = async (trackQuery, limit, sortOptions = { playCount: -1, createdAt: -1 }) => {
     const tracks = await Track.find(trackQuery)
-        .sort({ playCount: -1, createdAt: -1 })
+        .sort(sortOptions)
         .limit(limit)
         .populate('artist', 'name _id')
         .populate('album', 'title coverArtUrl')
@@ -610,6 +611,8 @@ const processAndPopulateTracks = async (trackQuery, limit) => {
         return track;
     });
 };
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
 router.get('/wave', authMiddleware, async (req, res) => {
     try {
@@ -617,7 +620,7 @@ router.get('/wave', authMiddleware, async (req, res) => {
         const profile = await UserMusicProfile.findOne({ user: userId });
 
         if (!profile || (profile.topArtists.length === 0 && profile.topGenres.length === 0)) {
-            const popularTracks = await processAndPopulateTracks({ status: 'approved' }, 50);
+            const popularTracks = await processAndPopulateTracks({ status: 'approved', type: 'library_track' }, 50);
             popularTracks.sort(() => Math.random() - 0.5);
             return res.json(popularTracks);
         }
@@ -633,6 +636,7 @@ router.get('/wave', authMiddleware, async (req, res) => {
 
         const waveQuery = {
             status: 'approved',
+            type: 'library_track',
             _id: { $nin: listenedTracks },
             $or: [
                 { artist: { $in: topArtistIds } },
@@ -647,6 +651,7 @@ router.get('/wave', authMiddleware, async (req, res) => {
             const existingIds = waveTracks.map(t => t._id);
             const popularTracks = await processAndPopulateTracks({ 
                 status: 'approved', 
+                type: 'library_track',
                 _id: { $nin: [...listenedTracks, ...existingIds] } 
             }, needed);
             waveTracks.push(...popularTracks);
@@ -683,16 +688,19 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
 
             const newReleasesQuery = {
                 status: 'approved',
+                type: 'library_track',
                 releaseDate: { $gte: new Date(`${currentYear}-01-01`) },
+                _id: { $nin: listenedTracks },
                 $or: [
                     { artist: { $in: topArtistIds } },
                     { genres: { $in: topGenres } }
                 ]
             };
-            newReleases = await processAndPopulateTracks(newReleasesQuery, 10);
+            newReleases = await processAndPopulateTracks(newReleasesQuery, 10, { releaseDate: -1, createdAt: -1 });
 
             const popularHitsQuery = {
                 status: 'approved',
+                type: 'library_track',
                 _id: { $nin: listenedTracks },
                  $or: [
                     { artist: { $in: topArtistIds } },
@@ -706,15 +714,17 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
             const existingIds = newReleases.map(t => t._id);
             const generalNew = await processAndPopulateTracks({ 
                 status: 'approved', 
+                type: 'library_track',
                 releaseDate: { $gte: new Date(`${currentYear}-01-01`) },
                 _id: { $nin: existingIds }
-            }, 10 - newReleases.length);
+            }, 10 - newReleases.length, { releaseDate: -1, createdAt: -1 });
             newReleases.push(...generalNew);
         }
         if (popularHits.length < 10) {
             const existingIds = popularHits.map(t => t._id);
             const generalPopular = await processAndPopulateTracks({ 
                 status: 'approved',
+                type: 'library_track',
                 _id: { $nin: existingIds }
             }, 10 - popularHits.length);
             popularHits.push(...generalPopular);
@@ -745,7 +755,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
             }
         ]);
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем дубликаты по названию и артисту ---
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         const getPrimaryArtistName = (artistData) => {
             if (!artistData) return '';
             if (Array.isArray(artistData) && artistData.length > 0) {

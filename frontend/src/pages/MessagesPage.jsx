@@ -8,7 +8,7 @@ import ChatList from '../components/chat/ChatList';
 import ConversationWindow from '../components/chat/ConversationWindow';
 import { MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import { AnimatePresence } from 'framer-motion';
 import DeletionTimerToast from '../components/chat/DeletionTimerToast';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
