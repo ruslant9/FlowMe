@@ -20,7 +20,7 @@ import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
 import AnimatedAccent from './AnimatedAccent';
-import { useCachedImage } from '../hooks/useCachedImage'; 
+import { useCachedImage } from '../../hooks/useCachedImage'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
@@ -863,9 +863,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                         {comments.length < totalRootComments && !loadingComments && (
                                             <button 
                                                 onClick={handleLoadMore} 
-                                                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем `w-28` и добавляем `whitespace-nowrap` ---
                                                 className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:underline px-3 py-1.5 rounded-lg flex items-center justify-center whitespace-nowrap"
-                                                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                                 disabled={loadingMore}
                                             >
                                                 {loadingMore ? <Loader2 className="animate-spin" /> : "Показать еще"}

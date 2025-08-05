@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CreateCommunityModal from '../components/modals/CreateCommunityModal';
 import { useModal } from '../hooks/useModal';
 import CommunityCard from '../components/CommunityCard';
+import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -179,6 +180,16 @@ const CommunitiesPage = () => {
             </>
         );
     };
+    
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    const navItems = [
+        { key: 'my', label: 'Мои сообщества', icon: Users, onClick: () => handleTabSwitch('my'), count: myCommunities.length },
+        { key: 'created', label: 'Созданные', icon: Building, onClick: () => handleTabSwitch('created'), count: 0 },
+        { key: 'recommended', label: 'Рекомендации', icon: Globe, onClick: () => handleTabSwitch('recommended'), count: 0 },
+        { key: 'pendingSent', label: 'Отправленные', icon: Clock, onClick: () => handleTabSwitch('pendingSent'), count: pendingSentRequests.length }
+    ];
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 
     return (
         <>
@@ -219,20 +230,25 @@ const CommunitiesPage = () => {
                         )}
                     </div>
 
-                    <div className="flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
-                        <TabButton active={activeTab === 'my'} onClick={() => handleTabSwitch('my')}>
-                            <Users size={16} /> <span>Мои сообщества</span>
-                        </TabButton>
-                        <TabButton active={activeTab === 'created'} onClick={() => handleTabSwitch('created')}>
-                            <Building size={16} /> <span>Созданные</span>
-                        </TabButton>
-                        <TabButton active={activeTab === 'recommended'} onClick={() => handleTabSwitch('recommended')}>
-                            <Globe size={16} /> <span>Рекомендации</span>
-                        </TabButton>
-                        <TabButton active={activeTab === 'pendingSent'} onClick={() => handleTabSwitch('pendingSent')} count={pendingSentRequests.length}>
-                            <Clock size={16} /> <span>Отправленные заявки</span>
-                        </TabButton>
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                    {/* Горизонтальная панель навигации для десктопа */}
+                    <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
+                        {navItems.map(item => (
+                            <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
+                                <item.icon size={16} /> <span>{item.label}</span>
+                            </TabButton>
+                        ))}
                     </div>
+
+                    {/* Адаптивная навигация для мобильных */}
+                    <div className="md:hidden mb-6">
+                        <ResponsiveNav 
+                            items={navItems}
+                            visibleCount={4} // Здесь можно настроить количество видимых кнопок
+                            activeKey={activeTab}
+                        />
+                    </div>
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
                     <div>
                         {activeTab === 'my' && renderCommunityList(myCommunities)}

@@ -5,11 +5,12 @@ import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus } from 'lucide-react';
+import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus, MoreHorizontal } from 'lucide-react'; // --- ИЗМЕНЕНИЕ: Добавлена иконка
 import { useModal } from '../hooks/useModal';
 import NotificationItem from '../components/NotificationItem';
 import { AnimatePresence } from 'framer-motion';
 import PostViewModal from '../components/modals/PostViewModal';
+import MorePanel from '../components/MorePanel'; // --- ИЗМЕНЕНИЕ: Импорт панели
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -55,6 +56,9 @@ const NotificationsPage = () => {
     const { showConfirmation } = useModal();
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
     const [modalPostData, setModalPostData] = useState(null);
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    const [isMorePanelOpen, setIsMorePanelOpen] = useState(false);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const openPostInModal = useCallback(async (postId, highlightCommentId) => {
         try {
@@ -231,20 +235,27 @@ const NotificationsPage = () => {
         return groups;
     }, [filteredNotifications]);
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const subTabs = useMemo(() => {
-        const tabs = [{ id: 'all', name: 'Все', icon: Bell }];
+        const tabs = [{ key: 'all', label: 'Все', icon: Bell, onClick: () => setActiveFilter('all') }];
         if (activeTab === 'personal') {
-            tabs.push({ id: 'requests', name: 'Заявки', icon: UserPlus });
+            tabs.push({ key: 'requests', label: 'Заявки', icon: UserPlus, onClick: () => setActiveFilter('requests') });
         }
         if (activeTab === 'community') {
-            tabs.push({ id: 'requests', name: 'Заявки', icon: Users });
+            tabs.push({ key: 'requests', label: 'Заявки', icon: Users, onClick: () => setActiveFilter('requests') });
         }
         tabs.push(
-            { id: 'likes', name: 'Лайки', icon: Heart },
-            { id: 'comments', name: 'Комментарии', icon: MessageCircle }
+            { key: 'likes', label: 'Лайки', icon: Heart, onClick: () => setActiveFilter('likes') },
+            { key: 'comments', label: 'Комментарии', icon: MessageCircle, onClick: () => setActiveFilter('comments') }
         );
         return tabs;
     }, [activeTab]);
+
+    const subVisibleCount = 3;
+    const subVisibleItems = subTabs.slice(0, subVisibleCount);
+    const subHiddenItems = subTabs.slice(subVisibleCount);
+    const isSubMoreButtonActive = subHiddenItems.some(item => item.key === activeFilter);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return (
         <>
@@ -274,13 +285,46 @@ const NotificationsPage = () => {
                         <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
                     </div>
 
-                    <div className="flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                    {/* Навигация для десктопа */}
+                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
                         {subTabs.map(tab => (
-                            <SubTabButton key={tab.id} active={activeFilter === tab.id} onClick={() => setActiveFilter(tab.id)}>
-                                <tab.icon size={14} /> <span>{tab.name}</span>
+                            <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
+                                <tab.icon size={14} /> <span>{tab.label}</span>
                             </SubTabButton>
                         ))}
                     </div>
+
+                    {/* Адаптивная навигация для мобильных */}
+                    <div className="md:hidden flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                        {subVisibleItems.map(tab => (
+                             <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
+                                <tab.icon size={14} /> <span>{tab.label}</span>
+                            </SubTabButton>
+                        ))}
+                        {subHiddenItems.length > 0 && (
+                            <SubTabButton active={isSubMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
+                                <MoreHorizontal size={14} /> <span>Еще</span>
+                            </SubTabButton>
+                        )}
+                    </div>
+                    
+                    <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
+                        {subHiddenItems.map(item => (
+                            <button
+                                key={item.key}
+                                onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
+                                className={`w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
+                                ${activeFilter === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
+                                `}
+                            >
+                                <item.icon size={22} className={activeFilter === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
+                                <span>{item.label}</span>
+                            </button>
+                        ))}
+                    </MorePanel>
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+
 
                     {loading ? (
                         <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></div>

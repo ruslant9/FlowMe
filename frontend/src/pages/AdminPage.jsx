@@ -7,6 +7,7 @@ import AdminUploadPanel from '../components/admin/AdminUploadPanel';
 import AdminContentManager from '../components/admin/AdminContentManager';
 import AdminUserManager from '../components/admin/AdminUserManager';
 import { CheckCircle, UploadCloud, Database, Users } from 'lucide-react';
+import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ
 
 // Возвращаем стильный компонент для горизонтальных вкладок
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
@@ -27,6 +28,15 @@ const AdminPage = () => {
     useTitle('Панель администратора');
     const [activeTab, setActiveTab] = useState('submissions');
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    const navItems = [
+        { key: 'submissions', label: 'Заявки на модерацию', icon: CheckCircle, onClick: () => setActiveTab('submissions') },
+        { key: 'content', label: 'Управление контентом', icon: Database, onClick: () => setActiveTab('content') },
+        { key: 'users', label: 'Управление пользователями', icon: Users, onClick: () => setActiveTab('users') },
+        { key: 'create', label: 'Создать контент', icon: UploadCloud, onClick: () => setActiveTab('create') }
+    ];
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
     // Компоненты для каждой вкладки
     const renderContent = () => {
         switch (activeTab) {
@@ -45,37 +55,30 @@ const AdminPage = () => {
                     <h1 className="text-3xl font-bold">Панель администратора</h1>
                 </div>
                 
-                {/* Горизонтальная панель навигации */}
-                <div className="flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
-                    <TabButton 
-                        active={activeTab === 'submissions'} 
-                        onClick={() => setActiveTab('submissions')}
-                        icon={CheckCircle}
-                    >
-                        Заявки на модерацию
-                    </TabButton>
-                    <TabButton 
-                        active={activeTab === 'content'} 
-                        onClick={() => setActiveTab('content')}
-                        icon={Database}
-                    >
-                        Управление контентом
-                    </TabButton>
-                    <TabButton 
-                        active={activeTab === 'users'} 
-                        onClick={() => setActiveTab('users')}
-                        icon={Users}
-                    >
-                        Управление пользователями
-                    </TabButton>
-                    <TabButton 
-                        active={activeTab === 'create'} 
-                        onClick={() => setActiveTab('create')}
-                        icon={UploadCloud}
-                    >
-                        Создать контент
-                    </TabButton>
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                {/* Горизонтальная панель навигации для десктопа */}
+                <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
+                    {navItems.map(item => (
+                        <TabButton 
+                            key={item.key}
+                            active={activeTab === item.key} 
+                            onClick={item.onClick}
+                            icon={item.icon}
+                        >
+                            {item.label}
+                        </TabButton>
+                    ))}
                 </div>
+                
+                {/* Адаптивная навигация для мобильных */}
+                <div className="md:hidden mb-6">
+                    <ResponsiveNav 
+                        items={navItems}
+                        visibleCount={3}
+                        activeKey={activeTab}
+                    />
+                </div>
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
     
                 {/* Область для отображения контента активной вкладки */}
                 <div className="mt-6">

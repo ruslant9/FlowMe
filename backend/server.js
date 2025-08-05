@@ -87,8 +87,6 @@ const broadcastFullUserStatus = async (userId, isOnline, clientsMap) => {
             console.warn('broadcastFullUserStatus: Received invalid userId:', userId);
             return;
         }
-
-        // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем username и fullName в выборку ---
         const user = await User.findById(userId).select('username fullName lastSeen privacySettings avatar premium premiumCustomization');
         if (!user) return;
         
@@ -96,10 +94,8 @@ const broadcastFullUserStatus = async (userId, isOnline, clientsMap) => {
             type: 'FULL_USER_STATUS_UPDATE',
             payload: {
                 userId: userId.toString(),
-                // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Добавляем username и fullName в отправляемые данные ---
                 username: user.username,
                 fullName: user.fullName,
-                // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
                 isOnline: isOnline,
                 lastSeen: user.lastSeen,
                 privacySettings: user.privacySettings,
@@ -108,8 +104,6 @@ const broadcastFullUserStatus = async (userId, isOnline, clientsMap) => {
                 premiumCustomization: user.premiumCustomization,
             }
         };
-        // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
-
         clientsMap.forEach((wsClient) => {
             if (wsClient.readyState === WebSocket.OPEN) {
                 wsClient.send(JSON.stringify(message));

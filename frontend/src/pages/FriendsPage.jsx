@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, Fragment } fr
 import axios from 'axios';
 import useTitle from '../hooks/useTitle';
 import Avatar from '../components/Avatar';
-import { Search, UserPlus, UserCheck, UserX, Clock, Loader2, ShieldOff, History, Trash2 as TrashIcon, MessageSquare, Filter, ChevronDown, Check, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, UserPlus, UserCheck, UserX, Clock, Loader2, ShieldOff, History, Trash2 as TrashIcon, MessageSquare, Filter, ChevronDown, Check, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-react'; // --- ИЗМЕНЕНИЕ: Добавлена иконка
 import toast from 'react-hot-toast';
 import { useModal } from '../hooks/useModal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,17 +14,12 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
 import { useUser } from '../hooks/useUser';
-
+import MorePanel from '../components/MorePanel'; // --- ИЗМЕНЕНИЕ: Импорт панели
 
 const API_URL = import.meta.env.VITE_API_URL;
 const MAX_HISTORY_ITEMS = 5;
 
-const availableInterests = [
-    "Программирование", "Дизайн", "Музыка", "Кино", "Путешествия", "Спорт",
-    "Видеоигры", "Чтение", "Кулинария", "Фотография", "Искусство", "Наука",
-    "Психология", "Автомобили", "Мода", "Фитнес", "Технологии", "Животные",
-    "История", "Философия", "Юмор", "Природа"
-];
+// ... (Остальные хелперы и компоненты внутри FriendsPage остаются без изменений) ...
 
 const customRuLocaleForDistance = {
     ...ru,
@@ -225,7 +220,6 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
     return (
         <Link to={`/profile/${user._id}`} className="flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5">
             <div className="flex items-center space-x-4 min-w-0">
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                 {(() => {
                     const border = user.premiumCustomization?.avatarBorder;
                     const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
@@ -246,7 +240,6 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
                         </div>
                     );
                 })()}
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 <div className="min-w-0">
                     <p className="font-semibold truncate">{user.fullName || user.username}</p>
                     <div className="text-sm text-slate-500 dark:text-white/60 h-4 flex items-center space-x-1.5">
@@ -266,6 +259,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
         </Link>
     );
 };
+
 const FriendsPage = () => {
     useTitle('Друзья');
     const location = useLocation();
@@ -289,6 +283,10 @@ const FriendsPage = () => {
     const { userStatuses } = useWebSocket();
     const navigate = useNavigate();
     const { currentUser } = useUser();
+    
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    const [isMorePanelOpen, setIsMorePanelOpen] = useState(false);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const [now, setNow] = useState(new Date());
 
@@ -568,6 +566,20 @@ const FriendsPage = () => {
             return (<div className="space-y-1"><p className="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-white/50">Недавние запросы</p>{searchHistory.map((term, index) => (<div key={index} className="flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5 cursor-pointer" onClick={() => handleSearchHistoryClick(term)}><div className="flex items-center space-x-2"><History size={16} className="text-slate-400 dark:text-white/40 flex-shrink-0" /><span className="truncate">{term}</span></div></div>))}<div className="border-t border-slate-200 dark:border-white/10 pt-2 mt-2"><button onClick={clearSearchHistory} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"><TrashIcon size={16} /><span>Очистить историю поиска</span></button></div></div>);
         }
     };
+
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    const navItems = [
+        { key: 'friends', label: 'Мои друзья', icon: UserCheck, count: allFriends.length, onClick: () => handleTabClick('friends') },
+        { key: 'incoming', label: 'Входящие', icon: UserPlus, count: incoming.length, onClick: () => handleTabClick('incoming') },
+        { key: 'outgoing', label: 'Исходящие', icon: Clock, count: outgoing.length, onClick: () => handleTabClick('outgoing') },
+        { key: 'blacklist', label: 'Черный список', icon: ShieldOff, count: blacklist.length, onClick: () => handleTabClick('blacklist') }
+    ];
+    const visibleCount = 2;
+    const visibleItems = navItems.slice(0, visibleCount);
+    const hiddenItems = navItems.slice(visibleCount);
+    const isMoreButtonActive = hiddenItems.some(item => item.key === activeTab);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
     const renderTabContent = () => {
         if (loading) return (<div className="space-y-2">{[...Array(3)].map((_, i) => <UserCardSkeleton key={i} />)}</div>);
         let list, status, emptyMessage;
@@ -640,12 +652,51 @@ const FriendsPage = () => {
                     <AnimatePresence>
                         {isDropdownVisible && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">{renderDropdownContent()}</motion.div>}
                     </AnimatePresence>                </div>
-                <div className="flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
-                    <TabButton active={activeTab === 'friends'} onClick={() => handleTabClick('friends')} count={allFriends.length}><UserCheck size={16} /><span>Мои друзья</span></TabButton>
-                    <TabButton active={activeTab === 'incoming'} onClick={() => handleTabClick('incoming')} count={incoming.length}><UserPlus size={16} /><span>Входящие</span></TabButton>
-                    <TabButton active={activeTab === 'outgoing'} onClick={() => handleTabClick('outgoing')} count={outgoing.length}><Clock size={16} /><span>Исходящие</span></TabButton>
-                    <TabButton active={activeTab === 'blacklist'} onClick={() => handleTabClick('blacklist')} count={blacklist.length}><ShieldOff size={16} /><span>Черный список</span></TabButton>
+                
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                {/* Навигация для десктопа */}
+                <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
+                    {navItems.map(item => (
+                        <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
+                            <item.icon size={16} /><span>{item.label}</span>
+                        </TabButton>
+                    ))}
                 </div>
+
+                {/* Адаптивная навигация для мобильных */}
+                <div className="md:hidden flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
+                    {visibleItems.map(item => (
+                        <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
+                            <item.icon size={16} /><span>{item.label}</span>
+                        </TabButton>
+                    ))}
+                    {hiddenItems.length > 0 && (
+                        <TabButton active={isMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
+                            <MoreHorizontal size={16} /><span>Еще</span>
+                        </TabButton>
+                    )}
+                </div>
+                <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
+                    {hiddenItems.map(item => (
+                        <button
+                            key={item.key}
+                            onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
+                            className={`w-full flex items-center justify-between p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
+                              ${activeTab === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
+                            `}
+                        >
+                            <div className="flex items-center space-x-4">
+                                <item.icon size={22} className={activeTab === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
+                                <span>{item.label}</span>
+                            </div>
+                            {item.count > 0 && 
+                                <span className="px-2 py-0.5 rounded-full text-xs bg-slate-200 dark:bg-white/10">{item.count > 9 ? '9+' : item.count}</span>
+                            }
+                        </button>
+                    ))}
+                </MorePanel>
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                
                 <div>{renderTabContent()}</div>
             </div>
         </main>
