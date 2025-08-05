@@ -1,13 +1,12 @@
 // frontend/src/components/music/MusicPlayerBar.jsx
 
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X, Eye } from 'lucide-react'; // Добавлена иконка Eye
+import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X, Eye } from 'lucide-react';
 import Slider from 'rc-slider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import { Link } from 'react-router-dom';
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src, alt, className, onClick }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -16,13 +15,13 @@ const CachedImage = ({ src, alt, className, onClick }) => {
     return <img src={finalSrc} alt={alt} className={className} onClick={onClick} />;
 };
 
-
 const formatTime = (seconds) => {
     if (isNaN(seconds) || seconds < 0) return "0:00";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
+
 const NotificationToast = ({ message }) => (
     <AnimatePresence>
         {message && (
@@ -37,61 +36,44 @@ const NotificationToast = ({ message }) => (
         )}
     </AnimatePresence>
 );
+
 const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification, openFullScreenPlayer }) => {
     if (!track) {
         return null;
     }
     const cleanTitle = (title) => {
         if (!title) return '';
-        return title.replace(
-            /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
-            ''
-        ).trim();
+        return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
             return artistData.map((artist, index) => (
                 <React.Fragment key={artist._id || index}>
-                    <Link to={`/artist/${artist._id}`} className="hover:underline">
-                        {(artist.name || '').replace(' - Topic', '').trim()}
-                    </Link>
+                    <Link to={`/artist/${artist._id}`} className="hover:underline">{(artist.name || '').replace(' - Topic', '').trim()}</Link>
                     {index < artistData.length - 1 && ', '}
                 </React.Fragment>
             ));
         }
         if (typeof artistData === 'object' && artistData.name) {
-            return (
-                <Link to={`/artist/${artistData._id}`} className="hover:underline">
-                    {artistData.name.replace(' - Topic', '').trim()}
-                </Link>
-            );
+            return <Link to={`/artist/${artistData._id}`} className="hover:underline">{artistData.name.replace(' - Topic', '').trim()}</Link>;
         }
         return <span>{artistData.toString()}</span>;
     };
     const currentProgress = progress || 0;
     const totalDuration = duration || 1;
+
     return (
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Полностью новая структура ---
         <div className="w-full p-4 flex items-center justify-between">
-            {/* Пустой блок слева для балансировки центрального элемента */}
+            {/* Левый блок: пустой для выравнивания */}
             <div className="w-1/4"></div>
 
-            {/* Центральный блок с плеером */}
+            {/* Центральный блок: плеер */}
             <div className="flex-1 flex flex-col items-center justify-center min-w-0">
-                {/* Информация о треке */}
                 <div className="flex items-center space-x-3 mb-2">
                     <div className="relative group flex-shrink-0">
-                        <CachedImage
-                            src={track.albumArtUrl}
-                            alt={track.title}
-                            className="w-12 h-12 rounded-md object-cover shadow-md"
-                        />
-                        <button 
-                            onClick={openFullScreenPlayer}
-                            className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                            aria-label="Открыть полноэкранный плеер"
-                        >
+                        <CachedImage src={track.albumArtUrl} alt={track.title} className="w-12 h-12 rounded-md object-cover shadow-md" />
+                        <button onClick={openFullScreenPlayer} className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Открыть полноэкранный плеер">
                             <Eye size={20} />
                         </button>
                     </div>
@@ -101,7 +83,6 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
                     </div>
                 </div>
 
-                {/* Основные кнопки управления */}
                 <div className="flex items-center justify-center space-x-4">
                     <motion.button onClick={onToggleLike} className={`p-2 transition-colors ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60 hover:text-red-400'}`} title="Нравится" whileTap={{ scale: 1.3, transition: { type: 'spring', stiffness: 400, damping: 10 } }}>
                         <Heart size={18} fill={isLiked ? 'currentColor' : 'none'}/>
@@ -123,7 +104,6 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
                     </div>
                 </div>
 
-                {/* Полоса прокрутки */}
                 <div className="w-full max-w-lg flex items-center space-x-2 mt-2">
                     <span className="text-xs text-slate-700 dark:text-white/60 w-10 text-center">{formatTime(currentProgress)}</span>
                     <div className="relative flex-grow flex items-center">
@@ -134,8 +114,8 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
                     <span className="text-xs text-slate-700 dark:text-white/60 w-10 text-center">{formatTime(totalDuration)}</span>
                 </div>
             </div>
-
-            {/* Блок справа (громкость и закрытие) */}
+            
+            {/* Правый блок: громкость и закрытие */}
             <div className="flex items-center space-x-2 w-1/4 justify-end">
                 <button onClick={() => onSetVolume(volume > 0 ? 0 : 0.5)} className="p-2 text-slate-800 dark:text-white/60 hover:text-blue-500 dark:hover:text-blue-400" title={volume > 0 ? "Выключить звук" : "Включить звук"}>
                     {volume > 0 ? <Volume2 size={20} /> : <VolumeX size={20} />}
@@ -144,7 +124,6 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
                 <button onClick={stopAndClearPlayer} className="p-2 text-slate-800 dark:text-white/60 hover:text-red-500 dark:hover:text-red-400" title="Закрыть плеер"><X size={24} /></button>
             </div>
         </div>
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     );
 };
 

@@ -169,7 +169,6 @@ const AlbumPage = () => {
                         <Shuffle />
                     </button>
                 </div>
-        // --- КОНЕЦ ИЗМЕНЕНИЙ В СТРУКТУРЕ ---
 
                 <div className="space-y-1">
                     <div className="grid grid-cols-[auto_1fr_auto] gap-x-4 px-4 text-sm text-slate-500 dark:text-slate-400 border-b border-slate-300 dark:border-white/10 pb-2">

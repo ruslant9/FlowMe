@@ -39,47 +39,44 @@ const AdminPage = () => {
     };
 
     return (
-        // Основной контейнер, который центрирует контент на странице
         <main className="flex-1 p-4 md:p-8">
-            <div className="ios-glass-final rounded-3xl p-6 w-full max-w-6xl mx-auto">
-                <h1 className="text-3xl font-bold mb-6">Панель администратора</h1>
-                
-                {/* Горизонтальная панель навигации */}
-                <div className="flex flex-wrap border-b border-slate-300 dark:border-slate-700 mb-6">
-                    <TabButton 
-                        active={activeTab === 'submissions'} 
-                        onClick={() => setActiveTab('submissions')}
-                        icon={CheckCircle}
-                    >
-                        Заявки на модерацию
-                    </TabButton>
-                    <TabButton 
-                        active={activeTab === 'content'} 
-                        onClick={() => setActiveTab('content')}
-                        icon={Database}
-                    >
-                        Управление контентом
-                    </TabButton>
-                    <TabButton 
-                        active={activeTab === 'users'} 
-                        onClick={() => setActiveTab('users')}
-                        icon={Users}
-                    >
-                        Управление пользователями
-                    </TabButton>
-                    <TabButton 
-                        active={activeTab === 'create'} 
-                        onClick={() => setActiveTab('create')}
-                        icon={UploadCloud}
-                    >
-                        Создать контент
-                    </TabButton>
-                </div>
+            <h1 className="text-3xl font-bold mb-6">Панель администратора</h1>
+            
+            {/* Горизонтальная панель навигации */}
+            <div className="flex flex-wrap border-b border-slate-300 dark:border-slate-700 mb-6">
+                <TabButton 
+                    active={activeTab === 'submissions'} 
+                    onClick={() => setActiveTab('submissions')}
+                    icon={CheckCircle}
+                >
+                    Заявки на модерацию
+                </TabButton>
+                <TabButton 
+                    active={activeTab === 'content'} 
+                    onClick={() => setActiveTab('content')}
+                    icon={Database}
+                >
+                    Управление контентом
+                </TabButton>
+                <TabButton 
+                    active={activeTab === 'users'} 
+                    onClick={() => setActiveTab('users')}
+                    icon={Users}
+                >
+                    Управление пользователями
+                </TabButton>
+                <TabButton 
+                    active={activeTab === 'create'} 
+                    onClick={() => setActiveTab('create')}
+                    icon={UploadCloud}
+                >
+                    Создать контент
+                </TabButton>
+            </div>
 
-                {/* Область для отображения контента активной вкладки */}
-                <div>
-                    {renderContent()}
-                </div>
+            {/* Область для отображения контента активной вкладки */}
+            <div className="mt-6">
+                {renderContent()}
             </div>
         </main>
     );

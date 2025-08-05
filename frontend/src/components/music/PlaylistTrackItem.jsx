@@ -64,7 +64,7 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
     return (
         <div 
             onDoubleClick={onPlay} 
-            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 px-4 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
+            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
         >
             <div className="flex items-center justify-center w-8 text-slate-600 dark:text-slate-400">
                 {isCurrent ? (

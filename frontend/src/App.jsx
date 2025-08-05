@@ -328,8 +328,8 @@ function App() {
 
   return (
     <>
-      <AnimatePresence mode="wait" key={location.pathname}>
-        <Routes location={location}>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname.split('/')[1]}>
 
           <Route element={<AuthLayout><PageWrapper><Outlet /></PageWrapper></AuthLayout>}>
               <Route path="/login" element={<LoginPage />} />

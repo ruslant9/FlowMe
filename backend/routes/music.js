@@ -699,7 +699,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
                 }
             },
             { $sort: { totalPlayCount: -1 } },
-            { $limit: 11 },
+            { $limit: 10 },
             {
                 $lookup: {
                     from: "artists",
