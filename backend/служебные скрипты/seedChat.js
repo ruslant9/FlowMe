@@ -4,9 +4,9 @@ const mongoose = require('mongoose');
 const crypto = require('crypto');
 require('dotenv').config();
 
-const User = require('./models/User');
-const Conversation = require('./models/Conversation');
-const Message = require('./models/Message');
+const User = require('../models/User');
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
 
 // --- НАСТРОЙКИ СКРИПТА ---
 

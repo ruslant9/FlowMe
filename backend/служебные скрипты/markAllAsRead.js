@@ -1,9 +1,9 @@
 // backend/markAllAsRead.js
 
 const mongoose = require('mongoose');
-const User = require('./models/User');
-const Conversation = require('./models/Conversation');
-const Message = require('./models/Message');
+const User = require('../models/User');
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
 require('dotenv').config();
 
 const markAllAsRead = async () => {

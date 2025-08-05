@@ -1,7 +1,7 @@
 // backend/cleanupMusicHistory.js
 
 const mongoose = require('mongoose');
-const Track = require('./models/Track'); // Убедитесь, что путь к модели Track правильный
+const Track = require('../models/Track'); // Убедитесь, что путь к модели Track правильный
 require('dotenv').config();
 
 const cleanupHistory = async () => {

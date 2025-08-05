@@ -3,8 +3,8 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const User = require('./models/User');
-const ContentPack = require('./models/ContentPack');
+const User = require('../models/User');
+const ContentPack = require('../models/ContentPack');
 
 const emojiPacks = [
     {

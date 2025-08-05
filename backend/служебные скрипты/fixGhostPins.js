@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 require('dotenv').config();
-const Conversation = require('./models/Conversation');
+const Conversation = require('../models/Conversation');
 
 const fixGhostPins = async () => {
     console.log('\x1b[36m%s\x1b[0m', '--- Запуск скрипта для исправления "призрачных" закреплений (v2) ---');

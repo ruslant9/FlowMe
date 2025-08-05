@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 require('dotenv').config();
 
-const Track = require('./models/Track');
-const Artist = require('./models/Artist'); // Не забываем require для populate
+const Track = require('../models/Track');
+const Artist = require('../models/Artist'); // Не забываем require для populate
 
 const BATCH_SIZE = 200;
 const DELAY_MS = 1000;

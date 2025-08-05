@@ -1,29 +1,29 @@
+// backend/cleanupMusic.js
+
 const mongoose = require('mongoose');
-const User = require('./models/User'); // Убедитесь, что пути к моделям правильные
-const Track = require('./models/Track');
+const Track = require('../models/Track'); // Убедитесь, что путь к модели Track правильный
 require('dotenv').config();
 
-const cleanupSavedMusic = async () => {
+const cleanupSavedTracks = async () => {
   if (!process.env.MONGO_URI) {
     console.error('\x1b[31m%s\x1b[0m', 'Ошибка: MONGO_URI не найден в файле .env.');
     return;
   }
 
-  console.log('\x1b[36m%s\x1b[0m', '--- Запуск скрипта для очистки сохраненной музыки ("Моя музыка") ---');
+  console.log('--- Запуск скрипта для очистки сохраненных треков ---');
   
   try {
     console.log('1. Подключение к базе данных MongoDB...');
     await mongoose.connect(process.env.MONGO_URI);
     console.log('\x1b[32m%s\x1b[0m', '   Успешно подключено.');
 
-    // Фильтр для поиска всех треков, добавленных пользователями в "Мою музыку"
     const filter = { type: 'saved' };
     
-    console.log('2. Подсчет количества треков для удаления...');
+    console.log('2. Подсчет количества треков для удаления (с type: "saved")...');
     const count = await Track.countDocuments(filter);
     
     if (count === 0) {
-      console.log('\x1b[33m%s\x1b[0m', '   Нет сохраненных треков для удаления. Очистка не требуется.');
+      console.log('\x1b[36m%s\x1b[0m', '   Нет сохраненных треков для удаления. Очистка не требуется.');
     } else {
       console.log(`   Найдено ${count} треков для удаления.`);
       console.log('3. Удаление всех треков с type: "saved"...');
@@ -46,4 +46,4 @@ const cleanupSavedMusic = async () => {
   }
 };
 
-cleanupSavedMusic();
+cleanupSavedTracks();

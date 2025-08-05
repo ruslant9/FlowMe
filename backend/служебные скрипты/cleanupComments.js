@@ -1,8 +1,8 @@
 // cleanupComments.js
 
 const mongoose = require('mongoose');
-const Post = require('./models/Post');
-const Comment = require('./models/Comment');
+const Post = require('../models/Post');
+const Comment = require('../models/Comment');
 require('dotenv').config();
 
 const cleanup = async () => {

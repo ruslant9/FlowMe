@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('./models/User'); // Убедитесь, что путь к модели User правильный
+const User = require('../models/User'); // Убедитесь, что путь к модели User правильный
 require('dotenv').config();
 
 const cleanupFriendRequests = async () => {

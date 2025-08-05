@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Playlist = require('./models/Playlist'); // Убедитесь, что путь к модели Playlist правильный
+const Playlist = require('../models/Playlist'); // Убедитесь, что путь к модели Playlist правильный
 require('dotenv').config();
 
 const cleanupPlaylists = async () => {
