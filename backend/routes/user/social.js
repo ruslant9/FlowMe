@@ -271,21 +271,4 @@ router.post('/users-by-ids', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/users-by-ids', authMiddleware, async (req, res) => {
-    try {
-        const { userIds } = req.body;
-        if (!Array.isArray(userIds) || userIds.length === 0) {
-            return res.json([]);
-        }
-        
-        const users = await User.find({ '_id': { $in: userIds } })
-            .select('username fullName avatar');
-            
-        res.json(users);
-    } catch (error) {
-        console.error("Error fetching users by IDs:", error);
-        res.status(500).json({ message: "Ошибка сервера при получении пользователей." });
-    }
-});
-
 module.exports = router;
