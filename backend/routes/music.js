@@ -166,26 +166,41 @@ router.get('/saved', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/history', authMiddleware, async (req, res) => {
-    try {
-        const history = await Track.find({ user: req.user.userId, type: 'recent' })
-            .sort({ playedAt: -1 })
-            .limit(50)
-            .populate('artist', 'name _id')
-            .populate('album', 'title coverArtUrl')
-            .lean();
-            
-        const processedHistory = history.map(track => {
-            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
-                return { ...track, albumArtUrl: track.album.coverArtUrl };
-            }
-            return track;
-        });
-        res.json(processedHistory);
-    } catch (error) {
-        res.status(500).json({ message: 'Ошибка при получении истории.' });
-    }
-});
+ router.get('/history', authMiddleware, async (req, res) => {
+     try {
+        // Aggregation pipeline to get only the most recent entry for each unique track
+        const historyAggregation = await Track.aggregate([
+            { $match: { user: new mongoose.Types.ObjectId(req.user.userId), type: 'recent' } },
+            { $sort: { playedAt: -1 } },
+            {
+                $group: {
+                    _id: "$sourceId", // Group by the original library track ID
+                    latestEntry: { $first: "$$ROOT" } // Get the whole document of the most recent play
+                }
+            },
+            { $replaceRoot: { newRoot: "$latestEntry" } },
+            { $sort: { playedAt: -1 } },
+            { $limit: 50 }
+        ]);
+
+        // Mongoose's populate doesn't work directly on aggregate results, so we do it manually.
+        await Track.populate(historyAggregation, [
+            { path: 'artist', select: 'name _id' },
+            { path: 'album', select: 'title coverArtUrl' }
+        ]);
+             
+        const processedHistory = historyAggregation.map(track => {
+             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                 return { ...track, albumArtUrl: track.album.coverArtUrl };
+             }
+             return track;
+         });
+         res.json(processedHistory);
+     } catch (error) {
+        console.error("Error fetching history:", error);
+         res.status(500).json({ message: 'Ошибка при получении истории.' });
+     }
+ });
 
 // --- МАРШРУТЫ ДЛЯ СТРАНИЦ АРТИСТОВ И АЛЬБОМОВ ---
 router.get('/album/:albumId', authMiddleware, async (req, res) => {
@@ -695,11 +710,20 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
         }
         
         if (newReleases.length < 10) {
-            const generalNew = await processAndPopulateTracks({ status: 'approved', releaseDate: { $gte: new Date(`${currentYear}-01-01`) } }, 10 - newReleases.length);
+            const existingIds = newReleases.map(t => t._id);
+            const generalNew = await processAndPopulateTracks({ 
+                status: 'approved', 
+                releaseDate: { $gte: new Date(`${currentYear}-01-01`) },
+                _id: { $nin: existingIds }
+            }, 10 - newReleases.length);
             newReleases.push(...generalNew);
         }
         if (popularHits.length < 10) {
-            const generalPopular = await processAndPopulateTracks({ status: 'approved' }, 10 - popularHits.length);
+            const existingIds = popularHits.map(t => t._id);
+            const generalPopular = await processAndPopulateTracks({ 
+                status: 'approved',
+                _id: { $nin: existingIds }
+            }, 10 - popularHits.length);
             popularHits.push(...generalPopular);
         }
         
@@ -713,7 +737,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
                 }
             },
             { $sort: { totalPlayCount: -1 } },
-            { $limit: 11 },
+            { $limit: 10 },
             {
                 $lookup: {
                     from: "artists",
