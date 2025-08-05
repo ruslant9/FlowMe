@@ -336,8 +336,9 @@ router.get('/artist/:artistId', authMiddleware, async (req, res) => {
                     acc.push(track.album);
                 }
                 return acc;
-            }, []);
-        
+            }, [])
+            .sort((a, b) => new Date(b.releaseDate || 0) - new Date(a.releaseDate || 0));
+
         // 5. STATS
         const totalPlayCount = allTracksByArtist.reduce((sum, track) => sum + (track.playCount || 0), 0);
         const subscriberCount = artist.subscribers?.length || 0;

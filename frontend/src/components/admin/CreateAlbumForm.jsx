@@ -95,7 +95,7 @@ const ArtistAutocomplete = ({ artists, onSelect, initialArtistId }) => {
     );
 };
 
-const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
+const SortableTrackItem = ({ track, index, mainArtistId, onEditTrack, onDeleteTrack }) => {
     const {
         attributes,
         listeners,
@@ -111,6 +111,8 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
         zIndex: isDragging ? 10 : 'auto',
     };
 
+    const featuredArtists = (track.artist || []).filter(a => a._id !== mainArtistId);
+
     return (
         <div ref={setNodeRef} style={style} className={`flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg transition-shadow ${isDragging ? 'shadow-xl opacity-50' : ''}`}>
             <div className="flex items-center space-x-2 min-w-0">
@@ -118,9 +120,14 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
                 <div {...attributes} {...listeners} className="cursor-grab touch-none p-1 text-slate-500">
                     <GripVertical size={16} />
                 </div>
-                <Music size={16} className="text-slate-500 flex-shrink-0" />
-                <span className="font-semibold text-sm truncate">{track.title}</span>
-                {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full">E</span>}
+                <div className="flex items-center space-x-2 min-w-0">
+                    <Music size={16} className="text-slate-500 flex-shrink-0" />
+                    <div className="truncate">
+                        <span className="font-semibold text-sm truncate">{track.title}</span>
+                        {featuredArtists.length > 0 && <span className="text-xs text-slate-500 ml-2">(feat. {featuredArtists.map(a => a.name).join(', ')})</span>}
+                    </div>
+                    {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0">E</span>}
+                </div>
             </div>
             <div className="flex items-center space-x-1 flex-shrink-0">
                 <button type="button" onClick={() => onEditTrack(track)} className="p-1.5 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600" title="Редактировать трек">
@@ -134,7 +141,10 @@ const SortableTrackItem = ({ track, index, onEditTrack, onDeleteTrack }) => {
     );
 };
 
-const TrackItem = ({ track, index }) => {
+// Статичный компонент для DragOverlay
+// Этот компонент используется для визуального представления перетаскиваемого элемента
+const TrackItem = ({ track, index, mainArtistId }) => {
+    const featuredArtists = (track.artist || []).filter(a => a._id !== mainArtistId);
     return (
         <div className="flex items-center justify-between p-2 bg-slate-200 dark:bg-slate-700 rounded-lg shadow-xl">
             <div className="flex items-center space-x-2 min-w-0">
@@ -142,9 +152,12 @@ const TrackItem = ({ track, index }) => {
                 <div className="cursor-grabbing touch-none p-1 text-slate-500">
                     <GripVertical size={16} />
                 </div>
-                <Music size={16} className="text-slate-500 flex-shrink-0" />
-                <span className="font-semibold text-sm truncate">{track.title}</span>
-                {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full">E</span>}
+                <div className="flex items-center space-x-2 min-w-0">
+                    <Music size={16} className="text-slate-500 flex-shrink-0" />
+                    <span className="font-semibold text-sm truncate">{track.title}</span>
+                    {featuredArtists.length > 0 && <span className="text-xs text-slate-500 ml-2">(feat. {featuredArtists.map(a => a.name).join(', ')})</span>}
+                    {track.isExplicit && <span className="text-xs font-bold text-slate-500 bg-slate-300 dark:bg-slate-600 px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0">E</span>}
+                </div>
             </div>
             <div className="flex items-center space-x-1 flex-shrink-0">
                 <div className="p-1.5"><Edit size={14} /></div>
@@ -223,6 +236,10 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
     const fileInputRef = useRef(null);
     const batchFileInputRef = useRef(null);
 
+    const mainArtistIdForTracks = useMemo(() => {
+        return initialData?.artist?._id || initialData?.artist;
+    }, [initialData]);
+
      const dropAnimation = {
         sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.5" } } }),
     };
@@ -241,7 +258,10 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             const res = await axios.get(`${API_URL}/api/admin/albums/${initialData._id}/tracks`, { headers: { Authorization: `Bearer ${token}` } });
             setAlbumTracks(res.data);
             setInitialTracks(res.data);
-        } catch (error) { toast.error("Не удалось загрузить треки альбома."); }
+        } catch (error) { 
+            toast.error("Не удалось загрузить треки альбома."); 
+            setAlbumTracks([]); setInitialTracks([]); 
+        }
     }, [isEditMode, initialData]);
 
     useEffect(() => {
@@ -393,9 +413,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 e.target.reset();
             }
             onSuccess();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при отправке заявки.", { id: toastId });
-        } finally { setLoading(false); }
+        } catch (error) { toast.error(error.response?.data?.message || "Ошибка при отправке заявки.", { id: toastId }); } finally { setLoading(false); }
     };
 
     return (
@@ -405,7 +423,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 {currentUser.role !== 'admin' && !isEditMode && <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>}
             </div>
 
-            <div className={`flex flex-col ${isEditMode ? 'md:flex-row md:space-x-6' : ''} mt-6`}>
+            <div className="flex flex-col md:flex-row md:space-x-6 mt-6">
                 <div className={`space-y-4 ${isEditMode ? 'md:w-1/2 flex-shrink-0' : 'w-full'}`}>
                     <div>
                         <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
@@ -469,13 +487,14 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                                     index={index + 1}
                                                     onEditTrack={onEditTrack} 
                                                     onDeleteTrack={handleDeleteTrack} 
+                                                    mainArtistId={mainArtistIdForTracks}
                                                 />
                                             ))}
                                         </div>
                                     </SortableContext>
                                     <DragOverlay dropAnimation={dropAnimation}>
                                         {activeTrack ? (
-                                            <TrackItem track={activeTrack} index={activeTrack.originalIndex + 1} />
+                                            <TrackItem track={activeTrack} index={activeTrack.originalIndex + 1} mainArtistId={mainArtistIdForTracks}/>
                                         ) : null}
                                     </DragOverlay>
                                 </DndContext>
@@ -491,7 +510,7 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
             <div className="flex justify-end pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
                 <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
                     {loading && <Loader2 className="animate-spin mr-2"/>}
-                    {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? 'Создать альбом' : 'Отправить на проверку')}
+                    {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? 'Создать альбом' : 'Отправить')}
                 </button>
             </div>
         </form>
