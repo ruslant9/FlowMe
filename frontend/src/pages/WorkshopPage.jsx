@@ -9,7 +9,7 @@ import { Brush, Library, Search, Loader2, PlusCircle, Edit, Trash2, CheckCircle,
 import { Menu, Transition } from '@headlessui/react';
 import CreateEditPackModal from '../components/workshop/CreateEditPackModal';
 import PackCard from '../components/workshop/PackCard';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import { useModal } from '../hooks/useModal';
 import PackPreviewModal from '../components/workshop/PackPreviewModal';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';

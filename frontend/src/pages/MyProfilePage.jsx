@@ -10,9 +10,9 @@ import { Loader2, Upload, Trash2, User, BarChart2, Sparkles, Music, Newspaper, P
 import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useModal } from '../hooks/useModal';
-import { useUser } from '../context/UserContext';
-import { useWebSocket } from '../context/WebSocketContext';
+import { useUser } from '../hooks/useUser';
 
+import { useWebSocket } from '../context/WebSocketContext';
 import ProfileStats from '../components/ProfileStats';
 import PostCard from '../components/PostCard';
 import CreatePostModal from '../components/modals/CreatePostModal';

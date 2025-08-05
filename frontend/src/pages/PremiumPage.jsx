@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import { Link } from 'react-router-dom';
 import { useModal } from '../hooks/useModal';
 

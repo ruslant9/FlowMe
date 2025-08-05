@@ -6,7 +6,7 @@ import axios from 'axios';
 import useTitle from '../hooks/useTitle';
 import { Loader2, Play, Music, Clock, ArrowLeft, PlusCircle, Edit, Trash2, Shuffle } from 'lucide-react';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import EditPlaylistModal from '../components/modals/EditPlaylistModal';

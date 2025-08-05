@@ -14,7 +14,7 @@ import { useWebSocket } from '../context/WebSocketContext';
 import ProfileCard from '../components/ProfileCard';
 import ProfileStats from '../components/ProfileStats';
 import PostCard from '../components/PostCard';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import EditPostModal from '../components/modals/EditPostModal';
 import UserListModal from '../components/modals/UserListModal';
 import TrackList from '../components/music/TrackList';

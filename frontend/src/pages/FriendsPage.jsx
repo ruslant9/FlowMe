@@ -13,7 +13,7 @@ import { useWebSocket } from '../context/WebSocketContext';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 
 
 const API_URL = import.meta.env.VITE_API_URL;

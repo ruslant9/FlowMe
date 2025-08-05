@@ -8,7 +8,7 @@ import TrackList from '../components/music/TrackList';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2, Search, Music, History, Star, ListMusic, PlusCircle, UploadCloud } from 'lucide-react';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../hooks/useUser';
 import RecommendationCard from '../components/music/RecommendationCard';
 import ArtistAvatar from '../components/music/ArtistAvatar';
 import MusicWave from '../components/music/MusicWave';
