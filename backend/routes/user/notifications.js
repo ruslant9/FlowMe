@@ -10,7 +10,50 @@ const Notification = require('../../models/Notification');
 const Submission = require('../../models/Submission'); 
 const mongoose = require('mongoose');
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Переработанный роут для получения уведомлений ---
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Новые роуты для Push-уведомлений ---
+
+// 1. Отдать публичный VAPID ключ на фронтенд
+router.get('/vapid-public-key', (req, res) => {
+    if (!process.env.VAPID_PUBLIC_KEY) {
+        return res.status(500).json({ message: 'VAPID public key не настроен на сервере.' });
+    }
+    res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+// 2. Сохранить подписку пользователя
+router.post('/subscribe', async (req, res) => {
+    try {
+        const subscription = req.body;
+        // Добавляем подписку в массив, только если её там ещё нет (по endpoint)
+        await User.findByIdAndUpdate(req.user.userId, {
+            $addToSet: { pushSubscriptions: subscription }
+        });
+        res.status(201).json({ message: 'Подписка на уведомления оформлена.' });
+    } catch (error) {
+        console.error("Ошибка при подписке на push-уведомления:", error);
+        res.status(500).json({ message: 'Ошибка сервера при подписке.' });
+    }
+});
+
+// 3. Удалить подписку пользователя
+router.post('/unsubscribe', async (req, res) => {
+    try {
+        const { endpoint } = req.body;
+        if (!endpoint) {
+            return res.status(400).json({ message: 'Endpoint не предоставлен.' });
+        }
+        await User.findByIdAndUpdate(req.user.userId, {
+            $pull: { pushSubscriptions: { endpoint: endpoint } }
+        });
+        res.status(200).json({ message: 'Подписка отменена.' });
+    } catch (error) {
+        console.error("Ошибка при отписке от push-уведомлений:", error);
+        res.status(500).json({ message: 'Ошибка сервера при отписке.' });
+    }
+});
+
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 router.get('/', async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
@@ -73,8 +116,6 @@ router.get('/', async (req, res) => {
         res.status(500).json({ message: 'Ошибка на сервере при получении уведомлений' });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
 
 router.post('/mark-read', async (req, res) => {
     try {
@@ -150,7 +191,6 @@ router.get('/summary', async (req, res) => {
         const unreadNotificationsCount = await Notification.countDocuments({ recipient: userId, read: false });
         const friendRequestsCount = user.friendRequestsReceived.length;
         
-        // Вот здесь используется 'Conversation', поэтому импорт необходим
         const userConversations = await Conversation.find({ 
             participants: userId, 
             'deletedBy.user': { $ne: userId }, 
@@ -185,7 +225,6 @@ router.get('/summary', async (req, res) => {
         });
 
     } catch (error) {
-        // Добавим более детальное логирование ошибки на сервере
         console.error("Ошибка в роуте /notifications/summary:", error);
         res.status(500).json({ message: 'Server error' });
     }

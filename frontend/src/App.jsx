@@ -120,6 +120,8 @@ const MainLayout = ({ children }) => {
   return (
     <div style={{ height: 'calc(var(--vh, 1vh) * 100)' }} className={`w-full font-sans transition-colors duration-300 relative ${
       theme === 'dark' ? 'bg-liquid-background text-white' : 'bg-slate-100 text-slate-900'
+       } ${
+      currentTrack ? 'pb-[100px]' : ''
     }`}>
       {theme === 'dark' && (
         <Suspense fallback={null}>
@@ -167,7 +169,7 @@ const MainLayout = ({ children }) => {
       )}
       
       
-      <div className={`flex relative z-10 h-full overflow-hidden ${currentTrack ? 'pb-[100px]' : ''}`}>
+      <div className={`flex relative z-10 h-full overflow-hidden`}>
         <Sidebar 
           themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} 
           isMobileNavOpen={isMobileNavOpen}

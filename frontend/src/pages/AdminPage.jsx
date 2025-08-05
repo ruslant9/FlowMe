@@ -46,7 +46,7 @@ const AdminPage = () => {
                 </div>
                 
                 {/* Горизонтальная панель навигации */}
-                <div className="flex flex-wrap border-b border-slate-300 dark:border-slate-700 mb-6">
+                <div className="flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
                     <TabButton 
                         active={activeTab === 'submissions'} 
                         onClick={() => setActiveTab('submissions')}

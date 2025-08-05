@@ -448,3 +448,12 @@ html.dark .rc-slider-rail {
   opacity: 0.3; /* Уменьшаем интенсивность градиента */
   z-index: -1; /* Помещаем псевдоэлемент за контентом */
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

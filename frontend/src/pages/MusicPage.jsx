@@ -250,8 +250,8 @@ const MusicPage = () => {
                     </button>
                 </div>
                 
-                <div className="px-6 md:px-8 border-b border-slate-300 dark:border-slate-700">
-                    <div className="flex flex-wrap items-center gap-x-2 -mb-px">
+                <div className="px-6 md:px-8 border-b border-slate-300 dark:border-slate-700 overflow-x-auto no-scrollbar">
+                    <div className="flex items-center gap-x-2 -mb-px">
                         <TabButton active={activeTab === 'recommendations'} onClick={() => setActiveTab('recommendations')}><Star size={16}/><span>Главная</span></TabButton>
                         <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')}><Search size={16}/><span>Поиск</span></TabButton>
                         <TabButton active={activeTab === 'my-music'} onClick={() => setActiveTab('my-music')}><Music size={16}/><span>Моя музыка</span></TabButton>

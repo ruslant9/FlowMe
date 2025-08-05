@@ -10,7 +10,7 @@ import { useUser } from '../hooks/useUser';
 import { jwtDecode } from 'jwt-decode';
 import { format } from 'date-fns';
 import {
-    Trash2, Loader2, MessageSquare, Calendar, Image, FileText, Mail, EyeOff, Tag, Check, ChevronDown, UserPlus, Users, Briefcase, Globe, Lock, MapPin, KeyRound, Shield, Laptop, Smartphone, XCircle, Music
+    Trash2, Loader2, MessageSquare, Calendar, Image, FileText, Mail, EyeOff, Tag, Check, ChevronDown, UserPlus, Users, Briefcase, Globe, Lock, MapPin, KeyRound, Shield, Laptop, Smartphone, XCircle, Music, Bell, ShieldAlert, BellOff
 } from 'lucide-react';
 import { Listbox, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -55,7 +55,7 @@ const Section = ({ title, icon: Icon, children, isInitiallyOpen = false }) => {
     return (
         <section className="mb-4">
             <button className="w-full flex justify-between items-center p-4 rounded-lg bg-slate-100/50 dark:bg-slate-800/50 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors group" onClick={() => setIsOpen(v => !v)}>
-                <div className="flex items-center space-x-4 w-full sm:w-auto">
+                <div className="flex items-center space-x-4">
                     <Icon size={22} className="text-slate-500 dark:text-white/70" />
                     <div>
                         <h2 className="text-lg font-bold text-left">{title}</h2>
@@ -107,7 +107,7 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
             <div className="flex items-center space-x-4">
                 {children}
                 <Listbox value={value} onChange={onChange}>
-                    <div className="relative flex-1">
+                    <div className="relative w-full sm:w-48">
                         <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                             <span className="block truncate">{options.find(opt => opt.id === value)?.name}</span>
                             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" /></span>
@@ -130,6 +130,126 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
     );
 };
 
+const NotificationToggle = () => {
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [permission, setPermission] = useState('default');
+    const [loading, setLoading] = useState(true);
+    const [subscriptionObject, setSubscriptionObject] = useState(null);
+
+    const urlBase64ToUint8Array = (base64String) => {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    };
+
+    const checkSubscription = useCallback(async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            setPermission('denied');
+            setLoading(false);
+            return;
+        }
+        setPermission(Notification.permission);
+        const registration = await navigator.serviceWorker.ready;
+        const sub = await registration.pushManager.getSubscription();
+        setIsSubscribed(!!sub);
+        setSubscriptionObject(sub);
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        checkSubscription();
+    }, [checkSubscription]);
+
+    const subscribeUser = async () => {
+        setLoading(true);
+        try {
+            const perm = await Notification.requestPermission();
+            setPermission(perm);
+            if (perm !== 'granted') {
+                toast.error('Вы заблокировали уведомления. Измените это в настройках браузера.');
+                setLoading(false);
+                return;
+            }
+
+            const registration = await navigator.serviceWorker.ready;
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/api/user/vapid-public-key`, { headers: { Authorization: `Bearer ${token}` } });
+            const applicationServerKey = urlBase64ToUint8Array(res.data.publicKey);
+
+            const sub = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey,
+            });
+
+            await axios.post(`${API_URL}/api/user/subscribe`, sub, { headers: { Authorization: `Bearer ${token}` } });
+            toast.success('Уведомления включены!');
+            checkSubscription();
+        } catch (error) {
+            toast.error('Не удалось включить уведомления.');
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const unsubscribeUser = async () => {
+        if (!subscriptionObject) return;
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/api/user/unsubscribe`, { endpoint: subscriptionObject.endpoint }, { headers: { Authorization: `Bearer ${token}` } });
+            await subscriptionObject.unsubscribe();
+            toast.success('Уведомления отключены.');
+            checkSubscription();
+        } catch (error) {
+            toast.error('Не удалось отключить уведомления.');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    if (!isMobile) {
+        return null;
+    }
+
+    let buttonContent;
+    let buttonAction = () => {};
+    let buttonDisabled = loading;
+
+    if (permission === 'denied') {
+        buttonContent = <><ShieldAlert size={18} /><span>Заблокировано</span></>;
+        buttonDisabled = true;
+    } else if (isSubscribed) {
+        buttonContent = <><BellOff size={18} /><span>Отключить</span></>;
+        buttonAction = unsubscribeUser;
+    } else {
+        buttonContent = <><Bell size={18} /><span>Включить</span></>;
+        buttonAction = subscribeUser;
+    }
+
+    return (
+        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-between">
+            <div>
+                <p className="font-semibold text-slate-700 dark:text-white">Push-уведомления</p>
+                <p className="text-sm text-slate-500 dark:text-white/60">Получайте уведомления, даже когда сайт закрыт.</p>
+            </div>
+            <button
+                onClick={buttonAction}
+                disabled={buttonDisabled}
+                className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+            >
+                {loading ? <Loader2 className="animate-spin" /> : buttonContent}
+            </button>
+        </div>
+    );
+};
 
 const SettingsPage = () => {
     useTitle('Настройки');
@@ -278,6 +398,20 @@ const SettingsPage = () => {
             <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
                 <h1 className="text-3xl font-bold mb-6 text-center">Настройки</h1>
 
+                <Section title="Уведомления" icon={Bell} isInitiallyOpen={true}>
+                    <div className="space-y-4">
+                        <NotificationToggle />
+                        {privacySettings && (
+                            <ToggleControl label="Отключить всплывающие уведомления в приложении" description="Вы не будете получать уведомления внутри сайта." checked={privacySettings.disableToasts} onChange={(e) => handleToggleChange('disableToasts', e.target.checked)} />
+                        )}
+                        {haveSettingsChanged() && (
+                            <div className="flex justify-end pt-2">
+                                <button onClick={savePrivacySettings} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Сохранить</button>
+                            </div>
+                        )}
+                    </div>
+                </Section>
+                
                 <Section title="Безопасность и вход" icon={Shield} isInitiallyOpen={false}>
                     <div className="space-y-6">
                         <div>
@@ -349,8 +483,7 @@ const SettingsPage = () => {
 
                 <Section title="Настройки приватности" icon={Lock}>
                     {loadingPrivacySettings || !privacySettings ? <Loader2 className="animate-spin mx-auto"/> : (
-                        <div className="space-y-6">
-                             <ToggleControl label="Отключить все всплывающие уведомления" description="Вы не будете получать push-уведомления и звуковые оповещения." checked={privacySettings.disableToasts} onChange={(e) => handleToggleChange('disableToasts', e.target.checked)} />
+                        <div className="space-y-4">
                              <div className="space-y-4">
                                 <PrivacySettingControl label="Кто видит дату рождения" icon={Calendar} value={privacySettings.viewDOB} onChange={(v) => handlePrivacyChange('viewDOB', v)} options={privacyOptions}>{privacySettings.viewDOB !== 'private' && (<label className="flex items-center space-x-2 text-sm text-slate-600 dark:text-white/70"><input type="checkbox" checked={privacySettings.hideDOBYear} onChange={(e) => handleToggleChange('hideDOBYear', e.target.checked)} className="form-checkbox h-4 w-4 rounded" /><span>Скрыть год</span></label>)}</PrivacySettingControl>
                                 <PrivacySettingControl label="Кто видит аватар" icon={Image} value={privacySettings.viewAvatar} onChange={(v) => handlePrivacyChange('viewAvatar', v)} options={privacyOptions} />

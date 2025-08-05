@@ -86,7 +86,8 @@ const UserSchema = new Schema({
     resetPasswordExpires: Date,
     subscribedCommunities: [{ type: Schema.Types.ObjectId, ref: 'Community' }],
     subscribedArtists: [{ type: Schema.Types.ObjectId, ref: 'Artist' }],
-    addedContentPacks: [{ type: Schema.Types.ObjectId, ref: 'ContentPack' }]
+    addedContentPacks: [{ type: Schema.Types.ObjectId, ref: 'ContentPack' }],
+    pushSubscriptions: [Schema.Types.Mixed]
 }, { timestamps: true });
 UserSchema.add({ banInfo: { type: banInfoSchema, default: () => ({}) } });
 
