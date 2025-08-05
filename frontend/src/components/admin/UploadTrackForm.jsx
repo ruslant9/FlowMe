@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Loader2, Trash2, X, GripVertical } from 'lucide-react';
+import { Loader2, Trash2, X, GripVertical, ChevronDown } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import GenreSelector from './GenreSelector';
 import Avatar from '../Avatar';

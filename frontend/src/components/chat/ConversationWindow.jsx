@@ -152,10 +152,10 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
     
-    const activeConversationRef = useRef(internalConversation);
+    const activeConversationRef = useRef(activeConversation);
     useEffect(() => {
-        activeConversationRef.current = internalConversation;
-    }, [internalConversation]);
+        activeConversationRef.current = activeConversation;
+    }, [activeConversation]);
 
     const refetchConversationDetails = useCallback(async () => {
         if (!internalConversation?._id) return;
@@ -478,6 +478,59 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         }
     }, [internalConversation?._id]);
 
+    const handleScrollToDate = useCallback(async (date) => {
+        setIsCalendarOpen(false);
+        const dateString = date.toISOString().split('T')[0];
+        
+        const firstMessageOnDate = messages.find(m => m.createdAt.startsWith(dateString));
+
+        if (firstMessageOnDate) {
+            const element = document.getElementById(`message-${firstMessageOnDate._id}`);
+            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            const toastId = toast.loading('Загрузка истории чата...');
+            try {
+                const token = localStorage.getItem('token');
+                
+                const contextRes = await axios.get(`${API_URL}/api/messages/conversations/${internalConversation._id}/messages-by-date?date=${dateString}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                const targetPage = contextRes.data.page;
+                const hasOlderMessages = contextRes.data.hasMore;
+
+                const pagePromises = [];
+                for (let i = 1; i <= targetPage; i++) {
+                    pagePromises.push(
+                        axios.get(`${API_URL}/api/messages/conversations/${internalConversation._id}/messages?page=${i}&limit=${MESSAGE_PAGE_LIMIT}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        })
+                    );
+                }
+                
+                const pageResults = await Promise.all(pagePromises);
+                
+                const allMessages = pageResults.flatMap(res => res.data);
+
+                setMessages(allMessages);
+                setPage(targetPage);
+                setHasMore(hasOlderMessages);
+                
+                setTimeout(() => {
+                    const firstMessageOnTargetDate = allMessages.find(m => m.createdAt.startsWith(dateString));
+                    if (firstMessageOnTargetDate) {
+                        const element = document.getElementById(`message-${firstMessageOnTargetDate._id}`);
+                        element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100);
+
+                toast.dismiss(toastId);
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Не удалось найти сообщения за эту дату.', { id: toastId });
+            }
+        }
+    }, [messages, internalConversation]);
+
     const handleScrollToMessage = useCallback(async (messageId) => {
         const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
         
@@ -503,7 +556,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             }
         }
     }, [messages]);
-
     useLayoutEffect(() => {
         if (highlightedMessageId) {
             const element = document.getElementById(`message-${highlightedMessageId}`);
@@ -590,7 +642,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     useEffect(() => {
         const handleNewMessage = (e) => {
             const newMessage = e.detail;
-            const currentConv = activeConversationRef.current;
+            const currentConv = activeConversationRef.current; // Используем ref, чтобы избежать stale state
 
             const scrollContainer = scrollContainerRef.current;
             const isScrolledToBottom = scrollContainer 

@@ -53,7 +53,7 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
     };
 
     return (
-        <div className="flex justify-center my-4">
+        <div className="flex justify-center my-2">
             <div className="relative group inline-flex items-center">
                 <div className="flex items-center text-xs font-semibold text-slate-800 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full px-3 py-1.5 max-w-sm text-center">
                     {getIcon()}
