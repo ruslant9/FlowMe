@@ -1,17 +1,14 @@
 // frontend/src/context/UserContext.jsx
 
-import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { UserDataCache } from '../utils/UserDataCacheService';
+// --- ИЗМЕНЕНИЕ: Удален импорт UserDataCache ---
+// import { UserDataCache } from '../utils/UserDataCacheService';
 import { jwtDecode } from 'jwt-decode';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export const UserContext = createContext(null);
-
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Удаляем хук useUser из этого файла ---
-// export const useUser = () => { ... } // <--- ЭТА ФУНКЦИЯ УДАЛЯЕТСЯ
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 export const UserProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
@@ -28,8 +25,9 @@ export const UserProvider = ({ children }) => {
             const [userRes, packsRes] = await Promise.all([userPromise, packsPromise]);
 
             const userData = userRes.data;
-            const profileDataToCache = { user: userData, friendshipStatus: 'self' };
-            await UserDataCache.setUser(userData._id, profileDataToCache);
+            // --- ИЗМЕНЕНИЕ: Логика сохранения в кеш удалена ---
+            // const profileDataToCache = { user: userData, friendshipStatus: 'self' };
+            // await UserDataCache.setUser(userData._id, profileDataToCache);
 
             setCurrentUser(userData);
             setAddedPacks(packsRes.data);
@@ -41,7 +39,8 @@ export const UserProvider = ({ children }) => {
                 setToken(null);
                 setCurrentUser(null);
                 setAddedPacks([]);
-                UserDataCache.clearAll();
+                // --- ИЗМЕНЕНИЕ: Очистка кеша удалена ---
+                // UserDataCache.clearAll();
             }
         }
     }, []);
@@ -53,18 +52,8 @@ export const UserProvider = ({ children }) => {
                 setLoadingUser(true);
                 setLoadingPacks(true);
 
-                let loadedFromCache = false;
-                try {
-                    const decodedToken = jwtDecode(token);
-                    const cachedProfile = await UserDataCache.getUser(decodedToken.userId);
-                    if (cachedProfile && isMounted) {
-                        setCurrentUser(cachedProfile.user);
-                        loadedFromCache = true;
-                    }
-                } catch (e) {
-                    // Невалидный токен
-                }
-
+                // --- ИЗМЕНЕНИЕ: Вся логика загрузки из кеша полностью удалена.
+                // Теперь данные всегда запрашиваются с сервера при инициализации.
                 await fetchFreshData(token);
 
                 if (isMounted) {
@@ -102,7 +91,8 @@ export const UserProvider = ({ children }) => {
             localStorage.removeItem('user');
             setCurrentUser(null);
             setAddedPacks([]);
-            UserDataCache.clearAll();
+            // --- ИЗМЕНЕНИЕ: Очистка кеша удалена ---
+            // UserDataCache.clearAll();
         }
     }, []);
 
