@@ -4,7 +4,6 @@ import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
-// --- ИСПРАВЛЕНИЕ: Добавляем недостающие иконки (Home, Search, Music, ListMusic, Star) ---
 import { Sun, Moon, Loader2, ShieldAlert, LogOut, Menu, Home, Search, Music, ListMusic, Star } from 'lucide-react';
 import { useUser } from './hooks/useUser';
 const LiquidGlassBackground = React.lazy(() => import('./components/LiquidGlassBackground'));
@@ -18,7 +17,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import FriendsPage from './pages/FriendsPage';
 import MessagesPage from './pages/MessagesPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
-import PageWrapper from './components/PageWrapper';
+import PageWrapper from './components/PageWrapper'; // --- ИСПРАВЛЕНИЕ: Импорт добавлен
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AuthLayout from './components/AuthLayout';
@@ -42,6 +41,8 @@ import { useWebSocket } from './context/WebSocketContext';
 import WorkshopPage from './pages/WorkshopPage';
 import { Link } from 'react-router-dom';
 import ResponsiveNav from './components/ResponsiveNav';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ThemeSwitcher = ({ theme, toggleTheme }) => (
   <div className="flex items-center justify-center space-x-2 p-2 rounded-lg">
@@ -307,7 +308,11 @@ const ProtectedLayout = () => {
 
   return (
     <MainLayout>
-      <Outlet />
+      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+      <PageWrapper>
+        <Outlet />
+      </PageWrapper>
+      {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
     </MainLayout>
   );
 };
