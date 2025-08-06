@@ -63,7 +63,7 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  const isMobileChatView = /^\/messages\/.+/.test(location.pathname);
+  const isFullBleedLayout = /^\/(artist|album|single|communities)\/[^/]+/.test(location.pathname) || /^\/messages\/.+/.test(location.pathname);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
@@ -134,7 +134,7 @@ const MainLayout = ({ children }) => {
 
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className={`md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || isMobileChatView ? 'hidden' : 'block'}`}
+        className={`md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || isFullBleedLayout ? 'hidden' : 'block'}`}
       >
         <Menu />
       </button>
@@ -178,7 +178,7 @@ const MainLayout = ({ children }) => {
           isMobileNavOpen={isMobileNavOpen}
           onMobileNavClose={() => setIsMobileNavOpen(false)}
         />
-        <div className={`flex-1 relative overflow-y-auto transform-gpu transition-all duration-300 ${isMobileChatView ? '' : 'pt-16 md:pt-0'}`}>
+        <div className={`flex-1 relative overflow-y-auto transform-gpu transition-all duration-300 ${isFullBleedLayout ? '' : 'pt-16 md:pt-0'}`}>
           {children}
         </div>
       </div>

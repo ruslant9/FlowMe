@@ -129,7 +129,7 @@ const ArtistPage = () => {
                     />
                     <button 
                         onClick={() => navigate(-1)} 
-                        className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
+                        className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
                         style={{ color: dominantColor }}
                     >
                         <ArrowLeft size={16} strokeWidth={2.5} />

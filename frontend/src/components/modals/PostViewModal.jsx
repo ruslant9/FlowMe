@@ -29,7 +29,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT = 450;
 const COMMENT_PAGE_LIMIT = 5;
 
-// Компонент для кешированного изображения с анимацией
 const CachedMotionImage = ({ src, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
 
@@ -44,8 +43,6 @@ const CachedMotionImage = ({ src, ...props }) => {
     return <motion.img src={finalSrc} {...props} />;
 };
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-// Компонент для обычного кешированного изображения, которого не хватало
 const CachedImage = ({ src, alt, className }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -120,7 +117,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const isPollExpired = useMemo(() => {
         return activePost?.poll?.expiresAt && new Date() > new Date(activePost.poll.expiresAt);
     }, [activePost]);
-
 
     useEffect(() => {
         const fetchCommentingOptions = async () => {
@@ -433,7 +429,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                         exit={{ scale: 0.9 }}
                         onClick={(e) => e.stopPropagation()}
                         style={{ maxHeight: currentTrack ? 'calc(90vh - 100px)' : '90vh' }}
-                        className="overflow-hidden w-full h-full max-w-6xl flex bg-white dark:bg-slate-900 rounded-3xl relative text-slate-900 dark:text-white"
+                        className="overflow-hidden w-full h-full max-w-6xl flex flex-col md:flex-row bg-white dark:bg-slate-900 rounded-3xl relative text-slate-900 dark:text-white"
                     >
                         {isLoading && !activePost ? (
                             <div className="w-full flex items-center justify-center"><Loader2 className="animate-spin"/></div>
@@ -442,14 +438,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                 {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[60]">{currentIndex + 1} / {posts.length}</div>}
                                 
                                 {hasImages ? (
-                                    <div className="w-full md:w-3/5 bg-black flex items-center justify-center">
+                                    <div className="w-full md:w-3/5 flex-shrink-0 bg-black flex items-center justify-center">
                                         <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
                                     </div>
                                 ) : null}
-                                <div className={`
-                                    flex-col relative z-20 bg-white dark:bg-slate-900
-                                    ${hasImages ? 'hidden md:flex md:w-2/5' : 'flex w-full'}
-                                `}>
+                                <div className={`flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0`}>
                                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center space-x-3 flex-shrink-0">
                                         {(() => {
                                             const author = activePost.community || activePost.user;
@@ -461,7 +454,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             return (
                                                 <Link to={linkTo} onClick={onClose} className="flex items-center space-x-3 group">
                                                     <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
-                                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                                         <Avatar
                                                             username={author.name || author.username}
                                                             fullName={author.fullName}
@@ -469,7 +461,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                             isPremium={!activePost.community && author.premium?.isActive}
                                                             customBorder={border}
                                                         />
-                                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                                     </div>
                                                     <div className="flex-grow">
                                                         {activePost.community && <p className="text-xs text-slate-400 flex items-center"><Users size={12} className="mr-1"/>Сообщество</p>}
