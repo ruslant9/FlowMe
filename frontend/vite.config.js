@@ -5,9 +5,16 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   assetsInclude: ['**/*.glsl'],
   plugins: [react()],
-  // --- ДОБАВЬТЕ ЭТОТ БЛОК ---
   server: {
     host: true
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]'
+      }
+    }
   }
-  // --- КОНЕЦ БЛОКА ---
 })
