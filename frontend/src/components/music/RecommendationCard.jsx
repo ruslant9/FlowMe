@@ -32,32 +32,32 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
 
     // --- ФИНАЛЬНАЯ ЛОГИКА ОТОБРАЖЕНИЯ МЕТОК ---
     const getReleaseBadge = (releaseDate) => {
-        if (!releaseDate) return null;
+    if (!releaseDate) return null;
 
-        const release = new Date(releaseDate);
-        if (isNaN(release.getTime())) return null;
+    const release = new Date(`${releaseDate}-01`);
+    if (isNaN(release.getTime())) return null;
 
-        const now = new Date();
-        
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
-        
-        const releaseYear = release.getFullYear();
-        const releaseMonth = release.getMonth();
+    const now = new Date();
 
-        if (releaseYear === currentYear && releaseMonth === currentMonth) {
-            return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
-        }
-        
-        const isPreviousMonthSameYear = (releaseYear === currentYear && releaseMonth === currentMonth - 1);
-        const isPreviousMonthDifferentYear = (currentMonth === 0 && releaseYear === currentYear - 1 && releaseMonth === 11);
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0 - январь
 
-        if (isPreviousMonthSameYear || isPreviousMonthDifferentYear) {
-            return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
-        }
-        
-        return null;
-    };
+    const releaseYear = release.getFullYear();
+    const releaseMonth = release.getMonth();
+
+    if (releaseYear === currentYear && releaseMonth === currentMonth) {
+        return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
+    }
+
+    const isPreviousMonthSameYear = (releaseYear === currentYear && releaseMonth === currentMonth - 1);
+    const isPreviousMonthDifferentYear = (currentMonth === 0 && releaseYear === currentYear - 1 && releaseMonth === 11);
+
+    if (isPreviousMonthSameYear || isPreviousMonthDifferentYear) {
+        return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
+    }
+
+    return null;
+};
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handlePlayClick = (e) => {
