@@ -1,4 +1,5 @@
 // frontend/src/components/music/ArtistInfoPanel.jsx
+
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -8,24 +9,16 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
     const { currentTrack } = useMusicPlayer();
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Блокировка скролла фона ---
     useEffect(() => {
-        // Если панель открыта, запрещаем скролл
         if (isOpen) {
             document.body.style.overflow = 'hidden';
         } else {
-            // Если закрыта, возвращаем скролл
             document.body.style.overflow = '';
         }
-
-        // Функция очистки: гарантирует, что скролл вернется,
-        // даже если компонент будет удален из DOM по другой причине
         return () => {
             document.body.style.overflow = '';
         };
-    }, [isOpen]); // Этот эффект будет срабатывать каждый раз, когда меняется `isOpen`
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
+    }, [isOpen]);
 
     return (
         <AnimatePresence>

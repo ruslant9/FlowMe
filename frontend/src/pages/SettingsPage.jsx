@@ -479,11 +479,11 @@ const SettingsPage = () => {
                                                             {getDeviceIcon(session.device)}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <p className="font-semibold truncate">
+                                                            <p className="font-semibold truncate text-sm sm:text-base">
                                                                 {session.browser || 'Unknown'} on {session.os || 'Unknown'}
                                                                 {isCurrent && <span className="text-xs text-green-500 ml-2">(Текущая)</span>}
                                                             </p>
-                                                            <div className="text-sm text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2">
+                                                            <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2"> 
                                                                 {isLocal ? (
                                                                     <span className="font-semibold text-cyan-500">Локальная сессия</span>
                                                                 ) : (

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Search, Shield, ShieldCheck, ShieldAlert, User, Mail, Calendar } from 'lucide-react';
-import AdminUserManagementOverlay from './AdminUserManagementOverlay'; // <-- ИЗМЕНЯЕМ ИМПОРТ
+import AdminUserManagementOverlay from './AdminUserManagementOverlay';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -80,55 +80,87 @@ const AdminUserManager = () => {
         if (users.length === 0) return <p className="text-center text-slate-500 p-8">Пользователи не найдены.</p>;
         
         return (
-            <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[700px]">
-                    <thead>
-                        <tr className="border-b dark:border-slate-700">
-                            <th className="p-2 font-semibold">Пользователь</th>
-                            <th className="p-2 font-semibold">Email</th>
-                            <th className="p-2 font-semibold">Дата регистрации</th>
-                            <th className="p-2 font-semibold">Статус бана</th>
-                            <th className="p-2 text-right">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map(user => (
-                            <tr key={user._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
-                                <td className="p-2">
-                                    <div className="flex items-center space-x-2">
-                                        <User size={14} />
-                                        <span className="font-semibold">{user.fullName || user.username}</span>
-                                    </div>
-                                </td>
-                                <td className="p-2">
-                                    <div className="flex items-center space-x-2 text-slate-500">
-                                        <Mail size={14} />
-                                        <span>{user.email}</span>
-                                    </div>
-                                </td>
-                                <td className="p-2">
-                                     <div className="flex items-center space-x-2 text-slate-500">
-                                        <Calendar size={14} />
-                                        <span>{new Date(user.createdAt).toLocaleDateString('ru-RU')}</span>
-                                    </div>
-                                </td>
-                                <td className="p-2">{renderBanStatus(user)}</td>
-                                <td className="p-2">
-                                    <div className="flex items-center justify-end">
-                                        <button 
-                                            onClick={() => handleOpenOverlay(user)} 
-                                            className="flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
-                                        >
-                                            <Shield size={14} />
-                                            <span>Управление</span>
-                                        </button>
-                                    </div>
-                                </td>
+            <>
+                {/* Desktop Table View */}
+                <div className="overflow-x-auto hidden md:block">
+                    <table className="w-full text-left min-w-[700px]">
+                        <thead>
+                            <tr className="border-b dark:border-slate-700">
+                                <th className="p-2 font-semibold">Пользователь</th>
+                                <th className="p-2 font-semibold">Email</th>
+                                <th className="p-2 font-semibold">Дата регистрации</th>
+                                <th className="p-2 font-semibold">Статус бана</th>
+                                <th className="p-2 text-right">Действия</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {users.map(user => (
+                                <tr key={user._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                    <td className="p-2">
+                                        <div className="flex items-center space-x-2">
+                                            <User size={14} />
+                                            <span className="font-semibold">{user.fullName || user.username}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-2">
+                                        <div className="flex items-center space-x-2 text-slate-500">
+                                            <Mail size={14} />
+                                            <span>{user.email}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-2">
+                                         <div className="flex items-center space-x-2 text-slate-500">
+                                            <Calendar size={14} />
+                                            <span>{new Date(user.createdAt).toLocaleDateString('ru-RU')}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-2">{renderBanStatus(user)}</td>
+                                    <td className="p-2">
+                                        <div className="flex items-center justify-end">
+                                            <button 
+                                                onClick={() => handleOpenOverlay(user)} 
+                                                className="flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
+                                            >
+                                                <Shield size={14} />
+                                                <span>Управление</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3">
+                    {users.map(user => (
+                        <div key={user._id} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg">
+                            <div className="flex justify-between items-start">
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold truncate">{user.fullName || user.username}</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                                </div>
+                                <button 
+                                    onClick={() => handleOpenOverlay(user)} 
+                                    className="flex-shrink-0 flex items-center space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
+                                >
+                                    <Shield size={14} />
+                                    <span>Упр.</span>
+                                </button>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
+                                <div className="text-slate-500 dark:text-slate-400">
+                                    <p>Рег: {new Date(user.createdAt).toLocaleDateString('ru-RU')}</p>
+                                </div>
+                                <div>
+                                    {renderBanStatus(user)}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </>
         );
     };
 

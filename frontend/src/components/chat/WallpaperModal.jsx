@@ -32,7 +32,7 @@ const getContrastingTextColor = (hexColor) => {
 const TabButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
-        className={`flex-1 py-2.5 text-sm font-semibold rounded-md transition-colors ${
+        className={`flex-1 px-2 py-1.5 text-xs md:px-4 md:py-2.5 md:text-sm font-semibold rounded-md transition-colors ${
             active 
             ? 'bg-blue-600 text-white shadow' 
             : 'text-slate-600 dark:text-white/70 hover:bg-slate-200/50 dark:hover:bg-white/10'
@@ -306,15 +306,15 @@ const WallpaperModal = ({ isOpen, onClose, conversationId, currentWallpaper }) =
                     <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
                     <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="ios-glass-final w-full max-w-4xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
+                        className="ios-glass-final w-full max-w-4xl p-4 md:p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Выбор обоев для чата</h2>
+                            <h2 className="text-lg md:text-xl font-bold">Выбор обоев для чата</h2>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10">
                                 <X />
                             </button>
                         </div>
 
-                        <div className="flex items-center space-x-2 p-1 mb-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                        <div className="flex items-center space-x-1 md:space-x-2 p-1 mb-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
                             {editingWallpaper && <button onClick={() => { setEditingWallpaper(null); setActiveTab('my');}} className="text-sm px-2 text-blue-500 hover:underline">← Назад</button>}
                             <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')}>Мои обои</TabButton>
                             <TabButton active={activeTab === 'templates'} onClick={() => setActiveTab('templates')}>Шаблоны</TabButton>
@@ -338,8 +338,8 @@ const WallpaperModal = ({ isOpen, onClose, conversationId, currentWallpaper }) =
                         </div>
                         
                         <div className="flex justify-end mb-2">
-                             <button onClick={handleResetWallpaper} className="flex items-center space-x-2 text-sm text-slate-700 dark:text-slate-300 hover:text-blue-500 dark:hover:text-blue-400 font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                                 <RotateCcw size={14}/> <span>Сбросить до стандартных</span>
+                             <button onClick={handleResetWallpaper} className="flex items-center space-x-2 text-xs md:text-sm text-slate-700 dark:text-slate-300 hover:text-blue-500 dark:hover:text-blue-400 font-semibold px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                 <RotateCcw size={14}/> <span className="hidden sm:inline">Сбросить до стандартных</span><span className="sm:hidden">Сбросить</span>
                             </button>
                         </div>
 

@@ -1,6 +1,6 @@
 // frontend/src/pages/UserProfilePage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -31,9 +31,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const customRuLocaleForDistance = {
     ...ru,
     formatDistance: (token, count, options) => {
-        if (token === 'lessThanXMinutes' || (token === 'xMinutes' && count === 1)) {
-            return 'только что';
-        }
+        if (token === 'lessThanXMinutes' || (token === 'xMinutes' && count === 1)) return 'только что';
         return ru.formatDistance(token, count, options);
     },
 };
@@ -465,162 +463,107 @@ const UserProfilePage = () => {
                 />
             )}
 
-            <main className="flex-1 p-4 md:p-8">
-                <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1 flex flex-col gap-6">
-                        <ProfileCard
-                            icon={User}
-                            title="Профиль"
-                            noHeaderMargin
-                            userAccent={userAccent}
-                            renderContent={(accentTextColor) => (
-                                 <div className="text-center pt-4 pb-6">
-                                    <div className="relative flex-shrink-0 mx-auto mb-4">
-                                        <Avatar
-                                            username={user.username}
-                                            fullName={user.fullName}
-                                            avatarUrl={user.avatar}
-                                            size="xl"
-                                            isPremium={user.premium?.isActive}
-                                            customBorder={user.premiumCustomization?.avatarBorder}
+            <main className="flex-1 overflow-y-auto">
+                <div className="max-w-7xl mx-auto p-4 md:p-8">
+                    {/* HERO SECTION */}
+                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8">
+                        {userAccent && <AnimatedAccent backgroundUrl={userAccent.backgroundUrl || userAccent} emojis={userAccent.emojis || []} />}
+                        <div className="relative z-10 flex-shrink-0 group">
+                            <Avatar
+                                username={user.username}
+                                fullName={user.fullName}
+                                avatarUrl={user.avatar}
+                                size="2xl"
+                                isPremium={user.premium?.isActive}
+                                customBorder={user.premiumCustomization?.avatarBorder}
+                            />
+                        </div>
+                        <div className="relative z-10">
+                            <h1 className="text-4xl md:text-5xl font-extrabold text-white flex items-center justify-center md:justify-start" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                                {user.fullName || user.username}
+                                {user.premiumCustomization?.usernameEmoji?.url && (
+                                    <button onClick={handlePremiumFeatureClick} className="ml-3 focus:outline-none" title="Функция Premium">
+                                        <img 
+                                            src={user.premiumCustomization.usernameEmoji.url} 
+                                            alt="emoji" 
+                                            className="w-8 h-8" 
                                         />
-                                    </div>
-                                    <div className="flex flex-col items-center mt-4">
-                                        <div className="flex items-center justify-center">
-                                            <h1 className="text-2xl font-bold">{user.fullName || user.username}</h1>
-                                            {user.premiumCustomization?.usernameEmoji?.url && (
-                                                <button onClick={handlePremiumFeatureClick} className="ml-2 focus:outline-none" title="Функция Premium">
-                                                    <img 
-                                                        src={user.premiumCustomization.usernameEmoji.url} 
-                                                        alt="emoji" 
-                                                        className="w-6 h-6" 
-                                                    />
-                                                </button>
-                                            )}
-                                        </div>
-                                        
-                                        {user.status && (
-                                            <div className="mt-2 text-center w-full max-w-xs mx-auto">
-                                                <p className="text-sm text-slate-600 dark:text-slate-300" style={accentTextColor ? {color: accentTextColor, opacity: 0.8} : {}}>
-                                                    <span className="font-semibold"></span> <span className="whitespace-pre-wrap break-words">{user.status}</span>
-                                                </p>
-                                            </div>
-                                        )}
-                                        
-                                        <p className="text-slate-500 dark:text-white/60 mt-2" style={accentTextColor ? {color: accentTextColor, opacity: 0.7} : {}}>@{user.username}</p>
-                                        
-                                        <p className="text-sm text-slate-500 dark:text-white/50 mt-2" style={accentTextColor ? {color: accentTextColor, opacity: 0.6} : {}}>
-                                            Регистрация: {format(new Date(user.createdAt), 'd MMMM yyyy', { locale: ru })}
-                                        </p>
-                                        {getDisplayOnlineStatus() && (
-                                            <p className="text-sm text-slate-500 dark:text-white/50 mt-1" style={accentTextColor ? {color: accentTextColor, opacity: 0.6} : {}}>
-                                                {getDisplayOnlineStatus()}
-                                            </p>
-                                        )}
-                                        
-                                        {mutualFriendsCount > 0 && (
-                                            <p className="text-sm text-slate-500 dark:text-white/60 mt-2" style={accentTextColor ? {color: accentTextColor, opacity: 0.7} : {}}>
-                                                Общих друзей: {mutualFriendsCount}
-                                            </p>
-                                        )}
-                                        
-                                    </div>
-                                    <div className="mt-4 flex justify-center">
-                                        <UserInteractionButtons
-                                            status={friendshipStatus}
-                                            onAction={handleAction}
-                                            user={user}
-                                            isProcessing={processingAction === 'write_message' || !!processingAction}
-                                            onWriteMessage={handleWriteMessage}
-                                            onInvite={() => setIsInviteModalOpen(true)}
-                                        />
+                                    </button>
+                                )}
+                            </h1>
+                            <p className="text-lg text-slate-300 mt-1" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>@{user.username}</p>
+                            
+                            {user.status && (
+                                <div className="mt-3">
+                                    <p className="text-white/90 whitespace-pre-wrap break-words">{user.status}</p>
+                                </div>
+                            )}
+
+                            <div className="flex items-center justify-center md:justify-start space-x-3 mt-3 text-xs text-slate-300" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
+                                <span>Регистрация: {format(new Date(user.createdAt), 'dd.MM.yyyy', { locale: ru })}</span>
+                                {getDisplayOnlineStatus() && (<span>• {getDisplayOnlineStatus()}</span>)}
+                            </div>
+                            
+                             {mutualFriendsCount > 0 && (
+                                <p className="text-sm text-slate-300 mt-2" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
+                                    Общих друзей: {mutualFriendsCount}
+                                </p>
+                            )}
+                            
+                            <div className="mt-6 flex flex-wrap justify-center md:justify-start gap-3">
+                                <UserInteractionButtons
+                                    status={friendshipStatus}
+                                    onAction={handleAction}
+                                    user={user}
+                                    isProcessing={!!processingAction}
+                                    onWriteMessage={handleWriteMessage}
+                                    onInvite={() => setIsInviteModalOpen(true)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MAIN GRID */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-1 flex flex-col gap-6">
+                             {stats && (
+                                <div className="bg-slate-800 rounded-2xl p-4">
+                                    <div className="flex items-center justify-around">
+                                        <StatItem label="Посты" value={stats.posts} />
+                                        <StatItem label="Друзья" value={stats.friends} onClick={() => handleShowUsers('friends')} />
+                                        <StatItem label="Сообщества" value={stats.subscribedCommunities} onClick={() => handleShowUsers('communities')} />
+                                        <StatItem label="Подписчики" value={stats.subscribers} onClick={() => handleShowUsers('subscribers')} />
+                                        <StatItem label="Лайки" value={stats.likes} />
                                     </div>
                                 </div>
                             )}
-                        />
+                            <div className="bg-slate-800 rounded-2xl p-6 space-y-4">
+                               <h3 className="text-xl font-bold text-white mb-2">Основная информация</h3>
+                               <ProfileField label="Местоположение" value={user.city || user.country ? [user.city, user.country].filter(Boolean).join(', ') : null} />
+                               <ProfileField label="Дата рождения" value={displayDOB()} />
+                               <ProfileField label="Пол" value={user.gender} />
+                            </div>
+                             <div className="bg-slate-800 rounded-2xl p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xl font-bold text-white">Интересы</h3>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {user.interests?.length > 0 ? user.interests.map(i => <div key={i} className="bg-blue-500/20 text-blue-300 rounded-full px-3 py-1 text-sm">{i}</div>) : <p className="text-slate-400 text-sm">Пользователь не добавил интересы.</p>}
+                                </div>
+                            </div>
+                             <div className="bg-slate-800 rounded-2xl p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xl font-bold text-white">Музыка пользователя</h3>
+                                    {totalMusicCount > 0 && <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-400 hover:underline">Все ({totalMusicCount})</button>}
+                                </div>
+                                {musicError ? <p className="text-slate-400 text-sm">{musicError}</p> : 
+                                 loading ? <div className="flex justify-center py-4"><Loader2 className="animate-spin text-slate-400"/></div> : 
+                                 musicTracks.length > 0 ? <TrackList tracks={musicTracks} onSelectTrack={(track) => playTrack(track, musicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, myMusicTrackIds}} /> : <p className="text-slate-400 text-sm">У пользователя нет сохраненной музыки.</p>}
+                            </div>
+                        </div>
 
-                        {!isBlockedByThem && (
-                            <>
-                                <ProfileCard 
-                                    icon={BarChart2} 
-                                    title="Статистика" 
-                                    renderContent={(accentTextColor) => (
-                                        <ProfileStats stats={stats} onShowUsers={handleShowUsers} accentTextColor={accentTextColor} />
-                                    )}
-                                />
-                                
-                                <ProfileCard 
-                                    icon={User} 
-                                    title="Основная информация"
-                                    renderContent={(accentTextColor) => (
-                                        <div className="space-y-6 text-left">
-                                            <ProfileField label="Полное имя" value={user.fullName} accentTextColor={accentTextColor} />
-                                            <ProfileField label="Местоположение" value={user.city || user.country ? [user.city, user.country].filter(Boolean).join(', ') : null} accentTextColor={accentTextColor} />
-                                            <ProfileField label="Дата рождения" value={displayDOB()} accentTextColor={accentTextColor} />
-                                            <ProfileField label="Пол" value={user.gender} accentTextColor={accentTextColor} />
-                                            <ProfileField label="Email" value={user.email} accentTextColor={accentTextColor} />
-                                        </div>
-                                    )}
-                                />
-
-                                <ProfileCard 
-                                    icon={Sparkles} 
-                                    title="Интересы"
-                                    renderContent={(accentTextColor) => (
-                                         <div className="flex flex-wrap gap-2">
-                                            {user.interests && user.interests.length > 0 ? (
-                                                user.interests.map(interest => (
-                                                    <div key={interest} className="flex items-center bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 rounded-full px-3 py-1 text-sm">
-                                                        {interest}
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-slate-500 dark:text-white/50" style={accentTextColor ? { color: accentTextColor, opacity: 0.7 } : {}}>Пользователь не добавил интересы.</p>
-                                            )}
-                                        </div>
-                                    )}
-                                />
-                                
-                                <ProfileCard 
-                                    icon={Music} 
-                                    title="Музыка пользователя" 
-                                    actionButton={
-                                        <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-500 hover:underline">
-                                            Показать все ({totalMusicCount})
-                                        </button>
-                                    }
-                                    renderContent={() => (
-                                        musicError ? (
-                                            <p className="text-slate-500 dark:text-white/50">{musicError}</p>
-                                        ) : loading ? (
-                                            <div className="flex justify-center py-4"><Loader2 className="animate-spin" /></div>
-                                        ) : musicTracks.length > 0 ? (
-                                            <TrackList
-                                                tracks={musicTracks}
-                                                onSelectTrack={(track) => playTrack(track, musicTracks)}
-                                                currentPlayingTrackId={currentTrack?._id}
-                                                isPlaying={isPlaying}
-                                                onToggleSave={onToggleLike}
-                                                myMusicTrackIds={myMusicTrackIds}
-                                                progress={progress}
-                                                duration={duration}
-                                                onSeek={seekTo}
-                                                loadingTrackId={loadingTrackId}
-                                                buffered={buffered}
-                                                togglePlayPause={togglePlayPause}
-                                            />
-                                        ) : (
-                                            <p className="text-slate-500 dark:text-white/50">У пользователя нет сохраненной музыки.</p>
-                                        )
-                                    )}
-                                />
-                            </>
-                        )}
-                    </div>
-
-                    <div className="lg:col-span-2 flex flex-col gap-6">
-                        {!isBlockedByThem && (
-                            posts.length > 0 ? (
+                        <div className="lg:col-span-2 flex flex-col gap-6">
+                            {posts.length > 0 ? (
                                 posts.map(post => (
                                     <PostCard
                                         key={post._id}
@@ -632,13 +575,13 @@ const UserProfilePage = () => {
                                     />
                                 ))
                             ) : (
-                                 <div className="ios-glass-final rounded-3xl p-6 w-full">
+                                 <div className="bg-slate-800 rounded-2xl p-6 w-full">
                                     <div className="p-10 text-center text-slate-500 dark:text-white/60">
                                         <p>У пользователя пока нет постов.</p>
                                     </div>
                                 </div>
-                            )
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </main>
