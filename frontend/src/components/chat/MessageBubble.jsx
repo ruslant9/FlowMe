@@ -1,4 +1,4 @@
-// frontend/src/components/chat/MessageBubble.jsx
+// frontend/src/components/chat/MessageBubble.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useMemo, useRef, useState, forwardRef } from 'react';
 import { format } from 'date-fns';
@@ -232,62 +232,62 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             
             <div className={`relative flex-shrink-0 ${isOwnMessage ? 'order-1' : 'order-2'}`}>
                 {!selectionMode && !message.isSending && !message.isFailed && (
-                     <Tippy
-                        interactive
-                        placement={menuPosition === 'bottom' ? 'bottom-end' : 'top-end'}
-                        visible={isMenuOpen}
-                         onClickOutside={(instance, event) => {
-                            const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
-                            if (isClickOnPreviewOverlay) {
-                                return false; 
-                            }
-                            onToggleMenu(null);
-                        }}
-                        popperOptions={{ strategy: 'fixed' }}
-                        render={attrs => (
-                            <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
-                                <ReactionsPopover onSelect={(emoji) => { onReact(emoji); onToggleMenu(null); }}>
-                                     <button
-                                        disabled={!canInteract}
-                                        className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                     >
-                                       <span className="text-xl">❤️</span> <span>Реагировать</span>
-                                    </button>
-                                </ReactionsPopover>
-                                <button onClick={() => { onReply(message); onToggleMenu(null); }} disabled={!canInteract} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                                   <CornerDownRight size={16}/> <span>Ответить</span>
-                                </button>
-                                <button onClick={() => { onForward(message._id); onToggleMenu(null); }} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700">
-                                   <ChevronsRight size={16}/> <span>Переслать</span>
-                                </button>
-                                <button
-                                    onClick={() => { (isPinned ? onUnpin : onPin)(message._id); onToggleMenu(null); }}
-                                    disabled={!canInteract}
-                                    className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                   <Pin size={16}/> <span>{isPinned ? 'Открепить' : 'Закрепить'}</span>
-                                </button>
-                                {isOwnMessage && (
-                                    <button onClick={() => { onEdit(message); onToggleMenu(null); }} disabled={!canInteract} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                                       <Pencil size={16}/> <span>Редактировать</span>
-                                    </button>
-                                )}
-                                <div className="my-1 h-px bg-slate-200 dark:bg-slate-700"></div>
-                                <button onClick={handleDeleteRequest} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">
-                                   <Trash2 size={16}/> <span>Удалить</span>
-                                </button>
-                                <div className="tippy-arrow" data-popper-arrow></div>
-                            </div>
-                        )}
-                    >
-                         <TippyWrapper 
-                            ref={menuButtonRef} 
-                            onClick={handleMenuClick} 
-                            className="p-2 rounded-full text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-200 dark:hover:bg-slate-700"
-                         >
-                            <MoreHorizontal size={18}/>
-                         </TippyWrapper>
-                     </Tippy>
+                     // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Убираем вложенность и сразу рендерим ReactionsPopover ---
+                     <ReactionsPopover onSelect={(emoji) => { onReact(emoji); onToggleMenu(null); }}>
+                        <Tippy
+                           interactive
+                           placement={menuPosition === 'bottom' ? 'bottom-end' : 'top-end'}
+                           visible={isMenuOpen}
+                            onClickOutside={(instance, event) => {
+                               const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
+                               if (isClickOnPreviewOverlay) {
+                                   return false; 
+                               }
+                               onToggleMenu(null);
+                           }}
+                           popperOptions={{ strategy: 'fixed' }}
+                           render={attrs => (
+                               <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
+                                   {/* Кнопка "Реагировать" теперь триггерит сам ReactionsPopover */}
+                                   <TippyWrapper className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                      <span className="text-xl">❤️</span> <span>Реагировать</span>
+                                   </TippyWrapper>
+                                   <button onClick={() => { onReply(message); onToggleMenu(null); }} disabled={!canInteract} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                      <CornerDownRight size={16}/> <span>Ответить</span>
+                                   </button>
+                                   <button onClick={() => { onForward(message._id); onToggleMenu(null); }} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                                      <ChevronsRight size={16}/> <span>Переслать</span>
+                                   </button>
+                                   <button
+                                       onClick={() => { (isPinned ? onUnpin : onPin)(message._id); onToggleMenu(null); }}
+                                       disabled={!canInteract}
+                                       className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                   >
+                                      <Pin size={16}/> <span>{isPinned ? 'Открепить' : 'Закрепить'}</span>
+                                   </button>
+                                   {isOwnMessage && (
+                                       <button onClick={() => { onEdit(message); onToggleMenu(null); }} disabled={!canInteract} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                          <Pencil size={16}/> <span>Редактировать</span>
+                                       </button>
+                                   )}
+                                   <div className="my-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                                   <button onClick={handleDeleteRequest} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">
+                                      <Trash2 size={16}/> <span>Удалить</span>
+                                   </button>
+                                   <div className="tippy-arrow" data-popper-arrow></div>
+                               </div>
+                           )}
+                       >
+                            <TippyWrapper 
+                               ref={menuButtonRef} 
+                               onClick={handleMenuClick} 
+                               className="p-2 rounded-full text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-200 dark:hover:bg-slate-700"
+                            >
+                               <MoreHorizontal size={18}/>
+                            </TippyWrapper>
+                        </Tippy>
+                    </ReactionsPopover>
+                    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
                 )}
             </div>
 
@@ -333,7 +333,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 {message.imageUrl && (
                     <div className="relative p-1">
                         <CachedImage 
-                            src={message.imageUrl} 
+                            src={getImageUrl(message.imageUrl)} 
                             alt="Attachment" 
                             className="max-w-full h-auto rounded-xl object-cover cursor-pointer"
                             onClick={() => onImageClick && onImageClick(message.imageUrl)}

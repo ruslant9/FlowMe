@@ -286,12 +286,10 @@ const MyProfilePage = () => {
                                 <button onClick={() => setIsEditProfileModalOpen(true)} className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-colors flex items-center space-x-2">
                                     <Edit2 size={16} /><span>Редактировать</span>
                                 </button>
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                 <button onClick={() => setIsPremiumCustomizationModalOpen(true)} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg text-white' : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm'}`}>
-                                    <Crown size={16} className={!user.premium?.isActive ? 'text-yellow-400' : ''} />
+                                    {user.premium?.isActive ? <Crown size={16} /> : <Sparkles size={16} />}
                                     <span>Кастомизация</span>
                                 </button>
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </div>
                         </div>
                     </div>

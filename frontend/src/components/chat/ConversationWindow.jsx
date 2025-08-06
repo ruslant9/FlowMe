@@ -1,4 +1,4 @@
-// frontend/src/components/chat/ConversationWindow.jsx
+// frontend/src/components/chat/ConversationWindow.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
@@ -12,7 +12,7 @@ import { Loader2, MoreVertical, X, ChevronsRight, Trash2, CornerUpLeft, Search, 
 import { useWebSocket } from '../../context/WebSocketContext';
 import { useModal } from '../../hooks/useModal';
 import toast from 'react-hot-toast';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, formatDistanceToNowStrict } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useUser } from '../../hooks/useUser';
 import SmartDateIndicator from './SmartDateIndicator';
@@ -31,8 +31,6 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
 
-// ... (остальные хелперы и компонент без изменений) ...
-
 const getImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) {
@@ -41,33 +39,24 @@ const getImageUrl = (url) => {
     return `${API_URL}/${url}`;
 };
 
-const customRuLocaleForDistance = {
-    ...ru,
-    formatDistance: (token, count, options) => {
-        if (token === 'lessThanXMinutes' || (token === 'xMinutes' && count === 1)) {
-            return 'только что';
-        }
-        return ru.formatDistance(token, count, options);
-    },
-};
-
+// --- НАЧАЛО ИЗМЕНЕНИЯ 2: Перерабатываем функцию для более короткого вывода ---
 const formatLastSeen = (dateString) => {
-    if (!dateString) return "недавно";
+    if (!dateString) return "Был(а) недавно";
     const date = new Date(dateString);
     const now = new Date();
+    const diffSeconds = (now.getTime() - date.getTime()) / 1000;
 
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
+    if (diffSeconds < 60) return "Был(а) только что";
+    if (diffSeconds < 3600) return `Был(а) ${Math.round(diffSeconds / 60)}м назад`;
+    if (diffSeconds < 86400) return `Был(а) ~${Math.round(diffSeconds / 3600)}ч назад`;
 
-    if (diffHours < 24) {
-        return formatDistanceToNow(date, { addSuffix: true, locale: customRuLocaleForDistance });
-    } else {
-        if (date.getFullYear() === now.getFullYear()) {
-            return format(date, 'd MMMM в HH:mm', { locale: ru });
-        }
-        return format(date, 'd MMMM yyyy г. в HH:mm', { locale: ru });
+    if (date.getFullYear() === now.getFullYear()) {
+        return `Был(а) ${format(date, 'd MMM в HH:mm', { locale: ru })}`;
     }
+    return `Был(а) ${format(date, 'd MMM yyyy в HH:mm', { locale: ru })}`;
 };
+// --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
+
 
 const getContrastingTextColor = (hexColor) => {
     if (!hexColor || hexColor.length < 7) return '#111827'; 
@@ -154,12 +143,10 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const activeConversationRef = useRef(conversation);
     useEffect(() => {
         activeConversationRef.current = conversation;
     }, [conversation]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const refetchConversationDetails = useCallback(async () => {
         if (!internalConversation?._id) return;
@@ -883,7 +870,8 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         if (liveInterlocutor?.isOnline && canSeeDetailedStatus) return "Онлайн";
         if (canSeeDetailedStatus) {
             const lastSeenTime = liveInterlocutor.lastSeen;
-            if (lastSeenTime) return `Был(а) ${formatLastSeen(lastSeenTime)}`;
+            // --- ИЗМЕНЕНИЕ 2: Используем новую функцию ---
+            if (lastSeenTime) return formatLastSeen(lastSeenTime);
         }
         return "Недавно";
     }, [liveInterlocutor, isBlockedByThem, isBlockingThem, isInterlocutorTyping, internalConversation, currentUser]);
