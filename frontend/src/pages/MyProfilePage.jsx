@@ -15,6 +15,7 @@ import { useWebSocket } from '../context/WebSocketContext';
 import PostCard from '../components/PostCard';
 import CreatePostModal from '../components/modals/CreatePostModal';
 import EditPostModal from '../components/modals/EditPostModal';
+import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 import UserListModal from '../components/modals/UserListModal';
 import TrackList from '../components/music/TrackList';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
@@ -81,6 +82,7 @@ const MyProfilePage = () => {
     const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isPremiumCustomizationModalOpen, setIsPremiumCustomizationModalOpen] = useState(false);
+    const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
     const [isUserListModalOpen, setIsUserListModalOpen] = useState(false);
     const [userForModal, setUserForModal] = useState(null);
     const [userListModalTitle, setUserListModalTitle] = useState('');
@@ -222,6 +224,14 @@ const MyProfilePage = () => {
         }
     }, [user]);
 
+    const handleCustomizationClick = () => {
+        if (user?.premium?.isActive) {
+            setIsPremiumCustomizationModalOpen(true);
+        } else {
+            setIsPremiumModalOpen(true);
+        }
+    };
+
     if (loadingUser) {
         return <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" /></div>;
     }
@@ -237,6 +247,7 @@ const MyProfilePage = () => {
             <InterestSelectionModal isOpen={isInterestModalOpen} onClose={() => setIsInterestModalOpen(false)} onSave={handleSaveInterests} initialSelectedInterests={user.interests} />
             <UserListModal isOpen={isUserListModalOpen} onClose={() => setIsUserListModalOpen(false)} user={userForModal} listType={listTypeInModal} initialTitle={userListModalTitle} />
             <StatusModal isOpen={isStatusModalOpen} onClose={() => setIsStatusModalOpen(false)} currentStatus={user.status} onSave={() => refetchUser()} />
+            <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
             <PremiumCustomizationModal isOpen={isPremiumCustomizationModalOpen} onClose={() => { setIsPremiumCustomizationModalOpen(false); refetchUser(); }} user={user} />
 
             <main className="flex-1 overflow-y-auto">
@@ -280,7 +291,7 @@ const MyProfilePage = () => {
                                 <button onClick={() => setIsEditProfileModalOpen(true)} className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-colors flex items-center space-x-2">
                                     <Edit2 size={16} /><span>Редактировать</span>
                                 </button>
-                                <button onClick={() => setIsPremiumCustomizationModalOpen(true)} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg text-white' : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm'}`}>
+                                <button onClick={handleCustomizationClick} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg text-white' : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm'}`}>
                                     {user.premium?.isActive ? <Crown size={16} /> : <Sparkles size={16} />}
                                     <span>Кастомизация</span>
                                 </button>

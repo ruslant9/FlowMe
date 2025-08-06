@@ -1098,9 +1098,9 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                         </>
                     ) : (
                         <>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 min-w-0">
                                 <button onClick={onDeselectConversation} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-[color:var(--chat-header-text-color,inherit)]"><CornerUpLeft size={20} /></button>
-                                <Link to={`/profile/${liveInterlocutor._id}`} className="flex items-center space-x-3 group">
+                                <Link to={`/profile/${liveInterlocutor._id}`} className="flex items-center space-x-3 group min-w-0">
                                     {(() => {
                                         const border = liveInterlocutor?.premiumCustomization?.avatarBorder;
                                         const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';
@@ -1119,16 +1119,16 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                             </div>
                                         );
                                     })()}
-                                    <div>
-                                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем адаптивные классы для текста --- */}
-                                        <h2 className="font-bold group-hover:underline flex items-center text-base md:text-lg" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
+                                    <div className="min-w-0">
+                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлен класс truncate --- */}
+                                        <h2 className="font-bold group-hover:underline flex items-center text-base md:text-lg truncate" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
                                             {liveInterlocutor.fullName || liveInterlocutor.username}
                                             {usernameEmoji?.url && (
                                                 <img src={usernameEmoji.url} alt="emoji" className="w-5 h-5 ml-1.5" />
                                             )}
                                         </h2>
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                         <p className="text-xs h-4" style={{ color: 'var(--chat-header-text-color, inherit)', opacity: 0.7 }}>{getStatusText()}</p>
-                                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ 1 --- */}
                                     </div>
                                 </Link>
                             </div>

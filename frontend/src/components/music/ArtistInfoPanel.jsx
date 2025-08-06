@@ -8,23 +8,39 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
     const { currentTrack } = useMusicPlayer();
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Глобальная блокировка скролла ---
     useEffect(() => {
-        // Когда панель открывается, добавляем класс к body, чтобы запретить скролл
-        if (isOpen) {
-            document.body.classList.add('overflow-hidden');
-        } else {
-            // Когда панель закрывается, убираем класс
-            document.body.classList.remove('overflow-hidden');
-        }
+    if (isOpen) {
+        // 1. Сохраняем текущую позицию прокрутки
+        const scrollY = window.scrollY;
+        
+        // 2. Применяем стили для блокировки
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
 
-        // Функция очистки: гарантирует, что класс будет удален,
-        // если компонент будет удален из DOM по другой причине
-        return () => {
-            document.body.classList.remove('overflow-hidden');
-        };
-    }, [isOpen]); // Этот эффект будет срабатывать каждый раз, когда меняется `isOpen`
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    } else {
+        // 3. Восстанавливаем стили при закрытии
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+
+    // 4. Функция очистки
+    return () => {
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        if (scrollY) {
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
+    };
+}, [isOpen]);
 
 
     return (

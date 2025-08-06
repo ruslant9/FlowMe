@@ -32,32 +32,32 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
     };
 
     const getReleaseBadge = (releaseDate) => {
-        if (!releaseDate) return null;
+    if (!releaseDate) return null;
 
-        const release = new Date(releaseDate);
-        if (isNaN(release.getTime())) return null;
+    const release = new Date(releaseDate);
+    if (isNaN(release.getTime())) return null;
 
-        const now = new Date();
+    const now = new Date();
+    
+    // Устанавливаем время на полночь для обеих дат в локальном часовом поясе
+    now.setHours(0, 0, 0, 0);
+    release.setHours(0, 0, 0, 0);
+    
+    const diffTime = now.getTime() - release.getTime();
+    
+    // Считаем разницу в полных 24-часовых периодах
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays >= 0 && diffDays <= 14) {
+        return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
+    }
 
-        // Получаем начало текущего дня в UTC
-        const startOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-
-        // Получаем начало дня релиза в UTC
-        const startOfReleaseDayUTC = new Date(Date.UTC(release.getUTCFullYear(), release.getUTCMonth(), release.getUTCDate()));
-
-        const diffTime = startOfTodayUTC.getTime() - startOfReleaseDayUTC.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays >= 0 && diffDays <= 14) {
-            return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
-        }
-
-        if (diffDays > 14 && diffDays <= 60) {
-            return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
-        }
-        
-        return null;
-    };
+    if (diffDays > 14 && diffDays <= 60) {
+        return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
+    }
+    
+    return null;
+};
 
     const handlePlayClick = (e) => {
         e.stopPropagation();

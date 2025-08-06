@@ -191,7 +191,16 @@ const CommunityDetailPage = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                     </div>
                     
-                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Адаптивная верстка шапки --- */}
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЙ --- */}
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800"
+                    >
+                        <ArrowLeft size={16} strokeWidth={2.5} />
+                        <span>Назад</span>
+                    </button>
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
+                    
                     <div className="max-w-2xl mx-auto px-4 md:px-8">
                         <div className="flex flex-col md:flex-row items-center md:items-end md:justify-between -mt-16 md:-mt-20 relative z-10 gap-4">
                             {/* Левая часть: Аватар + Имя/Метаданные */}
@@ -230,7 +239,6 @@ const CommunityDetailPage = () => {
                             </div>
                         </div>
                     </div>
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 </div>
 
                 {/* --- POSTS SECTION --- */}

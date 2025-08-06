@@ -185,7 +185,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
         ...(user?.role === 'admin' ? [{ name: "Админ-панель", path: "/admin", icon: Shield, count: summary.submissionsCount }] : [])
     ], [user, summary, menuItems]);
     
-    const NAV_ITEM_LIMIT = 6;
+    const NAV_ITEM_LIMIT = 7;
     const shouldTruncate = allNavItems.length > NAV_ITEM_LIMIT;
     const visibleNavItems = shouldTruncate ? allNavItems.slice(0, NAV_ITEM_LIMIT - 1) : allNavItems;
     
@@ -226,10 +226,12 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                 ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'}
                 ${isExpanded ? 'w-64' : 'md:w-20'}
             `}>
-                <div className="ios-glass-final h-full flex flex-col p-4">
-                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                <div className="ios-glass-final h-full flex flex-col p-4 relative">
+                    <button onClick={onMobileNavClose} className="absolute top-4 left-4 p-2 rounded-lg text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 md:hidden z-10">
+                        <X size={20} />
+                    </button>
+                    
                     <div className="flex items-center justify-between mb-6">
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                         <Tippy
                             placement="right"
                             delay={[300, 0]}
@@ -241,9 +243,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                 </button>
                             </TippyWrapper>
                         </Tippy>
-                         <button onClick={onMobileNavClose} className="p-2 rounded-lg text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 md:hidden">
-                            <X size={20} />
-                        </button>
+                        
                         <div className={`transition-all duration-200 ${isExpanded || isMobileNavOpen ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
                             {themeSwitcher}
                         </div>
