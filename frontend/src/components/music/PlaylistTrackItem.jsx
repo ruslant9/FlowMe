@@ -1,12 +1,10 @@
 // frontend/src/components/music/PlaylistTrackItem.jsx
 import React from 'react';
-import { Play, Pause, Heart, Trash2 } from 'lucide-react';
+import { Play, Pause, Heart, Trash2, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Tippy from '@tippyjs/react/headless';
 import { useCachedImage } from '../../hooks/useCachedImage';
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем хук для доступа к плееру ---
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const CachedImage = ({ src, alt, className }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -17,9 +15,7 @@ const CachedImage = ({ src, alt, className }) => {
 };
 
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15' }) => {
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Получаем функцию togglePlayPause напрямую из контекста ---
-    const { togglePlayPause } = useMusicPlayer();
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    const { togglePlayPause, loadingTrackId } = useMusicPlayer();
     
     const cleanTitle = (title) => {
         if (!title) return '';
@@ -53,6 +49,7 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
     };
     
     const cleanedTitle = cleanTitle(track.title);
+    const isLoading = loadingTrackId === track._id;
 
     const formatDuration = (ms) => {
         if (!ms) return '?:??';
@@ -62,32 +59,33 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
 
+    const handlePlayClick = (e) => {
+        e.stopPropagation();
+        if (isCurrent) {
+            togglePlayPause();
+        } else {
+            onPlay();
+        }
+    };
+
     return (
         <div 
             onDoubleClick={onPlay} 
-            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 px-4 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
+            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 px-2 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
         >
             <div className="flex items-center justify-center w-8 text-slate-600 dark:text-slate-400">
-                {isCurrent ? (
-                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Вызываем правильную функцию ---
-                    <button onClick={togglePlayPause} style={{ color: accentColor }}>
-                        {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-                    </button>
-                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-                ) : (
-                    <>
-                        <span className="group-hover:hidden">{index}</span>
-                        <button onClick={onPlay} className="hidden group-hover:block text-slate-800 dark:text-white">
-                            <Play size={18} />
-                        </button>
-                    </>
-                )}
+                <span style={isCurrent ? { color: accentColor } : {}}>{index}</span>
             </div>
             <div className="flex items-center space-x-4 min-w-0">
-                <CachedImage 
-                    src={track.albumArtUrl} 
-                    alt={cleanedTitle} className="w-10 h-10 rounded object-cover"
-                />
+                <div className="relative w-10 h-10 rounded object-cover flex-shrink-0 group/cover">
+                    <CachedImage 
+                        src={track.albumArtUrl} 
+                        alt={cleanedTitle} className="w-full h-full"
+                    />
+                    <button onClick={handlePlayClick} className={`absolute inset-0 bg-black/50 flex items-center justify-center text-white transition-opacity ${isCurrent || isLoading ? 'opacity-100' : 'opacity-0 group-hover/cover:opacity-100'}`}>
+                        {isLoading ? <Loader2 size={18} className="animate-spin" /> : (isCurrent && isPlaying ? <Pause size={18} /> : <Play size={18} />)}
+                    </button>
+                </div>
                 <div className="min-w-0">
                     <div className="flex items-center space-x-2">
                         {track.isExplicit && (
@@ -111,13 +109,13 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                             </Tippy>
                         )}
                         <p 
-                            className="font-semibold truncate" 
+                            className="font-semibold truncate text-sm md:text-base"
                             style={isCurrent ? { color: accentColor } : {}}
                         >
                             {cleanedTitle}
                         </p>
                     </div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate">
                         {renderArtistLinks(track.artist)}
                     </p>
                 </div>

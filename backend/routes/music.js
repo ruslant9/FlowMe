@@ -397,36 +397,62 @@ router.get('/search-all', authMiddleware, async (req, res) => {
         const searchOrCondition = (field) => ({
             $or: searchPatterns.map(pattern => ({ [field]: { $regex: pattern } }))
         });
-
-        const [matchingArtists, matchingAlbums] = await Promise.all([
-            Artist.find({ ...searchOrCondition('name'), status: 'approved' }).select('_id').lean(),
-            Album.find({ ...searchOrCondition('title'), status: 'approved' }).select('_id').lean()
-        ]);
-        const artistIds = matchingArtists.map(a => a._id);
-        const albumIds = matchingAlbums.map(a => a._id);
-
-        const trackQuery = {
-            status: 'approved',
-            type: 'library_track',
-            $or: [
-                searchOrCondition('title'),
-                { artist: { $in: artistIds } },
-                { album: { $in: albumIds } }
-            ]
-        };
         
-        const [artists, albums, playlists, tracks, totalTracks] = await Promise.all([
+        // --- ИЗМЕНЕНИЕ: Упрощенная логика для верхних результатов ---
+        const [artists, albums, playlists] = await Promise.all([
             page == 1 ? Artist.find({ ...searchOrCondition('name'), status: 'approved' }).limit(6).lean() : Promise.resolve([]),
-            page == 1 ? Album.find({ status: 'approved', $or: [searchOrCondition('title'), { artist: { $in: artistIds } }]}).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
+            page == 1 ? Album.find({ ...searchOrCondition('title'), status: 'approved' }).populate('artist', 'name').limit(6).lean() : Promise.resolve([]),
             page == 1 ? Playlist.find({ ...searchOrCondition('name'), visibility: 'public' }).populate('user', 'username').limit(6).lean() : Promise.resolve([]),
-            Track.find(trackQuery)
-                .populate('artist', 'name _id')
-                .populate('album', 'title coverArtUrl')
-                .sort({ playCount: -1 })
-                .skip(skip)
-                .limit(limit)
-                .lean(),
-            Track.countDocuments(trackQuery)
+        ]);
+
+        // --- ИЗМЕНЕНИЕ: Основная логика поиска треков через агрегацию ---
+        const trackAggregationPipeline = [
+            { $match: { status: 'approved', type: 'library_track' } },
+            {
+                $lookup: {
+                    from: 'artists',
+                    localField: 'artist',
+                    foreignField: '_id',
+                    as: 'artistDetails'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'albums',
+                    localField: 'album',
+                    foreignField: '_id',
+                    as: 'albumDetails'
+                }
+            },
+            { $unwind: { path: '$albumDetails', preserveNullAndEmptyArrays: true } },
+            {
+                $match: {
+                    $or: [
+                        searchOrCondition('title'),
+                        searchOrCondition('artistDetails.name'),
+                        searchOrCondition('albumDetails.title')
+                    ]
+                }
+            },
+            {
+                $facet: {
+                    paginatedResults: [
+                        { $sort: { playCount: -1, createdAt: -1 } },
+                        { $skip: skip },
+                        { $limit: limit }
+                    ],
+                    totalCount: [ { $count: 'count' } ]
+                }
+            }
+        ];
+
+        const aggregationResult = await Track.aggregate(trackAggregationPipeline);
+        const tracks = aggregationResult[0].paginatedResults;
+        const totalTracks = aggregationResult[0].totalCount[0]?.count || 0;
+
+        await Track.populate(tracks, [
+            { path: 'artist', select: 'name _id' },
+            { path: 'album', select: 'title coverArtUrl' }
         ]);
         
         const processedTracks = tracks.map(track => {

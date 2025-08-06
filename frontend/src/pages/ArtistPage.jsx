@@ -117,7 +117,6 @@ const ArtistPage = () => {
                 artist={artist}
                 isOpen={isInfoPanelOpen}
                 onClose={() => setIsInfoPanelOpen(false)}
-                scrollableContainerRef={mainRef}
             />
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
                 <div 
@@ -129,7 +128,7 @@ const ArtistPage = () => {
                     />
                     <button 
                         onClick={() => navigate(-1)} 
-                        className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
+                        className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
                         style={{ color: dominantColor }}
                     >
                         <ArrowLeft size={16} strokeWidth={2.5} />
@@ -140,10 +139,8 @@ const ArtistPage = () => {
                         <div className="flex flex-col space-y-4">
                             <div className="flex items-center space-x-6">
                                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавлен break-words для переноса длинных имён --- */}
                                 <h1 className="text-5xl md:text-7xl font-extrabold break-words" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{artist.name}</h1>
                             </div>
-                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ 2: Добавлен flex-wrap для переноса статистики --- */}
                             <div className="flex items-center space-x-4 text-sm font-semibold flex-wrap" style={{ color: textColor }}>
                                 <div className="flex items-center space-x-1.5">
                                     <Users size={16} />
@@ -159,7 +156,6 @@ const ArtistPage = () => {
                 </div>
 
                 <div className="p-6 md:p-8 relative bg-slate-100 dark:bg-slate-900">
-                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавлен flex-wrap и gap-4 для корректного переноса кнопок --- */}
                     <div className="flex items-center flex-wrap gap-4 mb-8">
                         <button 
                             onClick={() => handlePlayTopTracks(false)} 
@@ -177,15 +173,15 @@ const ArtistPage = () => {
                         </button>
                         <button 
                             onClick={handleSubscribeToggle}
-                            className={`px-6 py-3 font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-all duration-200 text-sm
+                            className={`p-3 rounded-full transition-colors flex items-center justify-center
                                 ${isSubscribed 
-                                    ? 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white' 
-                                    : 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white'
+                                    ? 'bg-blue-500/20 text-blue-500' 
+                                    : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20'
                                 }`
                             }
+                            title={isSubscribed ? 'Вы подписаны' : 'Подписаться'}
                         >
-                            {isSubscribed ? <Check size={18} /> : <UserPlus size={18} />}
-                            <span>{isSubscribed ? 'Вы подписаны' : 'Подписаться'}</span>
+                            {isSubscribed ? <Check size={20} /> : <UserPlus size={20} />}
                         </button>
                     </div>
                     

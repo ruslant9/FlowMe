@@ -26,7 +26,10 @@ import AnimatedAccent from '../AnimatedAccent';
 import { useCachedImage } from '../../hooks/useCachedImage'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
-const EMOJI_PICKER_HEIGHT = 450;
+const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
+const EMOJI_PICKER_WIDTH_DESKTOP = 350;
+const EMOJI_PICKER_HEIGHT_MOBILE = 350;
+
 const COMMENT_PAGE_LIMIT = 5;
 
 const CachedMotionImage = ({ src, ...props }) => {
@@ -104,6 +107,15 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const [commentingOptions, setCommentingOptions] = useState([]);
     const previousPostIdRef = useRef(null);
     
+    // --- ИЗМЕНЕНИЕ 1: Адаптивные размеры для Emoji Picker ---
+    const emojiPickerDimensions = useMemo(() => {
+        const isMobile = window.innerWidth < 768;
+        return {
+            height: isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : EMOJI_PICKER_HEIGHT_DESKTOP,
+            width: isMobile ? '100%' : EMOJI_PICKER_WIDTH_DESKTOP,
+        };
+    }, []);
+
     const userVote = useMemo(() => {
         if (!currentUser || !activePost?.poll?.options) return null;
         for (const option of activePost.poll.options) {
@@ -163,6 +175,14 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     }, [currentUser, activePost]);
 
     const togglePicker = () => { 
+        if (smileButtonRef.current) {
+            const rect = smileButtonRef.current.getBoundingClientRect();
+            if (window.innerHeight - rect.bottom < emojiPickerDimensions.height) {
+                setPickerPosition('top');
+            } else {
+                setPickerPosition('bottom');
+            }
+        }
         setIsPickerVisible(v => !v);
     };
 
@@ -410,11 +430,13 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     return ReactDOM.createPortal(
         <AnimatePresence>
             {currentIndex !== null && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-20 p-4">
-                    <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-[60]"><X size={32} /></button>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} 
+                    // --- ИЗМЕНЕНИЕ 2: Адаптивное выравнивание ---
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-end md:items-center z-20 p-0 md:p-4"
+                >
                     {posts.length > 1 && <>
-                        <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p-1+posts.length)%posts.length) }} className="absolute left-4 md:left-10 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[60] text-white"><ChevronLeft size={32} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p+1)%posts.length) }} className="absolute right-4 md:right-10 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[60] text-white"><ChevronRight size={32} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p-1+posts.length)%posts.length) }} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[60] text-white"><ChevronLeft size={32} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p+1)%posts.length) }} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[60] text-white"><ChevronRight size={32} /></button>
                     </>}
                     
                     {isEditingPostImage && activePost && (
@@ -424,25 +446,32 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             onSave={handleImageUpdate} />
                     )}
                     <motion.div
-                        initial={{ scale: 0.9 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0.9 }}
+                        initial={{ scale: 0.95, y: '100%' }}
+                        animate={{ scale: 1, y: 0 }}
+                        exit={{ scale: 0.95, y: '100%' }}
+                        md-initial={{ scale: 0.9 }}
+                        md-animate={{ scale: 1 }}
+                        md-exit={{ scale: 0.9 }}
                         onClick={(e) => e.stopPropagation()}
-                        style={{ maxHeight: currentTrack ? 'calc(90vh - 100px)' : '90vh' }}
-                        className="overflow-hidden w-full h-full max-w-6xl flex flex-col md:flex-row bg-white dark:bg-slate-900 rounded-3xl relative text-slate-900 dark:text-white"
+                        style={{ maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' }}
+                        // --- ИЗМЕНЕНИЕ 2 (продолжение): Адаптивные скругления и высота ---
+                        className="overflow-hidden w-full max-w-6xl flex flex-col md:flex-row bg-white dark:bg-slate-900 rounded-t-3xl md:rounded-3xl relative text-slate-900 dark:text-white md:h-auto md:max-h-[90vh]"
                     >
+                        {/* --- ИЗМЕНЕНИЕ 3: Кнопка "Закрыть" --- */}
+                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors z-[60] bg-white/30 dark:bg-black/30 rounded-full p-1"><X size={24} /></button>
+
                         {isLoading && !activePost ? (
-                            <div className="w-full flex items-center justify-center"><Loader2 className="animate-spin"/></div>
+                            <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
                         ) : activePost ? (
                             <>
                                 {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[60]">{currentIndex + 1} / {posts.length}</div>}
                                 
                                 {hasImages ? (
-                                    <div className="w-full md:w-3/5 flex-shrink-0 bg-black flex items-center justify-center">
+                                    <div className="w-full md:w-3/5 flex-shrink-0 bg-black flex items-center justify-center aspect-square md:aspect-auto">
                                         <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
                                     </div>
                                 ) : null}
-                                <div className={`flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0`}>
+                                <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
                                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center space-x-3 flex-shrink-0">
                                         {(() => {
                                             const author = activePost.community || activePost.user;
@@ -668,6 +697,8 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                               <Picker 
                                                                   onEmojiClick={(e) => setCommentText(p => p+e.emoji)} 
                                                                   theme={localStorage.getItem('theme') === 'dark' ? "dark" : "light"} 
+                                                                  width={emojiPickerDimensions.width}
+                                                                  height={emojiPickerDimensions.height}
                                                               />
                                                           </Suspense>
                                                       </div>

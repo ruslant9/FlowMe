@@ -12,7 +12,7 @@ import { ru } from 'date-fns/locale';
 import { useModal } from '../hooks/useModal';
 import { useWebSocket } from '../context/WebSocketContext';
 import ProfileCard from '../components/ProfileCard';
-import ProfileStats from '../components/ProfileStats'; // <-- ИСПРАВЛЕНИЕ: Добавлен недостающий импорт
+import ProfileStats from '../components/ProfileStats'; 
 import PostCard from '../components/PostCard';
 import { useUser } from '../hooks/useUser';
 import EditPostModal from '../components/modals/EditPostModal';
@@ -501,9 +501,15 @@ const UserProfilePage = () => {
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-center md:justify-start space-x-3 mt-3 text-xs text-slate-300" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
+                            {/* --- ИСПРАВЛЕНИЕ: Блок с датой регистрации и онлайном --- */}
+                            <div className="flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 mt-3 text-xs text-slate-300" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
                                 <span>Регистрация: {format(new Date(user.createdAt), 'dd.MM.yyyy', { locale: ru })}</span>
-                                {getDisplayOnlineStatus() && (<span>• {getDisplayOnlineStatus()}</span>)}
+                                {getDisplayOnlineStatus() && (
+                                    <>
+                                        <span className="hidden md:inline">•</span>
+                                        <span>{getDisplayOnlineStatus()}</span>
+                                    </>
+                                )}
                             </div>
                             
                              {mutualFriendsCount > 0 && (

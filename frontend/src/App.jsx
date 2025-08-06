@@ -17,7 +17,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import FriendsPage from './pages/FriendsPage';
 import MessagesPage from './pages/MessagesPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
-import PageWrapper from './components/PageWrapper'; // --- ИСПРАВЛЕНИЕ: Импорт добавлен
+import PageWrapper from './components/PageWrapper';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AuthLayout from './components/AuthLayout';
@@ -28,7 +28,7 @@ import CommunityManagementPage from './pages/CommunityManagementPage';
 import MusicPage from './pages/MusicPage';
 import PlaylistPage from './pages/PlaylistPage';
 import PremiumPage from './pages/PremiumPage';
-import AdminPage from './pages/AdminPage'; 
+import AdminPage from './pages/AdminPage';
 import ArtistPage from './pages/ArtistPage';
 import AlbumPage from './pages/AlbumPage';
 import SinglePage from './pages/SinglePage';
@@ -99,17 +99,6 @@ const MainLayout = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  useEffect(() => {
-    const setViewportHeight = () => {
-      let vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
-    setViewportHeight();
-    window.addEventListener('resize', setViewportHeight);
-    return () => window.removeEventListener('resize', setViewportHeight);
-  }, []);
-
-  
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     if (newTheme === 'dark') {
@@ -121,7 +110,7 @@ const MainLayout = ({ children }) => {
  };
 
   return (
-    <div style={{ height: 'calc(var(--vh, 1vh) * 100)' }} className={`w-full font-sans transition-colors duration-300 relative ${
+    <div className={`w-full font-sans transition-colors duration-300 relative h-[100dvh] ${
       theme === 'dark' ? 'bg-liquid-background text-white' : 'bg-slate-100 text-slate-900'
        } ${
       currentTrack ? 'pb-[100px]' : ''
