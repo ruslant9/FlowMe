@@ -1,12 +1,31 @@
 // frontend/src/components/music/ArtistInfoPanel.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Avatar from '../Avatar';
-import { useMusicPlayer } from '../../context/MusicPlayerContext'; // 1. Импортируем хук
+import { useMusicPlayer } from '../../context/MusicPlayerContext';
 
 const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
-    const { currentTrack } = useMusicPlayer(); // 2. Получаем информацию о текущем треке
+    const { currentTrack } = useMusicPlayer();
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Блокировка скролла фона ---
+    useEffect(() => {
+        // Если панель открыта, запрещаем скролл
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            // Если закрыта, возвращаем скролл
+            document.body.style.overflow = '';
+        }
+
+        // Функция очистки: гарантирует, что скролл вернется,
+        // даже если компонент будет удален из DOM по другой причине
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]); // Этот эффект будет срабатывать каждый раз, когда меняется `isOpen`
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     return (
         <AnimatePresence>
@@ -16,7 +35,7 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 bg-black/60 z-[60]" // Увеличиваем z-index, чтобы быть выше всего
+                    className="fixed inset-0 bg-black/60 z-[60]"
                 >
                     <motion.div
                         initial={{ x: '100%' }}
@@ -24,7 +43,6 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         onClick={(e) => e.stopPropagation()}
-                        // 3. Динамически изменяем высоту, если плеер активен
                         className={`absolute top-0 right-0 w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col transition-height duration-300 ${
                             currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
                         }`}

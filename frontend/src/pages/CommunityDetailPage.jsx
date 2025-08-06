@@ -1,4 +1,4 @@
-// frontend/src/pages/CommunityDetailPage.jsx
+// frontend/src/pages/CommunityDetailPage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -13,7 +13,6 @@ import { useModal } from '../hooks/useModal';
 import CreatePostModal from '../components/modals/CreatePostModal';
 import EditPostModal from '../components/modals/EditPostModal';
 import ImageViewer from '../components/ImageViewer';
-import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -177,7 +176,7 @@ const CommunityDetailPage = () => {
     const canViewContent = community.isMember || community.visibility === 'public';
     
     return (
-        <PageWrapper>
+        <>
             <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => { setIsCreatePostModalOpen(false); fetchCommunityPosts(); }} communityId={community._id} />
             <EditPostModal isOpen={!!editingPost} post={editingPost} onClose={() => { setEditingPost(null); fetchCommunityPosts(); }} />
             {isImageViewerOpen && <ImageViewer images={imageViewerSource} startIndex={0} onClose={() => setIsImageViewerOpen(false)} />}
@@ -185,27 +184,27 @@ const CommunityDetailPage = () => {
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
                 {/* --- HEADER SECTION --- */}
                 <div className="relative">
-                    <div className="h-64 md:h-80 bg-slate-300 dark:bg-slate-700 relative">
+                    <div className="h-48 md:h-80 bg-slate-300 dark:bg-slate-700 relative">
                         {community.coverImage && (
                             <img src={community.coverImage} alt="" className="w-full h-full object-cover"/>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                     </div>
-                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Переработанная структура для правильного выравнивания --- */}
+                    
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Адаптивная верстка шапки --- */}
                     <div className="max-w-2xl mx-auto px-4 md:px-8">
-                        <div className="flex justify-between items-end -mt-16 md:-mt-20 relative z-10">
+                        <div className="flex flex-col md:flex-row items-center md:items-end md:justify-between -mt-16 md:-mt-20 relative z-10 gap-4">
                             {/* Левая часть: Аватар + Имя/Метаданные */}
-                            <div className="flex items-center text-left">
+                            <div className="flex flex-col md:flex-row items-center text-center md:text-left gap-4">
                                 <div 
                                     onClick={() => community.avatar && (setImageViewerSource([community.avatar]), setIsImageViewerOpen(true))}
-                                    // Убираем адаптивный размер, чтобы он всегда соответствовал размеру аватара '2xl'
                                     className="w-32 h-32 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0 cursor-pointer"
                                 >
                                     <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
                                 </div>
-                                <div className="ml-6">
+                                <div className="md:mb-2">
                                     <h1 className="text-3xl md:text-4xl font-bold truncate">{community.name}</h1>
-                                    <div className="flex items-center space-x-3 text-sm text-slate-500 dark:text-white/60 mt-2">
+                                    <div className="flex items-center justify-center md:justify-start space-x-3 text-sm text-slate-500 dark:text-white/60 mt-2">
                                         <div className="flex items-center space-x-1">{renderVisibilityIcon(community.visibility)} <span>{pluralizeMembers(community.memberCount)}</span></div>
                                         <span className="opacity-50">•</span>
                                         <span>{community.topic}</span>
@@ -214,7 +213,7 @@ const CommunityDetailPage = () => {
                             </div>
 
                             {/* Правая часть: Кнопка управления/вступления */}
-                            <div className="flex items-center space-x-2 flex-shrink-0">
+                            <div className="flex items-center space-x-2 flex-shrink-0 md:mb-2">
                                 {community.isOwner ? (
                                     <Link to={`/communities/${community._id}/manage`} className="px-4 py-2 text-sm font-semibold rounded-lg bg-green-500 text-white hover:bg-green-600 flex items-center space-x-2"><ShieldQuestion size={18} /><span>Управление</span></Link>
                                 ) : community.isMember ? (
@@ -231,7 +230,7 @@ const CommunityDetailPage = () => {
                             </div>
                         </div>
                     </div>
-                     {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 </div>
 
                 {/* --- POSTS SECTION --- */}
@@ -280,7 +279,7 @@ const CommunityDetailPage = () => {
                     )}
                 </div>
             </main>
-        </PageWrapper>
+        </>
     );
 };
 

@@ -21,8 +21,7 @@ const CachedImage = ({ src }) => {
 };
 
 const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
-    <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${active ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'}`}>
-        <Icon size={16} />
+    <button onClick={onClick} className={`flex items-center space-x-2 px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold rounded-lg transition-colors ${active ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'}`}>        <Icon size={16} />
         <span>{children}</span>
     </button>
 );
@@ -149,7 +148,7 @@ export const AdminContentManager = () => {
         
         return (
             <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[600px]">
+                 <table className="w-full text-left">
                     <thead>
                         <tr className="border-b dark:border-slate-700">
                             <th className="p-2 w-12"> </th>

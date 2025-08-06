@@ -456,36 +456,46 @@ const SettingsPage = () => {
                                 {loadingSessions ? <Loader2 className="animate-spin"/> : (
                                     <div className="space-y-2">
                                         {(sessionsExpanded ? sessions : sessions.slice(0, 3)).map(session => {
-                                            const isCurrent = session._id === currentSessionId;
-                                            const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
-                                            return (
-                                                <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-between flex-wrap gap-2">
-                                                    <div className="flex items-center space-x-3">
-                                                        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400">
-                                                            {getDeviceIcon(session.device)}
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-semibold">
-                                                                {session.browser || 'Unknown'} on {session.os || 'Unknown'} {isCurrent && <span className="text-xs text-green-500">(Текущая)</span>}
-                                                            </p>
-                                                            <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center space-x-2">
-                                                                 {isLocal ? (
-                                                                    <span className="font-semibold text-cyan-500">Локальная сессия</span>
-                                                                ) : (
-                                                                    <>
-                                                                        {session.countryCode && session.countryCode !== 'xx' && <img src={`https://flagcdn.com/w20/${session.countryCode}.png`} alt={session.countryCode} className="w-5 h-auto rounded-sm"/>}
-                                                                        <span>{session.ipAddress}</span>
-                                                                    </>
-                                                                )}
-                                                                <span>•</span>
-                                                                <span>{format(new Date(session.lastActive), 'dd.MM.yyyy HH:mm')}</span>
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    {!isCurrent && <button onClick={() => terminateSession(session._id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full" title="Прервать сессию"><XCircle/></button>}
-                                                </div>
-                                            )
-                                        })}
+    const isCurrent = session._id === currentSessionId;
+    const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
+    // Отображаем только первый IP-адрес из списка
+    const primaryIp = session.ipAddress ? session.ipAddress.split(',')[0].trim() : 'Неизвестный IP';
+
+    return (
+        <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3">
+            <div className="flex items-start space-x-3 min-w-0">
+                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 mt-1">
+                    {getDeviceIcon(session.device)}
+                </div>
+                <div className="min-w-0">
+                    <p className="font-semibold truncate">
+                        {session.browser || 'Unknown'} on {session.os || 'Unknown'}
+                        {isCurrent && <span className="text-xs text-green-500 ml-2">(Текущая)</span>}
+                    </p>
+                    <div className="text-sm text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2">
+                        {isLocal ? (
+                            <span className="font-semibold text-cyan-500">Локальная сессия</span>
+                        ) : (
+                            <div className="flex items-center space-x-2">
+                                {session.countryCode && session.countryCode !== 'xx' && (
+                                    <img src={`https://flagcdn.com/w20/${session.countryCode}.png`} alt={session.countryCode} className="w-5 h-auto rounded-sm"/>
+                                )}
+                                <span className="truncate">{primaryIp}</span>
+                            </div>
+                        )}
+                        <span className="hidden sm:inline">•</span>
+                        <span>{format(new Date(session.lastActive), 'dd.MM.yyyy HH:mm')}</span>
+                    </div>
+                </div>
+            </div>
+            {!isCurrent && (
+                <button onClick={() => terminateSession(session._id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full flex-shrink-0" title="Прервать сессию">
+                    <XCircle/>
+                </button>
+            )}
+        </div>
+    )
+})}
                                         {sessions.length > 3 && <button onClick={() => setSessionsExpanded(!sessionsExpanded)} className="text-sm text-blue-500 hover:underline">{sessionsExpanded ? 'Скрыть' : `Показать еще ${sessions.length - 3}`}</button>}
                                         {sessions.length > 1 && <button onClick={terminateAllOtherSessions} className="text-sm text-red-500 hover:underline ml-4">Прервать все другие сессии</button>}
                                     </div>
