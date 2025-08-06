@@ -20,10 +20,10 @@ import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
-import Tippy from '@tippyjs/react/headless'; 
+import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
 import AnimatedAccent from '../AnimatedAccent';
-import { useCachedImage } from '../../hooks/useCachedImage'; 
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
@@ -525,10 +525,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>}
                                     </div>
                                     
-                                    <div className="flex-1 overflow-y-auto min-h-0">
-                                        <div className="p-4">
-                                            {(activePost.text || activePost.attachedTrack || activePost.poll) && (
-                                                <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-4 py-2 mb-4 space-y-3">
+                                    {/* --- ИЗМЕНЕНИЕ 4: Оборачиваем панель в div --- */}
+                                    <div className="sticky top-0 z-10 bg-white dark:bg-slate-900">
+                                        {(activePost.text || activePost.attachedTrack || activePost.poll) && (
+                                            <div className="p-4">
+                                                <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-4 py-2 space-y-3">
                                                     {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
                                                     {activePost.attachedTrack && 
                                                         <AttachedTrack 
@@ -540,50 +541,52 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                     }
                                                     {activePost.poll && <PollDisplay poll={activePost.poll} onVote={handleVote} />}
                                                 </div>
-                                            )}
-                                            
-                                            <div className="flex items-center justify-between mt-4">
-                                                <div className="flex items-center space-x-4">
-                                                    <LikesPopover likers={activePost.likes}>
-                                                        <span>
-                                                            <button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500">
-                                                                <Heart fill={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'none'} stroke={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'currentColor'}/>
-                                                                <span>{activePost.likes.length}</span>
-                                                            </button>
-                                                        </span>
-                                                    </LikesPopover>
-                                                    <div className="flex items-center space-x-1"><MessageCircle/><span>{activePost.comments.length}</span></div>
-                                                </div>
-
-                                                {commentSelectionMode ? (
-                                                    <div className="flex items-center space-x-2">
-                                                        <button onClick={() => {setCommentSelectionMode(false); setSelectedComments([])}} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20">Отмена</button>
-                                                        <button onClick={handleDeleteSelectedComments} disabled={selectedComments.length === 0} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Удалить ({selectedComments.length})</button>
-                                                    </div>
-                                                ) : null}
-
-                                                {activePost.comments.length > 1 && (
-                                                    <div className="relative" ref={sortMenuRef}>
-                                                        <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
-                                                            <span>{sortLabels[sortOrder]}</span>
-                                                            <ChevronDown size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
-                                                        </button>
-                                                        {showSortMenu && (
-                                                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black dark:ring-white/10 ring-opacity-5 py-1 z-30">
-                                                                {Object.entries(sortLabels).map(([key, label]) => (
-                                                                    <button key={key} onClick={() => handleSortChange(key)} className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${sortOrder === key ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'} hover:bg-slate-100 dark:hover:bg-slate-700`}>
-                                                                        {label}
-                                                                        {sortOrder === key && <Check size={16} />}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
                                             </div>
-                                        </div>
+                                        )}
+                                        <div className="flex items-center justify-between p-4 border-b border-t border-slate-200 dark:border-slate-700">
+                                            <div className="flex items-center space-x-4">
+                                                <LikesPopover likers={activePost.likes}>
+                                                    <span>
+                                                        <button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500">
+                                                            <Heart fill={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'none'} stroke={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'currentColor'}/>
+                                                            <span>{activePost.likes.length}</span>
+                                                        </button>
+                                                    </span>
+                                                </LikesPopover>
+                                                <div className="flex items-center space-x-1"><MessageCircle/><span>{activePost.comments.length}</span></div>
+                                            </div>
 
-                                        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                            {commentSelectionMode ? (
+                                                <div className="flex items-center space-x-2">
+                                                    <button onClick={() => {setCommentSelectionMode(false); setSelectedComments([])}} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20">Отмена</button>
+                                                    <button onClick={handleDeleteSelectedComments} disabled={selectedComments.length === 0} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Удалить ({selectedComments.length})</button>
+                                                </div>
+                                            ) : null}
+
+                                            {activePost.comments.length > 1 && (
+                                                <div className="relative" ref={sortMenuRef}>
+                                                    <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
+                                                        <span>{sortLabels[sortOrder]}</span>
+                                                        <ChevronDown size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+                                                    </button>
+                                                    {showSortMenu && (
+                                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black dark:ring-white/10 ring-opacity-5 py-1 z-30">
+                                                            {Object.entries(sortLabels).map(([key, label]) => (
+                                                                <button key={key} onClick={() => handleSortChange(key)} className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${sortOrder === key ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'} hover:bg-slate-100 dark:hover:bg-slate-700`}>
+                                                                    {label}
+                                                                    {sortOrder === key && <Check size={16} />}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* --- ИЗМЕНЕНИЕ 5: Оборачиваем комментарии в div для скролла --- */}
+                                    <div className="flex-1 overflow-y-auto min-h-0 p-4">
+                                        <div className="space-y-4">
                                             {sortedComments.length > 0 ? sortedComments.map(comment => (
                                                 <Comment 
                                                     key={comment._id} 

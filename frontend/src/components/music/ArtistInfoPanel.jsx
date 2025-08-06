@@ -1,6 +1,6 @@
 // frontend/src/components/music/ArtistInfoPanel.jsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Avatar from '../Avatar';
@@ -9,9 +9,40 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
     const { currentTrack } = useMusicPlayer();
 
+    // НАЧАЛО ИСПРАВЛЕНИЯ: Глобальная блокировка скролла для модального режима
+    useEffect(() => {
+        if (isOpen) {
+            const scrollY = window.scrollY;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        } else {
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
+
+        return () => {
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            if (scrollY) {
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
+        };
+    }, [isOpen]);
+    // КОНЕЦ ИСПРАВЛЕНИЯ
+
     return (
         <AnimatePresence>
             {isOpen && (
+                // ИСПРАВЛЕНИЕ: Это новый фон-затемнение (backdrop)
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -19,25 +50,22 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                     onClick={onClose}
                     className="fixed inset-0 bg-black/60 z-[60]"
                 >
+                    {/* ИСПРАВЛЕНИЕ: Сама панель теперь позиционируется абсолютно ВНУТРИ фона */}
                     <motion.div
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         onClick={(e) => e.stopPropagation()}
-                        // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Высота панели ---
                         className={`absolute top-0 right-0 w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col ${
                             currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
                         }`}
-                        // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
                     >
                         <header className="flex items-center justify-between p-4 pl-16 md:pl-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                             <h3 className="font-bold text-lg">Об исполнителе</h3>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X size={20} /></button>
                         </header>
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Изоляция прокрутки --- */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain">
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                             <div className="flex flex-col items-center text-center">
                                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
                                 <h2 className="text-3xl font-bold mt-4">{artist.name}</h2>

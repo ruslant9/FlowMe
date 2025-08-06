@@ -3,11 +3,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack, isHit }) => {
     
-    // Используем хук для получения кешированного URL
     const { finalSrc, loading: imageLoading } = useCachedImage(track.albumArtUrl);
 
     const cleanTitle = (title) => {
@@ -31,7 +30,7 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         return '';
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Полностью переписана логика определения метки ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика теперь использует UTC для всех сравнений ---
     const getReleaseBadge = (releaseDate) => {
         if (!releaseDate) return null;
 
@@ -39,23 +38,21 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         if (isNaN(release.getTime())) return null;
 
         const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth(); // 0-11
-        
-        const releaseYear = release.getFullYear();
-        const releaseMonth = release.getMonth(); // 0-11
 
-        // "Новое" - тот же месяц, тот же год
-        if (releaseYear === currentYear && releaseMonth === currentMonth) {
+        const currentYearUTC = now.getUTCFullYear();
+        const currentMonthUTC = now.getUTCMonth(); // 0-11 (UTC)
+        
+        const releaseYearUTC = release.getUTCFullYear();
+        const releaseMonthUTC = release.getUTCMonth(); // 0-11 (UTC)
+
+        // "Новое" - тот же месяц, тот же год (по UTC)
+        if (releaseYearUTC === currentYearUTC && releaseMonthUTC === currentMonthUTC) {
             return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
         }
 
-        // "Недавнее" - предыдущий месяц
-        // Случай 1: тот же год, предыдущий месяц (например, сейчас август, релиз в июле)
-        const isPreviousMonthSameYear = (releaseYear === currentYear && releaseMonth === currentMonth - 1);
-        
-        // Случай 2: переход через год (например, сейчас январь 2025, релиз в декабре 2024)
-        const isPreviousMonthDifferentYear = (currentMonth === 0 && releaseYear === currentYear - 1 && releaseMonth === 11);
+        // "Недавнее" - предыдущий месяц (по UTC)
+        const isPreviousMonthSameYear = (releaseYearUTC === currentYearUTC && releaseMonthUTC === currentMonthUTC - 1);
+        const isPreviousMonthDifferentYear = (currentMonthUTC === 0 && releaseYearUTC === currentYearUTC - 1 && releaseMonthUTC === 11);
 
         if (isPreviousMonthSameYear || isPreviousMonthDifferentYear) {
             return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
@@ -63,7 +60,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         
         return null;
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const handlePlayClick = (e) => {
         e.stopPropagation();
@@ -115,10 +113,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </div>
 
             <div className="relative z-10 text-white mt-auto">
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Уменьшены размеры текста --- */}
                 <h3 className="text-xs md:text-sm font-bold truncate">{cleanTitle(track.title)}</h3>
                 <p className="text-[10px] md:text-[11px] leading-tight opacity-80 truncate">{formatArtistName(track.artist)}</p>
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
             </div>
         </motion.div>
     );

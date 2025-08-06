@@ -253,6 +253,9 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                         <LayoutGroup>
                             <nav className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mr-4 pr-4 space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center flex flex-col'}`}>
                                 <div>
+                                    {!(user?.premium?.isActive) && (isExpanded || isMobileNavOpen) && (
+                                        <p className="text-xs text-yellow-400 font-bold animate-pulse text-center mb-1">Купить</p>
+                                    )}
                                     <NavItem
                                         to="/premium"
                                         icon={user?.premium?.isActive ? Crown : Sparkles}
@@ -260,9 +263,6 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                         count={0}
                                         isExpanded={isExpanded || isMobileNavOpen}
                                     />
-                                    {!(user?.premium?.isActive) && (isExpanded || isMobileNavOpen) && (
-                                        <p className="text-xs text-yellow-400 font-bold animate-pulse text-center mt-1 -mb-1">Купить</p>
-                                    )}
                                 </div>
 
                                 <Tippy disabled={isExpanded || isMobileNavOpen} placement="right" delay={[300, 0]} render={attrs => <Tooltip text="Мой профиль" attrs={attrs} />}>
