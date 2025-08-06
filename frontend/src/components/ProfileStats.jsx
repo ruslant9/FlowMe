@@ -8,8 +8,8 @@ const StatItem = ({ label, value, onClick, accentTextColor }) => {
 
     const content = (
         <div className="flex flex-col items-center">
-            <p className={`text-2xl font-bold transition-colors ${valueClasses}`}>{value}</p>
-            <p className={`text-[8px] sm:text-xs transition-colors whitespace-nowrap ${labelClasses}`} style={labelStyle}>{label}</p>
+            <p className={`text-lg font-bold transition-colors ${valueClasses}`}>{value}</p>
+            <p className={`text-[11px] sm:text-xs transition-colors whitespace-nowrap ${labelClasses}`} style={labelStyle}>{label}</p>
         </div>
     );
 
