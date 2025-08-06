@@ -34,19 +34,19 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
     const getReleaseBadge = (releaseDate) => {
         if (!releaseDate) return null;
 
-        const now = new Date();
         const release = new Date(releaseDate);
-        
-        // Проверяем, валидна ли дата релиза
         if (isNaN(release.getTime())) return null;
 
-        // Нормализуем даты до полуночи по UTC, чтобы игнорировать время и часовые пояса
-        const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        release.setHours(0, 0, 0, 0);
+        const now = new Date();
 
-        const diffDays = (today.getTime() - release.getTime()) / (1000 * 60 * 60 * 24);
+        // Получаем начало текущего дня в UTC
+        const startOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+        // Получаем начало дня релиза в UTC
+        const startOfReleaseDayUTC = new Date(Date.UTC(release.getUTCFullYear(), release.getUTCMonth(), release.getUTCDate()));
+
+        const diffTime = startOfTodayUTC.getTime() - startOfReleaseDayUTC.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays >= 0 && diffDays <= 14) {
             return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
@@ -58,7 +58,6 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         
         return null;
     };
-
 
     const handlePlayClick = (e) => {
         e.stopPropagation();
@@ -110,8 +109,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </div>
 
             <div className="relative z-10 text-white mt-auto">
-                <h3 className="text-base font-bold truncate">{cleanTitle(track.title)}</h3>
-                <p className="text-xs opacity-80 truncate">{formatArtistName(track.artist)}</p>
+                <h3 className="text-sm md:text-base font-bold truncate">{cleanTitle(track.title)}</h3>
+                <p className="text-[11px] md:text-xs leading-tight opacity-80 truncate">{formatArtistName(track.artist)}</p>
             </div>
         </motion.div>
     );

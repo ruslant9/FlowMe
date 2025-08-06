@@ -378,95 +378,85 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
 
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800">
-            <div>
-                <h3 className="font-bold text-lg">{isEditMode ? `Редактирование: ${initialData.title}` : (currentUser.role === 'admin' ? 'Создать Альбом' : 'Предложить новый альбом')}</h3>
-                {currentUser.role !== 'admin' && !isEditMode && <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>}
-            </div>
+    <div>
+        <h3 className="font-bold text-lg">{isEditMode ? `Редактирование: ${initialData.title}` : (currentUser.role === 'admin' ? 'Создать Альбом' : 'Предложить новый альбом')}</h3>
+        {currentUser.role !== 'admin' && !isEditMode && <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>}
+    </div>
 
-            <div className="flex flex-col md:flex-row md:space-x-6 mt-6">
-                <div className={`space-y-4 ${isEditMode ? 'md:w-1/2 flex-shrink-0' : 'w-full'}`}>
-                    <div>
-                        <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
-                        <ArtistAutocomplete artists={artists} onSelect={setArtistId} initialArtistId={artistId} />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-sm font-semibold block mb-1">Название альбома *</label>
-                            <input type="text" placeholder="Название" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
-                        </div>
-                        <div>
-                            <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
-                            <MonthYearPicker value={releaseDate} onChange={setReleaseDate} />
-                        </div>
-                    </div>
-                    
-                    <GenreSelector selectedGenres={genre} onGenreChange={setGenre} />
-                    
-                    <div>
-                        <label className="text-sm font-semibold block mb-1">Обложка альбома</label>
-                        <div className="flex items-center space-x-4">
-                            <button type="button" onClick={() => fileInputRef.current.click()}
-                                className="px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">
-                                Выберите файл
-                            </button>
-                            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
-                            <span className="flex-1 min-w-0 text-sm text-slate-500 truncate">
-                                {coverArt?.name || 'Файл не выбран'}
-                            </span>
-                            {coverPreview && <CachedImage src={coverPreview} />}
-                        </div>
-                    </div>
+    <div className="flex flex-col space-y-4 mt-6">
+        <div>
+            <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
+            <ArtistAutocomplete artists={artists} onSelect={setArtistId} initialArtistId={artistId} />
+        </div>
+        
+        <div>
+            <label className="text-sm font-semibold block mb-1">Название альбома *</label>
+            <input type="text" placeholder="Название" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 rounded bg-white dark:bg-slate-700" required />
+        </div>
+        
+        <div>
+            <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
+            <MonthYearPicker value={releaseDate} onChange={setReleaseDate} />
+        </div>
+        
+        <GenreSelector selectedGenres={genre} onGenreChange={setGenre} />
+        
+        <div>
+            <label className="text-sm font-semibold block mb-1">Обложка альбома</label>
+            <div className="flex items-center space-x-4">
+                <button type="button" onClick={() => fileInputRef.current.click()}
+                    className="px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">
+                    Выберите файл
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
+                <span className="flex-1 min-w-0 text-sm text-slate-500 truncate">
+                    {coverArt?.name || 'Файл не выбран'}
+                </span>
+                {coverPreview && <CachedImage src={coverPreview} />}
+            </div>
+        </div>
+
+        {isEditMode && (
+             <div className="flex flex-col mt-6">
+                <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-bold text-md">Треки в альбоме ({albumTracks.length})</h4>
+                    <button 
+                        type="button" 
+                        onClick={() => batchFileInputRef.current?.click()}
+                        className="flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-500/20 dark:text-green-300 dark:hover:bg-green-500/30"
+                    >
+                    <PlusCircle size={14} /> <span>Добавить еще треки</span>
+                    </button>
+                    <input ref={batchFileInputRef} type="file" accept="audio/*" multiple onChange={handleBatchUpload} className="hidden" />
                 </div>
                 
-                {isEditMode && (
-                    <>
-                        <div className="hidden md:block border-l border-slate-200 dark:border-slate-700 mx-2"></div>
-                        <div className="flex flex-col md:w-1/2 mt-6 md:mt-0">
-                            <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-bold text-md">Треки в альбоме ({albumTracks.length})</h4>
-                                <button 
-                                    type="button" 
-                                    onClick={() => batchFileInputRef.current?.click()}
-                                    className="flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-500/20 dark:text-green-300 dark:hover:bg-green-500/30"
-                                >
-                                <PlusCircle size={14} /> <span>Добавить еще треки</span>
-                                </button>
-                                <input ref={batchFileInputRef} type="file" accept="audio/*" multiple onChange={handleBatchUpload} className="hidden" />
-                            </div>
-                            
-                            <DndContext 
-                                sensors={sensors} 
-                                collisionDetection={closestCenter} 
-                                onDragEnd={handleDragEnd}
-                            >
-                                <div className="space-y-2 overflow-y-auto pr-2 flex-1">
-                                    <SortableContext items={albumTracks.map(t => t._id)} strategy={verticalListSortingStrategy}>
-                                        {albumTracks.map((track, index) => (
-                                            <SortableTrackItem 
-                                                key={track._id} 
-                                                id={track._id}
-                                                track={track}
-                                                index={index + 1}
-                                                onEditTrack={onEditTrack} 
-                                                onDeleteTrack={handleDeleteTrack} 
-                                                mainArtistId={mainArtistIdForTracks}
-                                            />
-                                        ))}
-                                    </SortableContext>
-                                </div>
-                            </DndContext>
-                        </div>
-                    </>
-                )}
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <div className="space-y-2 overflow-y-auto pr-2 flex-1">
+                        <SortableContext items={albumTracks.map(t => t._id)} strategy={verticalListSortingStrategy}>
+                            {albumTracks.map((track, index) => (
+                                <SortableTrackItem 
+                                    key={track._id} 
+                                    id={track._id}
+                                    track={track}
+                                    index={index + 1}
+                                    onEditTrack={onEditTrack} 
+                                    onDeleteTrack={handleDeleteTrack} 
+                                    mainArtistId={mainArtistIdForTracks}
+                                />
+                            ))}
+                        </SortableContext>
+                    </div>
+                </DndContext>
             </div>
+        )}
+    </div>
 
-            <div className="flex justify-end pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
-                <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
-                    {loading && <Loader2 className="animate-spin mr-2"/>}
-                    {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? 'Создать альбом' : 'Отправить')}
-                </button>
-            </div>
-        </form>
+    <div className="flex justify-end pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
+        <button type="submit" disabled={loading} className="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg flex items-center justify-center disabled:opacity-50">
+            {loading && <Loader2 className="animate-spin mr-2"/>}
+            {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? 'Создать альбом' : 'Отправить')}
+        </button>
+    </div>
+</form>
     );
 };

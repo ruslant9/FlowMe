@@ -462,109 +462,109 @@ export const UploadTrackForm = ({ artists, albums, onSuccess, isEditMode = false
 
     return (
         <form onSubmit={handleSubmit} className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 space-y-4">
-            <h3 className="font-bold text-lg">
-                {isEditMode ? `Редактирование: ${initialData.title}` : 
-                 (currentUser.role === 'admin' ? 'Загрузить трек' : 'Предложить новый трек')}
-            </h3>
-            {currentUser.role !== 'admin' && !isEditMode && (
-                <p className="text-xs text-slate-500 -mt-3">Ваша заявка будет рассмотрена администратором.</p>
+    <h3 className="font-bold text-lg">
+        {isEditMode ? `Редактирование: ${initialData.title}` : 
+         (currentUser.role === 'admin' ? 'Загрузить трек' : 'Предложить новый трек')}
+    </h3>
+    {currentUser.role !== 'admin' && !isEditMode && (
+        <p className="text-xs text-slate-500 -mt-3">Ваша заявка будет рассмотрена администратором.</p>
+    )}
+    
+    <div>
+        <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
+        <AlbumAutocomplete albums={albums} onSelect={setAlbumId} initialAlbumId={albumId}/>
+    </div>
+
+    {albumId && !isEditMode ? (
+         <div className="space-y-4">
+            <div>
+                <label className="text-sm font-semibold block mb-1">Аудиофайлы *</label>
+                <div className="flex items-center space-x-4">
+                    <label htmlFor="batch-file-upload" className="cursor-pointer px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">Выбрать файлы</label>
+                     <input id="batch-file-upload" type="file" multiple accept="audio/*" onChange={handleBatchFileChange} className="hidden" />
+                    {trackList.length > 0 && <span className="text-sm text-slate-500 dark:text-slate-400">Выбрано файлов: {trackList.length}</span>}
+                </div>
+            </div>
+            {trackList.length > 0 && (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={trackList.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-3">
+                            {trackList.map((track, index) => (
+                                <BatchTrackItem 
+                                    key={track.id} 
+                                    id={track.id}
+                                    track={track} 
+                                    index={index} 
+                                    artists={artists}
+                                    mainArtistId={mainAlbumArtistId} 
+                                    onUpdate={updateTrackInList} 
+                                    onRemove={() => removeTrackFromList(index)} 
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
             )}
+        </div>
+    ) : (
+        <div className="space-y-4">
+             <div>
+                <label className="text-sm font-semibold block mb-1">
+                    {albumId ? 'Дополнительные исполнители (фит)' : 'Исполнитель *'}
+                </label>
+                <MultiArtistAutocomplete artists={artists} selectedIds={singleTrackData.artistIds} onSelectionChange={(ids) => handleSingleTrackChange('artistIds', ids)} excludeIds={mainAlbumArtistId ? [mainAlbumArtistId] : []}/>
+            </div>
             
             <div>
-                <label className="text-sm font-semibold block mb-1">Альбом (необязательно)</label>
-                <AlbumAutocomplete albums={albums} onSelect={setAlbumId} initialAlbumId={albumId}/>
+                <label className="text-sm font-semibold block mb-1">Название трека *</label>
+                <input type="text" placeholder="Название" value={singleTrackData.title} onChange={e => handleSingleTrackChange('title', e.target.value)} className="w-full p-3 rounded bg-white dark:bg-slate-700" required />
             </div>
 
-            {albumId && !isEditMode ? (
-                 <div className="space-y-4">
-                    <div>
-                        <label className="text-sm font-semibold block mb-1">Аудиофайлы *</label>
-                        <div className="flex items-center space-x-4">
-                            <label htmlFor="batch-file-upload" className="cursor-pointer px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">Выбрать файлы</label>
-                             <input id="batch-file-upload" type="file" multiple accept="audio/*" onChange={handleBatchFileChange} className="hidden" />
-                            {trackList.length > 0 && <span className="text-sm text-slate-500 dark:text-slate-400">Выбрано файлов: {trackList.length}</span>}
-                        </div>
-                    </div>
-                    {trackList.length > 0 && (
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                            <SortableContext items={trackList.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                                <div className="space-y-3">
-                                    {trackList.map((track, index) => (
-                                        <BatchTrackItem 
-                                            key={track.id} 
-                                            id={track.id}
-                                            track={track} 
-                                            index={index} 
-                                            artists={artists}
-                                            mainArtistId={mainAlbumArtistId} 
-                                            onUpdate={updateTrackInList} 
-                                            onRemove={() => removeTrackFromList(index)} 
-                                        />
-                                    ))}
-                                </div>
-                            </SortableContext>
-                        </DndContext>
-                    )}
+            {!albumId && (
+                <div>
+                    <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
+                    <MonthYearPicker value={singleTrackData.releaseDate} onChange={(date) => handleSingleTrackChange('releaseDate', date)} />
                 </div>
-            ) : (
-                <div className="space-y-4">
-                     <div>
-                        <label className="text-sm font-semibold block mb-1">
-                            {albumId ? 'Дополнительные исполнители (фит)' : 'Исполнитель *'}
-                        </label>
-                        <MultiArtistAutocomplete artists={artists} selectedIds={singleTrackData.artistIds} onSelectionChange={(ids) => handleSingleTrackChange('artistIds', ids)} excludeIds={mainAlbumArtistId ? [mainAlbumArtistId] : []}/>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-sm font-semibold block mb-1">Название трека *</label>
-                            <input type="text" placeholder="Название" value={singleTrackData.title} onChange={e => handleSingleTrackChange('title', e.target.value)} className="w-full p-2 rounded bg-white dark:bg-slate-700" required />
-                        </div>
-                        {!albumId && (
-                            <div>
-                                <label className="text-sm font-semibold block mb-1">Дата выпуска</label>
-                                <MonthYearPicker value={singleTrackData.releaseDate} onChange={(date) => handleSingleTrackChange('releaseDate', date)} />
-                            </div>
-                        )}
-                    </div>
+            )}
 
-                    <div className="p-4 rounded-lg bg-slate-200 dark:bg-slate-900/50 space-y-4">
-                        <GenreSelector selectedGenres={singleTrackData.genres} onGenreChange={(genres) => handleSingleTrackChange('genres', genres)} />
-                        <ToggleSwitch 
-                            checked={singleTrackData.isExplicit} 
-                            onChange={(checked) => handleSingleTrackChange('isExplicit', checked)} 
-                            label="Explicit (ненормативная лексика)" 
-                        />
+            <div className="p-4 rounded-lg bg-slate-200 dark:bg-slate-900/50 space-y-4">
+                <GenreSelector selectedGenres={singleTrackData.genres} onGenreChange={(genres) => handleSingleTrackChange('genres', genres)} />
+                <ToggleSwitch 
+                    checked={singleTrackData.isExplicit} 
+                    onChange={(checked) => handleSingleTrackChange('isExplicit', checked)} 
+                    label="Explicit (ненормативная лексика)" 
+                />
+            </div>
+            
+            {!isEditMode && (
+                <>
+                    <div>
+                        <label className="text-sm font-semibold block mb-1">Обложка сингла</label>
+                        <input type="file" accept="image/*" onChange={(e) => handleSingleFileChange(e, 'cover')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
+                        {singleTrackData.coverPreview && <img src={singleTrackData.coverPreview} alt="Предпросмотр обложки" className="mt-2 w-24 h-24 rounded object-cover"/>}
                     </div>
-                    
-                    {!isEditMode && (
-                        <>
-                            <div>
-                                <label className="text-sm font-semibold block mb-1">Обложка сингла</label>
-                                <input type="file" accept="image/*" onChange={(e) => handleSingleFileChange(e, 'cover')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" />
-                                {singleTrackData.coverPreview && <img src={singleTrackData.coverPreview} alt="Предпросмотр обложки" className="mt-2 w-24 h-24 rounded object-cover"/>}
-                            </div>
-                            <div>
-                                <label className="text-sm font-semibold block mb-1">Аудиофайл *</label>
-                                <input type="file" accept="audio/*" onChange={(e) => handleSingleFileChange(e, 'track')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" required={!isEditMode} />
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
-            {loading && (
-                <div className="flex items-center space-x-4">
-                    <div className="flex-grow bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
-                        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                    <div>
+                        <label className="text-sm font-semibold block mb-1">Аудиофайл *</label>
+                        <input type="file" accept="audio/*" onChange={(e) => handleSingleFileChange(e, 'track')} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" required={!isEditMode} />
                     </div>
-                    <button type="button" onClick={handleCancelUpload} className="text-sm font-semibold text-red-500 hover:underline">
-                        Отмена
-                    </button>
-                </div>
+                </>
             )}
-            <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg flex items-center disabled:opacity-50">
-                {loading ? <Loader2 className="animate-spin mr-2"/> : null}
-                {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? `Загрузить трек(и)` : 'Отправить на проверку')}
+        </div>
+    )}
+    {loading && (
+        <div className="flex items-center space-x-4">
+            <div className="flex-grow bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+            </div>
+            <button type="button" onClick={handleCancelUpload} className="text-sm font-semibold text-red-500 hover:underline">
+                Отмена
             </button>
-        </form>
+        </div>
+    )}
+    <button type="submit" disabled={loading} className="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg flex items-center justify-center disabled:opacity-50">
+        {loading ? <Loader2 className="animate-spin mr-2"/> : null}
+        {isEditMode ? 'Сохранить изменения' : (currentUser.role === 'admin' ? `Загрузить трек(и)` : 'Отправить на проверку')}
+    </button>
+</form>
     );
 };

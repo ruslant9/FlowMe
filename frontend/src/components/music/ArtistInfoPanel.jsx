@@ -43,8 +43,8 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         onClick={(e) => e.stopPropagation()}
-                        className={`absolute top-0 right-0 w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col transition-height duration-300 ${
-                            currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
+                        className={`absolute top-0 right-0 w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col ${
+                            currentTrack ? 'h-[calc(100dvh-100px)]' : 'h-[100dvh]'
                         }`}
                     >
                         <header className="flex items-center justify-between p-4 pl-16 md:pl-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">

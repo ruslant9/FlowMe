@@ -171,18 +171,18 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
     }, [location.pathname]);
     
     const menuItems = useMemo(() => [
-        { name: "Уведомления", path: "/notifications", icon: Bell, count: summary.unreadNotificationsCount },
         { name: "Лента", path: "/", icon: Newspaper, count: 0 },
         { name: "Друзья", path: "/friends", icon: Users, count: summary.friendRequestsCount },
-        { name: "Сообщества", path: "/communities", icon: Globe, count: 0 },
         { name: "Сообщения", path: "/messages", icon: MessageSquare, count: summary.unreadConversationsCount },
+        { name: "Сообщества", path: "/communities", icon: Globe, count: 0 },
+        { name: "Уведомления", path: "/notifications", icon: Bell, count: summary.unreadNotificationsCount },
         { name: "Музыка", path: "/music", icon: Music, count: 0 },
         { name: "Мастерская", path: "/workshop", icon: Brush, count: 0 },
     ], [summary]);
 
     const allNavItems = useMemo(() => [
-        ...(user?.role === 'admin' ? [{ name: "Админ-панель", path: "/admin", icon: Shield, count: summary.submissionsCount }] : []),
-        ...menuItems
+        ...menuItems,
+        ...(user?.role === 'admin' ? [{ name: "Админ-панель", path: "/admin", icon: Shield, count: summary.submissionsCount }] : [])
     ], [user, summary, menuItems]);
     
     const NAV_ITEM_LIMIT = 6;

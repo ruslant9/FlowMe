@@ -161,7 +161,7 @@ const MainLayout = ({ children }) => {
       )}
       
       
-      <div className={`flex relative z-10 h-full overflow-hidden`}>
+      <div className={`flex relative h-full overflow-hidden`}>
         <Sidebar 
           themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} 
           isMobileNavOpen={isMobileNavOpen}
