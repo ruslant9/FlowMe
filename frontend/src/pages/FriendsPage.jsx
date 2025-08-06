@@ -56,7 +56,6 @@ const UserCardSkeleton = () => (
         <div className="h-8 w-20 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
     </div>
 );
-
 const TabButton = ({ children, active, onClick, count }) => (
     <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${ active ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10' }`}>
         {children}
@@ -80,7 +79,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
     const renderButton = (actionName, label, Icon, customClasses = '') => (
         <button
             onClick={(e) => handleClick(e, actionName, user)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${customClasses}`}
+            className={`flex-1 justify-center px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${customClasses}`}
             disabled={isProcessing}
         >
             {isProcessing ? <Spinner size={16} /> : Icon && <Icon size={16} />}
@@ -154,9 +153,9 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
         }
 
         return (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 w-full sm:w-auto">
                 {mainButtons}
-                {blockButton}
+                <div className="hidden sm:block">{blockButton}</div>
             </div>
         );
     };
@@ -212,7 +211,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
 
     return (
         <Link to={`/profile/${user._id}`} className="block p-3 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center space-x-4 min-w-0">
                     {(() => {
                         const border = user.premiumCustomization?.avatarBorder;
@@ -651,7 +650,7 @@ const FriendsPage = () => {
                         </TabButton>
                     ))}
                 </div>
-
+                
                 <div className="md:hidden flex items-center space-x-1 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
                     {visibleItems.map(item => (
                         <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
