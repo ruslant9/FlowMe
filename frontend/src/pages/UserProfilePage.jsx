@@ -12,7 +12,7 @@ import { ru } from 'date-fns/locale';
 import { useModal } from '../hooks/useModal';
 import { useWebSocket } from '../context/WebSocketContext';
 import ProfileCard from '../components/ProfileCard';
-import ProfileStats from '../components/ProfileStats';
+import ProfileStats from '../components/ProfileStats'; // <-- ИСПРАВЛЕНИЕ: Добавлен недостающий импорт
 import PostCard from '../components/PostCard';
 import { useUser } from '../hooks/useUser';
 import EditPostModal from '../components/modals/EditPostModal';
@@ -31,7 +31,9 @@ const API_URL = import.meta.env.VITE_API_URL;
 const customRuLocaleForDistance = {
     ...ru,
     formatDistance: (token, count, options) => {
-        if (token === 'lessThanXMinutes' || (token === 'xMinutes' && count === 1)) return 'только что';
+        if (token === 'lessThanXMinutes' || (token === 'xMinutes' && count === 1)) {
+            return 'только что';
+        }
         return ru.formatDistance(token, count, options);
     },
 };
@@ -528,13 +530,7 @@ const UserProfilePage = () => {
                         <div className="lg:col-span-1 flex flex-col gap-6">
                              {stats && (
                                 <div className="bg-slate-800 rounded-2xl p-4">
-                                    <div className="flex items-center justify-around">
-                                        <StatItem label="Посты" value={stats.posts} />
-                                        <StatItem label="Друзья" value={stats.friends} onClick={() => handleShowUsers('friends')} />
-                                        <StatItem label="Сообщества" value={stats.subscribedCommunities} onClick={() => handleShowUsers('communities')} />
-                                        <StatItem label="Подписчики" value={stats.subscribers} onClick={() => handleShowUsers('subscribers')} />
-                                        <StatItem label="Лайки" value={stats.likes} />
-                                    </div>
+                                    <ProfileStats stats={stats} onShowUsers={handleShowUsers} />
                                 </div>
                             )}
                             <div className="bg-slate-800 rounded-2xl p-6 space-y-4">
@@ -548,10 +544,19 @@ const UserProfilePage = () => {
                                     <h3 className="text-xl font-bold text-white">Интересы</h3>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    {user.interests?.length > 0 ? user.interests.map(i => <div key={i} className="bg-blue-500/20 text-blue-300 rounded-full px-3 py-1 text-sm">{i}</div>) : <p className="text-slate-400 text-sm">Пользователь не добавил интересы.</p>}
+                                    {user.interests && user.interests.length > 0 ? (
+                                        user.interests.map(interest => (
+                                            <div key={interest} className="bg-blue-500/20 text-blue-300 rounded-full px-3 py-1 text-sm">
+                                                {interest}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-slate-400 text-sm">Пользователь не добавил интересы.</p>
+                                    )}
                                 </div>
                             </div>
-                             <div className="bg-slate-800 rounded-2xl p-6">
+                             
+                            <div className="bg-slate-800 rounded-2xl p-6">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xl font-bold text-white">Музыка пользователя</h3>
                                     {totalMusicCount > 0 && <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-400 hover:underline">Все ({totalMusicCount})</button>}

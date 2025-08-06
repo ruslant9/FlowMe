@@ -5,27 +5,26 @@ import { X } from 'lucide-react';
 import Avatar from '../Avatar';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 
-const ArtistInfoPanel = ({ artist, isOpen, onClose, scrollableContainerRef }) => {
+const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
     const { currentTrack } = useMusicPlayer();
 
-    // --- ИСПРАВЛЕНИЕ: Блокируем скролл правильного контейнера ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Глобальная блокировка скролла ---
     useEffect(() => {
-        const container = scrollableContainerRef?.current;
-        if (!container) return;
-
-        // Сохраняем оригинальное значение overflow
-        const originalOverflow = container.style.overflow;
-
+        // Когда панель открывается, добавляем класс к body, чтобы запретить скролл
         if (isOpen) {
-            // При открытии панели, запрещаем скролл
-            container.style.overflow = 'hidden';
+            document.body.classList.add('overflow-hidden');
+        } else {
+            // Когда панель закрывается, убираем класс
+            document.body.classList.remove('overflow-hidden');
         }
-        
-        // Функция очистки, которая вернет скролл при закрытии панели
+
+        // Функция очистки: гарантирует, что класс будет удален,
+        // если компонент будет удален из DOM по другой причине
         return () => {
-            container.style.overflow = originalOverflow;
+            document.body.classList.remove('overflow-hidden');
         };
-    }, [isOpen, scrollableContainerRef]);
+    }, [isOpen]); // Этот эффект будет срабатывать каждый раз, когда меняется `isOpen`
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     return (
