@@ -18,16 +18,17 @@ const COMMUNITIES_PER_PAGE = 10;
 const TabButton = ({ children, active, onClick, count }) => (
     <button
         onClick={onClick}
-        className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+        className={`flex-shrink-0 flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${
             active
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10'
+                ? 'border-blue-500 text-blue-500' 
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
         }`}
     >
         {children}
-        {typeof count === 'number' && count > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/10'}`}>{count}</span>}
+        {typeof count === 'number' && count > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`}>{count}</span>}
     </button>
 );
+
 
 const CommunitiesPage = () => {
     useTitle('Сообщества');
@@ -181,14 +182,14 @@ const CommunitiesPage = () => {
         );
     };
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const navItems = [
         { key: 'my', label: 'Мои сообщества', icon: Users, onClick: () => handleTabSwitch('my'), count: myCommunities.length },
         { key: 'created', label: 'Созданные', icon: Building, onClick: () => handleTabSwitch('created'), count: 0 },
         { key: 'recommended', label: 'Рекомендации', icon: Globe, onClick: () => handleTabSwitch('recommended'), count: 0 },
         { key: 'pendingSent', label: 'Отправленные', icon: Clock, onClick: () => handleTabSwitch('pendingSent'), count: pendingSentRequests.length }
     ];
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     return (
@@ -230,7 +231,7 @@ const CommunitiesPage = () => {
                         )}
                     </div>
 
-                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                     {/* Горизонтальная панель навигации для десктопа */}
                     <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
                         {navItems.map(item => (
@@ -248,7 +249,7 @@ const CommunitiesPage = () => {
                             activeKey={activeTab}
                         />
                     </div>
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                     <div>
                         {activeTab === 'my' && renderCommunityList(myCommunities)}

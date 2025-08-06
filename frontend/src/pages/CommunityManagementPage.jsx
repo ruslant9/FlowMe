@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft, Save, Trash2, Image as ImageIcon, Check, X, UserX, 
 import Avatar from '../components/Avatar';
 import { Listbox, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ResponsiveNav from '../components/ResponsiveNav'; // --- НОВЫЙ ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -28,14 +29,15 @@ const postingPolicyOptions = [ { id: 'everyone', name: 'Все участник�
 const adminVisibilityOptions = [ { id: 'everyone', name: 'Все' }, { id: 'members_only', name: 'Только участники' }, { id: 'none', name: 'Никто' } ];
 const memberListVisibilityOptions = [ { id: 'everyone', name: 'Все' }, { id: 'members_only', name: 'Только участники' }, { id: 'none', name: 'Никто' } ];
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Фон полей ввода изменен на bg-white для лучшего контраста в светлой теме ---
 const EditField = ({ label, name, value, onChange, type = 'text', options, onListboxChange }) => (
     <div>
         <label htmlFor={name} className="block text-sm font-semibold mb-1">{label}</label>
-        {type === 'textarea' ? ( <textarea id={name} name={name} value={value || ''} onChange={onChange} rows="3" className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        {type === 'textarea' ? ( <textarea id={name} name={name} value={value || ''} onChange={onChange} rows="3" className="w-full p-2 bg-white dark:bg-slate-800 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
         ) : type === 'listbox' ? (
             <Listbox value={value} onChange={onListboxChange}>
                 <div className="relative mt-1">
-                    <Listbox.Button className="relative w-full cursor-default rounded-lg bg-slate-100 dark:bg-slate-800 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
+                    <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-slate-800 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                         <span className="block truncate">{options.find(opt => opt.id === value)?.name || ''}</span>
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" /></span>
                     </Listbox.Button>
@@ -46,19 +48,19 @@ const EditField = ({ label, name, value, onChange, type = 'text', options, onLis
                     </Transition>
                 </div>
             </Listbox>
-        ) : ( <input type={type} id={name} name={name} value={value || ''} onChange={onChange} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /> )}
+        ) : ( <input type={type} id={name} name={name} value={value || ''} onChange={onChange} className="w-full p-2 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /> )}
     </div>
 );
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ 2: Исправляем компонент кнопки и добавляем иконку ---
+
 const TabButton = ({ active, onClick, children, icon: Icon, count }) => (
     <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${ active ? 'border-blue-500 text-blue-500' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white' }`}>
         <Icon size={18} />
         <span>{children}</span>
-        {typeof count === 'number' && count > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-white text-blue-600' : 'bg-slate-200 dark:bg-white/10'}`}>{count}</span>}
+        {typeof count === 'number' && count > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`}>{count}</span>}
     </button>
 );
-// --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
 const CommunityManagementPage = () => {
     const { communityId } = useParams();
@@ -105,7 +107,7 @@ const CommunityManagementPage = () => {
 
     const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleFileChange = (e, type) => {
-        const file = e.target.files[0];
+        const file = e.target.files;
         if (!file) return;
         const setFileState = type === 'avatar' ? setAvatarFile : setCoverFile;
         setFileState({ file, preview: URL.createObjectURL(file), removed: false });
@@ -194,6 +196,16 @@ const CommunityManagementPage = () => {
         });
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Создаем массив для навигации ---
+    const navItems = community ? [
+        { key: 'settings', label: 'Настройки', icon: SettingsIcon, onClick: () => setActiveTab('settings') },
+        { key: 'members', label: 'Участники', icon: Users, count: community.members?.length, onClick: () => setActiveTab('members') },
+        { key: 'requests', label: 'Заявки', icon: UserRequestIcon, count: community.pendingJoinRequests?.length, onClick: () => setActiveTab('requests') },
+        { key: 'banned', label: 'Черный список', icon: Ban, count: community.bannedUsers?.length, onClick: () => setActiveTab('banned') },
+        { key: 'danger', label: 'Опасная зона', icon: ShieldAlert, onClick: () => setActiveTab('danger') }
+    ] : [];
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     if (loading || !formData) {
         return <main className="flex-1 p-8 flex justify-center items-center"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></main>;
     }
@@ -206,34 +218,40 @@ const CommunityManagementPage = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                 </div>
                 <div className="p-4 md:p-8 pt-0">
-                    <div className="flex items-center -mt-16 md:-mt-20 relative z-10 max-w-5xl mx-auto">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Улучшена верстка хедера для мобильных устройств --- */}
+                    <div className="flex flex-col md:flex-row items-center md:items-end -mt-16 md:-mt-20 relative z-10 max-w-5xl mx-auto">
                         <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0">
                             <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
                         </div>
-                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Поднимаем кнопку "Вернуться" --- */}
-                        <div className="md:ml-8 flex-1 min-w-0 flex flex-col justify-end self-end mb-2">
+                        <div className="ml-0 md:ml-8 mt-4 md:mt-0 flex-1 min-w-0 flex flex-col items-center md:items-start md:justify-end md:self-end md:mb-2 text-center md:text-left">
                             <Link to={`/communities/${communityId}`} className="text-sm font-semibold text-blue-500 hover:underline flex items-center space-x-1 mb-2">
                                 <ArrowLeft size={14}/> <span>Вернуться в сообщество</span>
                             </Link>
                             <h1 className="text-2xl md:text-3xl font-bold truncate">{community.name}</h1>
                         </div>
-                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ 1 --- */}
                     </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             </div>
 
             <div className="max-w-5xl mx-auto px-4 md:px-8 pb-8">
-                <div className="border-b border-slate-300 dark:border-slate-700 mb-6">
-                    <div className="flex items-center space-x-2 -mb-px overflow-x-auto">
-                        <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={SettingsIcon}>Настройки</TabButton>
-                        <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={Users} count={community.members?.length}>Участники</TabButton>
-                        <TabButton active={activeTab === 'requests'} onClick={() => setActiveTab('requests')} icon={UserRequestIcon} count={community.pendingJoinRequests?.length}>Заявки</TabButton>
-                        <TabButton active={activeTab === 'banned'} onClick={() => setActiveTab('banned')} icon={Ban} count={community.bannedUsers?.length}>Черный список</TabButton>
-                        <TabButton active={activeTab === 'danger'} onClick={() => setActiveTab('danger')} icon={ShieldAlert}>Опасная зона</TabButton>
-                    </div>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Адаптивная навигация --- */}
+                <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto">
+                    {navItems.map(item => (
+                        <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon} count={item.count}>
+                            {item.label}
+                        </TabButton>
+                    ))}
                 </div>
+                <div className="md:hidden mb-6">
+                    <ResponsiveNav 
+                        items={navItems}
+                        visibleCount={3}
+                        activeKey={activeTab}
+                    />
+                </div>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем анимацию смены вкладок --- */}
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
@@ -338,7 +356,6 @@ const CommunityManagementPage = () => {
                         )}
                     </motion.div>
                 </AnimatePresence>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
             </div>
         </main>
     );
