@@ -9,7 +9,6 @@ import { WebSocketProvider } from './context/WebSocketContext.jsx';
 import { UserProvider } from './context/UserContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import { MusicPlayerProvider } from './context/MusicPlayerContext.jsx';
-import { registerCacheBuster } from './utils/cacheBuster.js';
 import axios from 'axios';
 
 import './index.css';
@@ -25,16 +24,6 @@ axios.defaults.withCredentials = true;
 const token = localStorage.getItem('token');
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('ServiceWorker registration successful with scope: ', registration.scope);
-    }, err => {
-      console.log('ServiceWorker registration failed: ', err);
-    });
-  });
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
