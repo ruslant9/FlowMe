@@ -12,7 +12,7 @@ import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import ReactDOM from 'react-dom'; // <-- ИМПОРТ
-import EmojiParsedText from './common/EmojiParsedText'; // <-- ИМПОРТ
+import EmojiParsedText from '../common/EmojiParsedText'; // <-- ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
