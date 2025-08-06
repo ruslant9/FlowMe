@@ -30,38 +30,41 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         return '';
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика теперь использует UTC для всех сравнений ---
-    const getReleaseBadge = (releaseDate) => {
-        if (!releaseDate) return null;
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новая логика, работающая напрямую с годом и месяцем ---
+    const getReleaseBadge = (releaseDateString) => {
+        if (!releaseDateString) return null;
 
-        const release = new Date(releaseDate);
-        if (isNaN(release.getTime())) return null;
+        try {
+            // Извлекаем год и месяц напрямую из строки (например, "2025-08-01T...")
+            const releaseYear = parseInt(releaseDateString.substring(0, 4), 10);
+            const releaseMonth = parseInt(releaseDateString.substring(5, 7), 10) - 1; // Месяцы в JS 0-11
 
-        const now = new Date();
+            if (isNaN(releaseYear) || isNaN(releaseMonth)) return null;
+            
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
 
-        const currentYearUTC = now.getUTCFullYear();
-        const currentMonthUTC = now.getUTCMonth(); // 0-11 (UTC)
-        
-        const releaseYearUTC = release.getUTCFullYear();
-        const releaseMonthUTC = release.getUTCMonth(); // 0-11 (UTC)
+            // "Новое": если год и месяц релиза совпадают с текущими
+            if (releaseYear === currentYear && releaseMonth === currentMonth) {
+                return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
+            }
 
-        // "Новое" - тот же месяц, тот же год (по UTC)
-        if (releaseYearUTC === currentYearUTC && releaseMonthUTC === currentMonthUTC) {
-            return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
+            // "Недавнее": если релиз был в прошлом месяце
+            const isPreviousMonthSameYear = (releaseYear === currentYear && releaseMonth === currentMonth - 1);
+            const isPreviousMonthDifferentYear = (currentMonth === 0 && releaseYear === currentYear - 1 && releaseMonth === 11);
+
+            if (isPreviousMonthSameYear || isPreviousMonthDifferentYear) {
+                return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
+            }
+            
+            return null;
+        } catch (e) {
+            console.error("Ошибка парсинга даты релиза:", e);
+            return null;
         }
-
-        // "Недавнее" - предыдущий месяц (по UTC)
-        const isPreviousMonthSameYear = (releaseYearUTC === currentYearUTC && releaseMonthUTC === currentMonthUTC - 1);
-        const isPreviousMonthDifferentYear = (currentMonthUTC === 0 && releaseYearUTC === currentYearUTC - 1 && releaseMonthUTC === 11);
-
-        if (isPreviousMonthSameYear || isPreviousMonthDifferentYear) {
-            return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
-        }
-        
-        return null;
     };
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
     const handlePlayClick = (e) => {
         e.stopPropagation();

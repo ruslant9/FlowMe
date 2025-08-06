@@ -1,4 +1,5 @@
 // frontend/src/hooks/useModal.js
+
 import { useContext } from 'react';
 import { ModalContext } from '../context/ModalContext';
 

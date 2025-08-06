@@ -73,7 +73,7 @@ const NavItem = ({ to, end, icon: Icon, text, count, isExpanded }) => {
                                     </span>
                                 }
                             </div>
-                            <span className={`whitespace-nowrap transition-all duration-200 ${isExpanded ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>{textContent}</span>
+                            <div className={`whitespace-nowrap transition-all duration-200 ${isExpanded ? 'ml-4' : 'w-0 opacity-0 ml-0'}`}>{textContent}</div>
                         </>
                     )}
                 </NavLink>
@@ -252,18 +252,24 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                     <div className="flex-1 flex flex-col min-h-0">
                         <LayoutGroup>
                             <nav className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mr-4 pr-4 space-y-2 ${isExpanded || isMobileNavOpen ? 'px-2' : 'items-center flex flex-col'}`}>
-                                <div>
-                                    {!(user?.premium?.isActive) && (isExpanded || isMobileNavOpen) && (
-                                        <p className="text-xs text-yellow-400 font-bold animate-pulse text-center mb-1">Купить</p>
-                                    )}
-                                    <NavItem
-                                        to="/premium"
-                                        icon={user?.premium?.isActive ? Crown : Sparkles}
-                                        text={<span className={user?.premium?.isActive ? 'premium-gradient-text font-bold' : ''}>{user?.premium?.isActive ? "Мой Premium" : "Flow PREMIUM"}</span>}
-                                        count={0}
-                                        isExpanded={isExpanded || isMobileNavOpen}
-                                    />
-                                </div>
+                                <NavItem
+                                    to="/premium"
+                                    icon={user?.premium?.isActive ? Crown : Sparkles}
+                                    text={
+                                        <div className="flex items-center">
+                                            <span className={user?.premium?.isActive ? 'premium-gradient-text font-bold' : ''}>
+                                                {user?.premium?.isActive ? "Мой Premium" : "Flow PREMIUM"}
+                                            </span>
+                                            {!(user?.premium?.isActive) && (isExpanded || isMobileNavOpen) && (
+                                                <span className="ml-2 px-1.5 py-0.5 text-[10px] font-semibold bg-yellow-400 text-yellow-900 rounded-full animate-pulse">
+                                                    Купить
+                                                </span>
+                                            )}
+                                        </div>
+                                    }
+                                    count={0}
+                                    isExpanded={isExpanded || isMobileNavOpen}
+                                />
 
                                 <Tippy disabled={isExpanded || isMobileNavOpen} placement="right" delay={[300, 0]} render={attrs => <Tooltip text="Мой профиль" attrs={attrs} />}>
                                     <TippyWrapper>

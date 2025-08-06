@@ -21,7 +21,7 @@ const UploadContentModal = ({ isOpen, onClose }) => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center z-[100] pt-20 px-4 pb-4"
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center z-[110] pt-20 px-4 pb-4"
                 >
                     <motion.div
                         initial={{ scale: 0.9, y: 20 }}

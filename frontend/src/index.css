@@ -346,19 +346,19 @@ html.dark .rc-slider-rail {
 }
 
 .premium-icon-glow {
-  filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
+  filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.7));
   animation: premium-icon-pulse 3s infinite ease-in-out;
 }
 
 @keyframes premium-icon-pulse {
   0% {
-    filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
+    filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.7));
   }
   50% {
-    filter: drop-shadow(0 0 10px rgba(96, 165, 250, 1));
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 1));
   }
   100% {
-    filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.7));
+    filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.7));
   }
 }
 /* --- НОВЫЕ СТИЛИ: Анимированный золотой текст для Premium --- */

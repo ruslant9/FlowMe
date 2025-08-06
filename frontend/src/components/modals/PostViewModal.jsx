@@ -107,7 +107,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const [commentingOptions, setCommentingOptions] = useState([]);
     const previousPostIdRef = useRef(null);
     
-    // --- ИЗМЕНЕНИЕ 1: Адаптивные размеры для Emoji Picker ---
     const emojiPickerDimensions = useMemo(() => {
         const isMobile = window.innerWidth < 768;
         return {
@@ -431,8 +430,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         <AnimatePresence>
             {currentIndex !== null && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} 
-                    // --- ИЗМЕНЕНИЕ 2: Адаптивное выравнивание ---
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-end md:items-center z-20 p-0 md:p-4"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-20 p-0 md:p-4"
                 >
                     {posts.length > 1 && <>
                         <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p-1+posts.length)%posts.length) }} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[60] text-white"><ChevronLeft size={32} /></button>
@@ -446,18 +444,14 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             onSave={handleImageUpdate} />
                     )}
                     <motion.div
-                        initial={{ scale: 0.95, y: '100%' }}
-                        animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.95, y: '100%' }}
-                        md-initial={{ scale: 0.9 }}
-                        md-animate={{ scale: 1 }}
-                        md-exit={{ scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
                         style={{ maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' }}
-                        // --- ИЗМЕНЕНИЕ 2 (продолжение): Адаптивные скругления и высота ---
-                        className="overflow-hidden w-full max-w-6xl flex flex-col md:flex-row bg-white dark:bg-slate-900 rounded-t-3xl md:rounded-3xl relative text-slate-900 dark:text-white md:h-auto md:max-h-[90vh]"
+                        className="overflow-hidden w-full max-w-6xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
                     >
-                        {/* --- ИЗМЕНЕНИЕ 3: Кнопка "Закрыть" --- */}
                         <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors z-[60] bg-white/30 dark:bg-black/30 rounded-full p-1"><X size={24} /></button>
 
                         {isLoading && !activePost ? (
@@ -472,7 +466,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                     </div>
                                 ) : null}
                                 <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
-                                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center space-x-3 flex-shrink-0">
+                                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between space-x-3 flex-shrink-0">
                                         {(() => {
                                             const author = activePost.community || activePost.user;
                                             const linkTo = activePost.community ? `/communities/${author._id}` : `/profile/${author._id}`;
@@ -481,7 +475,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
 
                                             return (
-                                                <Link to={linkTo} onClick={onClose} className="flex items-center space-x-3 group">
+                                                <Link to={linkTo} onClick={onClose} className="flex items-center space-x-3 group flex-1 min-w-0">
                                                     <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
                                                         <Avatar
                                                             username={author.name || author.username}
@@ -491,15 +485,14 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                             customBorder={border}
                                                         />
                                                     </div>
-                                                    <div className="flex-grow">
+                                                    <div className="flex-grow min-w-0">
                                                         {activePost.community && <p className="text-xs text-slate-400 flex items-center"><Users size={12} className="mr-1"/>Сообщество</p>}
-                                                        <span className="font-bold group-hover:underline">{author.name || author.username}</span>
+                                                        <span className="font-bold group-hover:underline truncate block">{author.name || author.username}</span>
                                                         <p className="text-xs text-slate-500 dark:text-slate-400">{formatDistanceToNow(new Date(activePost.createdAt), { addSuffix: true, locale: customRuLocale })}</p>
                                                     </div>
                                                 </Link>
                                             );
                                         })()}
-                                        <div className="flex-grow"></div>
                                         {activePost.user._id === currentUserId && <div ref={postMenuRef} className="relative"><button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><MoreHorizontal size={20}/></button>
                                             {showPostMenu && (
                                                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10 overflow-hidden p-1 space-y-1">
@@ -525,8 +518,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>}
                                     </div>
                                     
-                                    {/* --- ИЗМЕНЕНИЕ 4: Оборачиваем панель в div --- */}
-                                    <div className="sticky top-0 z-10 bg-white dark:bg-slate-900">
+                                    <div className="flex-1 overflow-y-auto min-h-0">
                                         {(activePost.text || activePost.attachedTrack || activePost.poll) && (
                                             <div className="p-4">
                                                 <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-4 py-2 space-y-3">
@@ -543,50 +535,50 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                 </div>
                                             </div>
                                         )}
-                                        <div className="flex items-center justify-between p-4 border-b border-t border-slate-200 dark:border-slate-700">
-                                            <div className="flex items-center space-x-4">
-                                                <LikesPopover likers={activePost.likes}>
-                                                    <span>
-                                                        <button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500">
-                                                            <Heart fill={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'none'} stroke={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'currentColor'}/>
-                                                            <span>{activePost.likes.length}</span>
+                                        
+                                        <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-4 border-b border-t border-slate-200 dark:border-slate-700">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-4">
+                                                    <LikesPopover likers={activePost.likes}>
+                                                        <span>
+                                                            <button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500">
+                                                                <Heart fill={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'none'} stroke={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'currentColor'}/>
+                                                                <span>{activePost.likes.length}</span>
+                                                            </button>
+                                                        </span>
+                                                    </LikesPopover>
+                                                    <div className="flex items-center space-x-1"><MessageCircle/><span>{activePost.comments.length}</span></div>
+                                                </div>
+
+                                                {commentSelectionMode ? (
+                                                    <div className="flex items-center space-x-2">
+                                                        <button onClick={() => {setCommentSelectionMode(false); setSelectedComments([])}} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20">Отмена</button>
+                                                        <button onClick={handleDeleteSelectedComments} disabled={selectedComments.length === 0} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Удалить ({selectedComments.length})</button>
+                                                    </div>
+                                                ) : null}
+
+                                                {activePost.comments.length > 1 && (
+                                                    <div className="relative" ref={sortMenuRef}>
+                                                        <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
+                                                            <span>{sortLabels[sortOrder]}</span>
+                                                            <ChevronDown size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
                                                         </button>
-                                                    </span>
-                                                </LikesPopover>
-                                                <div className="flex items-center space-x-1"><MessageCircle/><span>{activePost.comments.length}</span></div>
+                                                        {showSortMenu && (
+                                                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black dark:ring-white/10 ring-opacity-5 py-1 z-30">
+                                                                {Object.entries(sortLabels).map(([key, label]) => (
+                                                                    <button key={key} onClick={() => handleSortChange(key)} className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${sortOrder === key ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'} hover:bg-slate-100 dark:hover:bg-slate-700`}>
+                                                                        {label}
+                                                                        {sortOrder === key && <Check size={16} />}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
-
-                                            {commentSelectionMode ? (
-                                                <div className="flex items-center space-x-2">
-                                                    <button onClick={() => {setCommentSelectionMode(false); setSelectedComments([])}} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20">Отмена</button>
-                                                    <button onClick={handleDeleteSelectedComments} disabled={selectedComments.length === 0} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Удалить ({selectedComments.length})</button>
-                                                </div>
-                                            ) : null}
-
-                                            {activePost.comments.length > 1 && (
-                                                <div className="relative" ref={sortMenuRef}>
-                                                    <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
-                                                        <span>{sortLabels[sortOrder]}</span>
-                                                        <ChevronDown size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
-                                                    </button>
-                                                    {showSortMenu && (
-                                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black dark:ring-white/10 ring-opacity-5 py-1 z-30">
-                                                            {Object.entries(sortLabels).map(([key, label]) => (
-                                                                <button key={key} onClick={() => handleSortChange(key)} className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${sortOrder === key ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'} hover:bg-slate-100 dark:hover:bg-slate-700`}>
-                                                                    {label}
-                                                                    {sortOrder === key && <Check size={16} />}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
                                         </div>
-                                    </div>
-                                    
-                                    {/* --- ИЗМЕНЕНИЕ 5: Оборачиваем комментарии в div для скролла --- */}
-                                    <div className="flex-1 overflow-y-auto min-h-0 p-4">
-                                        <div className="space-y-4">
+
+                                        <div className="p-4 space-y-4">
                                             {sortedComments.length > 0 ? sortedComments.map(comment => (
                                                 <Comment 
                                                     key={comment._id} 
