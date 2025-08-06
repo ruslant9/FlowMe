@@ -12,6 +12,7 @@ import { useUser } from '../hooks/useUser';
 import { AnimatePresence } from 'framer-motion';
 import DeletionTimerToast from '../components/chat/DeletionTimerToast';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -314,65 +315,67 @@ const MessagesPage = () => {
     };
 
     return (
-        <div className="flex h-full relative">
-            <PremiumRequiredModal 
-                isOpen={isPremiumModalOpen} 
-                onClose={() => setIsPremiumModalOpen(false)} 
-            />
-            <div className={`
-                ${activeConversation ? 'hidden md:flex' : 'flex'}
-                w-full md:w-[380px] flex-col flex-shrink-0 border-r border-slate-300 dark:border-slate-700/50
-            `}>
-                <ChatList
-                    activeConversations={activeConversations}
-                    archivedConversations={archivedConversations}
-                    onSelectConversation={handleSelectConversation}
-                    activeConversationId={activeConversation?._id}
-                    loading={loading}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    onUpdateList={() => fetchConversations(false)}
-                    typingStatuses={typingStatuses}
-                    unreadArchivedCount={unreadArchivedCount}
-                    onDeleteRequest={handleDeleteRequest}
-                    pinnedCount={pinnedCount}
-                    pinLimit={pinLimit}
-                    onOpenPremiumModal={() => setIsPremiumModalOpen(true)}
-                    onOptimisticPinUpdate={handleOptimisticPinUpdate}
+        <PageWrapper>
+            <div className="flex h-full relative">
+                <PremiumRequiredModal 
+                    isOpen={isPremiumModalOpen} 
+                    onClose={() => setIsPremiumModalOpen(false)} 
                 />
-            </div>
-            <div className={`
-                ${activeConversation ? 'flex' : 'hidden md:flex'}
-                flex-1 flex-col
-            `}>
-                {activeConversation ? (
-                    <ConversationWindow
-                        key={activeConversation._id}
-                        conversation={activeConversation}
-                        onDeselectConversation={() => {
-                            setActiveConversation(null);
-                            navigate('/messages', { replace: true });
-                        }}
+                <div className={`
+                    ${activeConversation ? 'hidden md:flex' : 'flex'}
+                    w-full md:w-[380px] flex-col flex-shrink-0 border-r border-slate-300 dark:border-slate-700/50
+                `}>
+                    <ChatList
+                        activeConversations={activeConversations}
+                        archivedConversations={archivedConversations}
+                        onSelectConversation={handleSelectConversation}
+                        activeConversationId={activeConversation?._id}
+                        loading={loading}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        onUpdateList={() => fetchConversations(false)}
+                        typingStatuses={typingStatuses}
+                        unreadArchivedCount={unreadArchivedCount}
                         onDeleteRequest={handleDeleteRequest}
+                        pinnedCount={pinnedCount}
+                        pinLimit={pinLimit}
+                        onOpenPremiumModal={() => setIsPremiumModalOpen(true)}
+                        onOptimisticPinUpdate={handleOptimisticPinUpdate}
                     />
-                ) : (
-                    <div className="h-full flex-col flex items-center justify-center text-slate-500 dark:text-slate-400 p-8 text-center">
-                        <MessageSquare size={48} className="mb-4" />
-                        <h2 className="text-xl font-semibold">Выберите чат</h2>
-                        <p>Начните общение с друзьями или найдите новых!</p>
-                    </div>
-                )}
+                </div>
+                <div className={`
+                    ${activeConversation ? 'flex' : 'hidden md:flex'}
+                    flex-1 flex-col
+                `}>
+                    {activeConversation ? (
+                        <ConversationWindow
+                            key={activeConversation._id}
+                            conversation={activeConversation}
+                            onDeselectConversation={() => {
+                                setActiveConversation(null);
+                                navigate('/messages', { replace: true });
+                            }}
+                            onDeleteRequest={handleDeleteRequest}
+                        />
+                    ) : (
+                        <div className="h-full flex-col flex items-center justify-center text-slate-500 dark:text-slate-400 p-8 text-center">
+                            <MessageSquare size={48} className="mb-4" />
+                            <h2 className="text-xl font-semibold">Выберите чат</h2>
+                            <p>Начните общение с друзьями или найдите новых!</p>
+                        </div>
+                    )}
+                </div>
+                <AnimatePresence>
+                    {pendingDeletion && (
+                        <DeletionTimerToast
+                            onCancel={cancelDeletion}
+                            timeLeft={pendingDeletion.timeLeft}
+                            forEveryone={pendingDeletion.forEveryone}
+                        />
+                    )}
+                </AnimatePresence>
             </div>
-            <AnimatePresence>
-                {pendingDeletion && (
-                    <DeletionTimerToast
-                        onCancel={cancelDeletion}
-                        timeLeft={pendingDeletion.timeLeft}
-                        forEveryone={pendingDeletion.forEveryone}
-                    />
-                )}
-            </AnimatePresence>
-        </div>
+        </PageWrapper>
     );
 };
 

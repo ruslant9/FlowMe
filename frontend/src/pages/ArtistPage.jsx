@@ -11,6 +11,7 @@ import AlbumCard from '../components/music/AlbumCard';
 import { useDynamicAccent } from '../hooks/useDynamicAccent';
 import toast from 'react-hot-toast';
 import ArtistInfoPanel from '../components/music/ArtistInfoPanel';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const INITIAL_DISPLAY_LIMIT = 8;
@@ -111,7 +112,7 @@ const ArtistPage = () => {
 
 
     return (
-        <>
+        <PageWrapper>
             <ArtistInfoPanel
                 artist={artist}
                 isOpen={isInfoPanelOpen}
@@ -267,7 +268,7 @@ const ArtistPage = () => {
                     )}
                 </div>
             </main>
-        </>
+        </PageWrapper>
     );
 };
 

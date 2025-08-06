@@ -308,11 +308,7 @@ const ProtectedLayout = () => {
 
   return (
     <MainLayout>
-      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-      <PageWrapper>
-        <Outlet />
-      </PageWrapper>
-      {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+      <Outlet />
     </MainLayout>
   );
 };

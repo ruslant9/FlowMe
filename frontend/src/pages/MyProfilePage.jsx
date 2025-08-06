@@ -25,6 +25,7 @@ import PremiumCustomizationModal from '../components/modals/PremiumCustomization
 import AnimatedAccent from '../components/AnimatedAccent';
 import { motion } from 'framer-motion';
 import ProfileField from '../components/ProfileField';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -46,7 +47,8 @@ const StatItem = ({ label, value, onClick }) => (
 const TabButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
-        className={`relative px-4 py-3 text-sm font-semibold transition-colors ${
+        // --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы flex и items-center ---
+        className={`flex items-center relative px-4 py-3 text-sm font-semibold transition-colors ${
             active 
             ? 'text-white' 
             : 'text-slate-400 hover:text-white'
@@ -235,7 +237,7 @@ const MyProfilePage = () => {
     }
 
     return (
-        <>
+        <PageWrapper>
             <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => {setIsCreatePostModalOpen(false); fetchPostsAndStats(false);}} />
             <EditPostModal isOpen={!!editingPost} post={editingPost} onClose={() => { setEditingPost(null); fetchPostsAndStats(false); }} />
             <EditProfileModal isOpen={isEditProfileModalOpen} onClose={() => {setIsEditProfileModalOpen(false); refetchUser();}} user={user} />
@@ -359,7 +361,7 @@ const MyProfilePage = () => {
                     </div>
                 </div>
             </main>
-        </>
+        </PageWrapper>
     );
 };
 

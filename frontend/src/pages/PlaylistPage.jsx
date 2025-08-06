@@ -15,6 +15,7 @@ import { useModal } from '../hooks/useModal';
 import toast from 'react-hot-toast';
 import ColorThief from 'colorthief';
 import { useCachedImage } from '../hooks/useCachedImage';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -209,7 +210,7 @@ const PlaylistPage = () => {
     }
 
     return (
-        <>
+        <PageWrapper>
             <EditPlaylistModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} playlist={playlist} onPlaylistUpdated={handlePlaylistUpdated} />
             <AddTracksToPlaylistModal isOpen={isAddTracksModalOpen} onClose={() => setAddTracksModalOpen(false)} onAddTracks={handleAddTracks} existingTrackIds={new Set(playlist.tracks.map(t=>t._id))} />
 
@@ -286,7 +287,7 @@ const PlaylistPage = () => {
                     </div>
                 </div>
             </main>
-        </>
+        </PageWrapper>
     );
 };
 

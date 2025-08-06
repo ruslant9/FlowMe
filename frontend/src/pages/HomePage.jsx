@@ -7,6 +7,7 @@ import PostCard from '../components/PostCard';
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EditPostModal from '../components/modals/EditPostModal';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -118,43 +119,45 @@ const HomePage = () => {
     };
 
     return (
-        <main className="flex-1 p-4 md:p-8">
-            <EditPostModal
-                isOpen={!!editingPost}
-                post={editingPost}
-                onClose={() => {
-                    setEditingPost(null);
-                    fetchFeed(false);
-                }}
-            />
-            <div className="max-w-2xl mx-auto space-y-6">
-                <h1 className="text-3xl font-bold text-center">Лента</h1>
+        <PageWrapper>
+            <main className="flex-1 p-4 md:p-8">
+                <EditPostModal
+                    isOpen={!!editingPost}
+                    post={editingPost}
+                    onClose={() => {
+                        setEditingPost(null);
+                        fetchFeed(false);
+                    }}
+                />
+                <div className="max-w-2xl mx-auto space-y-6">
+                    <h1 className="text-3xl font-bold text-center">Лента</h1>
 
-                {loading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <Loader2 className="w-10 h-10 animate-spin text-slate-400" />
-                    </div>
-                ) : posts.length > 0 ? (
-                    posts.map(post => (
-                        <PostCard 
-                            key={post._id} 
-                            post={post} 
-                            onPostDelete={handlePostDeleteInPlace}
-                            onPostUpdate={handlePostUpdateInPlace}
-                            currentUser={currentUser}
-                            myMusicTrackIds={myMusicTrackIds}
-                            context="feed"
-                            onEditRequest={setEditingPost}
-                        />
-                    ))
-                ) : (
-                    <div className="ios-glass-final rounded-3xl p-10 text-center text-slate-500 dark:text-white/60">
-                        <h2 className="text-xl font-semibold mb-2">Ваша лента пуста</h2>
-                        <p>Подпишитесь на других пользователей, чтобы видеть их посты здесь.</p>
-                    </div>
-                )}
-            </div>
-        </main>
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <Loader2 className="w-10 h-10 animate-spin text-slate-400" />
+                        </div>
+                    ) : posts.length > 0 ? (
+                        posts.map(post => (
+                            <PostCard 
+                                key={post._id} 
+                                post={post} 
+                                onPostDelete={handlePostDeleteInPlace}
+                                onPostUpdate={handlePostUpdateInPlace}
+                                currentUser={currentUser}
+                                myMusicTrackIds={myMusicTrackIds}
+                                context="feed"
+                                onEditRequest={setEditingPost}
+                            />
+                        ))
+                    ) : (
+                        <div className="ios-glass-final rounded-3xl p-10 text-center text-slate-500 dark:text-white/60">
+                            <h2 className="text-xl font-semibold mb-2">Ваша лента пуста</h2>
+                            <p>Подпишитесь на других пользователей, чтобы видеть их посты здесь.</p>
+                        </div>
+                    )}
+                </div>
+            </main>
+        </PageWrapper>
     );
 };
 
