@@ -1,4 +1,4 @@
-// frontend/src/pages/MusicPage.jsx
+// frontend/src/pages/MusicPage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -19,6 +19,8 @@ import ArtistCard from '../components/music/ArtistCard';
 import AlbumCard from '../components/music/AlbumCard';
 import { useModal } from '../hooks/useModal';
 import PageWrapper from '../components/PageWrapper';
+// --- ИЗМЕНЕНИЕ 1: Импортируем ResponsiveNav ---
+import ResponsiveNav from '../components/ResponsiveNav';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -234,6 +236,15 @@ const MusicPage = () => {
             }
         });
     };
+
+    // --- ИЗМЕНЕНИЕ 2: Создаем массив для навигации ---
+    const navItems = [
+        { key: 'recommendations', label: 'Главная', icon: Star, onClick: () => setActiveTab('recommendations') },
+        { key: 'search', label: 'Поиск', icon: Search, onClick: () => setActiveTab('search') },
+        { key: 'my-music', label: 'Моя музыка', icon: Music, onClick: () => setActiveTab('my-music') },
+        { key: 'playlists', label: 'Плейлисты', icon: ListMusic, onClick: () => setActiveTab('playlists') },
+        { key: 'recently-played', label: 'Вы слушали', icon: History, onClick: () => setActiveTab('recently-played') }
+    ];
     
     return (
         <PageWrapper>
@@ -252,15 +263,29 @@ const MusicPage = () => {
                         </button>
                     </div>
                     
-                    <div className="px-6 md:px-8 border-b border-slate-300 dark:border-slate-700 overflow-x-auto no-scrollbar">
-                        <div className="flex items-center gap-x-2 -mb-px">
-                            <TabButton active={activeTab === 'recommendations'} onClick={() => setActiveTab('recommendations')}><Star size={16}/><span>Главная</span></TabButton>
-                            <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')}><Search size={16}/><span>Поиск</span></TabButton>
-                            <TabButton active={activeTab === 'my-music'} onClick={() => setActiveTab('my-music')}><Music size={16}/><span>Моя музыка</span></TabButton>
-                            <TabButton active={activeTab === 'playlists'} onClick={() => setActiveTab('playlists')}><ListMusic size={16}/><span>Мои плейлисты</span></TabButton>
-                            <TabButton active={activeTab === 'recently-played'} onClick={() => setActiveTab('recently-played')}><History size={16}/><span>Вы слушали</span></TabButton>
+                    {/* --- ИЗМЕНЕНИЕ 3: Адаптивная навигация --- */}
+                    <div className="px-6 md:px-8">
+                        {/* Навигация для десктопа */}
+                        <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 overflow-x-auto no-scrollbar">
+                            <div className="flex items-center gap-x-2 -mb-px">
+                                {navItems.map(item => (
+                                    <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick}>
+                                        <item.icon size={16}/><span>{item.label}</span>
+                                    </TabButton>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Навигация для мобильных */}
+                        <div className="md:hidden mb-6">
+                            <ResponsiveNav 
+                                items={navItems}
+                                visibleCount={4}
+                                activeKey={activeTab}
+                            />
                         </div>
                     </div>
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     
                     <div className="p-6 md:p-8">
                         {activeTab === 'recommendations' && (

@@ -100,7 +100,9 @@ const PremiumPage = () => {
     
     return (
         <PageWrapper>
-            <main className="flex-1 p-4 md:p-8 flex items-center justify-center h-full">
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Удалены классы items-center и h-full --- */}
+            <main className="flex-1 p-4 md:p-8 flex justify-center">
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 {currentUser?.premium?.isActive ? (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}

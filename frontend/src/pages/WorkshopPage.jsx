@@ -19,13 +19,13 @@ const API_URL = import.meta.env.VITE_API_URL;
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
         onClick={onClick}
-        className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+        className={`flex items-center space-x-2 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-semibold rounded-lg transition-colors ${
             active 
             ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-white' 
             : 'text-slate-500 hover:bg-white/50 dark:hover:bg-slate-700/50'
         }`}
     >
-        <Icon size={18} />
+        <Icon size={16} />
         <span>{children}</span>
     </button>
 );
@@ -335,7 +335,7 @@ return (
                                     <ChevronDown className="h-4 w-4" />
                                 </Menu.Button>
                                 <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
-                                    <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl ios-glass-popover p-1">
+                                    <Menu.Items className="absolute left-0 z-10 mt-2 w-48 origin-top-left rounded-xl ios-glass-popover p-1">
                                         {premiumFilterOptions.map(option => (
                                             <Menu.Item key={option.id}>
                                                 {({ active }) => (
