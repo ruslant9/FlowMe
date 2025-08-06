@@ -17,8 +17,6 @@ import './styles/cropper-custom.css';
 import './styles/datepicker-custom.css';
 import 'rc-slider/assets/index.css';
 
-registerCacheBuster();
-// Глобальная настройка Axios для отправки cookie
 axios.defaults.withCredentials = true;
 
 const token = localStorage.getItem('token');
