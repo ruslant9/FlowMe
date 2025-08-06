@@ -73,9 +73,13 @@ const CommunityCard = ({ community, onAction, isMember, isPending }) => {
                 <Avatar username={community.name} avatarUrl={community.avatar} size="lg" />
                 <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold truncate group-hover:text-blue-400 transition-colors">{community.name}</h3>
-                    <p className="text-sm text-slate-600 dark:text-white/80 line-clamp-1">
-                        {community.description || 'Нет описания.'}
-                    </p>
+                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                    {community.description && (
+                        <p className="text-sm text-slate-600 dark:text-white/80 line-clamp-1">
+                            {community.description}
+                        </p>
+                    )}
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     <div className="flex items-center space-x-3 text-sm text-slate-500 dark:text-white/60 mt-1">
                         <div className="flex items-center space-x-1">{renderVisibilityIcon()}<span>{community.topic}</span></div>
                         <div className="flex items-center space-x-1"><Users size={14} /><span>{community.members?.length || 0}</span></div>

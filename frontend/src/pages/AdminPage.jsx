@@ -58,7 +58,7 @@ const AdminPage = () => {
                    title="Исходный код: MyProfilePage.jsx"
                    code={myProfilePageSource}
                />
-                <div className="max-w-7xl mx-auto pt-12 md:pt-0">
+                <div className="max-w-7xl mx-auto">
                     <div className="flex items-center justify-between mb-6">
                         <h1 className="text-3xl font-bold">Панель администратора</h1>
                     </div>

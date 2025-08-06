@@ -31,33 +31,39 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         return '';
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Полностью переписана логика определения метки ---
     const getReleaseBadge = (releaseDate) => {
-    if (!releaseDate) return null;
+        if (!releaseDate) return null;
 
-    const release = new Date(releaseDate);
-    if (isNaN(release.getTime())) return null;
+        const release = new Date(releaseDate);
+        if (isNaN(release.getTime())) return null;
 
-    const now = new Date();
-    
-    // Устанавливаем время на полночь для обеих дат в локальном часовом поясе
-    now.setHours(0, 0, 0, 0);
-    release.setHours(0, 0, 0, 0);
-    
-    const diffTime = now.getTime() - release.getTime();
-    
-    // Считаем разницу в полных 24-часовых периодах
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays >= 0 && diffDays <= 14) {
-        return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
-    }
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth(); // 0-11
+        
+        const releaseYear = release.getFullYear();
+        const releaseMonth = release.getMonth(); // 0-11
 
-    if (diffDays > 14 && diffDays <= 60) {
-        return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
-    }
-    
-    return null;
-};
+        // "Новое" - тот же месяц, тот же год
+        if (releaseYear === currentYear && releaseMonth === currentMonth) {
+            return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
+        }
+
+        // "Недавнее" - предыдущий месяц
+        // Случай 1: тот же год, предыдущий месяц (например, сейчас август, релиз в июле)
+        const isPreviousMonthSameYear = (releaseYear === currentYear && releaseMonth === currentMonth - 1);
+        
+        // Случай 2: переход через год (например, сейчас январь 2025, релиз в декабре 2024)
+        const isPreviousMonthDifferentYear = (currentMonth === 0 && releaseYear === currentYear - 1 && releaseMonth === 11);
+
+        if (isPreviousMonthSameYear || isPreviousMonthDifferentYear) {
+            return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
+        }
+        
+        return null;
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     const handlePlayClick = (e) => {
         e.stopPropagation();
@@ -109,8 +115,10 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </div>
 
             <div className="relative z-10 text-white mt-auto">
-                <h3 className="text-sm md:text-base font-bold truncate">{cleanTitle(track.title)}</h3>
-                <p className="text-[11px] md:text-xs leading-tight opacity-80 truncate">{formatArtistName(track.artist)}</p>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Уменьшены размеры текста --- */}
+                <h3 className="text-xs md:text-sm font-bold truncate">{cleanTitle(track.title)}</h3>
+                <p className="text-[10px] md:text-[11px] leading-tight opacity-80 truncate">{formatArtistName(track.artist)}</p>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
             </div>
         </motion.div>
     );

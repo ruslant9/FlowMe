@@ -27,7 +27,7 @@ import AnimatedAccent from '../components/AnimatedAccent';
 import { motion } from 'framer-motion';
 import ProfileField from '../components/ProfileField';
 import PageWrapper from '../components/PageWrapper';
-import ProfileStats from '../components/ProfileStats'; // <-- ИСПРАВЛЕНИЕ: Импортируем ProfileStats
+import ProfileStats from '../components/ProfileStats';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -292,7 +292,7 @@ const MyProfilePage = () => {
                                     <Edit2 size={16} /><span>Редактировать</span>
                                 </button>
                                 <button onClick={handleCustomizationClick} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg text-white' : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm'}`}>
-                                    {user.premium?.isActive ? <Crown size={16} /> : <Sparkles size={16} />}
+                                    <Crown size={16} />
                                     <span>Кастомизация</span>
                                 </button>
                             </div>

@@ -1,5 +1,6 @@
 // frontend/src/components/music/ArtistInfoPanel.jsx
-import React, { useEffect } from 'react';
+
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Avatar from '../Avatar';
@@ -7,41 +8,6 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 
 const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
     const { currentTrack } = useMusicPlayer();
-
-    useEffect(() => {
-    if (isOpen) {
-        // 1. Сохраняем текущую позицию прокрутки
-        const scrollY = window.scrollY;
-        
-        // 2. Применяем стили для блокировки
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${scrollY}px`;
-        document.body.style.width = '100%';
-        document.body.style.overflow = 'hidden';
-
-    } else {
-        // 3. Восстанавливаем стили при закрытии
-        const scrollY = document.body.style.top;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-    }
-
-    // 4. Функция очистки
-    return () => {
-        const scrollY = document.body.style.top;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
-        if (scrollY) {
-            window.scrollTo(0, parseInt(scrollY || '0') * -1);
-        }
-    };
-}, [isOpen]);
-
 
     return (
         <AnimatePresence>
@@ -59,15 +25,19 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         onClick={(e) => e.stopPropagation()}
+                        // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Высота панели ---
                         className={`absolute top-0 right-0 w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col ${
-                            currentTrack ? 'h-[calc(100dvh-100px)]' : 'h-[100dvh]'
+                            currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
                         }`}
+                        // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
                     >
                         <header className="flex items-center justify-between p-4 pl-16 md:pl-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                             <h3 className="font-bold text-lg">Об исполнителе</h3>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X size={20} /></button>
                         </header>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Изоляция прокрутки --- */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain">
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                             <div className="flex flex-col items-center text-center">
                                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
                                 <h2 className="text-3xl font-bold mt-4">{artist.name}</h2>
