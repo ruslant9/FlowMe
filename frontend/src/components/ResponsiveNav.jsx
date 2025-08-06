@@ -1,3 +1,5 @@
+// frontend/src/components/ResponsiveNav.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { MoreHorizontal } from 'lucide-react';
@@ -5,16 +7,15 @@ import MorePanel from './MorePanel';
 
 // Компонент для элемента навигации (может быть ссылкой или кнопкой)
 const NavItem = ({ item, isActive, onClick }) => {
-    const commonClasses = `flex-1 flex flex-col items-center justify-center space-y-1 p-2 rounded-lg transition-colors text-xs font-medium
+    // --- ИЗМЕНЕНИЕ: Убран flex-1, уменьшен горизонтальный padding (p-2 -> px-1 py-2) ---
+    const commonClasses = `flex flex-col items-center justify-center space-y-1 px-1 py-2 rounded-lg transition-colors text-xs font-medium
       ${isActive
         ? 'text-blue-600 dark:text-blue-400'
         : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
       }`;
     
-    // Исправление переноса текста: уменьшенный шрифт и межстрочный интервал
     const labelClasses = 'text-center text-[11px] leading-tight';
 
-    // Если у элемента есть path, это навигационная ссылка
     if (item.path) {
         return (
             <NavLink to={item.path} className={commonClasses}>
@@ -24,7 +25,6 @@ const NavItem = ({ item, isActive, onClick }) => {
         );
     }
 
-    // Если у элемента есть onClick, это кнопка для управления состоянием
     if (item.onClick) {
         return (
             <button onClick={onClick} className={commonClasses}>
@@ -39,9 +39,10 @@ const NavItem = ({ item, isActive, onClick }) => {
 
 // Компонент для кнопки "Еще"
 const MoreButton = ({ onClick, isActive }) => (
+    // --- ИЗМЕНЕНИЕ: Убран flex-1, уменьшен горизонтальный padding (p-2 -> px-1 py-2) ---
     <button
         onClick={onClick}
-        className={`flex-1 flex flex-col items-center justify-center space-y-1 p-2 rounded-lg transition-colors text-xs font-medium
+        className={`flex flex-col items-center justify-center space-y-1 px-1 py-2 rounded-lg transition-colors text-xs font-medium
       ${isActive
             ? 'text-blue-600 dark:text-blue-400'
             : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -67,7 +68,6 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
         ? items.slice(visibleCount - 1)
         : [];
 
-    // Единая проверка активности для кнопки "Еще"
     const isMoreButtonActive = hiddenItems.some(item =>
         item.path ? item.path === activePath : item.key === activeKey
     );
@@ -75,7 +75,8 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
     return (
         <>
             <div className="w-full max-w-sm mx-auto p-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center justify-around space-x-2">
+                {/* --- ИЗМЕНЕНИЕ: justify-around заменен на justify-evenly для лучшего распределения --- */}
+                <div className="flex items-center justify-evenly">
                     {visibleItems.map(item => (
                         <NavItem
                             key={item.path || item.key}

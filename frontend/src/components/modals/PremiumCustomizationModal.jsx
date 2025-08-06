@@ -1,6 +1,7 @@
 // frontend/src/components/modals/PremiumCustomizationModal.jsx
 
 import React, { useState, Fragment, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Check, Loader2, Sparkles, RotateCcw, CheckCircle, ArrowLeft, Plus, Edit as EditIcon, Trash2 as TrashIcon } from 'lucide-react';
 import axios from 'axios';
@@ -80,12 +81,7 @@ const getImageUrl = (url) => {
 const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
     const { refetchUser } = useUser();
     const { showConfirmation } = useModal();
-    const [customizationData, setCustomizationData] = useState({
-        avatarBorder: { id: 'none', type: 'none', value: null },
-        usernameEmoji: { id: 'none', url: null },
-        activeCardAccent: null,
-        customCardAccents: [],
-    });
+    const [draftData, setDraftData] = useState({});
     const [loading, setLoading] = useState(false);
     const [activePack, setActivePack] = useState(emojiPacks[0].name);
     const [previewingEmoji, setPreviewingEmoji] = useState(null);
@@ -107,32 +103,20 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
             hasPreloaded.current = true;
         }
     }, [isOpen]);
-
-    useEffect(() => {
-        if (user && isOpen) {
-            setCustomizationData({
-                avatarBorder: user.premiumCustomization?.avatarBorder || { id: 'none', type: 'none', value: null },
-                usernameEmoji: user.premiumCustomization?.usernameEmoji || { id: 'none', url: null },
-                activeCardAccent: user.premiumCustomization?.activeCardAccent || null,
-                customCardAccents: user.premiumCustomization?.customCardAccents || [],
-            });
-             setView('main');
-        }
-    }, [user, isOpen]);
-
-    const saveCustomization = async (payload) => {
-        try {
-            const token = localStorage.getItem('token');
-            await axios.put(`${API_URL}/api/user/profile`, { premiumCustomization: payload }, { headers: { Authorization: `Bearer ${token}` } });
-            refetchUser();
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Ошибка сохранения.');
-            refetchUser();
-        }
-    };
     
+    useEffect(() => {
+        if (isOpen) {
+            setDraftData(user.premiumCustomization || {});
+            setView('main');
+        }
+    }, [isOpen, user]);
+
+    const handleDraftChange = (field, value) => {
+        setDraftData(prev => ({ ...prev, [field]: value }));
+    };
+
     const handleCreateNewAccent = () => {
-        if (customizationData.customCardAccents.length >= 5) {
+        if (draftData.customCardAccents.length >= 5) {
             toast.error('Можно создать не более 5 кастомных акцентов.');
             return;
         }
@@ -213,36 +197,31 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
         });
     };
 
-    const handleSetActiveAccent = async (accent) => {
-        const accentId = (typeof accent === 'object' && accent !== null) ? accent._id : accent;
-        const originalAccent = customizationData.activeCardAccent;
-        
-        setCustomizationData(p => ({ ...p, activeCardAccent: accent }));
-
+    const handleSaveAll = async () => {
+        setLoading(true);
+        const toastId = toast.loading('Сохранение...');
         try {
             const token = localStorage.getItem('token');
+            // Отправляем только те поля, которые мы редактируем
+            const payload = {
+                avatarBorder: draftData.avatarBorder,
+                usernameEmoji: draftData.usernameEmoji,
+            };
+            await axios.put(`${API_URL}/api/user/profile`, { premiumCustomization: payload }, { headers: { Authorization: `Bearer ${token}` } });
+            
+            // Отдельный запрос для активного акцента
+            const accentId = (typeof draftData.activeCardAccent === 'object' && draftData.activeCardAccent !== null) ? draftData.activeCardAccent._id : draftData.activeCardAccent;
             await axios.put(`${API_URL}/api/user/premium-accents/set-active`, { accent: accentId }, { headers: { Authorization: `Bearer ${token}` } });
+
+            toast.success('Настройки сохранены!', { id: toastId });
             refetchUser();
+            onClose();
         } catch (error) {
-            toast.error('Не удалось применить акцент.');
-            setCustomizationData(p => ({ ...p, activeCardAccent: originalAccent }));
+            toast.error(error.response?.data?.message || 'Ошибка сохранения.', { id: toastId });
+            refetchUser(); // Все равно обновляем, чтобы вернуть к исходному состоянию
+        } finally {
+            setLoading(false);
         }
-    };
-
-    const handleAvatarBorderChange = (border) => {
-        const originalBorder = customizationData.avatarBorder;
-        setCustomizationData(p => ({ ...p, avatarBorder: border }));
-        saveCustomization({ avatarBorder: border }).catch(() => {
-            setCustomizationData(p => ({ ...p, avatarBorder: originalBorder }));
-        });
-    };
-
-    const handleUsernameEmojiChange = (emoji) => {
-        const originalEmoji = customizationData.usernameEmoji;
-        setCustomizationData(p => ({ ...p, usernameEmoji: emoji }));
-        saveCustomization({ usernameEmoji: emoji }).catch(() => {
-            setCustomizationData(p => ({ ...p, usernameEmoji: originalEmoji }));
-        });
     };
 
     const handleResetAll = () => {
@@ -250,17 +229,12 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
             title: 'Сбросить все настройки?',
             message: 'Все ваши настройки кастомизации будут возвращены к стандартным значениям. Кастомные акценты не будут удалены.',
             onConfirm: () => {
-                setCustomizationData(prev => ({
+                setDraftData(prev => ({
                     ...prev,
                     avatarBorder: { id: 'none', type: 'none', value: null },
                     usernameEmoji: { id: 'none', url: null },
                     activeCardAccent: null,
                 }));
-                saveCustomization({ 
-                    avatarBorder: { id: 'none', type: 'none', value: null },
-                    usernameEmoji: { id: 'none', url: null }
-                });
-                handleSetActiveAccent(null);
                 toast.success('Настройки сброшены.');
             }
         });
@@ -279,7 +253,7 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
     const handleMouseUp = (emoji) => {
         clearTimeout(longPressTimerRef.current);
         if (!longPressTriggeredRef.current) {
-            handleUsernameEmojiChange(emoji);
+            handleDraftChange('usernameEmoji', emoji);
         }
     };
     
@@ -290,17 +264,17 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
     const activeEmojis = emojiPacks.find(p => p.name === activePack)?.emojis || [];
 
     const getActiveAccentId = () => {
-        const active = customizationData.activeCardAccent;
+        const active = draftData.activeCardAccent;
         if (!active) return null;
         return typeof active === 'object' ? active._id : active;
     };
 
-    return (
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
                     <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end p-4 md:items-center justify-center z-[100]">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={(e) => e.stopPropagation()} className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
                             <div className="flex justify-between items-center mb-4">
                                 <div className="flex items-center space-x-2">
@@ -330,8 +304,8 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                                 <AvatarBorderPreview
                                                     key={border.id}
                                                     border={border}
-                                                    isSelected={customizationData.avatarBorder?.id === border.id}
-                                                    onClick={() => handleAvatarBorderChange(border)}
+                                                    isSelected={draftData.avatarBorder?.id === border.id}
+                                                    onClick={() => handleDraftChange('avatarBorder', border)}
                                                     user={user}
                                                 />
                                             ))}
@@ -349,7 +323,7 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                             </div>
                                             <div className="flex-1 overflow-y-auto grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg min-h-[120px]">
                                                 {activeEmojis.map((emoji) => {
-                                                    const isSelected = customizationData.usernameEmoji?.id === emoji.id;
+                                                    const isSelected = draftData.usernameEmoji?.id === emoji.id;
                                                     return (
                                                         <button
                                                             key={emoji.id}
@@ -380,9 +354,9 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                     <div>
                                         <div className="flex justify-between items-center mb-2">
                                             <label className="text-sm font-medium text-slate-600 dark:text-white/70 block">Акцент карточек</label>
-                                            {customizationData.activeCardAccent && (
+                                            {draftData.activeCardAccent && (
                                                 <button
-                                                    onClick={() => handleSetActiveAccent(null)}
+                                                    onClick={() => handleDraftChange('activeCardAccent', null)}
                                                     className="text-xs font-semibold text-slate-500 hover:text-red-500 transition-colors flex items-center space-x-1"
                                                 >
                                                     <RotateCcw size={14} />
@@ -396,11 +370,11 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                                     <Plus size={24} />
                                                     <span className="text-xs font-semibold">Создать свой</span>
                                                 </button>
-                                                {customizationData.customCardAccents?.map(accent => {
+                                                {draftData.customCardAccents?.map(accent => {
                                                     const isSelected = getActiveAccentId() === accent._id;
                                                     return (
                                                         <div key={accent._id} className="relative group">
-                                                            <button onClick={() => handleSetActiveAccent(accent)} className="w-full h-20 rounded-lg overflow-hidden relative">
+                                                            <button onClick={() => handleDraftChange('activeCardAccent', accent)} className="w-full h-20 rounded-lg overflow-hidden relative">
                                                                 <AnimatedAccent backgroundUrl={accent.backgroundUrl} emojis={accent.emojis} />
                                                                 <div className="absolute inset-0 bg-black/30"></div>
                                                                 <p className="absolute bottom-1 left-2 text-white text-xs font-semibold truncate">{accent.name}</p>
@@ -420,7 +394,7 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                                 {premadeAccents.map(accent => {
                                                     const isSelected = getActiveAccentId() === accent.url;
                                                     return (
-                                                         <button key={accent.name} onClick={() => handleSetActiveAccent(accent.url)} className={`relative rounded-lg overflow-hidden border-2 h-20 transition-all ${isSelected ? 'border-blue-500' : 'border-transparent'}`}>
+                                                         <button key={accent.name} onClick={() => handleDraftChange('activeCardAccent', accent.url)} className={`relative rounded-lg overflow-hidden border-2 h-20 transition-all ${isSelected ? 'border-blue-500' : 'border-transparent'}`}>
                                                             <div className="absolute inset-0 profile-card-accent" style={{ backgroundImage: `url(${accent.url})` }}></div>
                                                             <div className="absolute inset-0 bg-black/30"></div>
                                                             <p className="absolute bottom-1 left-2 text-white text-xs font-semibold truncate">{accent.name}</p>
@@ -485,15 +459,17 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                 <button onClick={handleResetAll} className="flex items-center space-x-2 px-4 py-2 text-sm text-slate-500 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors">
                                     <RotateCcw size={16}/><span>Сбросить все</span>
                                 </button>
-                                <button onClick={onClose} className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                                    <Save size={18} className="mr-2" /> Готово
+                                <button onClick={handleSaveAll} disabled={loading} className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                                    {loading ? <Loader2 className="animate-spin -ml-1 mr-2"/> : <Save size={18} className="mr-2" />}
+                                    Готово
                                 </button>
                             </div>
                         </motion.div>
                     </motion.div>
                 </>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 

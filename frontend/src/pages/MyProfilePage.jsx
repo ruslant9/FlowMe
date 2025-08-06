@@ -26,6 +26,9 @@ import AnimatedAccent from '../components/AnimatedAccent';
 import { motion } from 'framer-motion';
 import ProfileField from '../components/ProfileField';
 import PageWrapper from '../components/PageWrapper';
+// --- ИЗМЕНЕНИЕ 1: Импортируем модальное окно для Premium ---
+import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -37,7 +40,6 @@ const customRuLocale = {
     },
 };
 
-// --- ИЗМЕНЕНИЕ 1: Уменьшаем размер текста счётчика с text-2xl до text-xl ---
 const StatItem = ({ label, value, onClick }) => (
     <button disabled={!onClick} onClick={onClick} className="text-center group p-2 rounded-lg transition-colors hover:bg-white/5 disabled:cursor-default">
         <p className="text-xl font-bold transition-colors text-white group-hover:text-blue-400">{value}</p>
@@ -92,6 +94,8 @@ const MyProfilePage = () => {
     const [userForModal, setUserForModal] = useState(null);
     const [userListModalTitle, setUserListModalTitle] = useState('');
     const [listTypeInModal, setListTypeInModal] = useState('user');
+    // --- ИЗМЕНЕНИЕ 2: Добавляем состояние для Premium модалки ---
+    const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
     
     const userAccent = user?.premiumCustomization?.activeCardAccent;
 
@@ -229,6 +233,15 @@ const MyProfilePage = () => {
         }
     }, [user]);
 
+    // --- ИЗМЕНЕНИЕ 3: Создаем новый обработчик для кнопки кастомизации ---
+    const handleCustomizationClick = () => {
+        if (user.premium?.isActive) {
+            setIsPremiumCustomizationModalOpen(true);
+        } else {
+            setIsPremiumModalOpen(true);
+        }
+    };
+
     if (loadingUser) {
         return <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" /></div>;
     }
@@ -245,6 +258,8 @@ const MyProfilePage = () => {
             <UserListModal isOpen={isUserListModalOpen} onClose={() => setIsUserListModalOpen(false)} user={userForModal} listType={listTypeInModal} initialTitle={userListModalTitle} />
             <StatusModal isOpen={isStatusModalOpen} onClose={() => setIsStatusModalOpen(false)} currentStatus={user.status} onSave={() => refetchUser()} />
             <PremiumCustomizationModal isOpen={isPremiumCustomizationModalOpen} onClose={() => { setIsPremiumCustomizationModalOpen(false); refetchUser(); }} user={user} />
+            {/* --- ИЗМЕНЕНИЕ 4: Рендерим модальное окно --- */}
+            <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
 
             <main className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto p-4 md:p-8">
@@ -287,7 +302,8 @@ const MyProfilePage = () => {
                                 <button onClick={() => setIsEditProfileModalOpen(true)} className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-colors flex items-center space-x-2">
                                     <Edit2 size={16} /><span>Редактировать</span>
                                 </button>
-                                <button onClick={() => setIsPremiumCustomizationModalOpen(true)} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg text-white' : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm'}`}>
+                                {/* --- ИЗМЕНЕНИЕ 5: Используем новый обработчик --- */}
+                                <button onClick={handleCustomizationClick} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg text-white' : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm'}`}>
                                     {user.premium?.isActive ? <Crown size={16} /> : <Sparkles size={16} />}
                                     <span>Кастомизация</span>
                                 </button>
@@ -300,7 +316,6 @@ const MyProfilePage = () => {
                         <div className="lg:col-span-1 flex flex-col gap-6">
                              {stats && (
                                 <div className="bg-slate-800 rounded-2xl p-4">
-                                    {/* --- ИЗМЕНЕНИЕ 2: Убираем flex-wrap и gap-2, чтобы элементы не переносились --- */}
                                     <div className="flex items-center justify-around">
                                         <StatItem label="Посты" value={stats.posts} />
                                         <StatItem label="Друзья" value={stats.friends} onClick={() => handleShowUsers('friends')} />
