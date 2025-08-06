@@ -104,7 +104,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
             : renderSecondaryButton('blacklist', 'Заблокировать', ShieldOff, 'bg-slate-200 dark:bg-white/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-slate-600 dark:text-white/70 hover:text-red-600 dark:hover:text-red-500');
 
         if (status === 'blocked') {
-            return blockButton;
+            return <div className="w-full flex sm:w-auto">{blockButton}</div>;
         }
 
         let mainButtons;
@@ -246,7 +246,7 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center space-x-2 flex-shrink-0 self-end sm:self-center">
+                <div className="flex items-center space-x-2 flex-shrink-0 self-end sm:self-center w-full sm:w-auto">
                     {renderButtons()}
                 </div>
             </div>
@@ -651,7 +651,7 @@ const FriendsPage = () => {
                     ))}
                 </div>
                 
-                <div className="md:hidden flex items-center space-x-1 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
+                <div className="md:hidden flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
                     {visibleItems.map(item => (
                         <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
                             <item.icon size={16} /><span>{item.label}</span>
