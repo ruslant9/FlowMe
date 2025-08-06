@@ -143,10 +143,10 @@ const AdminUserManager = () => {
                                 </div>
                                 <button 
                                     onClick={() => handleOpenOverlay(user)} 
-                                    className="flex-shrink-0 flex items-center space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
+                                    className="flex-shrink-0 flex items-center whitespace-nowrap space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
                                 >
                                     <Shield size={14} />
-                                    <span>Упр.</span>
+                                    <span>Управление</span>
                                 </button>
                             </div>
                             <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
@@ -174,9 +174,9 @@ const AdminUserManager = () => {
              />
            
             <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="relative">
+                <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по имени, @username или почте..." className="pl-10 pr-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 w-full sm:w-96" />
+                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по имени, @username или почте..." className="pl-10 pr-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 w-full" />
                 </div>
             </div>
             {renderContent()}

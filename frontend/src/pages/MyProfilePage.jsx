@@ -26,6 +26,7 @@ import AnimatedAccent from '../components/AnimatedAccent';
 import { motion } from 'framer-motion';
 import ProfileField from '../components/ProfileField';
 import PageWrapper from '../components/PageWrapper';
+import ProfileStats from '../components/ProfileStats'; // <-- ИСПРАВЛЕНИЕ: Импортируем ProfileStats
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -36,13 +37,6 @@ const customRuLocale = {
         return ru.formatDistance(token, count, options);
     },
 };
-
-const StatItem = ({ label, value, onClick }) => (
-    <button disabled={!onClick} onClick={onClick} className="text-center group p-2 rounded-lg transition-colors hover:bg-white/5 disabled:cursor-default">
-        <p className="text-xl font-bold transition-colors text-white group-hover:text-blue-400">{value}</p>
-        <p className="text-xs transition-colors text-slate-400 group-hover:text-blue-300">{label}</p>
-    </button>
-);
 
 const TabButton = ({ active, onClick, children }) => (
     <button
@@ -297,17 +291,11 @@ const MyProfilePage = () => {
                     {/* MAIN GRID */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-1 flex flex-col gap-6">
-                             {stats && (
-                                <div className="bg-slate-800 rounded-2xl p-4">
-                                    <div className="flex items-center justify-around">
-                                        <StatItem label="Посты" value={stats.posts} />
-                                        <StatItem label="Друзья" value={stats.friends} onClick={() => handleShowUsers('friends')} />
-                                        <StatItem label="Сообщества" value={stats.subscribedCommunities} onClick={() => handleShowUsers('communities')} />
-                                        <StatItem label="Подписчики" value={stats.subscribers} onClick={() => handleShowUsers('subscribers')} />
-                                        <StatItem label="Лайки" value={stats.likes} />
-                                    </div>
-                                </div>
-                            )}
+                             {/* --- ИСПРАВЛЕНИЕ: Заменяем блок StatItem на компонент ProfileStats --- */}
+                            <div className="bg-slate-800 rounded-2xl p-4">
+                                <ProfileStats stats={stats} onShowUsers={handleShowUsers} />
+                            </div>
+                             {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <div className="bg-slate-800 rounded-2xl p-6 space-y-4">
                                <h3 className="text-xl font-bold text-white mb-2">Основная информация</h3>
                                <ProfileField label="Местоположение" value={[user.city, user.country].filter(Boolean).join(', ')} />

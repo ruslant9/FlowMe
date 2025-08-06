@@ -117,6 +117,7 @@ const ArtistPage = () => {
                 artist={artist}
                 isOpen={isInfoPanelOpen}
                 onClose={() => setIsInfoPanelOpen(false)}
+                scrollableContainerRef={mainRef}
             />
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
                 <div 

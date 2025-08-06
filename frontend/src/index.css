@@ -498,3 +498,13 @@ html.dark .profile-hero-banner::before {
   transform-style: preserve-3d;
   transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  textarea {
+    font-size: 16px !important;
+  }
+}

@@ -1,24 +1,32 @@
 // frontend/src/components/music/ArtistInfoPanel.jsx
-
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Avatar from '../Avatar';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 
-const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
+const ArtistInfoPanel = ({ artist, isOpen, onClose, scrollableContainerRef }) => {
     const { currentTrack } = useMusicPlayer();
 
+    // --- ИСПРАВЛЕНИЕ: Блокируем скролл правильного контейнера ---
     useEffect(() => {
+        const container = scrollableContainerRef?.current;
+        if (!container) return;
+
+        // Сохраняем оригинальное значение overflow
+        const originalOverflow = container.style.overflow;
+
         if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
+            // При открытии панели, запрещаем скролл
+            container.style.overflow = 'hidden';
         }
+        
+        // Функция очистки, которая вернет скролл при закрытии панели
         return () => {
-            document.body.style.overflow = '';
+            container.style.overflow = originalOverflow;
         };
-    }, [isOpen]);
+    }, [isOpen, scrollableContainerRef]);
+
 
     return (
         <AnimatePresence>

@@ -1,11 +1,11 @@
-// frontend/src/components/chat/ReactionsPopover.jsx
+// frontend/src/components/chat/ReactionsPopover.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Tippy from '@tippyjs/react/headless';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../../hooks/useUser';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
-import { Sparkles, Loader2, Search } from 'lucide-react';
+import { Sparkles, Loader2, Search, MoreHorizontal } from 'lucide-react';
 import { regularReactions, emojiPacks, allPremiumReactionUrls } from '../../data/emojiData';
 import EmojiPreviewModal from '../modals/EmojiPreviewModal';
 import { useCachedImage } from '../../hooks/useCachedImage';
@@ -37,6 +37,11 @@ const ReactionsPopover = ({ onSelect, children }) => {
     const [activePremiumPackName, setActivePremiumPackName] = useState('');
     const [activeUserPackName, setActiveUserPackName] = useState('');
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Состояние для мобильного вида и определение устройства ---
+    const [showAllRegular, setShowAllRegular] = useState(false);
+    const isMobile = useMemo(() => 'ontouchstart' in window || navigator.maxTouchPoints > 0, []);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
+
     const premiumEmojiPacks = useMemo(() => {
         const premadePacks = emojiPacks.slice(1);
         const userPremiumPacks = addedPacks.filter(pack => pack.type === 'emoji' && pack.isPremium);
@@ -67,6 +72,12 @@ const ReactionsPopover = ({ onSelect, children }) => {
             hasPreloaded.current = true;
         }
     }, []);
+
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Сбрасываем вид при смене вкладок ---
+    useEffect(() => {
+        setShowAllRegular(false);
+    }, [activeTab]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
     const handlePremiumTabClick = () => {
         if (currentUser?.premium?.isActive) {
@@ -118,7 +129,12 @@ const ReactionsPopover = ({ onSelect, children }) => {
         if (!searchQuery) return allEmojis;
         return allEmojis.filter(emoji => emoji.name.toLowerCase().includes(searchQuery.toLowerCase()));
     }, [activeTab, activeUserPackName, userFreeEmojiPacks, searchQuery]);
-
+    
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 3: Определяем, какие эмодзи показывать ---
+    const visibleRegularReactions = useMemo(() => {
+        return isMobile && !showAllRegular ? regularReactions.slice(0, 6) : regularReactions;
+    }, [isMobile, showAllRegular]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
 
     return (
         <>
@@ -179,7 +195,8 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                     {activeTab === 'regular' && (
                                         <div className="flex-1 overflow-y-auto pt-2 -mx-1 px-1">
                                             <div className="flex flex-wrap gap-x-1 gap-y-2 justify-center">
-                                                {regularReactions.map(emoji => (
+                                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 4: Рендерим отфильтрованный список и кнопку "Еще" --- */}
+                                                {visibleRegularReactions.map(emoji => (
                                                     <button
                                                         key={emoji}
                                                         onClick={() => onSelect(emoji)}
@@ -188,6 +205,15 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                         {emoji}
                                                     </button>
                                                 ))}
+                                                {isMobile && !showAllRegular && regularReactions.length > 6 && (
+                                                    <button
+                                                        onClick={() => setShowAllRegular(true)}
+                                                        className="p-1.5 rounded-full flex items-center justify-center w-9 h-9 transition-colors text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
+                                                    >
+                                                        <MoreHorizontal />
+                                                    </button>
+                                                )}
+                                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 4 --- */}
                                             </div>
                                         </div>
                                     )}
