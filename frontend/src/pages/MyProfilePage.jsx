@@ -291,9 +291,9 @@ const MyProfilePage = () => {
                                 <button onClick={() => setIsEditProfileModalOpen(true)} className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-colors flex items-center space-x-2">
                                     <Edit2 size={16} /><span>Редактировать</span>
                                 </button>
-                                <button onClick={handleCustomizationClick} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg text-white' : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm'}`}>
-                                    <Crown size={16} className={user.premium?.isActive ? 'premium-icon-glow text-yellow-400' : ''} />
-                                    <span>Кастомизация</span>
+                                <button onClick={handleCustomizationClick} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg' : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm'}`}>
+                                    <Crown size={16} className={user.premium?.isActive ? 'premium-icon-glow text-yellow-400' : 'text-white'} />
+                                    <span className="text-white">Кастомизация</span>
                                 </button>
                             </div>
                         </div>
