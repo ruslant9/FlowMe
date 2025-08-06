@@ -11,7 +11,6 @@ import { UserProvider } from './context/UserContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import { MusicPlayerProvider } from './context/MusicPlayerContext.jsx';
 import axios from 'axios';
-import { registerCacheBuster } from './utils/cacheBuster'; // --- ИМПОРТ
 
 import './index.css';
 import 'tippy.js/dist/tippy.css';
@@ -25,11 +24,6 @@ const token = localStorage.getItem('token');
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
-
-// --- ВЫЗОВ ФУНКЦИИ ---
-// Регистрируем обработчик для автоматической очистки кеша при обновлении
-registerCacheBuster();
-// ---------------------
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
