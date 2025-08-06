@@ -37,9 +37,10 @@ const customRuLocale = {
     },
 };
 
+// --- ИЗМЕНЕНИЕ 1: Уменьшаем размер текста счётчика с text-2xl до text-xl ---
 const StatItem = ({ label, value, onClick }) => (
     <button disabled={!onClick} onClick={onClick} className="text-center group p-2 rounded-lg transition-colors hover:bg-white/5 disabled:cursor-default">
-        <p className="text-2xl font-bold transition-colors text-white group-hover:text-blue-400">{value}</p>
+        <p className="text-xl font-bold transition-colors text-white group-hover:text-blue-400">{value}</p>
         <p className="text-xs transition-colors text-slate-400 group-hover:text-blue-300">{label}</p>
     </button>
 );
@@ -47,7 +48,6 @@ const StatItem = ({ label, value, onClick }) => (
 const TabButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
-        // --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы flex и items-center ---
         className={`flex items-center relative px-4 py-3 text-sm font-semibold transition-colors ${
             active 
             ? 'text-white' 
@@ -300,7 +300,8 @@ const MyProfilePage = () => {
                         <div className="lg:col-span-1 flex flex-col gap-6">
                              {stats && (
                                 <div className="bg-slate-800 rounded-2xl p-4">
-                                    <div className="flex items-center justify-around flex-wrap gap-2">
+                                    {/* --- ИЗМЕНЕНИЕ 2: Убираем flex-wrap и gap-2, чтобы элементы не переносились --- */}
+                                    <div className="flex items-center justify-around">
                                         <StatItem label="Посты" value={stats.posts} />
                                         <StatItem label="Друзья" value={stats.friends} onClick={() => handleShowUsers('friends')} />
                                         <StatItem label="Сообщества" value={stats.subscribedCommunities} onClick={() => handleShowUsers('communities')} />

@@ -12,6 +12,7 @@ import { useUser } from '../hooks/useUser';
 import { useModal } from '../hooks/useModal';
 import PackPreviewModal from '../components/workshop/PackPreviewModal';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -286,83 +287,85 @@ const renderContent = () => {
 };
 
 return (
-    <main className="flex-1 p-4 md:p-8">
-        <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
-        <CreateEditPackModal 
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            isEditMode={!!editingPack}
-            initialData={editingPack}
-            onSave={() => {
-                fetchData('my', '', 1, activeTypeFilter, premiumFilter);
-                refetchPacks();
-            }}
-        />
-        <PackPreviewModal
-            isOpen={!!previewingPack}
-            onClose={() => setPreviewingPack(null)}
-            pack={previewingPack}
-        />
-        <div className="w-full max-w-7xl mx-auto space-y-8">
-            <div className="flex items-center justify-between gap-4">
-                <h1 className="text-4xl font-bold">Мастерская</h1>
-                 <button onClick={handleCreatePack} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold p-2 md:px-4 md:py-2 rounded-lg transition-colors">
-                    <PlusCircle size={18} />
-                    <span className="hidden md:inline">Создать пак</span>
-                </button>
-            </div>
-            
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
-                <div className="flex items-center gap-x-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg w-full md:w-auto">
-                    <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
-                    <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
-                    <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск</TabButton>
+    <PageWrapper>
+        <main className="flex-1 p-4 md:p-8">
+            <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
+            <CreateEditPackModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                isEditMode={!!editingPack}
+                initialData={editingPack}
+                onSave={() => {
+                    fetchData('my', '', 1, activeTypeFilter, premiumFilter);
+                    refetchPacks();
+                }}
+            />
+            <PackPreviewModal
+                isOpen={!!previewingPack}
+                onClose={() => setPreviewingPack(null)}
+                pack={previewingPack}
+            />
+            <div className="w-full max-w-7xl mx-auto space-y-8">
+                <div className="flex items-center justify-between gap-4">
+                    <h1 className="text-4xl font-bold">Мастерская</h1>
+                     <button onClick={handleCreatePack} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold p-2 md:px-4 md:py-2 rounded-lg transition-colors">
+                        <PlusCircle size={18} />
+                        <span className="hidden md:inline">Создать пак</span>
+                    </button>
                 </div>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-x-4 gap-y-2 w-full md:w-auto">
-                    <div className="flex items-center flex-shrink-0 gap-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg">
-                        <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
-                        <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
-                        <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
+                
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
+                    <div className="flex items-center gap-x-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg w-full md:w-auto">
+                        <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
+                        <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
+                        <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск</TabButton>
                     </div>
-                    {activeTab === 'search' && (
-                        <Menu as="div" className="relative inline-block text-left">
-                            <Menu.Button className="inline-flex items-center gap-x-2 rounded-lg bg-slate-200/70 dark:bg-black/30 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-300 dark:hover:bg-black/40">
-                                <Filter size={16} />
-                                <span>{premiumFilterOptions.find(o => o.id === premiumFilter).name}</span>
-                                <ChevronDown className="h-4 w-4" />
-                            </Menu.Button>
-                            <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
-                                <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl ios-glass-popover p-1">
-                                    {premiumFilterOptions.map(option => (
-                                        <Menu.Item key={option.id}>
-                                            {({ active }) => (
-                                                <button onClick={() => setPremiumFilter(option.id)}
-                                                    className={`${ active ? 'bg-blue-500 text-white' : 'text-slate-900 dark:text-slate-200'} group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm`}>
-                                                    <span>{option.name}</span>
-                                                    {premiumFilter === option.id && <Check size={16} />}
-                                                </button>
-                                            )}
-                                        </Menu.Item>
-                                    ))}
-                                </Menu.Items>
-                            </Transition>
-                        </Menu>
-                    )}
-                </div>
-            </div>
 
-            {activeTab === 'search' && (
-                 <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
-                        className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-x-4 gap-y-2 w-full md:w-auto">
+                        <div className="flex items-center flex-shrink-0 gap-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg">
+                            <SubTabButton active={activeTypeFilter === 'all'} onClick={() => setActiveTypeFilter('all')}>Все</SubTabButton>
+                            <SubTabButton active={activeTypeFilter === 'sticker'} onClick={() => setActiveTypeFilter('sticker')}>Стикеры</SubTabButton>
+                            <SubTabButton active={activeTypeFilter === 'emoji'} onClick={() => setActiveTypeFilter('emoji')}>Эмодзи</SubTabButton>
+                        </div>
+                        {activeTab === 'search' && (
+                            <Menu as="div" className="relative inline-block text-left">
+                                <Menu.Button className="inline-flex items-center gap-x-2 rounded-lg bg-slate-200/70 dark:bg-black/30 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-300 dark:hover:bg-black/40">
+                                    <Filter size={16} />
+                                    <span>{premiumFilterOptions.find(o => o.id === premiumFilter).name}</span>
+                                    <ChevronDown className="h-4 w-4" />
+                                </Menu.Button>
+                                <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
+                                    <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl ios-glass-popover p-1">
+                                        {premiumFilterOptions.map(option => (
+                                            <Menu.Item key={option.id}>
+                                                {({ active }) => (
+                                                    <button onClick={() => setPremiumFilter(option.id)}
+                                                        className={`${ active ? 'bg-blue-500 text-white' : 'text-slate-900 dark:text-slate-200'} group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm`}>
+                                                        <span>{option.name}</span>
+                                                        {premiumFilter === option.id && <Check size={16} />}
+                                                    </button>
+                                                )}
+                                            </Menu.Item>
+                                        ))}
+                                    </Menu.Items>
+                                </Transition>
+                            </Menu>
+                        )}
+                    </div>
                 </div>
-            )}
-            
-            <div>{renderContent()}</div>
-        </div>
-    </main>
+
+                {activeTab === 'search' && (
+                     <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск по названию пака..."
+                            className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    </div>
+                )}
+                
+                <div>{renderContent()}</div>
+            </div>
+        </main>
+    </PageWrapper>
 );
 };
 

@@ -1,3 +1,5 @@
+// frontend/src/pages/FriendsPage.jsx
+
 import React, { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
 import axios from 'axios';
 import useTitle from '../hooks/useTitle';
@@ -13,6 +15,7 @@ import { ru } from 'date-fns/locale';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
 import { useUser } from '../hooks/useUser';
 import MorePanel from '../components/MorePanel';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const MAX_HISTORY_ITEMS = 5;
@@ -455,7 +458,6 @@ const FriendsPage = () => {
         try { const storedHistory = localStorage.getItem('searchHistory'); if (storedHistory) { setSearchHistory(JSON.parse(storedHistory)); } } catch (error) { console.error("Failed to load search history:", error); setSearchHistory([]); }
     }, []);
     useEffect(() => { localStorage.setItem('searchHistory', JSON.stringify(searchHistory)); }, [searchHistory]);
-    const clearSearchHistory = () => { showConfirmation({ title: "Очистить историю поиска?", message: "Вы уверены, что хотите удалить все сохраненные поисковые запросы?", onConfirm: () => { setSearchHistory([]); toast.success('История поиска очищена!'); } }); };
     useEffect(() => { function handleClickOutside(event) { if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target)) { setIsDropdownVisible(false); } } document.addEventListener("mousedown", handleClickOutside); return () => { document.removeEventListener("mousedown", handleClickOutside); }; }, [searchWrapperRef]);
     useEffect(() => { if (location.state?.defaultTab) { navigate(location.pathname, { replace: true }); } }, [location.state, navigate, location.pathname]);
     const fetchData = useCallback(async (showLoader = true) => {
@@ -624,69 +626,71 @@ const FriendsPage = () => {
     };
 
     return (
-        <main className="flex-1 p-4 md:p-8">
-            <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold mb-6">Друзья</h1>
-                <div className="relative mb-6" ref={searchWrapperRef}>
-                    <div className="flex items-center space-x-2">
-                        <div className="relative flex-grow">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40" size={20} />
-                            <input ref={searchInputRef} type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onFocus={handleSearchInputFocus} placeholder="Поиск по имени или @username" className="w-full pl-12 pr-10 py-3 rounded-lg bg-slate-200/70 dark:bg-black/30 text-slate-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:focus:ring-blue-500" />
-                            {isSearching && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/60"><Spinner size={18} /></div>}
+        <PageWrapper>
+            <main className="flex-1 p-4 md:p-8">
+                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold mb-6">Друзья</h1>
+                    <div className="relative mb-6" ref={searchWrapperRef}>
+                        <div className="flex items-center space-x-2">
+                            <div className="relative flex-grow">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40" size={20} />
+                                <input ref={searchInputRef} type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onFocus={handleSearchInputFocus} placeholder="Поиск по имени или @username" className="w-full pl-12 pr-10 py-3 rounded-lg bg-slate-200/70 dark:bg-black/30 text-slate-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:focus:ring-blue-500" />
+                                {isSearching && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/60"><Spinner size={18} /></div>}
+                            </div>
+                            <button onClick={() => setShowFilters(f => !f)} className={`p-3 rounded-lg transition-colors flex-shrink-0 ${showFilters ? 'bg-blue-600 text-white' : 'bg-slate-200/70 dark:bg-black/30 hover:bg-slate-300 dark:hover:bg-black/40'}`} title="Фильтры">
+                                <Filter size={20} />
+                            </button>
                         </div>
-                        <button onClick={() => setShowFilters(f => !f)} className={`p-3 rounded-lg transition-colors flex-shrink-0 ${showFilters ? 'bg-blue-600 text-white' : 'bg-slate-200/70 dark:bg-black/30 hover:bg-slate-300 dark:hover:bg-black/40'}`} title="Фильтры">
-                            <Filter size={20} />
-                        </button>
+                        {renderFilters()}
+                        <AnimatePresence>
+                            {isDropdownVisible && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">{renderDropdownContent()}</motion.div>}
+                        </AnimatePresence>                </div>
+                    
+                    <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
+                        {navItems.map(item => (
+                            <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
+                                <item.icon size={16} /><span>{item.label}</span>
+                            </TabButton>
+                        ))}
                     </div>
-                    {renderFilters()}
-                    <AnimatePresence>
-                        {isDropdownVisible && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">{renderDropdownContent()}</motion.div>}
-                    </AnimatePresence>                </div>
-                
-                <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
-                    {navItems.map(item => (
-                        <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
-                            <item.icon size={16} /><span>{item.label}</span>
-                        </TabButton>
-                    ))}
+                    
+                    <div className="md:hidden flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
+                        {visibleItems.map(item => (
+                            <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
+                                <item.icon size={16} /><span>{item.label}</span>
+                            </TabButton>
+                        ))}
+                        {hiddenItems.length > 0 && (
+                            <TabButton active={isMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
+                                <MoreHorizontal size={16} /><span>Еще</span>
+                            </TabButton>
+                        )}
+                    </div>
+                    
+                    <div>{renderTabContent()}</div>
                 </div>
                 
-                <div className="md:hidden flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
-                    {visibleItems.map(item => (
-                        <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
-                            <item.icon size={16} /><span>{item.label}</span>
-                        </TabButton>
+                <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
+                    {hiddenItems.map(item => (
+                        <button
+                            key={item.key}
+                            onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
+                            className={`w-full flex items-center justify-between p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
+                              ${activeTab === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
+                            `}
+                        >
+                            <div className="flex items-center space-x-4">
+                                <item.icon size={22} className={activeTab === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
+                                <span>{item.label}</span>
+                            </div>
+                            {item.count > 0 && 
+                                <span className="px-2 py-0.5 rounded-full text-xs bg-slate-200 dark:bg-white/10">{item.count > 9 ? '9+' : item.count}</span>
+                            }
+                        </button>
                     ))}
-                    {hiddenItems.length > 0 && (
-                        <TabButton active={isMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
-                            <MoreHorizontal size={16} /><span>Еще</span>
-                        </TabButton>
-                    )}
-                </div>
-                
-                <div>{renderTabContent()}</div>
-            </div>
-            
-            <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
-                {hiddenItems.map(item => (
-                    <button
-                        key={item.key}
-                        onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
-                        className={`w-full flex items-center justify-between p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
-                          ${activeTab === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
-                        `}
-                    >
-                        <div className="flex items-center space-x-4">
-                            <item.icon size={22} className={activeTab === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
-                            <span>{item.label}</span>
-                        </div>
-                        {item.count > 0 && 
-                            <span className="px-2 py-0.5 rounded-full text-xs bg-slate-200 dark:bg-white/10">{item.count > 9 ? '9+' : item.count}</span>
-                        }
-                    </button>
-                ))}
-            </MorePanel>
-        </main>
+                </MorePanel>
+            </main>
+        </PageWrapper>
     );
 };
 

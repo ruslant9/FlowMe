@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CreateCommunityModal from '../components/modals/CreateCommunityModal';
 import { useModal } from '../hooks/useModal';
 import CommunityCard from '../components/CommunityCard';
-import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ
+import ResponsiveNav from '../components/ResponsiveNav';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -182,18 +183,15 @@ const CommunitiesPage = () => {
         );
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const navItems = [
         { key: 'my', label: 'Мои сообщества', icon: Users, onClick: () => handleTabSwitch('my'), count: myCommunities.length },
         { key: 'created', label: 'Созданные', icon: Building, onClick: () => handleTabSwitch('created'), count: 0 },
         { key: 'recommended', label: 'Рекомендации', icon: Globe, onClick: () => handleTabSwitch('recommended'), count: 0 },
         { key: 'pendingSent', label: 'Отправленные', icon: Clock, onClick: () => handleTabSwitch('pendingSent'), count: pendingSentRequests.length }
     ];
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
     return (
-        <>
+        <PageWrapper>
             <CreateCommunityModal 
                 isOpen={isCreateModalOpen} 
                 onClose={() => {
@@ -230,9 +228,7 @@ const CommunitiesPage = () => {
                             </div>
                         )}
                     </div>
-
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-                    {/* Горизонтальная панель навигации для десктопа */}
+                    
                     <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
                         {navItems.map(item => (
                             <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
@@ -241,15 +237,13 @@ const CommunitiesPage = () => {
                         ))}
                     </div>
 
-                    {/* Адаптивная навигация для мобильных */}
                     <div className="md:hidden mb-6">
                         <ResponsiveNav 
                             items={navItems}
-                            visibleCount={4} // Здесь можно настроить количество видимых кнопок
+                            visibleCount={4}
                             activeKey={activeTab}
                         />
                     </div>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                     <div>
                         {activeTab === 'my' && renderCommunityList(myCommunities)}
@@ -259,7 +253,7 @@ const CommunitiesPage = () => {
                     </div>
                 </div>
             </main>
-        </>
+        </PageWrapper>
     );
 };
 

@@ -13,6 +13,7 @@ import { useModal } from '../hooks/useModal';
 import CreatePostModal from '../components/modals/CreatePostModal';
 import EditPostModal from '../components/modals/EditPostModal';
 import ImageViewer from '../components/ImageViewer';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -176,7 +177,7 @@ const CommunityDetailPage = () => {
     const canViewContent = community.isMember || community.visibility === 'public';
     
     return (
-        <>
+        <PageWrapper>
             <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => { setIsCreatePostModalOpen(false); fetchCommunityPosts(); }} communityId={community._id} />
             <EditPostModal isOpen={!!editingPost} post={editingPost} onClose={() => { setEditingPost(null); fetchCommunityPosts(); }} />
             {isImageViewerOpen && <ImageViewer images={imageViewerSource} startIndex={0} onClose={() => setIsImageViewerOpen(false)} />}
@@ -279,7 +280,7 @@ const CommunityDetailPage = () => {
                     )}
                 </div>
             </main>
-        </>
+        </PageWrapper>
     );
 };
 

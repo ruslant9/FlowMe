@@ -7,9 +7,10 @@ import AdminUploadPanel from '../components/admin/AdminUploadPanel';
 import AdminContentManager from '../components/admin/AdminContentManager';
 import AdminUserManager from '../components/admin/AdminUserManager';
 import { CheckCircle, UploadCloud, Database, Users, Code } from 'lucide-react';
-import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ
-import CodeViewerModal from '../components/admin/CodeViewerModal'; // --- НОВЫЙ ИМПОРТ
+import ResponsiveNav from '../components/ResponsiveNav'; 
+import CodeViewerModal from '../components/admin/CodeViewerModal';
 import myProfilePageSource from './MyProfilePage.jsx?raw';
+import PageWrapper from '../components/PageWrapper';
 
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
@@ -28,9 +29,8 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
 const AdminPage = () => {
     useTitle('Панель администратора');
     const [activeTab, setActiveTab] = useState('submissions');
-    const [isCodeViewerOpen, setIsCodeViewerOpen] = useState(false);
+   const [isCodeViewerOpen, setIsCodeViewerOpen] = useState(false);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const navItems = [
         { key: 'submissions', label: 'Заявки на модерацию', icon: CheckCircle, onClick: () => setActiveTab('submissions') },
         { key: 'content', label: 'Управление контентом', icon: Database, onClick: () => setActiveTab('content') },
@@ -38,9 +38,7 @@ const AdminPage = () => {
         { key: 'create', label: 'Создать контент', icon: UploadCloud, onClick: () => setActiveTab('create') },
        { key: 'debug', label: 'Инструменты', icon: Code, onClick: () => setIsCodeViewerOpen(true) }
     ];
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-    // Компоненты для каждой вкладки
     const renderContent = () => {
         switch (activeTab) {
             case 'submissions': return <AdminSubmissionsList />;
@@ -52,49 +50,46 @@ const AdminPage = () => {
     };
 
     return (
-        <main className="flex-1 p-4 md:p-8">
-             <CodeViewerModal
-               isOpen={isCodeViewerOpen}
-               onClose={() => setIsCodeViewerOpen(false)}
-               title="Исходный код: MyProfilePage.jsx"
-               code={myProfilePageSource}
-           />
-            <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-3xl font-bold">Панель администратора</h1>
+        <PageWrapper>
+            <main className="flex-1 p-4 md:p-8">
+               <CodeViewerModal
+                   isOpen={isCodeViewerOpen}
+                   onClose={() => setIsCodeViewerOpen(false)}
+                   title="Исходный код: MyProfilePage.jsx"
+                   code={myProfilePageSource}
+               />
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex items-center justify-between mb-6">
+                        <h1 className="text-3xl font-bold">Панель администратора</h1>
+                    </div>
+                    
+                    <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar flex-wrap">
+                        {navItems.map(item => (
+                            <TabButton 
+                                key={item.key}
+                               active={activeTab === item.key && item.key !== 'debug'}
+                                onClick={item.onClick}
+                                icon={item.icon}
+                            >
+                                {item.label}
+                            </TabButton>
+                        ))}
+                    </div>
+                    
+                    <div className="md:hidden mb-6">
+                        <ResponsiveNav 
+                            items={navItems}
+                           visibleCount={2}
+                            activeKey={activeTab}
+                        />
+                    </div>
+        
+                    <div className="mt-6">
+                        {renderContent()}
+                    </div>
                 </div>
-                
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
-                {/* Горизонтальная панель навигации для десктопа */}
-                <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar flex-wrap">
-                    {navItems.map(item => (
-                        <TabButton 
-                            key={item.key}
-                            active={activeTab === item.key && item.key !== 'debug'}
-                            onClick={item.onClick}
-                            icon={item.icon}
-                        >
-                            {item.label}
-                        </TabButton>
-                    ))}
-                </div>
-                
-                {/* Адаптивная навигация для мобильных */}
-                <div className="md:hidden mb-6">
-                    <ResponsiveNav 
-                        items={navItems}
-                        visibleCount={2}
-                        activeKey={activeTab}
-                    />
-                </div>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
-    
-                {/* Область для отображения контента активной вкладки */}
-                <div className="mt-6">
-                    {renderContent()}
-                </div>
-            </div>
-        </main>
+            </main>
+        </PageWrapper>
     );
 };
 

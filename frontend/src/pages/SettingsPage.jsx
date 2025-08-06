@@ -15,6 +15,7 @@ import {
 import { Listbox, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDynamicPosition } from '../hooks/useDynamicPosition';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -96,7 +97,6 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
     const [buttonRef, position] = useDynamicPosition();
 
     return (
-        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
         <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm flex-wrap gap-4">
             <div className="flex items-center space-x-3">
                 <Icon size={20} className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
@@ -105,11 +105,9 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
                     {description && <p className="text-sm text-slate-500 dark:text-white/60">{description}</p>}
                 </div>
             </div>
-            {/* Этот контейнер теперь будет занимать всю ширину на мобильных устройствах */}
             <div className="flex items-center space-x-4 w-full sm:w-auto justify-end sm:justify-start">
                 {children}
                 <Listbox value={value} onChange={onChange}>
-                    {/* Этот контейнер уже имеет w-full, поэтому он растянется внутри родителя */}
                     <div className="relative w-full sm:w-48">
                         <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                             <span className="block truncate">{options.find(opt => opt.id === value)?.name}</span>
@@ -130,7 +128,6 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
                 </Listbox>
             </div>
         </div>
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     );
 };
 
@@ -409,132 +406,134 @@ const SettingsPage = () => {
     };
 
     return (
-        <main className="flex-1 p-4 md:p-8">
-            <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold mb-6 text-center">Настройки</h1>
+        <PageWrapper>
+            <main className="flex-1 p-4 md:p-8">
+                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold mb-6 text-center">Настройки</h1>
 
-                <Section title="Уведомления" icon={Bell} isInitiallyOpen={true}>
-                    <div className="space-y-4">
-                        <NotificationToggle />
-                        {privacySettings && (
-                            <ToggleControl label="Отключить всплывающие уведомления в приложении" description="Вы не будете получать уведомления внутри сайта." checked={privacySettings.disableToasts} onChange={(e) => handleToggleChange('disableToasts', e.target.checked)} />
-                        )}
-                        {haveSettingsChanged() && (
-                            <div className="flex justify-end pt-2">
-                                <button onClick={savePrivacySettings} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Сохранить</button>
-                            </div>
-                        )}
-                    </div>
-                </Section>
-                
-                <Section title="Безопасность и вход" icon={Shield} isInitiallyOpen={false}>
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="text-lg font-semibold mb-2">Смена пароля</h3>
-                            <form onSubmit={handlePasswordChange} className="space-y-3 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                                {verificationRequired ? (
-                                    <>
-                                        <p className="text-sm text-center text-green-600 dark:text-green-400">На вашу почту отправлен код подтверждения. Введите его ниже.</p>
-                                        <input type="text" placeholder="Код из письма" value={passwordData.verificationCode} onChange={(e) => setPasswordData(p => ({...p, verificationCode: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
-                                    </>
-                                ) : (
-                                    <>
-                                        {currentUser?.hasPassword && (
-                                            <input type="password" placeholder="Текущий пароль (если сессия старше 1 часа)" value={passwordData.currentPassword} onChange={(e) => setPasswordData(p => ({...p, currentPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" />
-                                        )}
-                                        <input type="password" placeholder={currentUser?.hasPassword ? "Новый пароль" : "Задайте пароль для входа"} value={passwordData.newPassword} onChange={(e) => setPasswordData(p => ({...p, newPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
-                                        <input type="password" placeholder="Подтвердите новый пароль" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
-                                    </>
-                                )}
+                    <Section title="Уведомления" icon={Bell} isInitiallyOpen={true}>
+                        <div className="space-y-4">
+                            <NotificationToggle />
+                            {privacySettings && (
+                                <ToggleControl label="Отключить всплывающие уведомления в приложении" description="Вы не будете получать уведомления внутри сайта." checked={privacySettings.disableToasts} onChange={(e) => handleToggleChange('disableToasts', e.target.checked)} />
+                            )}
+                            {haveSettingsChanged() && (
                                 <div className="flex justify-end pt-2">
-                                    <button type="submit" disabled={passwordChangeLoading} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center min-w-[180px]">
-                                        {passwordChangeLoading ? <Loader2 className="animate-spin" /> : (verificationRequired ? 'Подтвердить' : (currentUser?.hasPassword ? 'Сменить пароль' : 'Установить пароль'))}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold mb-2">Активные сессии</h3>
-                            {loadingSessions ? <Loader2 className="animate-spin"/> : (
-                                <div className="space-y-2">
-                                    {(sessionsExpanded ? sessions : sessions.slice(0, 3)).map(session => {
-                                        const isCurrent = session._id === currentSessionId;
-                                        const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
-                                        return (
-                                            <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-between flex-wrap gap-2">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400">
-                                                        {getDeviceIcon(session.device)}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold">
-                                                            {session.browser || 'Unknown'} on {session.os || 'Unknown'} {isCurrent && <span className="text-xs text-green-500">(Текущая)</span>}
-                                                        </p>
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center space-x-2">
-                                                             {isLocal ? (
-                                                                <span className="font-semibold text-cyan-500">Локальная сессия</span>
-                                                            ) : (
-                                                                <>
-                                                                    {session.countryCode && session.countryCode !== 'xx' && <img src={`https://flagcdn.com/w20/${session.countryCode}.png`} alt={session.countryCode} className="w-5 h-auto rounded-sm"/>}
-                                                                    <span>{session.ipAddress}</span>
-                                                                </>
-                                                            )}
-                                                            <span>•</span>
-                                                            <span>{format(new Date(session.lastActive), 'dd.MM.yyyy HH:mm')}</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                {!isCurrent && <button onClick={() => terminateSession(session._id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full" title="Прервать сессию"><XCircle/></button>}
-                                            </div>
-                                        )
-                                    })}
-                                    {sessions.length > 3 && <button onClick={() => setSessionsExpanded(!sessionsExpanded)} className="text-sm text-blue-500 hover:underline">{sessionsExpanded ? 'Скрыть' : `Показать еще ${sessions.length - 3}`}</button>}
-                                    {sessions.length > 1 && <button onClick={terminateAllOtherSessions} className="text-sm text-red-500 hover:underline ml-4">Прервать все другие сессии</button>}
+                                    <button onClick={savePrivacySettings} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Сохранить</button>
                                 </div>
                             )}
                         </div>
-                    </div>
-                </Section>
-
-                <Section title="Настройки приватности" icon={Lock}>
-                    {loadingPrivacySettings || !privacySettings ? <Loader2 className="animate-spin mx-auto"/> : (
-                        <div className="space-y-4">
-                             <div className="space-y-4">
-                                <PrivacySettingControl label="Кто видит дату рождения" icon={Calendar} value={privacySettings.viewDOB} onChange={(v) => handlePrivacyChange('viewDOB', v)} options={privacyOptions}>{privacySettings.viewDOB !== 'private' && (<label className="flex items-center space-x-2 text-sm text-slate-600 dark:text-white/70"><input type="checkbox" checked={privacySettings.hideDOBYear} onChange={(e) => handleToggleChange('hideDOBYear', e.target.checked)} className="form-checkbox h-4 w-4 rounded" /><span>Скрыть год</span></label>)}</PrivacySettingControl>
-                                <PrivacySettingControl label="Кто видит аватар" icon={Image} value={privacySettings.viewAvatar} onChange={(v) => handlePrivacyChange('viewAvatar', v)} options={privacyOptions} />
-                                <PrivacySettingControl label="Кто видит почту" icon={Mail} value={privacySettings.viewEmail} onChange={(v) => handlePrivacyChange('viewEmail', v)} options={privacyOptions} />
-                                <PrivacySettingControl label="Кто видит интересы" icon={Tag} value={privacySettings.viewInterests} onChange={(v) => handlePrivacyChange('viewInterests', v)} options={privacyOptions} />
-                                <PrivacySettingControl label="Кто видит местоположение" icon={MapPin} value={privacySettings.viewLocation} onChange={(v) => handlePrivacyChange('viewLocation', v)} options={privacyOptions} /> 
-                                <PrivacySettingControl label="Кто видит список друзей" icon={Users} value={privacySettings.viewFriends} onChange={(v) => handlePrivacyChange('viewFriends', v)} options={privacyOptions} />
-                                <PrivacySettingControl label="Кто видит список подписчиков" icon={Users} value={privacySettings.viewSubscribers} onChange={(v) => handlePrivacyChange('viewSubscribers', v)} options={privacyOptions} />
-                                <PrivacySettingControl label="Кто видит мои сообщества" icon={Globe} value={privacySettings.viewSubscribedCommunities} onChange={(v) => handlePrivacyChange('viewSubscribedCommunities', v)} options={privacyOptions} />
-                                <PrivacySettingControl label="Кто видит посты" icon={FileText} value={privacySettings.viewPosts} onChange={(v) => handlePrivacyChange('viewPosts', v)} options={privacyOptions} />
-                                <PrivacySettingControl label="Кто видит онлайн активность" icon={EyeOff} value={privacySettings.viewOnlineStatus} onChange={(v) => handlePrivacyChange('viewOnlineStatus', v)} options={privacyOptions} />
-                                <PrivacySettingControl label="Кто может писать мне" icon={MessageSquare} value={privacySettings.messageMe} onChange={(v) => handlePrivacyChange('messageMe', v)} options={messageMeOptions} />
-                                <PrivacySettingControl label="Кто может отправлять запросы в друзья" icon={UserPlus} value={privacySettings.sendFriendRequest} onChange={(v) => handlePrivacyChange('sendFriendRequest', v)} options={friendRequestOptions} />
-                                <PrivacySettingControl label="Кто может приглашать в сообщества" icon={Briefcase} value={privacySettings.inviteToCommunity} onChange={(v) => handlePrivacyChange('inviteToCommunity', v)} options={communityInviteOptions} />
-                                <PrivacySettingControl label="Кто видит мою музыку" icon={Music} value={privacySettings.viewMusic} onChange={(v) => handlePrivacyChange('viewMusic', v)} options={privacyOptions} />
-                             </div>
-                            <div className="flex justify-end pt-4">
-                                <button onClick={savePrivacySettings} disabled={!haveSettingsChanged()} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50">Сохранить</button>
+                    </Section>
+                    
+                    <Section title="Безопасность и вход" icon={Shield} isInitiallyOpen={false}>
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Смена пароля</h3>
+                                <form onSubmit={handlePasswordChange} className="space-y-3 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                    {verificationRequired ? (
+                                        <>
+                                            <p className="text-sm text-center text-green-600 dark:text-green-400">На вашу почту отправлен код подтверждения. Введите его ниже.</p>
+                                            <input type="text" placeholder="Код из письма" value={passwordData.verificationCode} onChange={(e) => setPasswordData(p => ({...p, verificationCode: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
+                                        </>
+                                    ) : (
+                                        <>
+                                            {currentUser?.hasPassword && (
+                                                <input type="password" placeholder="Текущий пароль (если сессия старше 1 часа)" value={passwordData.currentPassword} onChange={(e) => setPasswordData(p => ({...p, currentPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                                            )}
+                                            <input type="password" placeholder={currentUser?.hasPassword ? "Новый пароль" : "Задайте пароль для входа"} value={passwordData.newPassword} onChange={(e) => setPasswordData(p => ({...p, newPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
+                                            <input type="password" placeholder="Подтвердите новый пароль" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
+                                        </>
+                                    )}
+                                    <div className="flex justify-end pt-2">
+                                        <button type="submit" disabled={passwordChangeLoading} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center min-w-[180px]">
+                                            {passwordChangeLoading ? <Loader2 className="animate-spin" /> : (verificationRequired ? 'Подтвердить' : (currentUser?.hasPassword ? 'Сменить пароль' : 'Установить пароль'))}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Активные сессии</h3>
+                                {loadingSessions ? <Loader2 className="animate-spin"/> : (
+                                    <div className="space-y-2">
+                                        {(sessionsExpanded ? sessions : sessions.slice(0, 3)).map(session => {
+                                            const isCurrent = session._id === currentSessionId;
+                                            const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
+                                            return (
+                                                <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-between flex-wrap gap-2">
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                                            {getDeviceIcon(session.device)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold">
+                                                                {session.browser || 'Unknown'} on {session.os || 'Unknown'} {isCurrent && <span className="text-xs text-green-500">(Текущая)</span>}
+                                                            </p>
+                                                            <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center space-x-2">
+                                                                 {isLocal ? (
+                                                                    <span className="font-semibold text-cyan-500">Локальная сессия</span>
+                                                                ) : (
+                                                                    <>
+                                                                        {session.countryCode && session.countryCode !== 'xx' && <img src={`https://flagcdn.com/w20/${session.countryCode}.png`} alt={session.countryCode} className="w-5 h-auto rounded-sm"/>}
+                                                                        <span>{session.ipAddress}</span>
+                                                                    </>
+                                                                )}
+                                                                <span>•</span>
+                                                                <span>{format(new Date(session.lastActive), 'dd.MM.yyyy HH:mm')}</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    {!isCurrent && <button onClick={() => terminateSession(session._id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full" title="Прервать сессию"><XCircle/></button>}
+                                                </div>
+                                            )
+                                        })}
+                                        {sessions.length > 3 && <button onClick={() => setSessionsExpanded(!sessionsExpanded)} className="text-sm text-blue-500 hover:underline">{sessionsExpanded ? 'Скрыть' : `Показать еще ${sessions.length - 3}`}</button>}
+                                        {sessions.length > 1 && <button onClick={terminateAllOtherSessions} className="text-sm text-red-500 hover:underline ml-4">Прервать все другие сессии</button>}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    )}
-                </Section>
-                
-                <section className="mt-8">
-                    <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h2 className="font-bold text-red-700 dark:text-red-300">Удаление аккаунта</h2>
-                            <p className="text-sm text-red-600 dark:text-red-400">Это действие нельзя будет отменить.</p>
+                    </Section>
+
+                    <Section title="Настройки приватности" icon={Lock}>
+                        {loadingPrivacySettings || !privacySettings ? <Loader2 className="animate-spin mx-auto"/> : (
+                            <div className="space-y-4">
+                                 <div className="space-y-4">
+                                    <PrivacySettingControl label="Кто видит дату рождения" icon={Calendar} value={privacySettings.viewDOB} onChange={(v) => handlePrivacyChange('viewDOB', v)} options={privacyOptions}>{privacySettings.viewDOB !== 'private' && (<label className="flex items-center space-x-2 text-sm text-slate-600 dark:text-white/70"><input type="checkbox" checked={privacySettings.hideDOBYear} onChange={(e) => handleToggleChange('hideDOBYear', e.target.checked)} className="form-checkbox h-4 w-4 rounded" /><span>Скрыть год</span></label>)}</PrivacySettingControl>
+                                    <PrivacySettingControl label="Кто видит аватар" icon={Image} value={privacySettings.viewAvatar} onChange={(v) => handlePrivacyChange('viewAvatar', v)} options={privacyOptions} />
+                                    <PrivacySettingControl label="Кто видит почту" icon={Mail} value={privacySettings.viewEmail} onChange={(v) => handlePrivacyChange('viewEmail', v)} options={privacyOptions} />
+                                    <PrivacySettingControl label="Кто видит интересы" icon={Tag} value={privacySettings.viewInterests} onChange={(v) => handlePrivacyChange('viewInterests', v)} options={privacyOptions} />
+                                    <PrivacySettingControl label="Кто видит местоположение" icon={MapPin} value={privacySettings.viewLocation} onChange={(v) => handlePrivacyChange('viewLocation', v)} options={privacyOptions} /> 
+                                    <PrivacySettingControl label="Кто видит список друзей" icon={Users} value={privacySettings.viewFriends} onChange={(v) => handlePrivacyChange('viewFriends', v)} options={privacyOptions} />
+                                    <PrivacySettingControl label="Кто видит список подписчиков" icon={Users} value={privacySettings.viewSubscribers} onChange={(v) => handlePrivacyChange('viewSubscribers', v)} options={privacyOptions} />
+                                    <PrivacySettingControl label="Кто видит мои сообщества" icon={Globe} value={privacySettings.viewSubscribedCommunities} onChange={(v) => handlePrivacyChange('viewSubscribedCommunities', v)} options={privacyOptions} />
+                                    <PrivacySettingControl label="Кто видит посты" icon={FileText} value={privacySettings.viewPosts} onChange={(v) => handlePrivacyChange('viewPosts', v)} options={privacyOptions} />
+                                    <PrivacySettingControl label="Кто видит онлайн активность" icon={EyeOff} value={privacySettings.viewOnlineStatus} onChange={(v) => handlePrivacyChange('viewOnlineStatus', v)} options={privacyOptions} />
+                                    <PrivacySettingControl label="Кто может писать мне" icon={MessageSquare} value={privacySettings.messageMe} onChange={(v) => handlePrivacyChange('messageMe', v)} options={messageMeOptions} />
+                                    <PrivacySettingControl label="Кто может отправлять запросы в друзья" icon={UserPlus} value={privacySettings.sendFriendRequest} onChange={(v) => handlePrivacyChange('sendFriendRequest', v)} options={friendRequestOptions} />
+                                    <PrivacySettingControl label="Кто может приглашать в сообщества" icon={Briefcase} value={privacySettings.inviteToCommunity} onChange={(v) => handlePrivacyChange('inviteToCommunity', v)} options={communityInviteOptions} />
+                                    <PrivacySettingControl label="Кто видит мою музыку" icon={Music} value={privacySettings.viewMusic} onChange={(v) => handlePrivacyChange('viewMusic', v)} options={privacyOptions} />
+                                 </div>
+                                <div className="flex justify-end pt-4">
+                                    <button onClick={savePrivacySettings} disabled={!haveSettingsChanged()} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50">Сохранить</button>
+                                </div>
+                            </div>
+                        )}
+                    </Section>
+                    
+                    <section className="mt-8">
+                        <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg flex items-center justify-between flex-wrap gap-4">
+                            <div>
+                                <h2 className="font-bold text-red-700 dark:text-red-300">Удаление аккаунта</h2>
+                                <p className="text-sm text-red-600 dark:text-red-400">Это действие нельзя будет отменить.</p>
+                            </div>
+                            <button onClick={handleDeleteAccount} disabled={loadingAccountDelete} className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50">
+                                {loadingAccountDelete ? <Loader2 className="animate-spin" /> : <Trash2 />}<span>Удалить аккаунт</span>
+                            </button>
                         </div>
-                        <button onClick={handleDeleteAccount} disabled={loadingAccountDelete} className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50">
-                            {loadingAccountDelete ? <Loader2 className="animate-spin" /> : <Trash2 />}<span>Удалить аккаунт</span>
-                        </button>
-                    </div>
-                </section>
-            </div>
-        </main>
+                    </section>
+                </div>
+            </main>
+        </PageWrapper>
     );
 };
 

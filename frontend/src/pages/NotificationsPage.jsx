@@ -11,6 +11,7 @@ import NotificationItem from '../components/NotificationItem';
 import { AnimatePresence } from 'framer-motion';
 import PostViewModal from '../components/modals/PostViewModal';
 import MorePanel from '../components/MorePanel';
+import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -254,105 +255,107 @@ const NotificationsPage = () => {
     const isSubMoreButtonActive = subHiddenItems.some(item => item.key === activeFilter);
 
     return (
-        <main className="flex-1 p-4 md:p-8">
-            {isPostModalOpen && (
-                <PostViewModal
-                    posts={modalPostData.posts} startIndex={modalPostData.startIndex} highlightCommentId={modalPostData.highlightCommentId}
-                    onClose={() => setIsPostModalOpen(false)}
-                    onDeletePost={() => fetchNotifications()}
-                />
-            )}
-            <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
-                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                    <div className="flex items-center space-x-3">
-                        <Bell size={28} />
-                        <h1 className="text-3xl font-bold">Уведомления</h1>
+        <PageWrapper>
+            <main className="flex-1 p-4 md:p-8">
+                {isPostModalOpen && (
+                    <PostViewModal
+                        posts={modalPostData.posts} startIndex={modalPostData.startIndex} highlightCommentId={modalPostData.highlightCommentId}
+                        onClose={() => setIsPostModalOpen(false)}
+                        onDeletePost={() => fetchNotifications()}
+                    />
+                )}
+                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
+                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                        <div className="flex items-center space-x-3">
+                            <Bell size={28} />
+                            <h1 className="text-3xl font-bold">Уведомления</h1>
+                            {notificationsData[activeTab].list.length > 0 && (
+                                <button onClick={handleDeleteAll} className="md:hidden p-2 rounded-full text-red-500 hover:bg-red-500/10">
+                                    <Trash2 size={18} />
+                                </button>
+                            )}
+                        </div>
                         {notificationsData[activeTab].list.length > 0 && (
-                            <button onClick={handleDeleteAll} className="md:hidden p-2 rounded-full text-red-500 hover:bg-red-500/10">
-                                <Trash2 size={18} />
+                            <button onClick={handleDeleteAll} className="hidden md:flex flex-shrink-0 items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10">
+                                <Trash2 size={16} /><span className="whitespace-nowrap">Очистить все</span>
                             </button>
                         )}
                     </div>
-                    {notificationsData[activeTab].list.length > 0 && (
-                        <button onClick={handleDeleteAll} className="hidden md:flex flex-shrink-0 items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10">
-                            <Trash2 size={16} /><span className="whitespace-nowrap">Очистить все</span>
-                        </button>
-                    )}
-                </div>
 
-                <div className="flex items-center flex-wrap gap-2 mb-4 border-b border-slate-200 dark:border-white/10 pb-4">
-                    <TabButton active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} count={notificationsData.personal.unreadCount}><User size={16} /> <span>Личные</span></TabButton>
-                    <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
-                </div>
-                
-                <div className="hidden md:flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
-                    {subTabs.map(tab => (
-                        <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
-                            <tab.icon size={14} /> <span>{tab.label}</span>
-                        </SubTabButton>
-                    ))}
-                </div>
-                
-                <div className="md:hidden flex items-center gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
-                    {subVisibleItems.map(tab => (
-                         <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
-                            <tab.icon size={14} /> <span>{tab.label}</span>
-                        </SubTabButton>
-                    ))}
-                    {subHiddenItems.length > 0 && (
-                        <SubTabButton active={isSubMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
-                            <MoreHorizontal size={14} /> <span>Еще</span>
-                        </SubTabButton>
+                    <div className="flex items-center flex-wrap gap-2 mb-4 border-b border-slate-200 dark:border-white/10 pb-4">
+                        <TabButton active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} count={notificationsData.personal.unreadCount}><User size={16} /> <span>Личные</span></TabButton>
+                        <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
+                    </div>
+                    
+                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                        {subTabs.map(tab => (
+                            <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
+                                <tab.icon size={14} /> <span>{tab.label}</span>
+                            </SubTabButton>
+                        ))}
+                    </div>
+                    
+                    <div className="md:hidden flex items-center gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
+                        {subVisibleItems.map(tab => (
+                             <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
+                                <tab.icon size={14} /> <span>{tab.label}</span>
+                            </SubTabButton>
+                        ))}
+                        {subHiddenItems.length > 0 && (
+                            <SubTabButton active={isSubMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
+                                <MoreHorizontal size={14} /> <span>Еще</span>
+                            </SubTabButton>
+                        )}
+                    </div>
+                    
+                    {loading ? (
+                        <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></div>
+                    ) : filteredNotifications.length === 0 ? (
+                        <div className="text-center py-20 text-slate-500 dark:text-white/60">
+                            <p>Уведомлений этого типа пока нет.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <AnimatePresence>
+                                {Object.entries(groupedNotifications).map(([groupKey, groupNotifications]) => (
+                                    groupNotifications.length > 0 && (
+                                        <div key={groupKey}>
+                                            <h2 className="font-bold text-lg mb-2 pl-3 text-slate-800 dark:text-white">
+                                                {groupKey === 'today' && 'Сегодня'}
+                                                {groupKey === 'yesterday' && 'Вчера'}
+                                                {groupKey === 'earlier' && 'Ранее'}
+                                            </h2>
+                                            <div className="space-y-1">
+                                                {groupNotifications.map(notification => (
+                                                    <div key={notification._id} onClick={() => handleNotificationClick(notification)}>
+                                                        <NotificationItem notification={notification} onDelete={handleDelete} onAction={handleAction} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )
+                                ))}
+                            </AnimatePresence>
+                        </div>
                     )}
                 </div>
                 
-                {loading ? (
-                    <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></div>
-                ) : filteredNotifications.length === 0 ? (
-                    <div className="text-center py-20 text-slate-500 dark:text-white/60">
-                        <p>Уведомлений этого типа пока нет.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        <AnimatePresence>
-                            {Object.entries(groupedNotifications).map(([groupKey, groupNotifications]) => (
-                                groupNotifications.length > 0 && (
-                                    <div key={groupKey}>
-                                        <h2 className="font-bold text-lg mb-2 pl-3 text-slate-800 dark:text-white">
-                                            {groupKey === 'today' && 'Сегодня'}
-                                            {groupKey === 'yesterday' && 'Вчера'}
-                                            {groupKey === 'earlier' && 'Ранее'}
-                                        </h2>
-                                        <div className="space-y-1">
-                                            {groupNotifications.map(notification => (
-                                                <div key={notification._id} onClick={() => handleNotificationClick(notification)}>
-                                                    <NotificationItem notification={notification} onDelete={handleDelete} onAction={handleAction} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )
-                            ))}
-                        </AnimatePresence>
-                    </div>
-                )}
-            </div>
-            
-            <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
-                {subHiddenItems.map(item => (
-                    <button
-                        key={item.key}
-                        onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
-                        className={`w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
-                        ${activeFilter === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
-                        `}
-                    >
-                        <item.icon size={22} className={activeFilter === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
-                        <span>{item.label}</span>
-                    </button>
-                ))}
-            </MorePanel>
-        </main>
+                <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
+                    {subHiddenItems.map(item => (
+                        <button
+                            key={item.key}
+                            onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
+                            className={`w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
+                            ${activeFilter === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
+                            `}
+                        >
+                            <item.icon size={22} className={activeFilter === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+                </MorePanel>
+            </main>
+        </PageWrapper>
     );
 };
 
