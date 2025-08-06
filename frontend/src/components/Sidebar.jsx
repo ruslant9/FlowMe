@@ -257,7 +257,7 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
                                     icon={user?.premium?.isActive ? Crown : Sparkles}
                                     text={
                                         <div className="flex items-center">
-                                            <span className={user?.premium?.isActive ? 'premium-gradient-text font-bold' : ''}>
+                                            <span className={`text-sm ${user?.premium?.isActive ? 'premium-gradient-text font-bold' : ''}`}>
                                                 {user?.premium?.isActive ? "Мой Premium" : "Flow PREMIUM"}
                                             </span>
                                             {!(user?.premium?.isActive) && (isExpanded || isMobileNavOpen) && (

@@ -430,11 +430,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         <AnimatePresence>
             {currentIndex !== null && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} 
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-20 p-0 md:p-4"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-[100] p-0 md:p-4"
                 >
                     {posts.length > 1 && <>
-                        <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p-1+posts.length)%posts.length) }} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[60] text-white"><ChevronLeft size={32} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p+1)%posts.length) }} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[60] text-white"><ChevronRight size={32} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p-1+posts.length)%posts.length) }} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[101] text-white"><ChevronLeft size={32} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(p=>(p+1)%posts.length) }} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/10 rounded-full hover:bg-white/20 z-[101] text-white"><ChevronRight size={32} /></button>
                     </>}
                     
                     {isEditingPostImage && activePost && (
@@ -444,28 +444,34 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             onSave={handleImageUpdate} />
                     )}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
                         style={{ maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' }}
                         className="overflow-hidden w-full max-w-6xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
                     >
-                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors z-[60] bg-white/30 dark:bg-black/30 rounded-full p-1"><X size={24} /></button>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors z-[101] bg-white/30 dark:bg-black/30 rounded-full p-1"><X size={24} /></button>
 
                         {isLoading && !activePost ? (
                             <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
                         ) : activePost ? (
                             <>
-                                {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[60]">{currentIndex + 1} / {posts.length}</div>}
+                                {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
                                 
-                                {hasImages ? (
-                                    <div className="w-full md:w-3/5 flex-shrink-0 bg-black flex items-center justify-center aspect-square md:aspect-auto">
+                                <div className={`w-full ${hasImages ? 'md:w-3/5' : 'hidden md:flex md:w-2/5'} flex-shrink-0 bg-black items-center justify-center relative`}>
+                                    {hasImages ? (
                                         <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
-                                    </div>
-                                ) : null}
+                                    ) : (
+                                        <div className="p-8">
+                                            {/* Контент, который будет показан, когда нет картинки */}
+                                        </div>
+                                    )}
+                                </div>
+                                
                                 <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
+                                    {/* --- ШАПКА ПОСТА (ФИКСИРОВАННАЯ) --- */}
                                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between space-x-3 flex-shrink-0">
                                         {(() => {
                                             const author = activePost.community || activePost.user;
@@ -518,6 +524,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>}
                                     </div>
                                     
+                                    {/* --- ОБЛАСТЬ КОНТЕНТА И КОММЕНТАРИЕВ (ПРОКРУЧИВАЕМАЯ) --- */}
                                     <div className="flex-1 overflow-y-auto min-h-0">
                                         {(activePost.text || activePost.attachedTrack || activePost.poll) && (
                                             <div className="p-4">
@@ -577,7 +584,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                 )}
                                             </div>
                                         </div>
-
+                                        
                                         <div className="p-4 space-y-4">
                                             {sortedComments.length > 0 ? sortedComments.map(comment => (
                                                 <Comment 
@@ -604,6 +611,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>
                                     </div>
                                     
+                                    {/* --- ФУТЕР С ПОЛЕМ ВВОДА (ФИКСИРОВАННЫЙ) --- */}
                                     {!activePost.commentsDisabled ? (
                                       <div className="p-4 border-t border-slate-200 dark:border-slate-700 relative flex-shrink-0">
                                           {replyingTo && (

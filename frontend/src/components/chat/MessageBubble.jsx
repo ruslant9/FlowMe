@@ -1,4 +1,4 @@
-// frontend/src/components/chat/MessageBubble.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/components/chat/MessageBubble.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useMemo, useRef, useState, forwardRef } from 'react';
 import { format } from 'date-fns';
@@ -11,6 +11,8 @@ import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
 import { useCachedImage } from '../../hooks/useCachedImage';
+import ReactDOM from 'react-dom'; // <-- ИМПОРТ
+import EmojiParsedText from './common/EmojiParsedText'; // <-- ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -192,15 +194,17 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
     };
 
     const renderMessageWithHighlight = useMemo(() => {
-        if (!isCurrentSearchResult || !searchQuery || !message.text) {
-            return message.text;
+        if (!message.text) return null;
+    
+        if (!isCurrentSearchResult || !searchQuery) {
+            return <EmojiParsedText text={message.text} />;
         }
-
+    
         const escapedQuery = searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         const regex = new RegExp(`(${escapedQuery})`, 'gi');
         const parts = message.text.split(regex);
-
-        return (
+    
+        const contentJsx = (
             <>
                 {parts.map((part, index) =>
                     regex.test(part) ? (
@@ -213,8 +217,15 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 )}
             </>
         );
+    
+        // Временный div для преобразования JSX в HTML-строку
+        const tempDiv = document.createElement('div');
+        ReactDOM.render(contentJsx, tempDiv);
+        const htmlString = tempDiv.innerHTML;
+        
+        return <EmojiParsedText text={htmlString} />;
+    
     }, [message.text, isCurrentSearchResult, searchQuery]);
-
 
     return (
         <div
@@ -232,7 +243,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             
             <div className={`relative flex-shrink-0 ${isOwnMessage ? 'order-1' : 'order-2'}`}>
                 {!selectionMode && !message.isSending && !message.isFailed && (
-                     // --- НАЧАЛО ИЗМЕНЕНИЯ: Упрощаем структуру. Tippy теперь один и открывает меню действий. ---
                      <Tippy
                         interactive
                         placement={menuPosition === 'bottom' ? 'bottom-end' : 'top-end'}
@@ -247,7 +257,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         popperOptions={{ strategy: 'fixed' }}
                         render={attrs => (
                             <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
-                                {/* ReactionsPopover теперь является частью меню и имеет свой триггер */}
                                 <ReactionsPopover onSelect={(emoji) => { onReact(emoji); onToggleMenu(null); }}>
                                      <button
                                         disabled={!canInteract}
@@ -290,17 +299,15 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                             <MoreHorizontal size={18}/>
                          </TippyWrapper>
                      </Tippy>
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
                 )}
             </div>
 
             <div
-    className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
-        ${isOwnMessage ? `${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
-        ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : (isOwnMessage ? 'bg-chat-bubble-own' : 'bg-chat-bubble-other')}
-    `}
->
-                
+                className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
+                    ${isOwnMessage ? `${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
+                    ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : (isOwnMessage ? 'bg-chat-bubble-own' : 'bg-chat-bubble-other')}
+                `}
+            >
                 <div className="pt-2"> 
                     {message.forwardedFrom && (
                         <Link to={`/profile/${message.forwardedFrom._id}`} className="flex items-center space-x-1.5 text-xs opacity-80 mb-1.5 px-3 cursor-pointer hover:underline">
@@ -309,7 +316,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         </Link>
                     )}
                 </div>
-
                 {message.replyTo && (
                      <div className="px-3 pt-2">
                          <button 
@@ -343,13 +349,12 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         />
                     </div>
                 )}
-                
                 <div className={`relative ${Object.values(groupedReactions).length > 0 ? 'pb-7' : ''}`}>
                     <div className="flex items-end flex-wrap px-3 pt-2 pb-2">
                         {message.text && (
-                             <p className="whitespace-pre-wrap break-words mr-2 min-w-0">
+                             <div className="whitespace-pre-wrap break-words mr-2 min-w-0">
                                 {renderMessageWithHighlight}
-                            </p>
+                            </div>
                         )}
                         <div className="inline-flex items-center gap-1 text-xs opacity-70 flex-shrink-0 min-w-max self-end ml-auto">
                             {isPinned && <Pin size={12} className="text-current" />}
@@ -357,13 +362,11 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                             <ReadReceipt />
                         </div>
                     </div>
-                    
                     <div className={`absolute bottom-1 right-2 z-10 flex items-center space-x-1`}>
                         {Object.values(groupedReactions).map(({ emoji, count, users = [] }) => {
                             const tippyContent = users.length > 0 ? users.join(', ') : '';
                             const Wrapper = users.length > 0 ? Tippy : React.Fragment;
                             const wrapperProps = users.length > 0 ? { content: tippyContent, placement: 'top' } : {};
-
                             return (
                                 <Wrapper key={emoji} {...wrapperProps}>
                                 <button disabled={!canInteract} onClick={() => onReact(emoji)} className="px-1.5 py-0.5 bg-white dark:bg-slate-600 rounded-full text-sm shadow flex items-center space-x-1 disabled:opacity-70 disabled:cursor-not-allowed">

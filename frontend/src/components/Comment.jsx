@@ -1,4 +1,4 @@
-// frontend/src/components/Comment.jsx
+// frontend/src/components/Comment.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useRef, useEffect, Suspense } from 'react';
 import axios from 'axios';
@@ -10,12 +10,12 @@ import toast from 'react-hot-toast';
 import { useModal } from '../hooks/useModal';
 import LikesPopover from './LikesPopover';
 import { Link } from 'react-router-dom';
+import EmojiParsedText from './common/EmojiParsedText'; // <-- ИМПОРТ
 
 const Picker = React.lazy(() => import('emoji-picker-react'));
 const EMOJI_PICKER_HEIGHT = 450;
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем кастомные форматы времени ---
 const customRuLocale = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -38,7 +38,6 @@ const formatShortDistanceToNow = (dateStr) => {
     if (diffDays < 7) return `${diffDays}д`;
     return format(date, 'dd.MM');
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 
 const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommunityId, onCommentUpdate, onReply, editingCommentId, setEditingCommentId, selectionMode, onToggleSelect, isSelected }) => {
@@ -137,24 +136,28 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     };
 
     const renderCommentText = () => {
-        const { text, parent } = localComment;
         const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const parentAuthorObject = parent ? (parent.author || parent.user) : null;
+        const parentAuthorObject = localComment.parent ? (localComment.parent.author || localComment.parent.user) : null;
         if (parentAuthorObject) {
             const parentAuthorName = parentAuthorObject.name || parentAuthorObject.username;
             if (parentAuthorName) {
-                const mentionRegex = new RegExp(`^@${escapeRegExp(parentAuthorName)}\\b`, 'i');
-                const match = text.match(mentionRegex);
+                const mentionRegex = new RegExp(`^@${escapeRegExp(parentAuthorName)}\\b,?\\s*`, 'i');
+                const match = localComment.text.match(mentionRegex);
                 if (match) {
-                    const matchedMention = match[0];
-                    const restOfText = text.substring(matchedMention.length);
-                    const parentAuthorModel = parent.authorModel || 'User';
+                    const matchedMention = match[0].trim();
+                    const restOfText = localComment.text.substring(match[0].length);
+                    const parentAuthorModel = localComment.parent.authorModel || 'User';
                     const linkTo = parentAuthorModel === 'Community' ? `/communities/${parentAuthorObject._id}` : `/profile/${parentAuthorObject._id}`;
-                    return (<><Link to={linkTo} className="text-blue-400 hover:underline font-semibold" onClick={e => e.stopPropagation()}>{matchedMention}</Link><span>{restOfText}</span></>);
+                    return (
+                        <div className="flex items-center flex-wrap">
+                            <Link to={linkTo} className="text-blue-400 hover:underline font-semibold mr-1" onClick={e => e.stopPropagation()}>{matchedMention}</Link>
+                            <EmojiParsedText text={restOfText} className="inline" />
+                        </div>
+                    );
                 }
             }
         }
-        return text;
+        return <EmojiParsedText text={localComment.text} />;
     };
 
     const handleLike = async () => {
@@ -171,20 +174,17 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     };
 
     const authorName = authorObject.name || authorObject.username;
-    const authorFullName = authorObject.fullName;
     const authorAvatar = authorObject.avatar || '';
     const authorLink = authorModel === 'Community' ? `/communities/${authorObject._id}` : `/profile/${authorObject._id}`;
     const authorIsPremium = authorModel === 'User' && authorObject.premium?.isActive;
     const authorCustomBorder = authorModel === 'User' ? authorObject.premiumCustomization?.avatarBorder : null;
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Создаем блок кнопок для переиспользования ---
     const renderActionButtons = () => (
         <>
             {isCommentOwner && <button onClick={() => setEditingCommentId(localComment._id)} className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><Pencil size={14} /></button>}
             {canDelete && <button onClick={handleDelete} className="p-1 text-slate-500 dark:text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>}
         </>
     );
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     return (
         <div>
@@ -236,7 +236,6 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                 </div>
                             ) : (
                                 <>
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Новая верстка для хедера комментария --- */}
                                     <div className="flex justify-between items-center">
                                         <div className="text-sm flex items-center space-x-2 min-w-0">
                                             <Link to={authorLink} className="font-bold hover:underline truncate">{authorName}</Link>
@@ -252,7 +251,7 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                             </div>
                                         )}
                                     </div>
-                                    <p className="text-sm break-words mt-1">{renderCommentText()}</p>
+                                    <div className="text-sm break-words mt-1">{renderCommentText()}</div>
                                     <div className="flex items-center justify-between mt-2">
                                         <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
                                            <button onClick={() => onReply({ id: localComment._id, username: authorName })} disabled={isEditingAny || selectionMode} className="font-semibold hover:text-slate-800 dark:hover:text-white transition-colors disabled:text-slate-400/50 disabled:cursor-not-allowed">Ответить</button>
@@ -277,7 +276,6 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                             </div>
                                         )}
                                     </div>
-                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                                 </>
                             )}
                         </div>
