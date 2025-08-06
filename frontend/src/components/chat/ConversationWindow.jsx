@@ -39,7 +39,6 @@ const getImageUrl = (url) => {
     return `${API_URL}/${url}`;
 };
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ 2: Перерабатываем функцию для более короткого вывода ---
 const formatLastSeen = (dateString) => {
     if (!dateString) return "Был(а) недавно";
     const date = new Date(dateString);
@@ -55,7 +54,6 @@ const formatLastSeen = (dateString) => {
     }
     return `Был(а) ${format(date, 'd MMM yyyy в HH:mm', { locale: ru })}`;
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
 
 const getContrastingTextColor = (hexColor) => {
@@ -870,7 +868,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         if (liveInterlocutor?.isOnline && canSeeDetailedStatus) return "Онлайн";
         if (canSeeDetailedStatus) {
             const lastSeenTime = liveInterlocutor.lastSeen;
-            // --- ИЗМЕНЕНИЕ 2: Используем новую функцию ---
             if (lastSeenTime) return formatLastSeen(lastSeenTime);
         }
         return "Недавно";
@@ -1123,13 +1120,15 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                         );
                                     })()}
                                     <div>
-                                        <h2 className="font-bold group-hover:underline flex items-center" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
+                                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем адаптивные классы для текста --- */}
+                                        <h2 className="font-bold group-hover:underline flex items-center text-base md:text-lg" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
                                             {liveInterlocutor.fullName || liveInterlocutor.username}
                                             {usernameEmoji?.url && (
                                                 <img src={usernameEmoji.url} alt="emoji" className="w-5 h-5 ml-1.5" />
                                             )}
                                         </h2>
                                         <p className="text-xs h-4" style={{ color: 'var(--chat-header-text-color, inherit)', opacity: 0.7 }}>{getStatusText()}</p>
+                                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ 1 --- */}
                                     </div>
                                 </Link>
                             </div>

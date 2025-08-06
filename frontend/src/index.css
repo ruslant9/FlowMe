@@ -5,6 +5,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем стили для фикса высоты --- */
+html, body, #root {
+  height: 100%;
+  overflow: hidden; /* Запрещаем прокрутку на корневых элементах */
+}
+/* --- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */
+
 /* 3. Описываем наш анимированный фон */
 .bg-liquid-background {
   background-color: #0f172a; /* Темно-синий фон по умолчанию */

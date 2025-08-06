@@ -15,13 +15,14 @@ const API_URL = import.meta.env.VITE_API_URL;
 const CachedImage = ({ src }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
-        return <div className="w-10 h-10 rounded object-cover bg-slate-200 dark:bg-slate-700 animate-pulse" />;
+        return <div className="w-full h-full rounded object-cover bg-slate-200 dark:bg-slate-700 animate-pulse" />;
     }
-    return <img src={finalSrc} alt="cover" className="w-10 h-10 rounded object-cover bg-slate-200 dark:bg-slate-700" />;
+    return <img src={finalSrc} alt="cover" className="w-full h-full rounded object-cover bg-slate-200 dark:bg-slate-700" />;
 };
 
 const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
-    <button onClick={onClick} className={`flex items-center space-x-2 px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold rounded-lg transition-colors ${active ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'}`}>        <Icon size={16} />
+    <button onClick={onClick} className={`flex items-center space-x-2 px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold rounded-lg transition-colors ${active ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'}`}>
+        <Icon size={16} />
         <span>{children}</span>
     </button>
 );
@@ -124,7 +125,6 @@ export const AdminContentManager = () => {
         });
     };
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Функция теперь принимает флаг для закрытия ---
     const handleModalSuccess = (shouldClose = true) => {
         if (shouldClose) {
             setIsEditModalOpen(false);
@@ -133,7 +133,6 @@ export const AdminContentManager = () => {
         fetchData();
         fetchAuxiliaryData();
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const SortableHeader = ({ label, sortKey }) => (
         <button onClick={() => handleSort(sortKey)} className="flex items-center space-x-1 font-semibold text-slate-600 dark:text-slate-400">
@@ -147,8 +146,10 @@ export const AdminContentManager = () => {
         if (items.length === 0) return <p className="text-center text-slate-500 p-8">Ничего не найдено.</p>;
         
         return (
-            <div className="overflow-x-auto">
-                 <table className="w-full text-left">
+            <>
+                {/* --- DESKTOP TABLE --- */}
+                <div className="overflow-x-auto hidden md:block">
+                    <table className="w-full text-left">
                     <thead>
                         <tr className="border-b dark:border-slate-700">
                             <th className="p-2 w-12"> </th>
@@ -167,7 +168,7 @@ export const AdminContentManager = () => {
                             return (
                                 <tr key={item._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
                                     <td className="p-2">
-                                        <Link to={linkTo} target="_blank" rel="noopener noreferrer">
+                                        <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="block w-10 h-10">
                                             <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
                                         </Link>
                                     </td>
@@ -194,8 +195,42 @@ export const AdminContentManager = () => {
                             );
                         })}
                     </tbody>
-                </table>
-            </div>
+                    </table>
+                </div>
+
+                {/* --- MOBILE CARDS --- */}
+                <div className="md:hidden space-y-3">
+                    {items.map(item => {
+                        const linkTo = activeType === 'artists' ? `/artist/${item._id}` :
+                                       activeType === 'albums' ? `/album/${item._id}` :
+                                       `/single/${item._id}`;
+                        return (
+                            <div key={item._id} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg flex gap-4 items-center">
+                                <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-14 h-14">
+                                    <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
+                                </Link>
+                                
+                                <div className="flex-1 min-w-0">
+                                    <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="block">
+                                        <p className="font-bold truncate">{item.name || item.title}</p>
+                                    </Link>
+                                    {activeType !== 'artists' && (
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                                            {Array.isArray(item.artist) ? item.artist.map(a => a.name).join(', ') : (item.artist?.name || 'N/A')}
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{new Date(item.createdAt).toLocaleDateString('ru-RU')}</p>
+                                </div>
+                                
+                                <div className="flex-shrink-0 flex flex-col justify-around gap-2">
+                                    <button onClick={() => handleEdit(item)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full" title="Редактировать"><EditIcon size={16} /></button>
+                                    <button onClick={() => handleDelete(item)} className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full" title="Удалить"><TrashIcon size={16} /></button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </>
         );
     };
 

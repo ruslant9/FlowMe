@@ -214,51 +214,63 @@ const NotificationToggle = () => {
         }
     };
     
-    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isMobile = useMemo(() => 'ontouchstart' in window || navigator.maxTouchPoints > 0, []);
     
     if (!isMobile) {
         return null;
     }
+    
+    const renderContent = () => {
+        if (loading) {
+            return <div className="flex justify-center"><Loader2 className="animate-spin" /></div>;
+        }
 
-    let buttonContent;
-    let buttonAction = () => {};
-    let buttonDisabled = loading;
+        if (permission === 'denied') {
+            return (
+                <>
+                    <p className="text-sm text-red-500 dark:text-red-400">
+                        Уведомления заблокированы в настройках вашего браузера. Чтобы их включить, измените разрешения для этого сайта.
+                    </p>
+                    <button
+                        disabled
+                        className="mt-2 px-4 py-2 text-sm font-semibold rounded-lg bg-slate-400 dark:bg-slate-600 text-white cursor-not-allowed flex items-center space-x-2"
+                    >
+                        <ShieldAlert size={18} /><span>Заблокировано</span>
+                    </button>
+                </>
+            );
+        }
+        
+        if (isSubscribed) {
+            return (
+                <button
+                    onClick={unsubscribeUser}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center space-x-2"
+                >
+                    {loading ? <Loader2 className="animate-spin" /> : <><BellOff size={18} /><span>Отключить</span></>}
+                </button>
+            );
+        }
 
-    if (permission === 'denied') {
-        buttonContent = <><ShieldAlert size={18} /><span>Заблокировано</span></>;
-        buttonDisabled = true;
-    } else if (isSubscribed) {
-        buttonContent = <><BellOff size={18} /><span>Отключить</span></>;
-        buttonAction = unsubscribeUser;
-    } else {
-        buttonContent = <><Bell size={18} /><span>Включить</span></>;
-        buttonAction = subscribeUser;
-    }
+        return (
+            <button
+                onClick={subscribeUser}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center space-x-2"
+            >
+                {loading ? <Loader2 className="animate-spin" /> : <><Bell size={18} /><span>Включить</span></>}
+            </button>
+        );
+    };
+
     return (
         <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg flex flex-col items-start gap-3">
             <div>
                 <p className="font-semibold text-slate-700 dark:text-white">Push-уведомления</p>
                 <p className="text-sm text-slate-500 dark:text-white/60">Получайте уведомления, даже когда сайт закрыт.</p>
-                {permission === 'denied' && (
-                    <p className="mt-2 text-xs text-red-500 dark:text-red-400">
-                        Уведомления заблокированы в настройках вашего браузера. Чтобы их включить, измените разрешения для этого сайта.
-                    </p>
-                )}
             </div>
-            <button
-                onClick={buttonAction}
-                disabled={buttonDisabled}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-70
-                    ${permission === 'denied' 
-                        ? 'bg-slate-400 dark:bg-slate-600 text-white cursor-not-allowed'
-                        : isSubscribed
-                            ? 'bg-red-500 text-white hover:bg-red-600'
-                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                    }
-                `}
-            >
-                {loading ? <Loader2 className="animate-spin" /> : buttonContent}
-            </button>
+            {renderContent()}
         </div>
     );
 };
@@ -411,7 +423,7 @@ const SettingsPage = () => {
                 <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
                     <h1 className="text-3xl font-bold mb-6 text-center">Настройки</h1>
 
-                    <Section title="Уведомления" icon={Bell} isInitiallyOpen={true}>
+                    <Section title="Уведомления" icon={Bell} isInitiallyOpen={false}>
                         <div className="space-y-4">
                             <NotificationToggle />
                             {privacySettings && (
@@ -456,48 +468,66 @@ const SettingsPage = () => {
                                 {loadingSessions ? <Loader2 className="animate-spin"/> : (
                                     <div className="space-y-2">
                                         {(sessionsExpanded ? sessions : sessions.slice(0, 3)).map(session => {
-    const isCurrent = session._id === currentSessionId;
-    const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
-    // Отображаем только первый IP-адрес из списка
-    const primaryIp = session.ipAddress ? session.ipAddress.split(',')[0].trim() : 'Неизвестный IP';
+                                            const isCurrent = session._id === currentSessionId;
+                                            const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
+                                            const primaryIp = session.ipAddress ? session.ipAddress.split(',')[0].trim() : 'Неизвестный IP';
 
-    return (
-        <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3">
-            <div className="flex items-start space-x-3 min-w-0">
-                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 mt-1">
-                    {getDeviceIcon(session.device)}
-                </div>
-                <div className="min-w-0">
-                    <p className="font-semibold truncate">
-                        {session.browser || 'Unknown'} on {session.os || 'Unknown'}
-                        {isCurrent && <span className="text-xs text-green-500 ml-2">(Текущая)</span>}
-                    </p>
-                    <div className="text-sm text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2">
-                        {isLocal ? (
-                            <span className="font-semibold text-cyan-500">Локальная сессия</span>
-                        ) : (
-                            <div className="flex items-center space-x-2">
-                                {session.countryCode && session.countryCode !== 'xx' && (
-                                    <img src={`https://flagcdn.com/w20/${session.countryCode}.png`} alt={session.countryCode} className="w-5 h-auto rounded-sm"/>
-                                )}
-                                <span className="truncate">{primaryIp}</span>
-                            </div>
-                        )}
-                        <span className="hidden sm:inline">•</span>
-                        <span>{format(new Date(session.lastActive), 'dd.MM.yyyy HH:mm')}</span>
-                    </div>
-                </div>
-            </div>
-            {!isCurrent && (
-                <button onClick={() => terminateSession(session._id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full flex-shrink-0" title="Прервать сессию">
-                    <XCircle/>
-                </button>
-            )}
-        </div>
-    )
-})}
-                                        {sessions.length > 3 && <button onClick={() => setSessionsExpanded(!sessionsExpanded)} className="text-sm text-blue-500 hover:underline">{sessionsExpanded ? 'Скрыть' : `Показать еще ${sessions.length - 3}`}</button>}
-                                        {sessions.length > 1 && <button onClick={terminateAllOtherSessions} className="text-sm text-red-500 hover:underline ml-4">Прервать все другие сессии</button>}
+                                            return (
+                                                <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3">
+                                                    <div className="flex items-start space-x-3 min-w-0">
+                                                        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 mt-1">
+                                                            {getDeviceIcon(session.device)}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="font-semibold truncate">
+                                                                {session.browser || 'Unknown'} on {session.os || 'Unknown'}
+                                                                {isCurrent && <span className="text-xs text-green-500 ml-2">(Текущая)</span>}
+                                                            </p>
+                                                            <div className="text-sm text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2">
+                                                                {isLocal ? (
+                                                                    <span className="font-semibold text-cyan-500">Локальная сессия</span>
+                                                                ) : (
+                                                                    <div className="flex items-center space-x-2">
+                                                                        {session.countryCode && session.countryCode !== 'xx' && (
+                                                                            <img src={`https://flagcdn.com/w20/${session.countryCode}.png`} alt={session.countryCode} className="w-5 h-auto rounded-sm"/>
+                                                                        )}
+                                                                        <span className="truncate">{primaryIp}</span>
+                                                                    </div>
+                                                                )}
+                                                                <span className="hidden sm:inline">•</span>
+                                                                <span>{format(new Date(session.lastActive), 'dd.MM.yyyy HH:mm')}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {!isCurrent && (
+                                                        <button onClick={() => terminateSession(session._id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full flex-shrink-0" title="Прервать сессию">
+                                                            <XCircle/>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )
+                                        })}
+                                        <div className="mt-4 flex items-center justify-between">
+                                            {sessions.length > 3 ? (
+                                                <button 
+                                                    onClick={() => setSessionsExpanded(!sessionsExpanded)} 
+                                                    className="text-sm font-semibold text-blue-500 hover:underline"
+                                                >
+                                                    {sessionsExpanded ? 'Скрыть' : `Показать еще ${sessions.length - 3}`}
+                                                </button>
+                                            ) : (
+                                                <span /> 
+                                            )}
+                                            
+                                            {sessions.length > 1 && (
+                                                <button 
+                                                    onClick={terminateAllOtherSessions} 
+                                                    className="text-sm font-semibold text-red-500 hover:underline"
+                                                >
+                                                    Прервать все другие сессии
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
