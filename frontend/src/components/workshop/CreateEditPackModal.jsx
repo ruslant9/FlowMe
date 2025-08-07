@@ -10,17 +10,10 @@ import { useUser } from '../../hooks/useUser';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Исправленный компонент ToggleSwitch
+// Полностью переработанный компонент ToggleSwitch
 const ToggleSwitch = ({ checked, onChange, label, description, disabled = false }) => (
     <div
-        onClick={() => {
-            if (disabled) {
-                toast.error('Эта функция доступна только для Premium-пользователей.');
-            } else {
-                onChange(!checked);
-            }
-        }}
-        className={`flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg transition-opacity ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg transition-opacity ${disabled ? 'opacity-60' : ''}`}
     >
         <div>
             <div className="flex items-center space-x-2">
@@ -29,16 +22,24 @@ const ToggleSwitch = ({ checked, onChange, label, description, disabled = false 
             </div>
             <p className="text-xs text-slate-500 dark:text-white/60">{description}</p>
         </div>
-        <div className="relative inline-flex items-center flex-shrink-0">
+        <label
+            className="relative inline-flex items-center flex-shrink-0 cursor-pointer"
+            onClick={(e) => {
+                if (disabled) {
+                    e.preventDefault();
+                    toast.error('Эта функция доступна только для Premium-пользователей.');
+                }
+            }}
+        >
             <input
                 type="checkbox"
                 className="sr-only peer"
                 checked={checked}
-                readOnly
+                onChange={disabled ? undefined : e => onChange(e.target.checked)}
                 disabled={disabled}
             />
             <div className="w-11 h-6 bg-gray-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-        </div>
+        </label>
     </div>
 );
 
@@ -149,6 +150,7 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                         onClick={(e) => e.stopPropagation()}
                         className="ios-glass-final w-full max-w-2xl p-4 md:p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
                     >
+                        
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">{isEditMode ? 'Редактировать пак' : 'Создать новый пак'}</h2>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
