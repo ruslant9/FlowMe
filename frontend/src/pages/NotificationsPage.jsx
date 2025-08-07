@@ -11,6 +11,7 @@ import NotificationItem from '../components/NotificationItem';
 import { AnimatePresence } from 'framer-motion';
 import PostViewModal from '../components/modals/PostViewModal';
 import PageWrapper from '../components/PageWrapper';
+import ResponsiveNav from '../components/ResponsiveNav';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -33,7 +34,7 @@ const TabButton = ({ active, onClick, children, count }) => (
 const FilterButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
-        className={`flex-shrink-0 px-3 py-1.5 text-xs md:px-4 md:py-2 md:text-sm font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${
+        className={`flex-shrink-0 px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${
             active
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
@@ -232,7 +233,7 @@ const NotificationsPage = () => {
         return groups;
     }, [filteredNotifications]);
     
-    const filters = useMemo(() => {
+    const filterItems = useMemo(() => {
         const tabs = [{ key: 'all', label: 'Все', icon: Bell, onClick: () => setActiveFilter('all') }];
         if (activeTab === 'personal') {
             tabs.push({ key: 'requests', label: 'Заявки', icon: UserPlus, onClick: () => setActiveFilter('requests') });
@@ -276,12 +277,20 @@ const NotificationsPage = () => {
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar">
-                        {filters.map(tab => (
+                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-6">
+                        {filterItems.map(tab => (
                             <FilterButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
                                 <tab.icon size={16} /> <span>{tab.label}</span>
                             </FilterButton>
                         ))}
+                    </div>
+
+                    <div className="md:hidden mb-6">
+                        <ResponsiveNav
+                            items={filterItems}
+                            visibleCount={4}
+                            activeKey={activeFilter}
+                        />
                     </div>
                     
                     {loading ? (

@@ -16,7 +16,7 @@ import { Listbox, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDynamicPosition } from '../hooks/useDynamicPosition';
 import PageWrapper from '../components/PageWrapper';
-import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ КОМПОНЕНТА ---
+import ResponsiveNav from '../components/ResponsiveNav';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -69,14 +69,14 @@ const getDeviceIcon = (deviceString) => {
 
 
 const ToggleControl = ({ label, checked, onChange, description }) => (
-    <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm">
+    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
         <div>
             <p className="font-semibold text-slate-700 dark:text-white">{label}</p>
             {description && <p className="text-sm text-slate-500 dark:text-white/60">{description}</p>}
         </div>
         <label htmlFor={label.replace(/\s+/g, '-')} className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id={label.replace(/\s+/g, '-')} className="sr-only peer" checked={checked} onChange={onChange} />
-            <div className="w-11 h-6 bg-gray-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            <div className="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
     </div>
 );
@@ -85,7 +85,7 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
     const [buttonRef, position] = useDynamicPosition();
 
     return (
-        <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm flex-wrap gap-4">
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm flex-wrap gap-4 border border-slate-200 dark:border-slate-700">
             <div className="flex items-center space-x-3">
                 <Icon size={20} className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
                 <div>
@@ -96,7 +96,7 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
             <div className="flex items-center flex-wrap gap-4 w-full sm:w-auto justify-end sm:justify-start">
                 <Listbox value={value} onChange={onChange}>
                     <div className="relative w-full sm:w-48">
-                        <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
+                        <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-slate-100 dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                             <span className="block truncate">{options.find(opt => opt.id === value)?.name}</span>
                             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" /></span>
                         </Listbox.Button>
@@ -252,7 +252,7 @@ const renderContent = () => {
 };
 
 return (
-    <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg flex flex-col items-start gap-3">
+    <div className="p-4 bg-white dark:bg-slate-800 rounded-lg flex flex-col items-start gap-3 border border-slate-200 dark:border-slate-700">
         <div>
             <p className="font-semibold text-slate-700 dark:text-white">Push-уведомления</p>
             <p className="text-sm text-slate-500 dark:text-white/60">Получайте уведомления, даже когда сайт закрыт.</p>
@@ -261,6 +261,7 @@ return (
     </div>
 );
 };
+
 
 const SettingsPage = () => {
     useTitle('Настройки');
@@ -407,14 +408,12 @@ const handlePasswordChange = async (e) => {
     finally { setPasswordChangeLoading(false); }
 };
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Создаем массив для ResponsiveNav ---
     const navItems = [
         { key: 'privacy', label: 'Приватность', icon: Lock, onClick: () => setActiveTab('privacy') },
         { key: 'security', label: 'Безопасность', icon: Shield, onClick: () => setActiveTab('security') },
         { key: 'notifications', label: 'Уведомления', icon: Bell, onClick: () => setActiveTab('notifications') },
         { key: 'danger', label: 'Опасная зона', icon: ShieldAlert, onClick: () => setActiveTab('danger') },
     ];
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 return (
     <PageWrapper>
@@ -422,7 +421,6 @@ return (
             <div className="w-full max-w-7xl mx-auto">
                 <h1 className="text-3xl font-bold mb-6 text-center">Настройки</h1>
 
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Адаптивная навигация --- */}
                 <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-8 justify-center">
                     {navItems.map(item => (
                         <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon}>
@@ -438,7 +436,6 @@ return (
                         activeKey={activeTab}
                     />
                 </div>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -484,19 +481,20 @@ return (
                                 <div className="space-y-8">
                                     <div>
                                         <h3 className="text-lg font-semibold mb-4">Смена пароля</h3>
+                                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Убрана обертка-карточка --- */}
                                         <form onSubmit={handlePasswordChange} className="space-y-3">
                                             {verificationRequired ? (
                                                 <>
                                                     <p className="text-sm text-center text-green-600 dark:text-green-400">На вашу почту отправлен код подтверждения. Введите его ниже.</p>
-                                                    <input type="text" placeholder="Код из письма" value={passwordData.verificationCode} onChange={(e) => setPasswordData(p => ({...p, verificationCode: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
+                                                    <input type="text" placeholder="Код из письма" value={passwordData.verificationCode} onChange={(e) => setPasswordData(p => ({...p, verificationCode: e.target.value}))} className="w-full p-2 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600" required />
                                                 </>
                                             ) : (
                                                 <>
                                                     {currentUser?.hasPassword && (
-                                                        <input type="password" placeholder="Текущий пароль (если сессия старше 1 часа)" value={passwordData.currentPassword} onChange={(e) => setPasswordData(p => ({...p, currentPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                                                        <input type="password" placeholder="Текущий пароль (если сессия старше 1 часа)" value={passwordData.currentPassword} onChange={(e) => setPasswordData(p => ({...p, currentPassword: e.target.value}))} className="w-full p-2 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600" />
                                                     )}
-                                                    <input type="password" placeholder={currentUser?.hasPassword ? "Новый пароль" : "Задайте пароль для входа"} value={passwordData.newPassword} onChange={(e) => setPasswordData(p => ({...p, newPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
-                                                    <input type="password" placeholder="Подтвердите новый пароль" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
+                                                    <input type="password" placeholder={currentUser?.hasPassword ? "Новый пароль" : "Задайте пароль для входа"} value={passwordData.newPassword} onChange={(e) => setPasswordData(p => ({...p, newPassword: e.target.value}))} className="w-full p-2 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600" required />
+                                                    <input type="password" placeholder="Подтвердите новый пароль" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} className="w-full p-2 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600" required />
                                                 </>
                                             )}
                                             <div className="flex justify-end pt-2">
@@ -505,6 +503,7 @@ return (
                                                 </button>
                                             </div>
                                         </form>
+                                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                     </div>
                                     
                                     <hr className="my-8 border-slate-200 dark:border-slate-700" />
@@ -518,7 +517,7 @@ return (
                                                     const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
                                                     const primaryIp = session.ipAddress && typeof session.ipAddress === 'string' ? session.ipAddress.split(',')[0].trim() : 'Неизвестный IP';
                                                     return (
-                                                        <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3">
+                                                        <div key={session._id} className="p-3 bg-white dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3 border border-slate-200 dark:border-slate-700">
                                                             <div className="flex items-start space-x-3 min-w-0">
                                                                 <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 mt-1">{getDeviceIcon(session.device)}</div>
                                                                 <div className="min-w-0">
