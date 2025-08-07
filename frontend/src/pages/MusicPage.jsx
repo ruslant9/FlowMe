@@ -5,7 +5,7 @@ import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import { Loader2, Music, Search, Clock, Disc, MicVocal, ListMusic, ChevronRight, Waves } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // FIXED: AnimatePresence was added here.
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 
@@ -147,6 +147,7 @@ const MusicListView = ({ tracks, loading, onPlayTrack, onToggleSave, myMusicTrac
 };
 
 const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore }) => {
+    const navigate = useNavigate();
     const { tracks, artists, albums, playlists } = results;
     const hasResults = tracks?.length > 0 || artists?.length > 0 || albums?.length > 0 || playlists?.length > 0;
     

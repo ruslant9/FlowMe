@@ -282,7 +282,8 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
         }
         if (conversation.isMarkedAsUnread) {
              return (
-                <span className={`w-2 h-2 rounded-full ${conversation.isMuted ? 'bg-slate-400 dark:bg-slate-600' : 'bg-blue-500'}`}></span>
+                // --- ИСПРАВЛЕНИЕ: Увеличена точка непрочитанного сообщения ---
+                <span className={`w-2.5 h-2.5 rounded-full ${conversation.isMuted ? 'bg-slate-400 dark:bg-slate-600' : 'bg-blue-500'}`}></span>
             );
         }
         if (hasUnreadReaction) {
@@ -344,11 +345,9 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                             {conversation.isMuted && <BellOff size={14} className="text-slate-400 dark:text-slate-500 ml-2 flex-shrink-0" />}
                         </p>
                     </div>
+                    {/* --- ИСПРАВЛЕНИЕ: Удален UnreadIndicator из этого блока --- */}
                     <div className="flex justify-between items-end mt-0.5">
                         {renderLastMessage()}
-                        <div className="flex items-center justify-end flex-shrink-0 ml-2 space-x-2">
-                            <UnreadIndicator />
-                        </div>
                     </div>
                 </div>
 
@@ -400,7 +399,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                                 </div>
                             )}
                         >
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                             <TippyWrapper className="ml-1">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setIsMenuVisible(v => !v); }}
@@ -409,11 +407,12 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                                     <MoreHorizontal size={16}/>
                                 </button>
                             </TippyWrapper>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </Tippy>
                     </div>
                     
-                    <div className="flex items-center justify-end">
+                    {/* --- ИСПРАВЛЕНИЕ: UnreadIndicator и Pin теперь здесь --- */}
+                    <div className="flex items-center justify-end space-x-2 min-h-[14px]">
+                        <UnreadIndicator />
                         {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
                     </div>
                 </div>
