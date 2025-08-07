@@ -202,14 +202,12 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
         const toastId = toast.loading('Сохранение...');
         try {
             const token = localStorage.getItem('token');
-            // Отправляем только те поля, которые мы редактируем
             const payload = {
                 avatarBorder: draftData.avatarBorder,
                 usernameEmoji: draftData.usernameEmoji,
             };
             await axios.put(`${API_URL}/api/user/profile`, { premiumCustomization: payload }, { headers: { Authorization: `Bearer ${token}` } });
             
-            // Отдельный запрос для активного акцента
             const accentId = (typeof draftData.activeCardAccent === 'object' && draftData.activeCardAccent !== null) ? draftData.activeCardAccent._id : draftData.activeCardAccent;
             await axios.put(`${API_URL}/api/user/premium-accents/set-active`, { accent: accentId }, { headers: { Authorization: `Bearer ${token}` } });
 
@@ -218,7 +216,7 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
             onClose();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Ошибка сохранения.', { id: toastId });
-            refetchUser(); // Все равно обновляем, чтобы вернуть к исходному состоянию
+            refetchUser();
         } finally {
             setLoading(false);
         }
@@ -274,9 +272,19 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
             {isOpen && (
                 <>
                     <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end p-4 md:items-center justify-center z-[100]">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={(e) => e.stopPropagation()} className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
-                            <div className="flex justify-between items-center mb-4">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены классы для адаптивного позиционирования --- */}
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] md:p-4"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, y: "100%" }} 
+                            animate={{ scale: 1, y: 0 }} 
+                            exit={{ scale: 0.95, y: "100%" }} 
+                            onClick={(e) => e.stopPropagation()} 
+                            className="ios-glass-final w-full max-w-2xl p-4 md:p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh] md:max-h-[85vh]"
+                        >
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                            <div className="flex justify-between items-center mb-4 flex-shrink-0">
                                 <div className="flex items-center space-x-2">
                                     {view === 'editor' && <button onClick={() => setView('main')} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ArrowLeft /></button>}
                                     <Sparkles size={24} className="premium-icon-glow text-yellow-400" />
@@ -296,61 +304,65 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                             >
                             {view === 'main' ? (
                                 <div className="flex-1 overflow-y-auto pr-2 -mr-4 space-y-6">
+                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Адаптивная сетка для основных блоков --- */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="flex flex-col">
-                                        <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-2 block">Рамка аватара</label>
-                                        <div className="grid grid-cols-3 gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                                            {avatarBorders.map((border) => (
-                                                <AvatarBorderPreview
-                                                    key={border.id}
-                                                    border={border}
-                                                    isSelected={draftData.avatarBorder?.id === border.id}
-                                                    onClick={() => handleDraftChange('avatarBorder', border)}
-                                                    user={user}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-2 block">Эмодзи у ника</label>
-                                        <div className="flex-1 flex flex-col min-h-0">
-                                            <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto">
-                                                {emojiPacks.map(pack => (
-                                                    <button key={pack.name} onClick={() => setActivePack(pack.name)} className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors flex-shrink-0 ${activePack === pack.name ? 'bg-blue-600 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
-                                                        {pack.name}
-                                                    </button>
+                                        <div className="flex flex-col">
+                                            <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-2 block">Рамка аватара</label>
+                                            <div className="grid grid-cols-3 gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                                {avatarBorders.map((border) => (
+                                                    <AvatarBorderPreview
+                                                        key={border.id}
+                                                        border={border}
+                                                        isSelected={draftData.avatarBorder?.id === border.id}
+                                                        onClick={() => handleDraftChange('avatarBorder', border)}
+                                                        user={user}
+                                                    />
                                                 ))}
                                             </div>
-                                            <div className="flex-1 overflow-y-auto grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg min-h-[120px]">
-                                                {activeEmojis.map((emoji) => {
-                                                    const isSelected = draftData.usernameEmoji?.id === emoji.id;
-                                                    return (
-                                                        <button
-                                                            key={emoji.id}
-                                                            type="button"
-                                                            onMouseDown={() => handleMouseDown(emoji)}
-                                                            onMouseUp={() => handleMouseUp(emoji)}
-                                                            onMouseLeave={handleMouseLeave}
-                                                            onTouchStart={() => handleMouseDown(emoji)}
-                                                            onTouchEnd={() => handleMouseUp(emoji)}
-                                                            className={`flex flex-col items-center justify-center p-2 rounded-lg aspect-square transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-                                                            title={emoji.name}
-                                                        >
-                                                            {emoji.url ? (
-                                                                <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" />
-                                                            ) : (
-                                                                <span className="text-xs">Нет</span>
-                                                            )}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-2 block">Эмодзи у ника</label>
+                                            <div className="flex-1 flex flex-col min-h-0">
+                                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Горизонтальный скролл для табов --- */}
+                                                <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto no-scrollbar">
+                                                    {emojiPacks.map(pack => (
+                                                        <button key={pack.name} onClick={() => setActivePack(pack.name)} className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors flex-shrink-0 ${activePack === pack.name ? 'bg-blue-600 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+                                                            {pack.name}
                                                         </button>
-                                                    );
-                                                })}
+                                                    ))}
+                                                </div>
+                                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                                                <div className="flex-1 overflow-y-auto grid grid-cols-[repeat(auto-fill,minmax(4rem,1fr))] gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg min-h-[120px]">
+                                                    {activeEmojis.map((emoji) => {
+                                                        const isSelected = draftData.usernameEmoji?.id === emoji.id;
+                                                        return (
+                                                            <button
+                                                                key={emoji.id}
+                                                                type="button"
+                                                                onMouseDown={() => handleMouseDown(emoji)}
+                                                                onMouseUp={() => handleMouseUp(emoji)}
+                                                                onMouseLeave={handleMouseLeave}
+                                                                onTouchStart={() => handleMouseDown(emoji)}
+                                                                onTouchEnd={() => handleMouseUp(emoji)}
+                                                                className={`flex flex-col items-center justify-center p-2 rounded-lg aspect-square transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                                                                title={emoji.name}
+                                                            >
+                                                                {emoji.url ? (
+                                                                    <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" />
+                                                                ) : (
+                                                                    <span className="text-xs">Нет</span>
+                                                                )}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2">
+                                                    Удерживайте для предпросмотра
+                                                </p>
                                             </div>
-                                            <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2">
-                                                Удерживайте эмодзи для предпросмотра
-                                            </p>
                                         </div>
                                     </div>
-                                </div>
+                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     <div>
                                         <div className="flex justify-between items-center mb-2">
                                             <label className="text-sm font-medium text-slate-600 dark:text-white/70 block">Акцент карточек</label>
@@ -455,7 +467,7 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                             )}
                             </motion.div>
                             </AnimatePresence>
-                            <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 dark:border-white/10">
+                            <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 dark:border-white/10 flex-shrink-0">
                                 <button onClick={handleResetAll} className="flex items-center space-x-2 px-4 py-2 text-sm text-slate-500 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors">
                                     <RotateCcw size={16}/><span>Сбросить все</span>
                                 </button>

@@ -183,15 +183,13 @@ const CommunitiesPage = () => {
         );
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем кнопку "Создать" в массив навигации ---
     const navItems = [
-        { key: 'my', label: 'Мои', icon: Users, onClick: () => handleTabSwitch('my'), count: myCommunities.length },
-        { key: 'created', label: 'Созданные', icon: Building, onClick: () => handleTabSwitch('created'), count: 0 },
+        { key: 'my', label: 'Мои сообщества', icon: Users, onClick: () => handleTabSwitch('my'), count: myCommunities.length },
+        { key: 'created', label: 'Созданные', icon: Building, onClick: () => handleTabSwitch('created'), count: createdCommunities.length },
         { key: 'recommended', label: 'Рекомендации', icon: Globe, onClick: () => handleTabSwitch('recommended'), count: 0 },
         { key: 'pendingSent', label: 'Отправленные', icon: Clock, onClick: () => handleTabSwitch('pendingSent'), count: pendingSentRequests.length },
         { key: 'create', label: 'Создать', icon: PlusCircle, onClick: () => setIsCreateModalOpen(true) }
     ];
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return (
         <PageWrapper>
@@ -207,7 +205,6 @@ const CommunitiesPage = () => {
                 <div className="w-full max-w-4xl mx-auto">
                     <div className="flex items-center justify-between mb-6">
                        <h1 className="text-2xl sm:text-3xl font-bold">Сообщества</h1>
-                        {/* --- ИСПРАВЛЕНИЕ: Кнопка теперь видна только на десктопе --- */}
                         <div className="hidden md:block">
                             <button 
                                 onClick={() => setIsCreateModalOpen(true)}
@@ -234,7 +231,6 @@ const CommunitiesPage = () => {
                     </div>
                     
                     <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
-                        {/* --- ИСПРАВЛЕНИЕ: Фильтруем массив, чтобы убрать кнопку "Создать" из десктопных табов --- */}
                         {navItems.filter(item => item.key !== 'create').map(item => (
                             <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
                                 <item.icon size={16} /> <span>{item.label}</span>
@@ -242,14 +238,15 @@ const CommunitiesPage = () => {
                         ))}
                     </div>
 
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Устанавливаем visibleCount = 4 --- */}
                     <div className="md:hidden mb-6">
-                        {/* --- ИСПРАВЛЕНИЕ: Увеличиваем `visibleCount` до 5, чтобы вместить новую кнопку --- */}
                         <ResponsiveNav 
                             items={navItems}
-                            visibleCount={5}
+                            visibleCount={4} 
                             activeKey={activeTab}
                         />
                     </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                     <div>
                         {activeTab === 'my' && renderCommunityList(myCommunities)}

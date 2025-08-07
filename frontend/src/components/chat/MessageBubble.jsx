@@ -53,14 +53,17 @@ TippyWrapper.displayName = 'TippyWrapper';
 
 const getEmojiOnlyCount = (text) => {
     if (!text) return 0;
+    // Регулярное выражение для поиска большинства современных эмодзи
     const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
     
+    // Удаляем все эмодзи и пробелы, чтобы проверить, остался ли какой-то текст
     const nonEmojiText = text.replace(emojiRegex, '').replace(/\s/g, '');
     
     if (nonEmojiText.length > 0) {
-        return 0; 
+        return 0; // Сообщение содержит не только эмодзи
     }
 
+    // Считаем количество найденных эмодзи
     const matches = text.match(emojiRegex);
     return matches ? matches.length : 0;
 };
@@ -310,10 +313,12 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </div>
 
             <div
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Удаляем условие, которое делало фон прозрачным ---
                 className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
                     ${isOwnMessage ? `bg-chat-bubble-own text-chat-bubble-own ${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `bg-chat-bubble-other text-chat-bubble-other ${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
                     ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : ''}
                 `}
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             >
                 
                 <div className="pt-2"> 

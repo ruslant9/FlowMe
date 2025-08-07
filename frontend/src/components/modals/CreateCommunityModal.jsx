@@ -175,23 +175,23 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                         onClick={handleCloseModal}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-4 pt-20"
                     >
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                         <motion.div
                             initial={{ y: "100%", opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: "100%", opacity: 0 }}
                             transition={{ type: "spring", stiffness: 400, damping: 40 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="ios-glass-final w-full max-w-2xl bg-slate-100 dark:bg-slate-800 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
+                            className="ios-glass-final w-full max-w-2xl bg-slate-100 dark:bg-slate-800 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                         >
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                                 <h2 className="text-xl font-bold">Создать сообщество</h2>
                                 <button onClick={handleCloseModal} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"><X /></button>
                             </div>
                             
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
                                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <div>
                                     <label htmlFor="name" className="block text-sm font-semibold mb-1">Название сообщества</label>
                                     <input type="text" id="name" name="name" value={communityData.name} onChange={handleChange} className="w-full p-2 bg-white dark:bg-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Например, 'Любители кошек'" required />
@@ -323,7 +323,6 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                 </div>
                                 </div>
                                 
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Футер с кнопкой вынесен из прокручиваемой области --- */}
                                 <div className="flex justify-end mt-auto p-4 border-t border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                                     <button
                                         type="submit"
@@ -334,7 +333,6 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                         {loading ? 'Создание...' : 'Создать сообщество'}
                                     </button>
                                 </div>
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                             </form>
                         </motion.div>
                     </motion.div>

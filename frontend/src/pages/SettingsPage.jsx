@@ -34,6 +34,7 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
     </button>
 );
 
+// ... (Остальные хелперы и импорты остаются без изменений) ...
 const privacyOptions = [
     { id: 'everyone', name: 'Все' },
     { id: 'friends', name: 'Только друзья' },
@@ -68,7 +69,6 @@ const getDeviceIcon = (deviceString) => {
 
 
 const ToggleControl = ({ label, checked, onChange, description }) => (
-    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
     <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-transparent">
         <div>
             <p className="font-semibold text-slate-700 dark:text-white">{label}</p>
@@ -85,7 +85,6 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
     const [buttonRef, position] = useDynamicPosition();
 
     return (
-        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
         <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-transparent flex-wrap gap-4">
             <div className="flex items-center space-x-3">
                 <Icon size={20} className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
@@ -253,7 +252,6 @@ const renderContent = () => {
 };
 
 return (
-    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
     <div className="p-4 bg-white dark:bg-slate-800 rounded-lg flex flex-col items-start gap-3 border border-slate-200 dark:border-transparent">
         <div>
             <p className="font-semibold text-slate-700 dark:text-white">Push-уведомления</p>
@@ -431,13 +429,17 @@ return (
                     ))}
                 </div>
                 
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Адаптивная навигация --- */}
                 <div className="md:hidden mb-6">
-                    <ResponsiveNav 
-                        items={navItems}
-                        visibleCount={4}
-                        activeKey={activeTab}
-                    />
+                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+                        <ResponsiveNav 
+                            items={navItems}
+                            visibleCount={4}
+                            activeKey={activeTab}
+                        />
+                    </div>
                 </div>
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -449,8 +451,9 @@ return (
                     >
                         {activeTab === 'privacy' && (
                             <section>
-                                <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Настройки приватности</h2>
-                                <p className="text-sm text-slate-500 dark:text-white/60 mb-6">Управляйте тем, кто может видеть вашу информацию и взаимодействовать с вами.</p>
+                                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы `hidden md:block` --- */}
+                                <h2 className="hidden md:block text-2xl font-bold mb-2 text-slate-900 dark:text-white">Настройки приватности</h2>
+                                <p className="hidden md:block text-sm text-slate-500 dark:text-white/60 mb-6">Управляйте тем, кто может видеть вашу информацию и взаимодействовать с вами.</p>
                                 {loadingPrivacySettings || !privacySettings ? <div className="flex justify-center"><Loader2 className="animate-spin"/></div> : (
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                         <PrivacySettingControl label="Кто видит дату рождения" icon={Calendar} value={privacySettings.viewDOB} onChange={(v) => handlePrivacyChange('viewDOB', v)} options={privacyOptions}>{privacySettings.viewDOB !== 'private' && (<label className="flex items-center space-x-2 text-sm text-slate-600 dark:text-white/70"><input type="checkbox" checked={privacySettings.hideDOBYear} onChange={(e) => handleToggleChange('hideDOBYear', e.target.checked)} className="form-checkbox h-4 w-4 rounded" /><span>Скрыть год</span></label>)}</PrivacySettingControl>
@@ -478,12 +481,12 @@ return (
 
                         {activeTab === 'security' && (
                             <section>
-                                <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Безопасность и вход</h2>
-                                <p className="text-sm text-slate-500 dark:text-white/60 mb-6">Управление паролем и активными сессиями.</p>
+                                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы `hidden md:block` --- */}
+                                <h2 className="hidden md:block text-2xl font-bold mb-2 text-slate-900 dark:text-white">Безопасность и вход</h2>
+                                <p className="hidden md:block text-sm text-slate-500 dark:text-white/60 mb-6">Управление паролем и активными сессиями.</p>
                                 <div className="space-y-8">
                                     <div>
                                         <h3 className="text-lg font-semibold mb-4">Смена пароля</h3>
-                                        {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
                                         <form onSubmit={handlePasswordChange} className="space-y-3">
                                             {verificationRequired ? (
                                                 <>
@@ -518,7 +521,6 @@ return (
                                                     const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
                                                     const primaryIp = session.ipAddress && typeof session.ipAddress === 'string' ? session.ipAddress.split(',')[0].trim() : 'Неизвестный IP';
                                                     return (
-                                                        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
                                                         <div key={session._id} className="p-3 bg-white dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3 border border-slate-200 dark:border-transparent">
                                                             <div className="flex items-start space-x-3 min-w-0">
                                                                 <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 mt-1">{getDeviceIcon(session.device)}</div>
@@ -547,8 +549,9 @@ return (
 
                         {activeTab === 'notifications' && (
                              <section>
-                                <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Уведомления</h2>
-                                <p className="text-sm text-slate-500 dark:text-white/60 mb-6">Настройте, как и когда вы хотите получать уведомления.</p>
+                                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы `hidden md:block` --- */}
+                                <h2 className="hidden md:block text-2xl font-bold mb-2 text-slate-900 dark:text-white">Уведомления</h2>
+                                <p className="hidden md:block text-sm text-slate-500 dark:text-white/60 mb-6">Настройте, как и когда вы хотите получать уведомления.</p>
                                 <div className="space-y-4">
                                     <NotificationToggle />
                                     {privacySettings && (
@@ -565,8 +568,9 @@ return (
                         
                         {activeTab === 'danger' && (
                             <section>
-                                <h2 className="text-2xl font-bold mb-2 text-red-500 text-center md:text-left">Опасная зона</h2>
-                                <p className="text-sm text-slate-500 dark:text-white/60 mb-6 text-center md:text-left">Действия в этом разделе необратимы. Пожалуйста, будьте внимательны.</p>
+                                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы `hidden md:block` --- */}
+                                <h2 className="hidden md:block text-2xl font-bold mb-2 text-red-500 text-center md:text-left">Опасная зона</h2>
+                                <p className="hidden md:block text-sm text-slate-500 dark:text-white/60 mb-6 text-center md:text-left">Действия в этом разделе необратимы. Пожалуйста, будьте внимательны.</p>
                                 <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg flex flex-col md:flex-row items-center md:items-center justify-center md:justify-between gap-4 text-center md:text-left">
                                     <div>
                                         <h3 className="font-bold text-red-700 dark:text-red-300">Удаление аккаунта</h3>
