@@ -277,10 +277,8 @@ const TabButton = ({ children, active, onClick, count }) => (
 const FriendsPage = () => {
     useTitle('Друзья');
     const location = useLocation();
-    const [friendsSubTab, setFriendsSubTab] = useState('important');
-    const [importantFriends, setImportantFriends] = useState([]);
     const [allFriends, setAllFriends] = useState([]);
-    const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'descending' });
+    const [sortConfig, setSortConfig] = useState({ key: 'fullName', direction: 'ascending' });
     const [activeTab, setActiveTab] = useState(location.state?.defaultTab || 'friends');
     const [incoming, setIncoming] = useState([]);
     const [outgoing, setOutgoing] = useState([]);
@@ -482,7 +480,6 @@ const FriendsPage = () => {
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/user/friends`, { headers: { Authorization: `Bearer ${token}` } });
-            setImportantFriends(res.data.importantFriends || []);
             setAllFriends(res.data.allFriends || []);
             setIncoming(res.data.incoming || []);
             setOutgoing(res.data.outgoing || []);
@@ -532,6 +529,7 @@ const FriendsPage = () => {
     const handleTabClick = (tab) => { setActiveTab(tab); setSearchTerm(''); setSearchResults([]); setIsDropdownVisible(false); };
     const handleSearchInputFocus = () => { setIsDropdownVisible(true); };
     const handleSearchHistoryClick = (historyTerm) => { setSearchTerm(historyTerm); searchInputRef.current?.focus(); };
+    const clearSearchHistory = () => { setSearchHistory([]); };
     const sortedAllFriends = useMemo(() => {
         if (!allFriends) return [];
         const sorted = [...allFriends];
@@ -548,6 +546,7 @@ const FriendsPage = () => {
                 const dateB = b.friendshipDate ? new Date(b.friendshipDate).getTime() : 0;
                 return sortConfig.direction === 'ascending' ? dateA - dateB : dateB - dateA;
             }
+            // Fallback to score if it exists, otherwise use name as default
             return (b.score || 0) - (a.score || 0);
         });
         return sorted;
@@ -583,23 +582,12 @@ const FriendsPage = () => {
         let list, status, emptyMessage;
 
         if (activeTab === 'friends') {
-            const listToRender = friendsSubTab === 'important' ? importantFriends : sortedAllFriends;
-            const emptyMessageText = friendsSubTab === 'important'
-                ? 'Здесь будут ваши самые важные друзья. Чаще общайтесь, лайкайте и комментируйте!'
-                : 'У вас пока нет друзей. Найдите новых знакомых в поиске!';
+            const listToRender = sortedAllFriends;
+            const emptyMessageText = 'У вас пока нет друзей. Найдите новых знакомых в поиске!';
 
             return (
                 <div>
-                    <div className="flex items-center space-x-2 mb-4 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg">
-                        <button onClick={() => setFriendsSubTab('important')} className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors ${friendsSubTab === 'important' ? 'bg-white dark:bg-slate-700 shadow' : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50'}`}>
-                            Важные
-                        </button>
-                        <button onClick={() => setFriendsSubTab('all')} className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors ${friendsSubTab === 'all' ? 'bg-white dark:bg-slate-700 shadow' : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50'}`}>
-                            Все друзья ({allFriends.length})
-                        </button>
-                    </div>
-
-                    {friendsSubTab === 'all' && allFriends.length > 0 && (
+                    {listToRender.length > 0 && (
                         <div className="flex justify-end items-center space-x-4 mb-2 text-sm">
                             <button onClick={() => requestSort('fullName')} className="flex items-center space-x-1 text-slate-500 hover:text-slate-800 dark:hover:text-white">
                                 <span>Сортировать по имени</span>

@@ -78,7 +78,7 @@ const EmojiPickerPopover = ({ isOpen, targetRef, onEmojiClick, onClose }) => {
                                     }}
                                     theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
                                     width={isMobile ? '100%' : 350}
-                                    height={isMobile ? 350 : 450}
+                                    height={isMobile ? 450 : 450}
                                     searchPlaceholder="Поиск"
                                     previewConfig={{ showPreview: !isMobile }}
                                     autoFocusSearch={false}

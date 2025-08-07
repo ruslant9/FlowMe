@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
-const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack, isHit }) => {
+const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack }) => {
     
     // Используем хук для получения кешированного URL
     const { finalSrc, loading: imageLoading } = useCachedImage(track.albumArtUrl);
@@ -31,32 +31,28 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         return '';
     };
 
-    const getReleaseBadge = (releaseDate) => { // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const getReleaseBadge = (releaseDate) => {
         if (!releaseDate) return null;
 
         const now = new Date();
+        now.setHours(0, 0, 0, 0); // Сбрасываем время для корректного сравнения дат
+
         const release = new Date(releaseDate);
+        release.setHours(0, 0, 0, 0);
 
-        // Проверяем, валидна ли дата релиза
-        if (isNaN(release.getTime())) return null;
-
-        // Нормализуем даты до полуночи по UTC, чтобы игнорировать время и часовые пояса
-        const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-        const utcRelease = Date.UTC(release.getUTCFullYear(), release.getUTCMonth(), release.getUTCDate());
-
-        const diffDays = (utcNow - utcRelease) / (1000 * 60 * 60 * 24);
-
-        if (diffDays >= 0 && diffDays <= 14) {
-            return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
+        if (release.getFullYear() > now.getFullYear() || (release.getFullYear() === now.getFullYear() && release.getMonth() >= now.getMonth())) {
+            return { text: 'Свежее', color: 'bg-lime-400 text-lime-900' };
         }
 
-        if (diffDays > 14 && diffDays <= 60) {
+        // "Недавнее": если релиз был в прошлом месяце
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        if (release.getFullYear() === lastMonth.getFullYear() && release.getMonth() === lastMonth.getMonth()) {
             return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
         }
-        
-        return null;
-    }; // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
+        return null;
+    };
 
     const handlePlayClick = (e) => {
         e.stopPropagation();
@@ -67,8 +63,7 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         }
     };
 
-    const dateBadge = getReleaseBadge(track.releaseDate);
-    const finalBadge = isHit ? { text: 'Хит', color: 'bg-red-500 text-white' } : dateBadge;
+    const badge = getReleaseBadge(track.releaseDate);
 
     return (
         <motion.div
@@ -86,14 +81,14 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
             
             <AnimatePresence>
-                {finalBadge && (
+                {badge && (
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold z-10 ${finalBadge.color}`}
+                        className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold z-10 ${badge.color}`}
                     >
-                        {finalBadge.text}
+                        {badge.text}
                     </motion.div>
                 )}
             </AnimatePresence>

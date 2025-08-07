@@ -9,7 +9,7 @@ import Avatar from './Avatar';
 import { motion } from 'framer-motion';
 import Tippy from '@tippyjs/react/headless'; 
 import NotificationSendersList from './NotificationSendersList'; 
-import { useCachedImage } from '../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../hooks/useCachedImage';
 
 // Компонент для кешированного изображения
 const CachedImage = ({ src }) => {
@@ -239,10 +239,10 @@ const NotificationItem = ({ notification, onDelete, onAction }) => {
                         </div>
                     </div>
                     <div className="flex-1 min-w-0"> 
-                        <p className="text-sm"> 
+                        <p className="text-sm md:text-base"> 
                             {renderText()}
                         </p>
-                        <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
+                        <p className="text-xs md:text-sm text-slate-500 dark:text-white/60 mt-1">
                             {formatDistanceToNow(new Date(notification.updatedAt), { addSuffix: true, locale: customRuLocale })}
                         </p>
                         {notification.type === 'community_invite' && (

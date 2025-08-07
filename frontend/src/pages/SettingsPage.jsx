@@ -19,7 +19,6 @@ import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Компонент для кнопок вкладок ---
 const TabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
         onClick={onClick}
@@ -33,7 +32,6 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
         <span>{children}</span>
     </button>
 );
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 const privacyOptions = [
     { id: 'everyone', name: 'Все' },
@@ -278,9 +276,7 @@ const SettingsPage = () => {
     const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
     const [verificationRequired, setVerificationRequired] = useState(false);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Состояние для активной вкладки ---
     const [activeTab, setActiveTab] = useState('privacy');
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
     const currentSessionId = useMemo(() => {
@@ -412,10 +408,9 @@ const handlePasswordChange = async (e) => {
 return (
     <PageWrapper>
         <main className="flex-1 p-4 md:p-8">
-            <div className="ios-glass-final rounded-3xl p-6 w-full max-w-7xl mx-auto">
+            <div className="w-full max-w-7xl mx-auto">
                 <h1 className="text-3xl font-bold mb-6 text-center">Настройки</h1>
 
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Новая навигация по вкладкам --- */}
                 <div className="flex border-b border-slate-300 dark:border-slate-700 mb-8 overflow-x-auto no-scrollbar">
                     <TabButton active={activeTab === 'privacy'} onClick={() => setActiveTab('privacy')} icon={Lock}>
                         Приватность
@@ -430,10 +425,7 @@ return (
                         Опасная зона
                     </TabButton>
                 </div>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
-
-
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Контент отображается в зависимости от активной вкладки --- */}
+                
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
@@ -462,6 +454,7 @@ return (
                                         <PrivacySettingControl label="Кто может отправлять запросы в друзья" icon={UserPlus} value={privacySettings.sendFriendRequest} onChange={(v) => handlePrivacyChange('sendFriendRequest', v)} options={friendRequestOptions} />
                                         <PrivacySettingControl label="Кто может приглашать в сообщества" icon={Briefcase} value={privacySettings.inviteToCommunity} onChange={(v) => handlePrivacyChange('inviteToCommunity', v)} options={communityInviteOptions} />
                                         <PrivacySettingControl label="Кто видит мою музыку" icon={Music} value={privacySettings.viewMusic} onChange={(v) => handlePrivacyChange('viewMusic', v)} options={privacyOptions} />
+                                        
                                         <div className="flex justify-end pt-4">
                                             <button onClick={savePrivacySettings} disabled={!haveSettingsChanged()} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50">Сохранить изменения</button>
                                         </div>
@@ -569,7 +562,6 @@ return (
                         )}
                     </motion.div>
                 </AnimatePresence>
-                 {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
             </div>
         </main>
     </PageWrapper>
