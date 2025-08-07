@@ -347,6 +347,11 @@ const FriendsPage = () => {
     const [searchHistory, setSearchHistory] = useState([]);
     const [interestsExpanded, setInterestsExpanded] = useState(false);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Объявляем ref здесь ---
+    const searchInputRef = useRef(null);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+
     useEffect(() => {
         const fetchCountries = async () => {
             try {
@@ -519,15 +524,7 @@ const FriendsPage = () => {
         try { const storedHistory = localStorage.getItem('searchHistory'); if (storedHistory) { setSearchHistory(JSON.parse(storedHistory)); } } catch (error) { console.error("Failed to load search history:", error); setSearchHistory([]); }
     }, []);
     useEffect(() => { localStorage.setItem('searchHistory', JSON.stringify(searchHistory)); }, [searchHistory]);
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            // No longer needed to manage dropdown visibility, can be removed if not used elsewhere
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
+
     useEffect(() => { if (location.state?.defaultTab) { navigate(location.pathname, { replace: true }); } }, [location.state, navigate, location.pathname]);
     const fetchData = useCallback(async (showLoader = true) => {
         if (showLoader) setLoading(true);
@@ -581,6 +578,7 @@ const FriendsPage = () => {
         if (currentAction.confirm) { showConfirmation({ title: currentAction.confirm.title, message: currentAction.confirm.message, onConfirm: performApiCall, }); } else { performApiCall(); }
     };
     const handleTabClick = (tab) => { setActiveTab(tab); setSearchTerm(''); setSearchResults([]); };
+    const handleSearchHistoryClick = (historyTerm) => { setSearchTerm(historyTerm); searchInputRef.current?.focus(); };
     const clearSearchHistory = () => { setSearchHistory([]); };
     const sortedAllFriends = useMemo(() => {
         if (!allFriends) return [];
@@ -617,12 +615,13 @@ const FriendsPage = () => {
         setSortConfig({ key, direction });
     };
     
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Упрощаем эту функцию ---
     const renderSearchResults = () => {
         if (isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Поиск...</div>;
         if (!isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Ничего не найдено.</div>;
         
         return (
-            <div>
+            <div className="ios-glass-final rounded-3xl p-2 md:p-4">
                 <p className="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-white/50">
                     Результаты поиска: {searchResults.length}
                 </p>
@@ -632,6 +631,8 @@ const FriendsPage = () => {
             </div>
         );
     };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const renderTabContent = () => {
         if (loading) return (<div className="space-y-2">{[...Array(3)].map((_, i) => <UserCardSkeleton key={i} />)}</div>);
@@ -699,6 +700,7 @@ const FriendsPage = () => {
                                 <Filter size={20} />
                             </button>
                         </div>
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем ref из этого div --- */}
                         <div className="relative">
                             <div className="flex items-center space-x-2">
                                 <div className="relative flex-grow">
@@ -726,8 +728,8 @@ const FriendsPage = () => {
                             {renderFilters()}
                         </div>
                     </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Упрощенная логика рендеринга --- */}
                     {hasActiveSearch ? (
                         <div className="mt-6 md:mt-0">
                             {renderSearchResults()}
@@ -761,7 +763,6 @@ const FriendsPage = () => {
                             </div>
                         </>
                     )}
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             </main>
         </PageWrapper>
