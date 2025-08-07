@@ -307,8 +307,10 @@ const WallpaperModal = ({ isOpen, onClose, conversationId, currentWallpaper }) =
                     <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                         transition={{ type: 'spring', stiffness: 400, damping: 40 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="ios-glass-final w-full max-w-4xl p-4 md:p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[85vh] relative">
+                        className="ios-glass-final w-full max-w-4xl p-4 md:p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[80vh] relative"
+                    >
                         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full md:hidden"></div>
+
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg md:text-xl font-bold">Выбор обоев для чата</h2>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10">
@@ -345,7 +347,7 @@ const WallpaperModal = ({ isOpen, onClose, conversationId, currentWallpaper }) =
                             </button>
                         </div>
 
-                         <div className="flex-1 overflow-y-auto px-2">
+                         <div className="flex-1 overflow-y-auto px-2 min-h-0">
                             {activeTab === 'my' && (
                                 loadingMyWallpapers ? <div className="flex justify-center py-10"><Loader2 className="animate-spin" /></div> :
                                 myWallpapers.length === 0 ? <p className="text-center py-10 text-slate-500">У вас нет сохраненных обоев.</p> :

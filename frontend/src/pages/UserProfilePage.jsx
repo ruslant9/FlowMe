@@ -25,11 +25,10 @@ import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 import { UserDataCache } from '../utils/UserDataCacheService'; 
 import ProfileField from '../components/ProfileField'; 
 import PageWrapper from '../components/PageWrapper';
-import AnimatedAccent from '../components/AnimatedAccent'; // --- ИМПОРТ
+import AnimatedAccent from '../components/AnimatedAccent';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ... (остальной код компонента, который был выше)
 const customRuLocaleForDistance = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -132,7 +131,6 @@ const UserInteractionButtons = ({ status, onAction, user, isProcessing, onWriteM
 
 
 const UserProfilePage = () => {
-    // ... (весь код, который был до return)
     const { userId } = useParams();
     const navigate = useNavigate();
     const [profileData, setProfileData] = useState(null);
@@ -471,7 +469,9 @@ const UserProfilePage = () => {
             <main className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto p-4 md:p-8">
                     {/* HERO SECTION */}
-                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8 bg-slate-200 dark:bg-transparent">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8 bg-white dark:bg-slate-800">
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         {userAccent && <AnimatedAccent backgroundUrl={userAccent.backgroundUrl || userAccent} emojis={userAccent.emojis || []} />}
                         <div className="relative z-10 flex-shrink-0 group">
                             <Avatar
@@ -484,7 +484,6 @@ const UserProfilePage = () => {
                             />
                         </div>
                         <div className="relative z-10">
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены адаптивные цвета текста --- */}
                             <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center md:justify-start" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                                 {user.fullName || user.username}
                                 {user.premiumCustomization?.usernameEmoji?.url && (
@@ -531,7 +530,6 @@ const UserProfilePage = () => {
                                     onInvite={() => setIsInviteModalOpen(true)}
                                 />
                             </div>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
                     </div>
 

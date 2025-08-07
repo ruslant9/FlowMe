@@ -5,7 +5,7 @@ import axios from 'axios';
 import useTitle from '../hooks/useTitle';
 import Avatar from '../components/Avatar';
 import { Search, UserPlus, UserCheck, UserX, Clock, Loader2, ShieldOff, History, Trash2 as TrashIcon, MessageSquare, Filter, ChevronDown, Check, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-react';
-import toast from 'react-hot-toast'; 
+import toast from 'react-hot-toast';
 import { useModal } from '../hooks/useModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -13,8 +13,8 @@ import { useWebSocket } from '../context/WebSocketContext';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
-import PageWrapper from '../components/PageWrapper'; 
-import ResponsiveNav from '../components/ResponsiveNav'; 
+import PageWrapper from '../components/PageWrapper';
+import ResponsiveNav from '../components/ResponsiveNav';
 import { useUser } from '../hooks/useUser';
 import MorePanel from '../components/MorePanel';
 
@@ -28,6 +28,9 @@ const availableInterests = [
     "Путешествия", "Кулинария", "Фитнес", "Психология", "Философия", "Юмор", "Природа", "Животные", "Садоводство", "DIY", "Волонтерство", "Мода", "Автомобили", "История",
     "Футбол", "Баскетбол", "Хоккей", "Теннис", "Автоспорт", "Киберспорт", "Йога", "Бег", "Плавание"
 ];
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новая константа для лимита интересов на мобильных ---
+const MOBILE_INTEREST_LIMIT = 12;
 
 const customRuLocaleForDistance = {
     ...ru,
@@ -134,7 +137,6 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
                     </>
                 );
                 break;
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Адаптивные кнопки для исходящих заявок ---
             case 'outgoing':
                 mainButtons = (
                     <>
@@ -159,7 +161,6 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
                     </>
                 );
                 break;
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             case 'search_result':
                 mainButtons = (
                      <>
@@ -333,8 +334,9 @@ const FriendsPage = () => {
     const [cities, setCities] = useState([]);
     const [citySearchQuery, setCitySearchQuery] = useState('');
     const [loadingCities, setLoadingCities] = useState(false);
-
     const [searchHistory, setSearchHistory] = useState([]);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новое состояние для раскрытия списка интересов ---
+    const [interestsExpanded, setInterestsExpanded] = useState(false);
 
     useEffect(() => {
         const fetchCountries = async () => {
@@ -432,9 +434,10 @@ const FriendsPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-semibold text-slate-600 dark:text-white/70 mb-1 block">Страна</label>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены стили для полей --- */}
                                 <Listbox value={selectedCountry} onChange={(country) => { setSelectedCountry(country); setFilters(prev => ({ ...prev, city: '' })); }}>
                                     <div className="relative">
-                                        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-slate-100 dark:bg-slate-800 py-2.5 pl-3 pr-10 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 h-[44px]">
+                                        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-800 py-2.5 pl-3 pr-10 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 h-[44px] border border-slate-200 dark:border-slate-700">
                                             <span className="block truncate">{selectedCountry?.name || 'Выберите страну'}</span>
                                             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" /></span>
                                         </Listbox.Button>
@@ -450,7 +453,7 @@ const FriendsPage = () => {
                                 <label className="text-sm font-semibold text-slate-600 dark:text-white/70 mb-1 block">Город</label>
                                 <Combobox value={filters.city} onChange={(city) => setFilters(prev => ({ ...prev, city }))} disabled={!selectedCountry}>
                                      <div className="relative">
-                                        <Combobox.Input onChange={(e) => setCitySearchQuery(e.target.value)} displayValue={(c) => c || ''} className="w-full h-[44px] px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск города..."}/>
+                                        <Combobox.Input onChange={(e) => setCitySearchQuery(e.target.value)} displayValue={(c) => c || ''} className="w-full h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 border border-slate-200 dark:border-slate-700" placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск города..."}/>
                                         <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400"/></Combobox.Button>
                                         <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-30">
                                             {loadingCities ? <div className="py-2 text-center"><Spinner/></div> :
@@ -460,16 +463,29 @@ const FriendsPage = () => {
                                         </Combobox.Options>
                                     </div>
                                 </Combobox>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </div>
                         </div>
                         <div>
                             <label className="text-sm font-semibold text-slate-600 dark:text-white/70 mb-2 block">Интересы</label>
+                             {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика скрытия/показа интересов --- */}
                             <div className="flex flex-wrap gap-2">
-                                {availableInterests.map(interest => {
+                                {availableInterests.slice(0, interestsExpanded ? availableInterests.length : MOBILE_INTEREST_LIMIT).map(interest => {
                                     const isSelected = filters.interests.includes(interest);
                                     return <button key={interest} onClick={() => handleInterestToggle(interest)} className={`px-3 py-1.5 text-xs rounded-full transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20'}`}>{interest}</button>
                                 })}
                             </div>
+                            {availableInterests.length > MOBILE_INTEREST_LIMIT && (
+                                <div className="mt-3 text-center">
+                                    <button 
+                                        onClick={() => setInterestsExpanded(!interestsExpanded)}
+                                        className="text-sm font-semibold text-blue-500 hover:underline"
+                                    >
+                                        {interestsExpanded ? 'Скрыть' : `Показать еще ${availableInterests.length - MOBILE_INTEREST_LIMIT}`}
+                                    </button>
+                                </div>
+                            )}
+                             {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
                         <div className="flex justify-end pt-2">
                             <button onClick={resetFilters} className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg">Сбросить</button>
@@ -647,7 +663,6 @@ const FriendsPage = () => {
         <PageWrapper>
             <main className="flex-1 p-4 md:p-8">
                 <div className="w-full max-w-4xl mx-auto flex flex-col flex-1">
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменена структура шапки --- */}
                     <div className="flex flex-col gap-4 mb-6">
                         <div className="flex items-center justify-between">
                             <h1 className="text-3xl font-bold">Друзья</h1>
@@ -694,7 +709,6 @@ const FriendsPage = () => {
                             </AnimatePresence>
                         </div>
                     </div>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     
                     <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
                         {navItems.map(item => (
@@ -718,11 +732,9 @@ const FriendsPage = () => {
                         />
                     </div>
                     
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменение стилей для мобильной версии --- */}
                     <div className="bg-white dark:bg-slate-800 md:ios-glass-final rounded-3xl p-2 md:p-4">
                         {renderTabContent()}
                     </div>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             </main>
         </PageWrapper>

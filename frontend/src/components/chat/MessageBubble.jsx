@@ -10,7 +10,7 @@ import 'tippy.js/dist/tippy.css';
 import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
-import Twemoji from '../Twemoji';
+import Twemoji from './Twemoji';
 import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -51,16 +51,13 @@ const TippyWrapper = forwardRef((props, ref) => {
 });
 TippyWrapper.displayName = 'TippyWrapper';
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ 1: Функция для проверки, состоит ли сообщение только из эмодзи ---
 const isOnlyEmojis = (str) => {
     if (!str) return false;
-    // Это регулярное выражение находит большинство эмодзи и удаляет все остальное (кроме пробелов)
     const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
     const nonWhitespaceText = str.replace(/\s/g, '');
     const emojiOnlyText = (nonWhitespaceText.match(emojiRegex) || []).join('');
     return nonWhitespaceText.length > 0 && nonWhitespaceText.length === emojiOnlyText.length;
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
 
 const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply, onEdit, onPerformDelete, onForward, onSelect, isSelected, selectionMode, openMenuId, onToggleMenu, onScrollToMessage, highlightedMessageId, isBlockingInterlocutor, isBlockedByInterlocutor, searchQuery, isCurrentSearchResult, canInteract, isPinned, onPin, onUnpin, onImageClick }) => {
@@ -228,9 +225,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
         );
     }, [message.text, isCurrentSearchResult, searchQuery]);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Проверяем, состоит ли сообщение только из эмодзи ---
     const onlyEmojis = useMemo(() => isOnlyEmojis(message.text), [message.text]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
     return (
         <div
@@ -308,13 +303,13 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </div>
 
             <div
-                // --- НАЧАЛО ИЗМЕНЕНИЯ 3: Убираем padding, если сообщение только из эмодзи ---
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем жестко заданные классы на динамические ---
                 className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
-                    ${isOwnMessage ? `${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
-                    ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : (isOwnMessage ? 'bg-chat-bubble-own' : 'bg-chat-bubble-other')}
+                    ${isOwnMessage ? `bg-chat-bubble-own text-chat-bubble-own ${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `bg-chat-bubble-other text-chat-bubble-other ${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
+                    ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : ''}
                     ${onlyEmojis ? 'bg-transparent dark:bg-transparent shadow-none' : ''}
                 `}
-                // --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             >
                 
                 <div className="pt-2"> 

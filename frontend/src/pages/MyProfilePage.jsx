@@ -253,7 +253,9 @@ const MyProfilePage = () => {
             <main className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto p-4 md:p-8">
                     {/* HERO SECTION */}
-                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8 bg-slate-200 dark:bg-transparent">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8 bg-white dark:bg-slate-800">
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         {userAccent && <AnimatedAccent backgroundUrl={userAccent.backgroundUrl || userAccent} emojis={userAccent.emojis || []} />}
                         <div className="relative z-10 flex-shrink-0 group">
                             <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} size="2xl" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} onClick={() => {}} >
@@ -265,7 +267,6 @@ const MyProfilePage = () => {
                             <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={handleAvatarUpload} />
                         </div>
                         <div className="relative z-10">
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены адаптивные цвета текста --- */}
                             <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center md:justify-start" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                                 {user.fullName || user.username}
                                 {user.premiumCustomization?.usernameEmoji?.url && (<img src={user.premiumCustomization.usernameEmoji.url} alt="emoji" className="w-8 h-8 ml-3" />)}
@@ -297,7 +298,6 @@ const MyProfilePage = () => {
                                     <span className="text-slate-800 dark:text-white">Кастомизация</span>
                                 </button>
                             </div>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
                     </div>
 

@@ -31,13 +31,15 @@ const AdminPage = () => {
     const [activeTab, setActiveTab] = useState('submissions');
    const [isCodeViewerOpen, setIsCodeViewerOpen] = useState(false);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменен порядок элементов ---
     const navItems = [
         { key: 'submissions', label: 'Заявки на модерацию', icon: CheckCircle, onClick: () => setActiveTab('submissions') },
+        { key: 'create', label: 'Создать контент', icon: UploadCloud, onClick: () => setActiveTab('create') },
         { key: 'content', label: 'Управление контентом', icon: Database, onClick: () => setActiveTab('content') },
         { key: 'users', label: 'Управление пользователями', icon: Users, onClick: () => setActiveTab('users') },
-        { key: 'create', label: 'Создать контент', icon: UploadCloud, onClick: () => setActiveTab('create') },
        { key: 'debug', label: 'Инструменты', icon: Code, onClick: () => setIsCodeViewerOpen(true) }
     ];
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const renderContent = () => {
         switch (activeTab) {
@@ -77,14 +79,15 @@ const AdminPage = () => {
                     </div>
                     
                     <div className="md:hidden mb-6">
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменено значение visibleCount --- */}
                         <ResponsiveNav 
                             items={navItems}
-                           visibleCount={2}
+                           visibleCount={3}
                             activeKey={activeTab}
                         />
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
         
-                    {/* --- ИСПРАВЛЕНИЕ ЗДЕСЬ: убран класс mt-6 --- */}
                     <div className="flex-1 flex flex-col">
                         {renderContent()}
                     </div>
