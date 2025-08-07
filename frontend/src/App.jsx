@@ -123,13 +123,12 @@ const MainLayout = ({ children }) => {
 
       {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
       {/* 
-        Добавлено условное позиционирование кнопки:
-        - `isFullBleedLayout ? 'right-4' : 'left-4'`
-        Теперь кнопка будет справа на страницах с полноэкранной "шапкой" и слева на всех остальных.
+        Кнопка скрыта на странице диалога (/messages/:id) на мобильных устройствах,
+        чтобы не перегружать интерфейс и не конфликтовать с элементами управления чата.
       */}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
+        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || location.pathname.startsWith('/messages/') ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
       >
         <Menu />
       </button>

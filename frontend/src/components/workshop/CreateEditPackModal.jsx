@@ -1,15 +1,17 @@
 // frontend/src/components/workshop/CreateEditPackModal.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Image as ImageIcon, Trash2, PlusCircle, AlertTriangle, Crown } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useUser } from '../../hooks/useUser'; // --- НОВЫЙ ИМПОРТ ---
+import { useUser } from '../../hooks/useUser';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Обновленный компонент ToggleSwitch ---
+// --- ИСПРАВЛЕНИЕ 1: Обновленный компонент ToggleSwitch ---
+// Теперь он принимает `disabled` и показывает подсказку для не-Premium пользователей
 const ToggleSwitch = ({ checked, onChange, label, description, disabled = false }) => (
     <div 
         onClick={disabled ? () => toast.error('Эта функция доступна только для Premium-пользователей.') : null}
@@ -34,11 +36,10 @@ const ToggleSwitch = ({ checked, onChange, label, description, disabled = false 
         </div>
     </div>
 );
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 
 const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave }) => {
-    const { currentUser } = useUser(); // Получаем данные текущего пользователя
+    const { currentUser } = useUser();
     const [name, setName] = useState('');
     const [type, setType] = useState('sticker');
     const [isPremiumOnly, setIsPremiumOnly] = useState(false);
@@ -127,17 +128,23 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
             setLoading(false);
         }
     };
+    
+    if (!isOpen) return null;
 
-    return (
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Изменены классы для позиционирования ---
+                // --- ИСПРАВЛЕНИЕ 2: Адаптивное позиционирование для мобильных устройств ---
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center z-[110] p-4 pt-20 md:pt-4">
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
-                    <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[110] p-4 pt-20 md:pt-4">
+                    <motion.div 
+                        initial={{ y: "100%" }} 
+                        animate={{ y: 0 }} 
+                        exit={{ y: "100%" }} 
+                        transition={{ type: "spring", stiffness: 400, damping: 40 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
+                        className="ios-glass-final w-full max-w-2xl p-4 md:p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
+                    >
                         
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">{isEditMode ? 'Редактировать пак' : 'Создать новый пак'}</h2>
@@ -161,7 +168,6 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                 </div>
                             )}
 
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1 (продолжение): Добавлено свойство disabled --- */}
                             {type === 'emoji' && (
                                 <ToggleSwitch 
                                     checked={isPremiumOnly}
@@ -171,7 +177,6 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                     disabled={!currentUser?.premium?.isActive}
                                 />
                             )}
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 (продолжение) --- */}
 
                             <div className="flex-1 overflow-y-auto -mr-2 pr-2 border-t border-b border-slate-200 dark:border-slate-700 py-4">
                                 <label className="block text-sm font-semibold mb-2">Изображения</label>
@@ -201,7 +206,7 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/png, image/gif, image/webp" className="hidden" />
                             </div>
 
-                            <div className="flex justify-end pt-2">
+                            <div className="flex justify-end pt-2 flex-shrink-0">
                                 <button type="submit" disabled={loading} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center">
                                     {loading && <Loader2 className="animate-spin mr-2"/>}
                                     {isEditMode ? 'Сохранить' : 'Создать'}
@@ -211,7 +216,8 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 

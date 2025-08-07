@@ -282,8 +282,7 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
         }
         if (conversation.isMarkedAsUnread) {
              return (
-                // --- ИСПРАВЛЕНИЕ: Увеличена точка непрочитанного сообщения ---
-                <span className={`w-2.5 h-2.5 rounded-full ${conversation.isMuted ? 'bg-slate-400 dark:bg-slate-600' : 'bg-blue-500'}`}></span>
+                <span className={`w-3.5 h-3.5 rounded-full ${conversation.isMuted ? 'bg-slate-400 dark:bg-slate-600' : 'bg-blue-500'}`}></span>
             );
         }
         if (hasUnreadReaction) {

@@ -182,7 +182,7 @@ const PlaylistsView = ({ playlists, loading, onCreate, onPlaylistUpdated, onPlay
 };
 
 
-const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, onPlayTrack }) => {
+const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, onPlayTrack, loadingMore }) => {
     const navigate = useNavigate();
     const { tracks, artists, albums, playlists } = results;
     const hasResults = tracks?.length > 0 || artists?.length > 0 || albums?.length > 0 || playlists?.length > 0;
@@ -196,7 +196,7 @@ const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Что будем слушать?"
-                    className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
             
@@ -245,8 +245,16 @@ const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, 
                             </div>
                             {hasMore && (
                                 <div className="mt-6 text-center">
-                                    <button onClick={onSearchMore} className="px-6 py-2 bg-slate-200 dark:bg-white/10 text-sm font-semibold rounded-full hover:bg-slate-300 dark:hover:bg-white/20">
-                                        Загрузить еще
+                                     <button 
+                                        onClick={onSearchMore} 
+                                        disabled={loadingMore}
+                                        className="px-6 py-2 bg-slate-200 dark:bg-white/10 text-sm font-semibold rounded-full hover:bg-slate-300 dark:hover:bg-white/20 flex items-center justify-center mx-auto disabled:opacity-70"
+                                    >
+                                        {loadingMore ? (
+                                            <><Loader2 className="animate-spin mr-2" size={16} /> <span>Загрузка...</span></>
+                                        ) : (
+                                            'Загрузить еще'
+                                        )}
                                     </button>
                                 </div>
                             )}
@@ -277,6 +285,7 @@ const MusicPage = () => {
     const [searchResults, setSearchResults] = useState({});
     const [searchPage, setSearchPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     const [loading, setLoading] = useState({
         recommendations: true, myMusic: true, history: true, playlists: true, search: false, wave: false
@@ -320,7 +329,11 @@ const MusicPage = () => {
             setHasMore(false);
             return;
         }
-        setLoading(prev => ({ ...prev, search: true }));
+        if (page > 1) {
+            setLoadingMore(true);
+        } else {
+            setLoading(prev => ({ ...prev, search: true }));
+        }
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/search-all?q=${query}&page=${page}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -335,7 +348,11 @@ const MusicPage = () => {
         } catch (error) {
             toast.error("Ошибка поиска.");
         } finally {
-            setLoading(prev => ({ ...prev, search: false }));
+            if (page > 1) {
+                setLoadingMore(false);
+            } else {
+                setLoading(prev => ({ ...prev, search: false }));
+            }
         }
     }, []);
 
@@ -435,7 +452,7 @@ const MusicPage = () => {
                             {activeTab === 'my-music' && <MusicListView tracks={myMusic} loading={loading.myMusic} title="Моя музыка" emptyMessage="Вы еще не добавили ни одного трека." onPlayTrack={(track) => playTrack(track, myMusic)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
                             {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
                             {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
-                            {activeTab === 'search' && <SearchView query={searchQuery} setQuery={setSearchQuery} results={searchResults} loading={loading.search} onSearchMore={handleSearchMore} hasMore={hasMore} onPlayTrack={(track, tracklist) => playTrack(track, tracklist)} />}
+                            {activeTab === 'search' && <SearchView query={searchQuery} setQuery={setSearchQuery} results={searchResults} loading={loading.search} onSearchMore={handleSearchMore} hasMore={hasMore} onPlayTrack={(track, tracklist) => playTrack(track, tracklist)} loadingMore={loadingMore} />}
                         </motion.div>
                     </AnimatePresence>
                 </div>

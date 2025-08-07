@@ -175,7 +175,7 @@ const BatchTrackItem = ({ track, index, artists, mainArtistId, onUpdate, onRemov
                     <GripVertical size={20}/>
                 </div>
             </div>
-            <div className="p-3 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3 w-full">
+            <div className="p-2 bg-slate-200 dark:bg-slate-700/50 rounded-lg space-y-3 w-full">
                 <div className="relative">
                     <input
                         type="text"
