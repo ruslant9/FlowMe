@@ -1,13 +1,12 @@
 // frontend/src/components/music/MusicPlayerBar.jsx
 
 import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X, Eye } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X, Eye, CheckCircle } from 'lucide-react';
 import Slider from 'rc-slider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import { Link } from 'react-router-dom';
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src, alt, className, onClick }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -15,7 +14,6 @@ const CachedImage = ({ src, alt, className, onClick }) => {
     }
     return <img src={finalSrc} alt={alt} className={className} onClick={onClick} />;
 };
-
 
 const formatTime = (seconds) => {
     if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -67,7 +65,7 @@ const formatArtistName = (artistData) => {
     return <span>{artistData.toString()}</span>;
 };
 
-const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification, openFullScreenPlayer }) => {
+const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification, openFullScreenPlayer, likeActionStatus }) => {
     if (!track) {
         return null;
     }
@@ -102,9 +100,27 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
 
             <div className="hidden md:flex flex-1 flex-col items-center justify-center min-w-0">
                 <div className="flex items-center justify-center space-x-4 mb-2">
-                    <motion.button onClick={() => onToggleLike(track)} className={`p-2 transition-colors ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60 hover:text-red-400'}`} title="Нравится" whileTap={{ scale: 1.3, transition: { type: 'spring', stiffness: 400, damping: 10 } }}>
-                        <Heart size={20} fill={isLiked ? 'currentColor' : 'none'}/>
-                    </motion.button>
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем кнопку в div и добавляем кастомный toast --- */}
+                    <div className="relative">
+                         <AnimatePresence>
+                            {likeActionStatus && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                                    className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-slate-800 text-white text-sm font-semibold rounded-lg shadow-lg whitespace-nowrap z-10 flex items-center space-x-2"
+                                >
+                                    <CheckCircle size={16} className="text-green-400"/>
+                                    <span>{likeActionStatus === 'liked' ? 'Трек добавлен в Мою музыку.' : 'Трек удален из Моей музыки.'}</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                        <motion.button onClick={() => onToggleLike(track)} className={`p-2 transition-colors ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60 hover:text-red-400'}`} title="Нравится" whileTap={{ scale: 1.3, transition: { type: 'spring', stiffness: 400, damping: 10 } }}>
+                            <Heart size={20} fill={isLiked ? 'currentColor' : 'none'}/>
+                        </motion.button>
+                    </div>
+                     {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     
                     <div className="relative">
                         <NotificationToast message={playerNotification?.target === 'shuffle' ? playerNotification.message : null} />
@@ -147,17 +163,35 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
             </div>
 
             <div className="flex md:hidden items-center space-x-1">
-    <motion.button onClick={() => onToggleLike(track)} className={`p-2 ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60'}`} whileTap={{ scale: 1.3 }}>
-        <Heart size={22} fill={isLiked ? 'currentColor' : 'none'}/>
-    </motion.button>
-    <button onClick={onPlayPauseToggle} className="p-2 text-slate-800 dark:text-white">
-        {isPlaying ? <Pause size={28}/> : <Play size={28}/>}
-    </button>
-    <button onClick={onNext} className="p-2 text-slate-800 dark:text-white"><SkipForward size={22}/></button>
-    <button onClick={stopAndClearPlayer} className="p-2 text-slate-700 dark:text-white/60 hover:text-red-500 dark:hover:text-red-400" title="Закрыть плеер">
-        <X size={22} />
-    </button>
-</div>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем мобильную кнопку тоже --- */}
+                <div className="relative">
+                    <AnimatePresence>
+                        {likeActionStatus && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                                transition={{ duration: 0.2, ease: 'easeOut' }}
+                                className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-lg whitespace-nowrap z-10 flex items-center space-x-1.5"
+                            >
+                                <CheckCircle size={14} className="text-green-400"/>
+                                <span>{likeActionStatus === 'liked' ? 'Добавлено' : 'Удалено'}</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    <motion.button onClick={() => onToggleLike(track)} className={`p-2 ${isLiked ? 'text-red-500' : 'text-slate-700 dark:text-white/60'}`} whileTap={{ scale: 1.3 }}>
+                        <Heart size={22} fill={isLiked ? 'currentColor' : 'none'}/>
+                    </motion.button>
+                </div>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                <button onClick={onPlayPauseToggle} className="p-2 text-slate-800 dark:text-white">
+                    {isPlaying ? <Pause size={28}/> : <Play size={28}/>}
+                </button>
+                <button onClick={onNext} className="p-2 text-slate-800 dark:text-white"><SkipForward size={22}/></button>
+                <button onClick={stopAndClearPlayer} className="p-2 text-slate-700 dark:text-white/60 hover:text-red-500 dark:hover:text-red-400" title="Закрыть плеер">
+                    <X size={22} />
+                </button>
+            </div>
         </div>
     );
 };

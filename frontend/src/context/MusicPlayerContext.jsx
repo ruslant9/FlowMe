@@ -1,4 +1,4 @@
-// frontend/src/context/MusicPlayerContext.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/context/MusicPlayerContext.jsx
 
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
@@ -32,18 +32,20 @@ export const MusicPlayerProvider = ({ children }) => {
     const [loadingTrackId, setLoadingTrackId] = useState(null);
     const [buffered, setBuffered] = useState(0);
     const [playerNotification, setPlayerNotification] = useState(null);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Новое состояние для уведомления о лайке ---
+    const [likeActionStatus, setLikeActionStatus] = useState(null); // 'liked', 'unliked', or null
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
-
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Создаем ref для AbortController ---
+    
     const abortControllerRef = useRef(null); 
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
     const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
     const notificationTimeoutRef = useRef(null);
+    const likeStatusTimeoutRef = useRef(null); // --- НАЧАЛО ИСПРАВЛЕНИЯ 1.1: Ref для таймера лайка ---
     const currentObjectUrlRef = useRef(null);
-
+    const animationFrameIdRef = useRef(null);
+    
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
@@ -103,12 +105,10 @@ export const MusicPlayerProvider = ({ children }) => {
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
         
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Отменяем предыдущий запрос ---
         if (abortControllerRef.current) {
             abortControllerRef.current.abort('New track selected');
         }
         abortControllerRef.current = new AbortController();
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
@@ -126,12 +126,10 @@ export const MusicPlayerProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             const audio = audioRef.current;
             
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем signal в запрос ---
             const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
                 headers: { Authorization: `Bearer ${token}` },
                 signal: abortControllerRef.current.signal
             });
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             const streamUrl = res.data.url;
             if (!streamUrl) throw new Error("Stream URL not found.");
@@ -166,19 +164,15 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsShuffle(startShuffled);
             setIsRepeat(startRepeat);
         } catch (error) {
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверяем, была ли ошибка отменой ---
             if (axios.isCancel(error)) {
                 console.log("Загрузка предыдущего трека отменена.");
             } else {
                 toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
                 setCurrentTrack(null);
             }
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         } finally {
             setLoadingTrackId(null);
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Очищаем контроллер ---
             abortControllerRef.current = null;
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         }
     }, [volume, logMusicAction]);
 
@@ -226,12 +220,28 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
 
+    const updateProgressLoop = useCallback(() => {
+        if (audioRef.current) {
+            setProgress(audioRef.current.currentTime);
+        }
+        animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
+    }, []);
+
     useEffect(() => {
         const audio = audioRef.current;
         
-        const handleTimeUpdate = () => setProgress(audio.currentTime);
+        const startLoop = () => {
+            cancelAnimationFrame(animationFrameIdRef.current);
+            animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
+        };
+
+        const stopLoop = () => {
+            cancelAnimationFrame(animationFrameIdRef.current);
+        };
+
         const handleDurationChange = () => setDuration(audio.duration);
         const handleEnded = () => {
+            stopLoop();
             if (isRepeat) {
                 audio.currentTime = 0;
                 audio.play();
@@ -246,20 +256,23 @@ export const MusicPlayerProvider = ({ children }) => {
             }
         };
         
-        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('play', startLoop);
+        audio.addEventListener('pause', stopLoop);
         audio.addEventListener('durationchange', handleDurationChange);
         audio.addEventListener('ended', handleEnded);
         audio.addEventListener('progress', handleProgress);
 
         return () => {
-            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            stopLoop();
+            audio.removeEventListener('play', startLoop);
+            audio.removeEventListener('pause', stopLoop);
             audio.removeEventListener('durationchange', handleDurationChange);
             audio.removeEventListener('ended', handleEnded);
             audio.removeEventListener('progress', handleProgress);
         };
-    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
+    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction, updateProgressLoop]);
 
-    // Этот useEffect устанавливает статическую информацию о треке и обработчики кнопок
+
     useEffect(() => {
         const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
         if (!link.parentElement) {
@@ -282,12 +295,9 @@ export const MusicPlayerProvider = ({ children }) => {
                 navigator.mediaSession.setActionHandler('pause', togglePlayPause);
                 navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
                 navigator.mediaSession.setActionHandler('nexttrack', handleNextTrack);
-                
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                 navigator.mediaSession.setActionHandler('seekto', (details) => {
                     seekTo(details.seekTime);
                 });
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             }
         } else {
             link.href = '/favicon.svg';
@@ -297,14 +307,11 @@ export const MusicPlayerProvider = ({ children }) => {
                 navigator.mediaSession.setActionHandler('pause', null);
                 navigator.mediaSession.setActionHandler('previoustrack', null);
                 navigator.mediaSession.setActionHandler('nexttrack', null);
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                 navigator.mediaSession.setActionHandler('seekto', null);
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             }
         }
-    }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack, seekTo]); // Добавляем seekTo в зависимости
+    }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack, seekTo]);
 
-    // Этот useEffect ОБНОВЛЯЕТ позицию плеера на экране блокировки
     useEffect(() => {
         if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
             navigator.mediaSession.setPositionState({
@@ -391,10 +398,20 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsLiked(!wasLiked);
         }
 
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Показываем кастомное уведомление о лайке ---
+        if (likeStatusTimeoutRef.current) {
+            clearTimeout(likeStatusTimeoutRef.current);
+        }
+        setLikeActionStatus(wasLiked ? 'unliked' : 'liked');
+        likeStatusTimeoutRef.current = setTimeout(() => {
+            setLikeActionStatus(null);
+        }, 2500);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
+
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
-            toast.success(res.data.message);
+            // Убираем toast отсюда, так как он теперь кастомный
+            await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
             if (!wasLiked) logMusicAction(trackData, 'like');
             window.dispatchEvent(new CustomEvent('myMusicUpdated'));
         } catch (error) {
@@ -416,6 +433,7 @@ export const MusicPlayerProvider = ({ children }) => {
         loadingTrackId,
         buffered,
         playerNotification,
+        likeActionStatus, // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Передаем новое состояние в контекст ---
         playTrack,
         togglePlayPause,
         seekTo,

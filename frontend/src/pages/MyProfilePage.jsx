@@ -44,8 +44,8 @@ const TabButton = ({ active, onClick, children }) => (
         onClick={onClick}
         className={`flex items-center relative px-4 py-3 text-sm font-semibold transition-colors ${
             active 
-            ? 'text-white' 
-            : 'text-slate-400 hover:text-white'
+            ? 'text-slate-800 dark:text-white' 
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
         }`}
     >
         {children}
@@ -302,46 +302,47 @@ const MyProfilePage = () => {
                     {/* MAIN GRID */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-1 flex flex-col gap-6">
-                             {/* --- ИСПРАВЛЕНИЕ: Заменяем блок StatItem на компонент ProfileStats --- */}
-                            <div className="bg-slate-800 rounded-2xl p-4">
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменены классы --- */}
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4">
                                 <ProfileStats stats={stats} onShowUsers={handleShowUsers} />
                             </div>
-                             {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 space-y-4">
                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Основная информация</h3>
                                <ProfileField label="Местоположение" value={[user.city, user.country].filter(Boolean).join(', ')} />
                                <ProfileField label="Дата рождения" value={user.dob ? format(new Date(user.dob), 'd MMMM yyyy', { locale: ru }) : ''} />
                                <ProfileField label="Пол" value={user.gender} />
                             </div>
-                             <div className="bg-slate-800 rounded-2xl p-6">
+                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xl font-bold text-white">Интересы</h3>
-                                    <button onClick={() => setIsInterestModalOpen(true)} className="p-2 rounded-full text-slate-300 hover:bg-white/10" title="Редактировать"><Edit2 size={16} /></button>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Интересы</h3>
+                                    <button onClick={() => setIsInterestModalOpen(true)} className="p-2 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" title="Редактировать"><Edit2 size={16} /></button>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    {user.interests?.length > 0 ? user.interests.map(i => <div key={i} className="bg-blue-500/20 text-blue-300 rounded-full px-3 py-1 text-sm">{i}</div>) : <p className="text-slate-400 text-sm">Расскажите о своих увлечениях.</p>}
+                                    {user.interests?.length > 0 ? user.interests.map(i => <div key={i} className="bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 rounded-full px-3 py-1 text-sm">{i}</div>) : <p className="text-slate-500 dark:text-slate-400 text-sm">Расскажите о своих увлечениях.</p>}
                                 </div>
                             </div>
-                             <div className="bg-slate-800 rounded-2xl p-6">
+                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xl font-bold text-white">Моя музыка</h3>
-                                    <Link to="/music" state={{ defaultTab: 'my-music' }} className="text-sm font-semibold text-blue-400 hover:underline">Все ({musicTracks.length})</Link>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Моя музыка</h3>
+                                    <Link to="/music" state={{ defaultTab: 'my-music' }} className="text-sm font-semibold text-blue-500 hover:underline">Все ({musicTracks.length})</Link>
                                 </div>
                                 {loadingPostsAndStats ? <div className="flex justify-center py-4"><Loader2 className="animate-spin text-slate-400"/></div> : 
-                                 musicTracks.length > 0 ? <TrackList tracks={musicTracks.slice(0, 3)} onSelectTrack={(track) => playTrack(track, musicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, myMusicTrackIds}} /> : <p className="text-slate-400 text-sm">Добавьте любимые треки в свою коллекцию.</p>}
+                                 musicTracks.length > 0 ? <TrackList tracks={musicTracks.slice(0, 3)} onSelectTrack={(track) => playTrack(track, musicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, myMusicTrackIds}} /> : <p className="text-slate-500 dark:text-slate-400 text-sm">Добавьте любимые треки в свою коллекцию.</p>}
                             </div>
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
 
                         <div className="lg:col-span-2 flex flex-col gap-6">
-                            <div className="bg-slate-800 rounded-2xl p-4 flex items-center space-x-4">
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменены классы --- */}
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 flex items-center space-x-4">
                                 <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} size="md"/>
-                                <button onClick={() => setIsCreatePostModalOpen(true)} className="flex-1 text-left px-4 py-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-400 transition-colors">
+                                <button onClick={() => setIsCreatePostModalOpen(true)} className="flex-1 text-left px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
                                     Что у вас нового?
                                 </button>
                                 <button onClick={() => setIsCreatePostModalOpen(true)} className="px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"><PlusCircle size={18}/></button>
                             </div>
-                            <div className="bg-slate-800 rounded-2xl">
-                                <div className="flex border-b border-slate-700 px-2">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl">
+                                <div className="flex border-b border-slate-200 dark:border-slate-700 px-2">
                                     <TabButton active={activePostTab === 'published'} onClick={() => setActivePostTab('published')}>
                                         <Newspaper size={16} className="mr-2"/> Опубликованные
                                     </TabButton>
@@ -351,10 +352,11 @@ const MyProfilePage = () => {
                                 </div>
                                 <div className="p-6 space-y-6">
                                      {loadingPostsAndStats ? <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-slate-400"/></div> : 
-                                        activePostTab === 'published' ? (posts.length > 0 ? posts.map(p => <PostCard key={p._id} post={p} onPostDelete={handlePostDeleteInPlace} onPostUpdate={handlePostUpdateInPlace} currentUser={user} myMusicTrackIds={myMusicTrackIds} onEditRequest={setEditingPost}/>) : <p className="text-center py-10 text-slate-400">У вас пока нет постов.</p>) :
-                                        (scheduledPosts.length > 0 ? scheduledPosts.map(p => <PostCard key={p._id} post={p} onPostDelete={handlePostDeleteInPlace} onPostUpdate={handlePostUpdateInPlace} currentUser={user} myMusicTrackIds={myMusicTrackIds} onEditRequest={setEditingPost} isScheduled={true}/>) : <p className="text-center py-10 text-slate-400">У вас нет запланированных постов.</p>)}
+                                        activePostTab === 'published' ? (posts.length > 0 ? posts.map(p => <PostCard key={p._id} post={p} onPostDelete={handlePostDeleteInPlace} onPostUpdate={handlePostUpdateInPlace} currentUser={user} myMusicTrackIds={myMusicTrackIds} onEditRequest={setEditingPost}/>) : <p className="text-center py-10 text-slate-500 dark:text-slate-400">У вас пока нет постов.</p>) :
+                                        (scheduledPosts.length > 0 ? scheduledPosts.map(p => <PostCard key={p._id} post={p} onPostDelete={handlePostDeleteInPlace} onPostUpdate={handlePostUpdateInPlace} currentUser={user} myMusicTrackIds={myMusicTrackIds} onEditRequest={setEditingPost} isScheduled={true}/>) : <p className="text-center py-10 text-slate-500 dark:text-slate-400">У вас нет запланированных постов.</p>)}
                                 </div>
                             </div>
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
                     </div>
                 </div>

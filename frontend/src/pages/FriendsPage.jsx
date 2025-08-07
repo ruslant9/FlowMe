@@ -5,7 +5,7 @@ import axios from 'axios';
 import useTitle from '../hooks/useTitle';
 import Avatar from '../components/Avatar';
 import { Search, UserPlus, UserCheck, UserX, Clock, Loader2, ShieldOff, History, Trash2 as TrashIcon, MessageSquare, Filter, ChevronDown, Check, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast'; 
 import { useModal } from '../hooks/useModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -13,8 +13,8 @@ import { useWebSocket } from '../context/WebSocketContext';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
-import PageWrapper from '../components/PageWrapper';
-import ResponsiveNav from '../components/ResponsiveNav';
+import PageWrapper from '../components/PageWrapper'; 
+import ResponsiveNav from '../components/ResponsiveNav'; 
 import { useUser } from '../hooks/useUser';
 import MorePanel from '../components/MorePanel';
 
@@ -134,16 +134,32 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
                     </>
                 );
                 break;
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Адаптивные кнопки для исходящих заявок ---
             case 'outgoing':
                 mainButtons = (
                     <>
-                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors" title="Написать сообщение">
-                            <MessageSquare size={18} />
-                        </button>
-                        {renderButton('cancel', 'Отменить', Clock, 'bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20')}
+                        {/* Mobile View */}
+                        <div className="flex sm:hidden items-center space-x-2 w-full">
+                            <button
+                                onClick={(e) => handleMessageClick(e, user)}
+                                className="flex-1 justify-center px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 bg-blue-500 text-white hover:bg-blue-600"
+                                disabled={isProcessing}
+                            >
+                                <MessageSquare size={16} /> <span>Написать</span>
+                            </button>
+                            {renderButton('cancel', 'Отменить', Clock, 'bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20')}
+                        </div>
+                        {/* Desktop View */}
+                        <div className="hidden sm:flex items-center space-x-2">
+                             <button onClick={(e) => handleMessageClick(e, user)} className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors" title="Написать сообщение">
+                                <MessageSquare size={18} />
+                            </button>
+                            {renderButton('cancel', 'Отменить', Clock, 'bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20')}
+                        </div>
                     </>
                 );
                 break;
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             case 'search_result':
                 mainButtons = (
                      <>
@@ -277,8 +293,10 @@ const TabButton = ({ children, active, onClick, count }) => (
 const FriendsPage = () => {
     useTitle('Друзья');
     const location = useLocation();
+    const [friendsSubTab, setFriendsSubTab] = useState('important');
+    const [importantFriends, setImportantFriends] = useState([]);
     const [allFriends, setAllFriends] = useState([]);
-    const [sortConfig, setSortConfig] = useState({ key: 'fullName', direction: 'ascending' });
+    const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'descending' });
     const [activeTab, setActiveTab] = useState(location.state?.defaultTab || 'friends');
     const [incoming, setIncoming] = useState([]);
     const [outgoing, setOutgoing] = useState([]);
@@ -546,7 +564,6 @@ const FriendsPage = () => {
                 const dateB = b.friendshipDate ? new Date(b.friendshipDate).getTime() : 0;
                 return sortConfig.direction === 'ascending' ? dateA - dateB : dateB - dateA;
             }
-            // Fallback to score if it exists, otherwise use name as default
             return (b.score || 0) - (a.score || 0);
         });
         return sorted;
@@ -629,45 +646,55 @@ const FriendsPage = () => {
     return (
         <PageWrapper>
             <main className="flex-1 p-4 md:p-8">
-                <div className="w-full max-w-4xl mx-auto">
-                    <div className="flex items-center justify-between mb-6">
-                        <h1 className="text-3xl font-bold">Друзья</h1>
-                    </div>
-                    
-                    <div className="relative mb-6" ref={searchWrapperRef}>
-                        <div className="flex items-center space-x-2">
-                            <div className="relative flex-grow">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40" size={20} />
-                                <input
-                                    ref={searchInputRef}
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onFocus={handleSearchInputFocus}
-                                    placeholder="Поиск по имени или @username"
-                                    className="w-full pl-12 pr-10 py-3 rounded-lg bg-slate-200/70 dark:bg-black/30 text-slate-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:focus:ring-blue-500"
-                                />
-                                {isSearching && (
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/60"><Spinner size={18} /></div>
-                                )}
-                            </div>
+                <div className="w-full max-w-4xl mx-auto flex flex-col flex-1">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменена структура шапки --- */}
+                    <div className="flex flex-col gap-4 mb-6">
+                        <div className="flex items-center justify-between">
+                            <h1 className="text-3xl font-bold">Друзья</h1>
                             <button
                                 onClick={() => setShowFilters(f => !f)}
-                                className={`p-3 rounded-lg transition-colors flex-shrink-0 ${showFilters ? 'bg-blue-600 text-white' : 'bg-slate-200/70 dark:bg-black/30 hover:bg-slate-300 dark:hover:bg-black/40'}`}
+                                className={`p-2 rounded-lg transition-colors flex-shrink-0 md:hidden ${showFilters ? 'bg-blue-600 text-white' : 'bg-slate-200/70 dark:bg-black/30 hover:bg-slate-300 dark:hover:bg-black/40'}`}
                                 title="Фильтры"
                             >
                                 <Filter size={20} />
                             </button>
                         </div>
-                        {renderFilters()}
-                        <AnimatePresence>
-                            {isDropdownVisible && (
-                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">
-                                    {renderDropdownContent()}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        <div className="relative" ref={searchWrapperRef}>
+                            <div className="flex items-center space-x-2">
+                                <div className="relative flex-grow">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40" size={20} />
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onFocus={handleSearchInputFocus}
+                                        placeholder="Поиск по имени или @username"
+                                        className="w-full pl-12 pr-10 py-3 rounded-lg bg-slate-200/70 dark:bg-black/30 text-slate-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:focus:ring-blue-500"
+                                    />
+                                    {isSearching && (
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/60"><Spinner size={18} /></div>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setShowFilters(f => !f)}
+                                    className={`p-3 rounded-lg transition-colors flex-shrink-0 hidden md:block ${showFilters ? 'bg-blue-600 text-white' : 'bg-slate-200/70 dark:bg-black/30 hover:bg-slate-300 dark:hover:bg-black/40'}`}
+                                    title="Фильтры"
+                                >
+                                    <Filter size={20} />
+                                </button>
+                            </div>
+                            {renderFilters()}
+                            <AnimatePresence>
+                                {isDropdownVisible && (
+                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">
+                                        {renderDropdownContent()}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     
                     <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
                         {navItems.map(item => (
@@ -691,9 +718,11 @@ const FriendsPage = () => {
                         />
                     </div>
                     
-                    <div className="ios-glass-final rounded-3xl p-4">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменение стилей для мобильной версии --- */}
+                    <div className="bg-white dark:bg-slate-800 md:ios-glass-final rounded-3xl p-2 md:p-4">
                         {renderTabContent()}
                     </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             </main>
         </PageWrapper>

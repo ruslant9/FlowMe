@@ -18,18 +18,15 @@ import AttachedTrack from './music/AttachedTrack';
 import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
-import AnimatedAccent from './AnimatedAccent';
-import { useCachedImage } from '../hooks/useCachedImage';
-import { useEmojiPicker } from '../hooks/useEmojiPicker'; // --- ИМПОРТ НОВОГО ХУКА ---
-import Twemoji from './Twemoji'; // --- ИМПОРТ КОМПОНЕНТА ---
+import AnimatedAccent from '../components/AnimatedAccent';
+import { useCachedImage } from '../../hooks/useCachedImage';
+import { useEmojiPicker } from '../../hooks/useEmojiPicker';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
 
-// Компонент для кешированного изображения с анимацией
 const CachedMotionImage = ({ src, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
-
     if (loading) {
         return (
             <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
@@ -37,10 +34,8 @@ const CachedMotionImage = ({ src, ...props }) => {
             </motion.div>
         );
     }
-
     return <motion.img src={finalSrc} {...props} />;
 };
-
 
 const customRuLocale = {
     ...ru,
@@ -53,12 +48,10 @@ const customRuLocale = {
 };
 
 const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightCommentId: initialHighlightCommentId, isCommunityOwner, onPinPost, onEditRequest, context, myMusicTrackIds, isScheduled }) => {
-
     const { showConfirmation } = useModal();
     const currentUserId = currentUser?._id;
     const isOwner = post.user._id === currentUserId;
     const authorData = isOwner ? currentUser : post.user;
-
 
     const [comments, setComments] = useState([]);
     const [totalComments, setTotalComments] = useState(0);
@@ -97,7 +90,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
     const [loadingMore, setLoadingMore] = useState(false);
     
     const { showPicker } = useEmojiPicker();
-    
+
     const userAccent = currentPost.user?.premiumCustomization?.activeCardAccent;
 
     const userVote = useMemo(() => {
@@ -315,9 +308,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
     const handleCommentSubmit = async (e) => {
         e.preventDefault();
         if (!newCommentText.trim() || isSendingComment) return;
-
         setIsSendingComment(true);
-
         try {
             const token = localStorage.getItem('token');
             const payload = { 
@@ -325,13 +316,10 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                 parentId: replyingTo ? replyingTo.id : null,
                 commentAs: commentAs?.type === 'community' ? commentAs._id : null
             };
-
             await axios.post(`${API_URL}/api/posts/${currentPost._id}/comments`, payload, { 
                 headers: { Authorization: `Bearer ${token}` } 
             });
-
             fetchComments(1, sortOrder);
-
             setNewCommentText('');
             setReplyingTo(null);
         } catch (error) {
@@ -677,7 +665,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
 
                 <div className="p-6 pt-2">
                     <div onClick={isScheduled ? undefined : handleOpenPostInModal} className={isScheduled ? '' : 'cursor-pointer'}>
-                        {currentPost.text && <p className="mb-4 whitespace-pre-wrap break-words"><Twemoji text={currentPost.text} /></p>}
+                        {currentPost.text && <p className="mb-4 whitespace-pre-wrap break-words">{currentPost.text}</p>}
                     
                         {currentPost.poll && <PollDisplay poll={currentPost.poll} onVote={handleVote} isScheduled={isScheduled} />}
                         
@@ -898,6 +886,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                 </Tippy>
                                             )}
                                             <div className="relative flex-1">
+                                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                                 <input
                                                     ref={commentInputRef}
                                                     type="text"
@@ -911,7 +900,9 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                     placeholder="Написать комментарий..."
                                                     className="w-full bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     disabled={!!editingCommentId || commentSelectionMode || isSendingComment}
+                                                    autoComplete="off" 
                                                 />
+                                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
                                                     <button 
                                                         ref={smileButtonRef} 
