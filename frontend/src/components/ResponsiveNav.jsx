@@ -11,14 +11,16 @@ const renderIcon = (Icon, props = {}) => {
         : React.createElement(Icon, props);
 };
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлена логика для count ---
-const NavItem = ({ item, isActive, onClick }) => {
-    const commonClasses = `flex flex-col items-center justify-center space-y-0.5 px-1 py-1.5 rounded-lg transition-colors text-xs font-medium
+const NavItem = ({ item, isActive, onClick, isMorePanel = false }) => {
+    const defaultClasses = `flex flex-col items-center justify-center space-y-0.5 px-1 py-1.5 rounded-lg transition-colors text-xs font-medium
       ${isActive
         ? 'text-blue-600 dark:text-blue-400'
         : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
       }`;
-
+    
+    // Применяем кастомные классы, если они есть, иначе используем стандартные
+    const commonClasses = item.className ? `flex flex-col items-center justify-center space-y-0.5 px-1 py-1.5 rounded-lg transition-colors text-xs font-medium ${isActive ? (item.activeClassName || item.className) : item.className}` : defaultClasses;
+    
     const labelClasses = 'text-center text-[11px] leading-tight';
 
     const icon = renderIcon(item.icon, { size: 20, strokeWidth: isActive ? 2.5 : 2 });
@@ -29,7 +31,7 @@ const NavItem = ({ item, isActive, onClick }) => {
         <>
             <div className="relative">
                 {icon}
-                {count > 0 && 
+                {count > 0 && !isMorePanel &&
                     <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 min-w-[16px] h-[16px] flex items-center justify-center border-2 border-white dark:border-slate-800">
                         {formattedCount}
                     </span>
@@ -49,7 +51,6 @@ const NavItem = ({ item, isActive, onClick }) => {
 
     return null;
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const MoreButton = ({ onClick, isActive }) => (
     <button
@@ -100,48 +101,26 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
                             onClick={() => setIsMorePanelOpen(true)}
                             isActive={isMoreButtonActive}
                         />
-                    )}
+                    )} 
                 </div>
             </div>
 
             <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
                 {hiddenItems.map(item => {
                     const isActive = item.path ? activePath === item.path : activeKey === item.key;
-                    const commonClasses = `w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
-              ${isActive ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}`;
-                    const iconClasses = isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500';
+                    // Определяем классы для элемента в панели
+                    const panelItemClasses = `w-full flex items-center space-x-4 p-3 rounded-lg transition-colors
+                        ${item.className ? `${item.className} ${isActive ? (item.activeClassName || '') : ''}` : `text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 ${isActive ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}`}
+                    `;
+                    const iconClasses = isActive ? (item.className ? '' : 'text-blue-600 dark:text-blue-400') : 'text-slate-500';
                     const icon = renderIcon(item.icon, { size: 22, className: iconClasses });
 
                     if (item.path) {
-                        return (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                onClick={() => setIsMorePanelOpen(false)}
-                                className={commonClasses}
-                            >
-                                {icon}
-                                <span>{item.label}</span>
-                            </NavLink>
-                        );
+                        return ( <NavLink key={item.path} to={item.path} onClick={() => setIsMorePanelOpen(false)} className={panelItemClasses}>{icon}<span>{item.label}</span></NavLink> );
                     }
-
                     if (item.onClick) {
-                        return (
-                            <button
-                                key={item.key}
-                                onClick={() => {
-                                    item.onClick();
-                                    setIsMorePanelOpen(false);
-                                }}
-                                className={commonClasses}
-                            >
-                                {icon}
-                                <span>{item.label}</span>
-                            </button>
-                        );
+                        return ( <button key={item.key} onClick={() => { item.onClick(); setIsMorePanelOpen(false); }} className={panelItemClasses}>{icon}<span>{item.label}</span></button> );
                     }
-
                     return null;
                 })}
             </MorePanel>

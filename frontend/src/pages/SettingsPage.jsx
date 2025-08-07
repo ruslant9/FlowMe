@@ -429,15 +429,13 @@ return (
                     ))}
                 </div>
                 
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Адаптивная навигация --- */}
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Удален лишний div-обертка --- */}
                 <div className="md:hidden mb-6">
-                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
-                        <ResponsiveNav 
-                            items={navItems}
-                            visibleCount={4}
-                            activeKey={activeTab}
-                        />
-                    </div>
+                    <ResponsiveNav 
+                        items={navItems}
+                        visibleCount={4}
+                        activeKey={activeTab}
+                    />
                 </div>
                 {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 
@@ -451,7 +449,6 @@ return (
                     >
                         {activeTab === 'privacy' && (
                             <section>
-                                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы `hidden md:block` --- */}
                                 <h2 className="hidden md:block text-2xl font-bold mb-2 text-slate-900 dark:text-white">Настройки приватности</h2>
                                 <p className="hidden md:block text-sm text-slate-500 dark:text-white/60 mb-6">Управляйте тем, кто может видеть вашу информацию и взаимодействовать с вами.</p>
                                 {loadingPrivacySettings || !privacySettings ? <div className="flex justify-center"><Loader2 className="animate-spin"/></div> : (
@@ -481,7 +478,6 @@ return (
 
                         {activeTab === 'security' && (
                             <section>
-                                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы `hidden md:block` --- */}
                                 <h2 className="hidden md:block text-2xl font-bold mb-2 text-slate-900 dark:text-white">Безопасность и вход</h2>
                                 <p className="hidden md:block text-sm text-slate-500 dark:text-white/60 mb-6">Управление паролем и активными сессиями.</p>
                                 <div className="space-y-8">
@@ -549,7 +545,6 @@ return (
 
                         {activeTab === 'notifications' && (
                              <section>
-                                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы `hidden md:block` --- */}
                                 <h2 className="hidden md:block text-2xl font-bold mb-2 text-slate-900 dark:text-white">Уведомления</h2>
                                 <p className="hidden md:block text-sm text-slate-500 dark:text-white/60 mb-6">Настройте, как и когда вы хотите получать уведомления.</p>
                                 <div className="space-y-4">
@@ -568,7 +563,6 @@ return (
                         
                         {activeTab === 'danger' && (
                             <section>
-                                {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы `hidden md:block` --- */}
                                 <h2 className="hidden md:block text-2xl font-bold mb-2 text-red-500 text-center md:text-left">Опасная зона</h2>
                                 <p className="hidden md:block text-sm text-slate-500 dark:text-white/60 mb-6 text-center md:text-left">Действия в этом разделе необратимы. Пожалуйста, будьте внимательны.</p>
                                 <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg flex flex-col md:flex-row items-center md:items-center justify-center md:justify-between gap-4 text-center md:text-left">

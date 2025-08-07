@@ -120,6 +120,17 @@ const NotificationItem = ({ notification, onDelete, onAction }) => {
         onAction(actionName, notification._id);
     };
 
+    const renderTextContent = () => {
+        const isCommunityAction = details.isCommunityAction;
+        const senderName = notification.lastSender?.fullName || notification.lastSender?.username || 'Кто-то';
+
+        if (isCommunityAction) {
+            return details.textSingular(notification);
+        }
+        
+        return notification.senders.length > 1 ? details.textGrouped(notification) : details.textSingular(notification);
+    };
+
     const renderText = () => {
         const isCommunityAction = details.isCommunityAction;
         if (isCommunityAction) {
@@ -239,23 +250,37 @@ const NotificationItem = ({ notification, onDelete, onAction }) => {
                         </div>
                     </div>
                     <div className="flex-1 min-w-0"> 
-                        <p className="text-sm md:text-base"> 
-                            {renderText()}
-                        </p>
-                        <p className="text-xs md:text-sm text-slate-500 dark:text-white/60 mt-1">
-                            {formatDistanceToNow(new Date(notification.updatedAt), { addSuffix: true, locale: customRuLocale })}
-                        </p>
+                        {/* Десктопная версия (остается как была) */}
+                        <div className="hidden sm:block">
+                            <p className="text-base">{renderText()}</p>
+                            <p className="text-sm text-slate-500 dark:text-white/60 mt-1">
+                                {formatDistanceToNow(new Date(notification.updatedAt), { addSuffix: true, locale: customRuLocale })}
+                            </p>
+                        </div>
+                        {/* Мобильная версия (новая) */}
+                        <div className="sm:hidden">
+                            <p className="text-sm">{renderTextContent()}</p>
+                            {details.previewFormat && (
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                                    {details.previewFormat(notification)}
+                                </p>
+                            )}
+                            <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
+                                {formatDistanceToNow(new Date(notification.updatedAt), { addSuffix: true, locale: customRuLocale })}
+                            </p>
+                        </div>
+                        
                         {notification.type === 'community_invite' && (
                             <div className="mt-2 flex items-center space-x-2">
                                 <button
                                     onClick={(e) => handleActionClick(e, 'accept_invite')}
-                                    className="px-4 py-2 text-sm font-semibold rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors"
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors"
                                 >
                                     Принять
                                 </button>
                                 <button
                                     onClick={(e) => handleActionClick(e, 'decline_invite')}
-                                    className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
                                 >
                                     Отклонить
                                 </button>

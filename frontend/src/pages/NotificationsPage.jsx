@@ -5,14 +5,14 @@ import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus, MoreHorizontal } from 'lucide-react';
+import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus } from 'lucide-react';
 import { useModal } from '../hooks/useModal';
 import NotificationItem from '../components/NotificationItem';
 import { motion, AnimatePresence } from 'framer-motion';
 import PostViewModal from '../components/modals/PostViewModal';
 import MorePanel from '../components/MorePanel';
 import PageWrapper from '../components/PageWrapper';
-import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ ResponsiveNav ---
+import ResponsiveNav from '../components/ResponsiveNav';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -33,7 +33,7 @@ const TabButton = ({ active, onClick, children, count, icon: Icon }) => (
     </button>
 );
 
-const SubTabButton = ({ active, onClick, children, icon: Icon }) => ( // --- Добавил icon в props ---
+const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
         onClick={onClick}
         className={`flex-shrink-0 px-2.5 py-1 text-[11px] font-semibold rounded-full transition-colors flex items-center space-x-1.5 ${
@@ -42,7 +42,6 @@ const SubTabButton = ({ active, onClick, children, icon: Icon }) => ( // --- Д�
                 : 'text-slate-500 dark:text-white/60 hover:bg-slate-200/50 dark:hover:bg-white/10'
         }`}
     >
-        {/* --- Отображаем иконку --- */}
         {Icon && <Icon size={14} />} 
         <span>{children}</span>
     </button>
@@ -122,6 +121,10 @@ const NotificationsPage = () => {
     const handleNotificationClick = async (notification) => {
         const postLinkRegex = /^\/posts\/([a-f\d]{24})$/;
         const match = notification.link.match(postLinkRegex);
+        if (notification.type === 'friend_request') {
+             navigate('/friends', { state: { defaultTab: 'incoming' } });
+             return;
+        }
         if (match) {
             const postId = match[1];
             try {
@@ -245,10 +248,29 @@ const NotificationsPage = () => {
         return tabs;
     }, [activeTab]);
     
-    const navItems = [
-        { key: 'personal', label: 'Личные', icon: User, onClick: () => setActiveTab('personal'), count: notificationsData.personal.unreadCount },
-        { key: 'community', label: 'Сообщества', icon: Users, onClick: () => setActiveTab('community'), count: notificationsData.community.unreadCount }
-    ];
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Создаем динамический массив для навигации ---
+    const navItems = useMemo(() => {
+        const baseItems = [
+            { key: 'personal', label: 'Личные', icon: User, onClick: () => setActiveTab('personal'), count: notificationsData.personal.unreadCount },
+            { key: 'community', label: 'Сообщества', icon: Users, onClick: () => setActiveTab('community'), count: notificationsData.community.unreadCount }
+        ];
+        
+        // Добавляем кнопку "Очистить" только если есть что очищать
+        if (notificationsData[activeTab].list.length > 0) {
+            baseItems.push({
+                key: 'clear',
+                label: 'Очистить все',
+                icon: Trash2,
+                onClick: handleDeleteAll,
+                // Добавляем кастомные классы для красного цвета
+                className: 'text-red-500 dark:text-red-400 hover:bg-red-500/10',
+                activeClassName: 'text-red-500 dark:text-red-400 bg-red-500/10'
+            });
+        }
+
+        return baseItems;
+    }, [activeTab, notificationsData, handleDeleteAll]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return (
         <PageWrapper>
@@ -265,33 +287,33 @@ const NotificationsPage = () => {
                         <div className="flex items-center space-x-3">
                             <h1 className="text-3xl font-bold">Уведомления</h1>
                         </div>
-                        {notificationsData[activeTab].list.length > 0 && (
-                            <button onClick={handleDeleteAll} className="flex-shrink-0 items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10 flex">
-                                <Trash2 size={16} /><span className="whitespace-nowrap">Очистить все</span>
-                            </button>
-                        )}
+                        {/* --- ИЗМЕНЕНИЕ: Кнопка "Очистить все" удалена отсюда и перенесена в навигацию --- */}
                     </div>
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Заменяем мобильные табы на ResponsiveNav --- */}
                     <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 -mx-4 px-4 overflow-x-auto">
-                        {navItems.map(item => (
+                        {/* Фильтруем кнопку "Очистить" для десктопных табов и рендерим ее отдельно */}
+                        {navItems.filter(item => item.key !== 'clear').map(item => (
                             <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon} count={item.count}>
                                 {item.label}
                             </TabButton>
                         ))}
+                        {notificationsData[activeTab].list.length > 0 && (
+                            <button onClick={handleDeleteAll} className="ml-auto flex-shrink-0 flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors text-red-500 hover:bg-red-500/10 rounded-lg">
+                                <Trash2 size={16} /><span>Очистить все</span>
+                            </button>
+                        )}
                     </div>
                     <div className="md:hidden mb-6">
                         <ResponsiveNav
                             items={navItems}
-                            visibleCount={2}
+                            visibleCount={3} // Показываем 2 табы + кнопку "Очистить" если есть место
                             activeKey={activeTab}
                         />
                     </div>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                     
                     <div className="mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
                         <ResponsiveNav 
                             items={subTabs.map(tab => ({ ...tab, label: tab.label }))}
-                            visibleCount={4} // Показываем все 4 кнопки
+                            visibleCount={4}
                             activeKey={activeFilter}
                         />
                     </div>
@@ -328,7 +350,6 @@ const NotificationsPage = () => {
                     )}
                 </div>
                 
-                {/* MorePanel остается для других случаев, где он может быть нужен */}
                 <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
                     {subTabs.map(item => (
                         <button
