@@ -460,7 +460,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             <>
                                 {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
                                 
-                                <div className={`w-full ${hasImages ? 'md:w-3/5' : 'hidden md:flex md:w-2/5'} flex-shrink-0 bg-black items-center justify-center relative`}>
+                                <div className={`w-full ${hasImages ? 'md:w-3/5' : 'hidden md:flex md:w-2/5'} flex-shrink-0 bg-black items-center justify-center relative aspect-square`}>
                                     {hasImages ? (
                                         <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
                                     ) : (
