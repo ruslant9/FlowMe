@@ -5,9 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft } from 'lucide-react';
 import Avatar from '../Avatar';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
+import ReactDOM from 'react-dom';
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Кастомный хук для определения размера экрана ---
-// Этот хук позволяет компоненту реагировать на изменения ширины окна браузера.
 const useMediaQuery = (query) => {
   const [matches, setMatches] = useState(false);
 
@@ -23,16 +22,11 @@ const useMediaQuery = (query) => {
 
   return matches;
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 
 const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
     const { currentTrack } = useMusicPlayer();
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем хук для определения мобильного устройства ---
     const isMobile = useMediaQuery('(max-width: 768px)');
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
-
-    // Общий контент, который будет использоваться как в мобильной, так и в десктопной версии
     const PanelContent = () => (
         <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain">
             <div className="flex flex-col items-center text-center">
@@ -68,12 +62,10 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
         </div>
     );
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Условный рендеринг в зависимости от размера экрана ---
     return (
         <AnimatePresence>
             {isOpen && (
                 isMobile ? (
-                    // Мобильная версия: полноэкранный блок
                     <motion.div
                         key="mobile-panel"
                         initial={{ x: '100%' }}
@@ -89,12 +81,11 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                                 <ArrowLeft size={20} />
                             </button>
                             <h3 className="font-bold text-lg mx-auto">Об исполнителе</h3>
-                            <div className="w-9 h-9"></div> {/* Пустой div для центрирования заголовка */}
+                            <div className="w-9 h-9"></div>
                         </header>
                         <PanelContent />
                     </motion.div>
                 ) : (
-                    // Десктопная версия: боковая панель
                     <motion.div
                         key="desktop-panel"
                         initial={{ opacity: 0 }}
@@ -122,9 +113,9 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                     </motion.div>
                 )
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 };
 
 export default ArtistInfoPanel;

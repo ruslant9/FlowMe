@@ -22,31 +22,38 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const renderArtistLinks = (artistData) => {
-        if (!artistData) return null;
+        if (!artistData) return 'Неизвестный исполнитель';
         const artists = Array.isArray(artistData) ? artistData : [artistData];
-        return (
-            <>
-                {artists.map((artist, idx) => {
-                    if (!artist || !artist._id || !artist.name) {
-                        return <span key={idx}>{artist.name || artist}</span>;
-                    }
-                    return (
-                        <React.Fragment key={artist._id}>
-                            <Link 
-                                to={`/artist/${artist._id}`}
-                                className="hover:underline hover:text-slate-700 dark:hover:text-white"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {artist.name.replace(' - Topic', '').trim()}
-                            </Link>
-                            {idx < artists.length - 1 && ', '}
-                        </React.Fragment>
-                    );
-                })}
-            </>
-        );
+        
+        return artists.map((artist, idx) => {
+            // Если есть полные данные для ссылки
+            if (artist && artist._id && artist.name) {
+                return (
+                    <React.Fragment key={artist._id}>
+                        <Link 
+                            to={`/artist/${artist._id}`}
+                            className="hover:underline hover:text-slate-700 dark:hover:text-white"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {artist.name.replace(' - Topic', '').trim()}
+                        </Link>
+                        {idx < artists.length - 1 && ', '}
+                    </React.Fragment>
+                );
+            }
+            // Если пришла просто строка или объект без нужных полей
+            const artistName = (typeof artist === 'object' ? artist.name : artist) || 'Неизвестный исполнитель';
+            return (
+                <React.Fragment key={idx}>
+                    <span>{artistName.replace(' - Topic', '').trim()}</span>
+                    {idx < artists.length - 1 && ', '}
+                </React.Fragment>
+            );
+        });
     };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const cleanedTitle = cleanTitle(track.title);
     const isLoading = loadingTrackId === track._id;
