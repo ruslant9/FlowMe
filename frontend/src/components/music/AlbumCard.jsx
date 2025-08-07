@@ -1,4 +1,4 @@
-// frontend/src/components/music/AlbumCard.jsx
+// frontend/src/components/music/AlbumCard.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 import { Music } from 'lucide-react';
 import { useCachedImage } from '../../hooks/useCachedImage'; 
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src, alt }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -15,20 +14,25 @@ const CachedImage = ({ src, alt }) => {
     return <img src={finalSrc} alt={alt} className="w-full h-full object-cover" />;
 };
 
-
 const AlbumCard = ({ album }) => {
     const linkTo = album.isSingle ? `/single/${album._id}` : `/album/${album._id}`;
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-    // Эта функция правильно обрабатывает данные об артисте.
-    // Она извлекает имя (name) из объекта или объединяет имена из массива,
-    // чтобы React мог отобразить их как строку, а не объект.
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Функция сделана более надежной ---
     const getArtistDisplay = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
-            return artistData.map(a => a.name).join(', ');
+            // Безопасно обрабатываем каждый элемент массива
+            return artistData.map(a => (a?.name || '')).filter(Boolean).join(', ');
         }
-        return artistData.name;
+        if (typeof artistData === 'object' && artistData !== null && artistData.name) {
+            return artistData.name;
+        }
+        // Если это строка (например, только ID), не рендерим ничего
+        if (typeof artistData === 'string') {
+             return ''; // или можно вернуть artistData, если это имя
+        }
+        // Возвращаем пустую строку в любом другом случае, чтобы избежать ошибки
+        return '';
     };
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 

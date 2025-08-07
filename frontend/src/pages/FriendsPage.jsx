@@ -493,7 +493,7 @@ const FriendsPage = () => {
                                 Сбросить
                             </button>
                         </div>
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                         {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
                 </motion.div>
             )}
@@ -714,31 +714,37 @@ const FriendsPage = () => {
                         </div>
                     </div>
                     
-                    <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
-                        {navItems.map(item => (
-                            <TabButton 
-                                key={item.key}
-                                active={activeTab === item.key}
-                                onClick={item.onClick}
-                                count={item.count}
-                            >
-                                <item.icon size={16} />
-                                <span>{item.label}</span>
-                            </TabButton>
-                        ))}
-                    </div>
-                    
-                    <div className="md:hidden mb-6">
-                         <ResponsiveNav 
-                            items={navItems}
-                            visibleCount={4}
-                            activeKey={activeTab}
-                        />
-                    </div>
-                    
-                    <div className="bg-white dark:bg-slate-800 md:ios-glass-final rounded-3xl p-2 md:p-4">
-                        {renderTabContent()}
-                    </div>
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Контейнер для скрытия на мобильных, когда фильтры открыты --- */}
+                    {!showFilters && (
+                        <>
+                            <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
+                                {navItems.map(item => (
+                                    <TabButton 
+                                        key={item.key}
+                                        active={activeTab === item.key}
+                                        onClick={item.onClick}
+                                        count={item.count}
+                                    >
+                                        <item.icon size={16} />
+                                        <span>{item.label}</span>
+                                    </TabButton>
+                                ))}
+                            </div>
+                            
+                            <div className="md:hidden mb-6">
+                                 <ResponsiveNav 
+                                    items={navItems}
+                                    visibleCount={4}
+                                    activeKey={activeTab}
+                                />
+                            </div>
+                            
+                            <div className="bg-white dark:bg-slate-800 md:ios-glass-final rounded-3xl p-2 md:p-4">
+                                {renderTabContent()}
+                            </div>
+                        </>
+                    )}
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             </main>
         </PageWrapper>

@@ -351,13 +351,19 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                     <div className="flex justify-between items-end mt-0.5">
                         {renderLastMessage()}
-                        <div className="flex items-center justify-end flex-shrink-0 ml-2 space-x-2">{conversation.isMuted && !UnreadIndicator() && (<BellOff size={14} className="text-slate-400 dark:text-slate-500" />)}
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                        <div className="flex items-center justify-end flex-shrink-0 ml-2 space-x-2">
+                            {conversation.isMuted && !UnreadIndicator() && (<BellOff size={14} className="text-slate-400 dark:text-slate-500" />)}
+                            {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
                             <UnreadIndicator />
                         </div>
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
                 </div>
 
-                 <div className="flex flex-col items-center justify-between flex-shrink-0">
+                 {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                 <div className="flex flex-col items-center justify-center flex-shrink-0">
+                 {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     <Tippy
                         interactive
                         placement="bottom-end"
@@ -401,20 +407,17 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                         )}
                     >
                         <TippyWrapper>
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                             <button
                                 onClick={(e) => { e.stopPropagation(); setIsMenuVisible(v => !v); }}
-                                className="p-1 rounded-full text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                className="p-1 rounded-full text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-opacity"
                             >
                                 <MoreHorizontal size={16}/>
                             </button>
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </TippyWrapper>
                     </Tippy>
-                    
-                    <div className="h-[14px]">
-                        {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
-                    </div>
-
-                </div>
+                 </div>
             </div>
         </div>
     );

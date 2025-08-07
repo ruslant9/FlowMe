@@ -200,7 +200,7 @@ const CommunityManagementPage = () => {
         { key: 'members', label: 'Участники', icon: Users, count: community.members?.length, onClick: () => setActiveTab('members') },
         { key: 'requests', label: 'Заявки', icon: UserRequestIcon, count: community.pendingJoinRequests?.length, onClick: () => setActiveTab('requests') },
         { key: 'banned', label: 'Черный список', icon: Ban, count: community.bannedUsers?.length, onClick: () => setActiveTab('banned') },
-        { key: 'danger', label: 'Опасная зона', icon: ShieldAlert, onClick: () => setActiveTab('danger') }
+        { key: 'danger', label: 'Опасная зона', icon: ShieldAlert, onClick: () => setActiveTab('danger') },
     ] : [];
 
     if (loading || !formData) {
@@ -216,14 +216,21 @@ const CommunityManagementPage = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-slate-100/50 to-transparent dark:from-slate-900 dark:via-slate-900/50"></div>
                     </div>
                     <div className="p-4 md:p-8 pt-0">
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                        {/* Кнопка "Назад" для мобильных и десктопных экранов вынесена сюда */}
+                        <div className="absolute top-6 left-6 z-10">
+                             <Link to={`/communities/${communityId}`} className="flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">
+                                <ArrowLeft size={16} strokeWidth={2.5} />
+                                <span>В сообщество</span>
+                            </Link>
+                        </div>
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
                         <div className="flex flex-col md:flex-row items-center md:items-end -mt-16 md:-mt-20 relative z-10 max-w-5xl mx-auto">
                             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-slate-100 dark:border-slate-900 flex-shrink-0">
                                 <Avatar username={community.name} avatarUrl={community.avatar} size="2xl"/>
                             </div>
                             <div className="ml-0 md:ml-8 mt-4 md:mt-0 flex-1 min-w-0 flex flex-col items-center md:items-start md:justify-end md:self-end md:mb-2 text-center md:text-left">
-                                <Link to={`/communities/${communityId}`} className="text-sm font-semibold text-blue-500 hover:underline flex items-center space-x-1 mb-2">
-                                    <ArrowLeft size={14}/> <span>Вернуться в сообщество</span>
-                                </Link>
                                 <h1 className="text-2xl md:text-3xl font-bold truncate">{community.name}</h1>
                             </div>
                         </div>
