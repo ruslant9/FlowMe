@@ -177,18 +177,17 @@ const FullScreenPlayer = () => {
                                 style={{ transformStyle: 'preserve-3d' }}
                                 className="w-full max-w-[70vw] md:max-w-md"
                             >
-                                <CachedImage 
-                                    key={track._id}
-                                    src={track.albumArtUrl} 
-                                    alt={track.title} 
-                                    className="w-full aspect-square rounded-2xl object-cover" 
-                                    style={{
-                                        filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.5))'
-                                    }}
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                                />
+                                <motion.div
+    key={track._id}
+    className="w-full aspect-square rounded-2xl bg-center bg-cover"
+    style={{
+        backgroundImage: `url(${track.albumArtUrl})`,
+        filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.5))'
+    }}
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5, ease: 'easeOut' }}
+/>
                             </motion.div>
                         </motion.div>
                     </div>
