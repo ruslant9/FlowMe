@@ -177,6 +177,16 @@ router.post('/submissions/:id/reject', async (req, res) => {
 router.post('/artists', upload.single('avatar'), async (req, res) => {
     try {
         const { name, description, tags } = req.body;
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверка на существующего артиста ---
+        if (!name) {
+            return res.status(400).json({ message: 'Имя артиста не может быть пустым.' });
+        }
+        const existingArtist = await Artist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+        if (existingArtist) {
+            return res.status(400).json({ message: 'Артист с таким именем уже существует.' });
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
         const newArtist = new Artist({
             name,
             description,
@@ -201,6 +211,19 @@ router.post('/tracks', upload.fields([{ name: 'trackFile', maxCount: 1 }, { name
         
         const parsedGenres = genres ? JSON.parse(genres) : [];
         const parsedArtistIds = artistIds ? JSON.parse(artistIds) : [];
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверка на существующий трек ---
+        if (!title || parsedArtistIds.length === 0) {
+            return res.status(400).json({ message: 'Название и исполнитель являются обязательными полями.' });
+        }
+        const existingTrack = await Track.findOne({
+            title: { $regex: new RegExp(`^${title}$`, 'i') },
+            artist: { $all: parsedArtistIds, $size: parsedArtistIds.length }
+        });
+        if (existingTrack) {
+            return res.status(400).json({ message: 'Такой трек у этого исполнителя (или группы исполнителей) уже существует.' });
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         if (!req.files || !req.files.trackFile) {
             return res.status(400).json({ message: 'Аудиофайл не загружен.' });
@@ -239,6 +262,19 @@ router.post('/albums', upload.single('coverArt'), async (req, res) => {
     try {
         const { title, artistId, genre, releaseDate } = req.body;
         const parsedGenre = genre ? JSON.parse(genre) : [];
+    
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверка на существующий альбом ---
+        if (!title || !artistId) {
+            return res.status(400).json({ message: 'Название альбома и исполнитель обязательны.' });
+        }
+        const existingAlbum = await Album.findOne({
+            title: { $regex: new RegExp(`^${title}$`, 'i') },
+            artist: artistId
+        });
+        if (existingAlbum) {
+            return res.status(400).json({ message: 'Альбом с таким названием у этого исполнителя уже существует.' });
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
         const newAlbum = new Album({
             title,
