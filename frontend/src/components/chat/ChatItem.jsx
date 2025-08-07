@@ -341,6 +341,8 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                             {usernameEmoji?.url && (
                                 <img src={usernameEmoji.url} alt="emoji" className="w-4 h-4 ml-1.5" />
                             )}
+                            {/* --- ИСПРАВЛЕНИЕ 2: Иконка "без звука" теперь здесь --- */}
+                            {conversation.isMuted && <BellOff size={14} className="text-slate-400 dark:text-slate-500 ml-2 flex-shrink-0" />}
                         </p>
                         <div className="flex flex-col items-end flex-shrink-0 ml-2">
                             <div className="flex items-center space-x-1 text-xs text-slate-400">
@@ -351,19 +353,15 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                     <div className="flex justify-between items-end mt-0.5">
                         {renderLastMessage()}
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                         <div className="flex items-center justify-end flex-shrink-0 ml-2 space-x-2">
-                            {conversation.isMuted && !UnreadIndicator() && (<BellOff size={14} className="text-slate-400 dark:text-slate-500" />)}
+                            {/* --- ИСПРАВЛЕНИЕ 1: Иконка "закреп" теперь здесь --- */}
                             {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
                             <UnreadIndicator />
                         </div>
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
                 </div>
 
-                 {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                  <div className="flex flex-col items-center justify-center flex-shrink-0">
-                 {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     <Tippy
                         interactive
                         placement="bottom-end"
@@ -407,17 +405,20 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                         )}
                     >
                         <TippyWrapper>
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                            {/* --- ИСПРАВЛЕНИЕ 1: Удалены классы, скрывающие кнопку --- */}
                             <button
                                 onClick={(e) => { e.stopPropagation(); setIsMenuVisible(v => !v); }}
                                 className="p-1 rounded-full text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-opacity"
                             >
                                 <MoreHorizontal size={16}/>
                             </button>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </TippyWrapper>
                     </Tippy>
-                 </div>
+                    
+                    {/* --- ИСПРАВЛЕНИЕ 1: Этот div больше не нужен для иконки закрепа --- */}
+                    {/* <div className="h-[14px]"></div> */}
+
+                </div>
             </div>
         </div>
     );
