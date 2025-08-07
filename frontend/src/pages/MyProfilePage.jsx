@@ -307,8 +307,8 @@ const MyProfilePage = () => {
                                 <ProfileStats stats={stats} onShowUsers={handleShowUsers} />
                             </div>
                              {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-                            <div className="bg-slate-800 rounded-2xl p-6 space-y-4">
-                               <h3 className="text-xl font-bold text-white mb-2">Основная информация</h3>
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 space-y-4">
+                               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Основная информация</h3>
                                <ProfileField label="Местоположение" value={[user.city, user.country].filter(Boolean).join(', ')} />
                                <ProfileField label="Дата рождения" value={user.dob ? format(new Date(user.dob), 'd MMMM yyyy', { locale: ru }) : ''} />
                                <ProfileField label="Пол" value={user.gender} />

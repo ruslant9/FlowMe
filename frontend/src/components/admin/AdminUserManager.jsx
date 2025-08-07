@@ -5,6 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Search, Shield, ShieldCheck, ShieldAlert, User, Mail, Calendar } from 'lucide-react';
 import AdminUserManagementOverlay from './AdminUserManagementOverlay';
+import { useUser } from '../../hooks/useUser'; // --- ИМПОРТ ХУКА ДЛЯ ПОЛУЧЕНИЯ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -17,6 +18,9 @@ const AdminUserManager = () => {
 
     const [isOverlayOpen, setIsOverlayOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    
+    // --- ИСПОЛЬЗУЕМ ХУК ДЛЯ ПОЛУЧЕНИЯ ДАННЫХ АДМИНИСТРАТОРА ---
+    const { currentUser } = useUser();
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -36,8 +40,6 @@ const AdminUserManager = () => {
         }
     }, [page, search]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-    // Этот хук теперь отвечает ТОЛЬКО за логику поиска: сброс на первую страницу.
     useEffect(() => {
         const debounce = setTimeout(() => {
             setPage(1);
@@ -45,13 +47,10 @@ const AdminUserManager = () => {
         return () => clearTimeout(debounce);
     }, [search]);
 
-    // Этот хук отвечает за загрузку данных. Он запускается, когда меняется страница ИЛИ когда поиск сбрасывает страницу на первую.
-    // Мы убрали `fetchData` из массива зависимостей, чтобы разорвать цикл.
     useEffect(() => {
         fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, search]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page]);
 
 
     const handleOpenOverlay = (user) => {
@@ -123,13 +122,18 @@ const AdminUserManager = () => {
                                     <td className="p-2">{renderBanStatus(user)}</td>
                                     <td className="p-2">
                                         <div className="flex items-center justify-end">
-                                            <button 
-                                                onClick={() => handleOpenOverlay(user)} 
-                                                className="flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
-                                            >
-                                                <Shield size={14} />
-                                                <span>Управление</span>
-                                            </button>
+                                            {/* --- ИСПРАВЛЕНИЕ: ПРОВЕРКА, ЧТОБЫ НЕ ЗАБЛОКИРОВАТЬ СЕБЯ --- */}
+                                            {currentUser?._id !== user._id ? (
+                                                <button 
+                                                    onClick={() => handleOpenOverlay(user)} 
+                                                    className="flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
+                                                >
+                                                    <Shield size={14} />
+                                                    <span>Управление</span>
+                                                </button>
+                                            ) : (
+                                                <span className="text-xs font-semibold text-slate-400">Это вы</span>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -147,13 +151,18 @@ const AdminUserManager = () => {
                                     <p className="font-bold truncate">{user.fullName || user.username}</p>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                                 </div>
-                                <button 
-                                    onClick={() => handleOpenOverlay(user)} 
-                                    className="flex-shrink-0 flex items-center whitespace-nowrap space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
-                                >
-                                    <Shield size={14} />
-                                    <span>Управление</span>
-                                </button>
+                                {/* --- ИСПРАВЛЕНИЕ: ПРОВЕРКА, ЧТОБЫ НЕ ЗАБЛОКИРОВАТЬ СЕБЯ --- */}
+                                {currentUser?._id !== user._id ? (
+                                    <button 
+                                        onClick={() => handleOpenOverlay(user)} 
+                                        className="flex-shrink-0 flex items-center whitespace-nowrap space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30"
+                                    >
+                                        <Shield size={14} />
+                                        <span>Управление</span>
+                                    </button>
+                                ) : (
+                                    <span className="text-xs font-semibold text-slate-400">Это вы</span>
+                                )}
                             </div>
                             <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
                                 <div className="text-slate-500 dark:text-slate-400">
@@ -182,7 +191,14 @@ const AdminUserManager = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по имени, @username или почте..." className="pl-10 pr-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 w-full" />
+                    {/* --- ИСПРАВЛЕНИЕ: ИЗМЕНЕНЫ СТИЛИ ПОЛЯ ВВОДА --- */}
+                    <input 
+                        type="text" 
+                        value={search} 
+                        onChange={e => setSearch(e.target.value)} 
+                        placeholder="Поиск по имени, @username или почте..." 
+                        className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
                 </div>
             </div>
             {renderContent()}
