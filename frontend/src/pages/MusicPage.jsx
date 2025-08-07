@@ -1,21 +1,24 @@
 // frontend/src/pages/MusicPage.jsx
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
 import axios from 'axios';
-import { Loader2, Music, Search, Clock, Disc, MicVocal, ListMusic, ChevronRight, Waves } from 'lucide-react';
+import { Loader2, Music, Search, Clock, Disc, MicVocal, ListMusic, ChevronRight, Waves, PlusCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion'; // FIXED: AnimatePresence was added here.
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 
 import PageWrapper from '../components/PageWrapper';
-import TrackItem from '../components/music/TrackItem';
+import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
 import MusicWave from '../components/music/MusicWave';
 import RecommendationCard from '../components/music/RecommendationCard';
 import ArtistAvatar from '../components/music/ArtistAvatar';
 import AlbumCard from '../components/music/AlbumCard';
 import PlaylistCard from '../components/music/PlaylistCard';
+import ResponsiveNav from '../components/ResponsiveNav';
+import CreatePlaylistModal from '../components/modals/CreatePlaylistModal';
+import UploadContentModal from '../components/modals/UploadContentModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -69,8 +72,8 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
                 <section>
                     <SectionHeader title="Новинки" icon={Disc} />
                     <div className="flex space-x-4 -mx-4 px-4 overflow-x-auto pb-4">
-                        {recommendations.newReleases.map(track => (
-                            <div key={track._id} className="w-1/2 sm:w-1/4 md:w-1/5 lg:w-[15%] flex-shrink-0">
+                        {recommendations.newReleases.slice(0, 6).map(track => (
+                            <div key={track._id} className="w-1/2 sm:w-1/4 md:w-1/5 lg:w-[14%] flex-shrink-0">
                                 <RecommendationCard 
                                     track={track}
                                     onSelectTrack={() => playTrack(track, recommendations.newReleases)}
@@ -89,8 +92,8 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
                 <section>
                     <SectionHeader title="Популярные хиты" icon={Music} />
                     <div className="flex space-x-4 -mx-4 px-4 overflow-x-auto pb-4">
-                        {recommendations.popularHits.map((track, index) => (
-                             <div key={track._id} className="w-1/2 sm:w-1/4 md:w-1/5 lg:w-[15%] flex-shrink-0">
+                        {recommendations.popularHits.slice(0, 6).map((track, index) => (
+                             <div key={track._id} className="w-1/2 sm:w-1/4 md:w-1/5 lg:w-[14%] flex-shrink-0">
                                 <RecommendationCard 
                                     track={track}
                                     onSelectTrack={() => playTrack(track, recommendations.popularHits)}
@@ -110,7 +113,7 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
                  <section>
                     <SectionHeader title="Популярные исполнители" icon={MicVocal} />
                     <div className="flex space-x-4 -mx-4 px-4 overflow-x-auto pb-4">
-                         {recommendations.popularArtists.map(artist => (
+                         {recommendations.popularArtists.slice(0, 9).map(artist => (
                              <div key={artist._id} className="w-1/4 sm:w-1/6 md:w-1/8 lg:w-[10%] flex-shrink-0">
                                  <ArtistAvatar artist={artist} />
                             </div>
@@ -122,23 +125,22 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
     );
 };
 
-const MusicListView = ({ tracks, loading, onPlayTrack, onToggleSave, myMusicTrackIds, title, emptyMessage, showDeleteButton = false, onDeleteFromHistory }) => {
+const MusicListView = ({ tracks, loading, onPlayTrack, onToggleSave, myMusicTrackIds, title, emptyMessage }) => {
     if (loading) return <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 animate-spin" /></div>;
     if (!tracks || tracks.length === 0) return <div className="text-center p-20 text-slate-500">{emptyMessage}</div>;
     
     return (
         <div className="space-y-4">
             <h2 className="text-2xl font-bold">{title} ({tracks.length})</h2>
-            <div className="space-y-2">
-                {tracks.map(track => (
-                    <TrackItem 
+            <div className="space-y-1">
+                {tracks.map((track, index) => (
+                    <PlaylistTrackItem 
                         key={track._id}
                         track={track}
-                        onSelectTrack={onPlayTrack}
+                        index={index + 1}
+                        onPlay={() => onPlayTrack(track)}
                         onToggleSave={onToggleSave}
                         isSaved={myMusicTrackIds.has(track.sourceId || track._id)}
-                        showDeleteButton={showDeleteButton}
-                        onDeleteFromHistory={onDeleteFromHistory}
                     />
                 ))}
             </div>
@@ -146,7 +148,41 @@ const MusicListView = ({ tracks, loading, onPlayTrack, onToggleSave, myMusicTrac
     );
 };
 
-const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore }) => {
+const PlaylistsView = ({ playlists, loading, onCreate, onPlaylistUpdated, onPlaylistDeleted }) => {
+    const navigate = useNavigate();
+    
+    if (loading) return <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 animate-spin" /></div>;
+
+    return (
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Плейлисты ({playlists.length})</h2>
+                <button onClick={onCreate} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                    <PlusCircle size={18} />
+                    <span>Создать</span>
+                </button>
+            </div>
+            {playlists.length === 0 ? (
+                <div className="text-center p-20 text-slate-500">У вас еще нет плейлистов.</div>
+            ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {playlists.map(playlist => (
+                        <PlaylistCard
+                            key={playlist._id}
+                            playlist={playlist}
+                            onClick={() => navigate(`/music/playlist/${playlist._id}`)}
+                            onDelete={() => onPlaylistDeleted(playlist._id)}
+                            onEdit={() => onPlaylistUpdated(playlist)}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, onPlayTrack }) => {
     const navigate = useNavigate();
     const { tracks, artists, albums, playlists } = results;
     const hasResults = tracks?.length > 0 || artists?.length > 0 || albums?.length > 0 || playlists?.length > 0;
@@ -204,8 +240,8 @@ const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore }
                     {tracks?.length > 0 && (
                         <section>
                             <SectionHeader title="Треки" icon={Music} />
-                            <div className="space-y-2">
-                                {tracks.map(track => <TrackItem key={track._id} track={track} />)}
+                            <div className="space-y-1">
+                                {tracks.map((track, index) => <PlaylistTrackItem key={track._id} track={track} index={index + 1} onPlay={() => onPlayTrack(track, tracks)} />)}
                             </div>
                             {hasMore && (
                                 <div className="mt-6 text-center">
@@ -233,15 +269,17 @@ const MusicPage = () => {
     const [recommendations, setRecommendations] = useState(null);
     const [myMusic, setMyMusic] = useState([]);
     const [history, setHistory] = useState([]);
-    const [wave, setWave] = useState([]);
-
+    const [playlists, setPlaylists] = useState([]);
+    const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState({});
     const [searchPage, setSearchPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
 
     const [loading, setLoading] = useState({
-        recommendations: true, myMusic: true, history: true, search: false, wave: false
+        recommendations: true, myMusic: true, history: true, playlists: true, search: false, wave: false
     });
 
     const fetchData = useCallback(async (tab) => {
@@ -263,6 +301,10 @@ const MusicPage = () => {
                     res = await axios.get(`${API_URL}/api/music/history`, headers);
                     setHistory(res.data);
                     break;
+                case 'playlists':
+                    res = await axios.get(`${API_URL}/api/playlists`, headers);
+                    setPlaylists(res.data);
+                    break;
                 default: break;
             }
         } catch (error) {
@@ -273,8 +315,9 @@ const MusicPage = () => {
     }, []);
     
     const fetchSearch = useCallback(async (query, page) => {
-        if (!query) {
+        if (!query.trim()) {
             setSearchResults({});
+            setHasMore(false);
             return;
         }
         setLoading(prev => ({ ...prev, search: true }));
@@ -301,7 +344,6 @@ const MusicPage = () => {
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/wave`, { headers: { Authorization: `Bearer ${token}` } });
-            setWave(res.data);
             if (res.data.length > 0) {
                 playTrack(res.data[0], res.data, { startShuffled: true });
             } else {
@@ -336,16 +378,49 @@ const MusicPage = () => {
         navigate('/music', { state: { defaultTab: tabName }, replace: true });
     };
 
+    const navItems = [
+        { key: 'recommendations', label: 'Рекомендации', icon: Waves, onClick: () => handleTabClick('recommendations') },
+        { key: 'my-music', label: 'Моя музыка', icon: Music, onClick: () => handleTabClick('my-music') },
+        { key: 'playlists', label: 'Плейлисты', icon: ListMusic, onClick: () => handleTabClick('playlists') },
+        { key: 'history', label: 'История', icon: Clock, onClick: () => handleTabClick('history') },
+        { key: 'search', label: 'Поиск', icon: Search, onClick: () => handleTabClick('search') },
+    ];
+    
     return (
         <PageWrapper>
+            <CreatePlaylistModal 
+                isOpen={isCreatePlaylistModalOpen}
+                onClose={() => setIsCreatePlaylistModalOpen(false)}
+                onPlaylistCreated={() => fetchData('playlists')}
+            />
+            <UploadContentModal
+                isOpen={isUploadModalOpen}
+                onClose={() => setIsUploadModalOpen(false)}
+            />
             <main className="flex-1 p-4 md:p-8">
                 <div className="max-w-7xl mx-auto">
-                    <h1 className="text-4xl font-bold mb-8">Музыка</h1>
-                    <div className="border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 mb-8 overflow-x-auto no-scrollbar flex">
-                        <TabButton active={activeTab === 'recommendations'} onClick={() => handleTabClick('recommendations')} icon={Waves}>Рекомендации</TabButton>
-                        <TabButton active={activeTab === 'my-music'} onClick={() => handleTabClick('my-music')} icon={Music}>Моя музыка</TabButton>
-                        <TabButton active={activeTab === 'history'} onClick={() => handleTabClick('history')} icon={Clock}>История</TabButton>
-                        <TabButton active={activeTab === 'search'} onClick={() => handleTabClick('search')} icon={Search}>Поиск</TabButton>
+                    <div className="flex justify-between items-center mb-8">
+                        <h1 className="text-4xl font-bold">Музыка</h1>
+                        <button onClick={() => setIsUploadModalOpen(true)} className="hidden md:flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                            <PlusCircle size={18} />
+                            <span>Загрузить трек</span>
+                        </button>
+                    </div>
+
+                    <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 mb-8 overflow-x-auto no-scrollbar">
+                        {navItems.map(item => (
+                            <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon}>
+                                {item.label}
+                            </TabButton>
+                        ))}
+                    </div>
+
+                    <div className="md:hidden mb-6">
+                        <ResponsiveNav 
+                            items={navItems}
+                            visibleCount={4}
+                            activeKey={activeTab}
+                        />
                     </div>
 
                     <AnimatePresence mode="wait">
@@ -356,10 +431,11 @@ const MusicPage = () => {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
                         >
-                            {activeTab === 'recommendations' && <RecommendationsView recommendations={recommendations} loading={loading.recommendations} onPlayWave={handlePlayWave} />}
+                            {activeTab === 'recommendations' && <RecommendationsView recommendations={recommendations} loading={loading.recommendations} onPlayWave={handlePlayWave} onSeeAll={(q) => { setActiveTab('search'); setSearchQuery(q); }} />}
                             {activeTab === 'my-music' && <MusicListView tracks={myMusic} loading={loading.myMusic} title="Моя музыка" emptyMessage="Вы еще не добавили ни одного трека." onPlayTrack={(track) => playTrack(track, myMusic)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
                             {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
-                            {activeTab === 'search' && <SearchView query={searchQuery} setQuery={setSearchQuery} results={searchResults} loading={loading.search} onSearchMore={handleSearchMore} hasMore={hasMore} />}
+                            {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
+                            {activeTab === 'search' && <SearchView query={searchQuery} setQuery={setSearchQuery} results={searchResults} loading={loading.search} onSearchMore={handleSearchMore} hasMore={hasMore} onPlayTrack={(track, tracklist) => playTrack(track, tracklist)} />}
                         </motion.div>
                     </AnimatePresence>
                 </div>

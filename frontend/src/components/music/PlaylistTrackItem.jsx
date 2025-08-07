@@ -22,13 +22,11 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const renderArtistLinks = (artistData) => {
         if (!artistData) return 'Неизвестный исполнитель';
         const artists = Array.isArray(artistData) ? artistData : [artistData];
         
         return artists.map((artist, idx) => {
-            // Если есть полные данные для ссылки
             if (artist && artist._id && artist.name) {
                 return (
                     <React.Fragment key={artist._id}>
@@ -43,7 +41,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                     </React.Fragment>
                 );
             }
-            // Если пришла просто строка или объект без нужных полей
             const artistName = (typeof artist === 'object' ? artist.name : artist) || 'Неизвестный исполнитель';
             return (
                 <React.Fragment key={idx}>
@@ -53,7 +50,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
             );
         });
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const cleanedTitle = cleanTitle(track.title);
     const isLoading = loadingTrackId === track._id;
@@ -65,6 +61,9 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         const seconds = totalSeconds % 60;
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
+    
+    // Определяем ссылку на страницу трека (сингл) или альбома
+    const trackLink = track.album ? `/album/${track.album._id}` : `/single/${track._id}`;
 
     const handlePlayClick = (e) => {
         e.stopPropagation();
@@ -115,12 +114,14 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                                 </span>
                             </Tippy>
                         )}
-                        <p 
-                            className="font-semibold truncate text-sm md:text-base"
-                            style={isCurrent ? { color: accentColor } : {}}
-                        >
-                            {cleanedTitle}
-                        </p>
+                        <Link to={trackLink} onClick={(e) => e.stopPropagation()}>
+                            <p 
+                                className="font-semibold truncate text-sm md:text-base hover:underline"
+                                style={isCurrent ? { color: accentColor } : {}}
+                            >
+                                {cleanedTitle}
+                            </p>
+                        </Link>
                     </div>
                     <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate">
                         {renderArtistLinks(track.artist)}

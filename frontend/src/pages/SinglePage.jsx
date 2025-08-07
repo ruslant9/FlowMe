@@ -119,7 +119,6 @@ const SinglePage = () => {
                     <div 
                         className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
                     />
-                    {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: меняем top-10 на top-6 --- */}
                     <button 
                         onClick={() => navigate(-1)} 
                         className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
@@ -135,15 +134,26 @@ const SinglePage = () => {
                         </div>
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
                             <span className="text-sm font-bold opacity-80" style={{ color: textColor }}>Сингл</span>
-                            <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{track.title}</h1>
-                            <div className="flex items-center space-x-2 mt-4 text-sm" style={{ color: textColor, opacity: 0.9 }}>
-                                <Link to={`/artist/${primaryArtist._id}`} className="hover:underline">
+                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ 2 --- */}
+                            <h1 className="text-5xl md:text-7xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{track.title}</h1>
+                            <div className="flex items-center space-x-2 mt-4 text-base flex-wrap justify-center md:justify-start" style={{ color: textColor, opacity: 0.9 }}>
+                            {/* --- КОНЕЦ ИЗМЕНЕНИЯ 2 --- */}
+                                <Link to={`/artist/${primaryArtist._id}`} className="hover:underline mb-1 md:mb-0">
                                     <div className="flex items-center space-x-2">
                                         <Avatar size="sm" username={primaryArtist.name} avatarUrl={primaryArtist.avatarUrl} />
                                         <div className="font-bold">{renderArtistLinks(track.artist)}</div>
                                     </div>
                                 </Link>
                                 <span className="opacity-80">• {track.releaseDate ? format(new Date(track.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • 1 трек, {totalMinutes} мин.</span>
+                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1 --- */}
+                                {track.playCount > 0 && (
+                                    <span className="opacity-80 flex items-center space-x-1">
+                                        <span>•</span>
+                                        <Play size={14} fill="currentColor" />
+                                        <span>{track.playCount.toLocaleString('ru-RU')}</span>
+                                    </span>
+                                )}
+                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 1 --- */}
                             </div>
                         </div>
                     </div>

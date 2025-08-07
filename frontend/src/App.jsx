@@ -63,9 +63,7 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
   const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)\/[^/]+/.test(location.pathname);
-  // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
@@ -123,12 +121,19 @@ const MainLayout = ({ children }) => {
         </Suspense>
       )}
 
+      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+      {/* 
+        Добавлено условное позиционирование кнопки:
+        - `isFullBleedLayout ? 'right-4' : 'left-4'`
+        Теперь кнопка будет справа на страницах с полноэкранной "шапкой" и слева на всех остальных.
+      */}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className={`md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || isFullBleedLayout ? 'hidden' : 'block'}`}
+        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
       >
         <Menu />
       </button>
+      {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
       <AnimatePresence>
           {isFullScreenPlayerOpen && <FullScreenPlayer />}

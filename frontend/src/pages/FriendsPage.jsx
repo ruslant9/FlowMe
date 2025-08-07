@@ -519,7 +519,15 @@ const FriendsPage = () => {
         try { const storedHistory = localStorage.getItem('searchHistory'); if (storedHistory) { setSearchHistory(JSON.parse(storedHistory)); } } catch (error) { console.error("Failed to load search history:", error); setSearchHistory([]); }
     }, []);
     useEffect(() => { localStorage.setItem('searchHistory', JSON.stringify(searchHistory)); }, [searchHistory]);
-    useEffect(() => { function handleClickOutside(event) { if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target)) { setIsDropdownVisible(false); } } document.addEventListener("mousedown", handleClickOutside); return () => { document.removeEventListener("mousedown", handleClickOutside); }; }, [searchWrapperRef]);
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // No longer needed to manage dropdown visibility, can be removed if not used elsewhere
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
     useEffect(() => { if (location.state?.defaultTab) { navigate(location.pathname, { replace: true }); } }, [location.state, navigate, location.pathname]);
     const fetchData = useCallback(async (showLoader = true) => {
         if (showLoader) setLoading(true);
@@ -573,8 +581,6 @@ const FriendsPage = () => {
         if (currentAction.confirm) { showConfirmation({ title: currentAction.confirm.title, message: currentAction.confirm.message, onConfirm: performApiCall, }); } else { performApiCall(); }
     };
     const handleTabClick = (tab) => { setActiveTab(tab); setSearchTerm(''); setSearchResults([]); };
-    const handleSearchInputFocus = () => { /* No longer needed to show dropdown */ };
-    const handleSearchHistoryClick = (historyTerm) => { setSearchTerm(historyTerm); searchInputRef.current?.focus(); };
     const clearSearchHistory = () => { setSearchHistory([]); };
     const sortedAllFriends = useMemo(() => {
         if (!allFriends) return [];
@@ -611,7 +617,6 @@ const FriendsPage = () => {
         setSortConfig({ key, direction });
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Переименована и упрощена функция ---
     const renderSearchResults = () => {
         if (isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Поиск...</div>;
         if (!isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Ничего не найдено.</div>;
@@ -627,7 +632,6 @@ const FriendsPage = () => {
             </div>
         );
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const renderTabContent = () => {
         if (loading) return (<div className="space-y-2">{[...Array(3)].map((_, i) => <UserCardSkeleton key={i} />)}</div>);
@@ -695,7 +699,7 @@ const FriendsPage = () => {
                                 <Filter size={20} />
                             </button>
                         </div>
-                        <div className="relative" ref={searchWrapperRef}>
+                        <div className="relative">
                             <div className="flex items-center space-x-2">
                                 <div className="relative flex-grow">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40" size={20} />
@@ -723,7 +727,7 @@ const FriendsPage = () => {
                         </div>
                     </div>
                     
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменена логика отображения --- */}
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Упрощенная логика рендеринга --- */}
                     {hasActiveSearch ? (
                         <div className="mt-6 md:mt-0">
                             {renderSearchResults()}
