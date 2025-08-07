@@ -141,7 +141,7 @@ const MultiArtistAutocomplete = ({ artists, selectedIds, onSelectionChange, excl
 };
 
 const ToggleSwitch = ({ checked, onChange, label }) => (
-    <label className="flex items-center space-x-2 cursor-pointer text-sm">
+    <label className="flex items-center space-x-2 cursor-pointer text-xs md:text-sm">
         <div className="relative">
             <input type="checkbox" className="sr-only" checked={checked} onChange={e => onChange(e.target.checked)} />
             <div className={`block w-10 h-6 rounded-full transition ${checked ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
