@@ -19,6 +19,7 @@ import AttachedTrack from './music/AttachedTrack';
 import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
+import AnimatedAccent from './AnimatedAccent';
 import { useCachedImage } from '../hooks/useCachedImage'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -724,7 +725,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
 
                 <div className="p-6 pt-2">
                     <div onClick={isScheduled ? undefined : handleOpenPostInModal} className={isScheduled ? '' : 'cursor-pointer'}>
-                        {currentPost.text && <EmojiParsedText text={currentPost.text} className="mb-4 whitespace-pre-wrap break-words" />}
+                        {currentPost.text && <p className="mb-4 whitespace-pre-wrap break-words">{currentPost.text}</p>}
                         {currentPost.poll && <PollDisplay poll={currentPost.poll} onVote={handleVote} isScheduled={isScheduled} />}
                         {currentPost.imageUrls && currentPost.imageUrls.length > 0 && (
                             <div className="relative group mb-4">

@@ -225,8 +225,7 @@ const PlaylistPage = () => {
                     }}
                 >
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-lg"></div>
-                     <button onClick={() => navigate(-1)} className="absolute top-10 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">
-                        <ArrowLeft size={16}/> <span>Назад</span>
+                <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">                        <ArrowLeft size={16}/> <span>Назад</span>
                     </button>
                     <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6 text-white">
                         <div className={`w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl ${getCoverGridClass()}`}>

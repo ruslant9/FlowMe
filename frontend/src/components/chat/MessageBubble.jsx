@@ -1,6 +1,6 @@
-// frontend/src/components/chat/MessageBubble.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/components/chat/MessageBubble.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
-import React, { useMemo, useRef, useState, forwardRef, useEffect } from 'react';
+import React, { useMemo, useRef, useState, forwardRef } from 'react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -11,7 +11,6 @@ import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
 import { useCachedImage } from '../../hooks/useCachedImage';
-import twemoji from 'twemoji'; // <-- ИМПОРТ TWEMOJI
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -56,17 +55,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
     const time = format(new Date(message.createdAt), 'HH:mm');
     const menuButtonRef = useRef(null);
     const [menuPosition, setMenuPosition] = useState('bottom');
-    const textContainerRef = useRef(null); // <-- 1. REF ДЛЯ ТЕКСТА
-
-    // <-- 2. useEffect ДЛЯ ПРИМЕНЕНИЯ TWEMOJI ---
-    useEffect(() => {
-        if (textContainerRef.current) {
-            twemoji.parse(textContainerRef.current, {
-                folder: 'svg',
-                ext: '.svg'
-            });
-        }
-    }, [message.text, isCurrentSearchResult, searchQuery]); // Перепарсиваем при изменении текста или поиска
 
     const isMenuOpen = openMenuId === message._id;
 
@@ -202,16 +190,16 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             ].reverse()
         });
     };
-    
-    // <-- 3. ФУНКЦИЯ ТЕПЕРЬ ВОЗВРАЩАЕТ JSX, А НЕ КОМПОНЕНТ ---
+
     const renderMessageWithHighlight = useMemo(() => {
-        if (!message.text) return null;
-        if (!isCurrentSearchResult || !searchQuery) {
+        if (!isCurrentSearchResult || !searchQuery || !message.text) {
             return message.text;
         }
+
         const escapedQuery = searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         const regex = new RegExp(`(${escapedQuery})`, 'gi');
         const parts = message.text.split(regex);
+
         return (
             <>
                 {parts.map((part, index) =>
@@ -244,6 +232,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             
             <div className={`relative flex-shrink-0 ${isOwnMessage ? 'order-1' : 'order-2'}`}>
                 {!selectionMode && !message.isSending && !message.isFailed && (
+                     // --- НАЧАЛО ИЗМЕНЕНИЯ: Упрощаем структуру. Tippy теперь один и открывает меню действий. ---
                      <Tippy
                         interactive
                         placement={menuPosition === 'bottom' ? 'bottom-end' : 'top-end'}
@@ -258,6 +247,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         popperOptions={{ strategy: 'fixed' }}
                         render={attrs => (
                             <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
+                                {/* ReactionsPopover теперь является частью меню и имеет свой триггер */}
                                 <ReactionsPopover onSelect={(emoji) => { onReact(emoji); onToggleMenu(null); }}>
                                      <button
                                         disabled={!canInteract}
@@ -300,6 +290,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                             <MoreHorizontal size={18}/>
                          </TippyWrapper>
                      </Tippy>
+                    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
                 )}
             </div>
 
@@ -355,9 +346,8 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 
                 <div className={`relative ${Object.values(groupedReactions).length > 0 ? 'pb-7' : ''}`}>
                     <div className="flex items-end flex-wrap px-3 pt-2 pb-2">
-                        {/* --- 4. РЕНДЕРИМ ТЕКСТ В КОНТЕЙНЕР С REF --- */}
                         {message.text && (
-                             <p ref={textContainerRef} className="whitespace-pre-wrap break-words mr-2 min-w-0">
+                             <p className="whitespace-pre-wrap break-words mr-2 min-w-0">
                                 {renderMessageWithHighlight}
                             </p>
                         )}
@@ -373,6 +363,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                             const tippyContent = users.length > 0 ? users.join(', ') : '';
                             const Wrapper = users.length > 0 ? Tippy : React.Fragment;
                             const wrapperProps = users.length > 0 ? { content: tippyContent, placement: 'top' } : {};
+
                             return (
                                 <Wrapper key={emoji} {...wrapperProps}>
                                 <button disabled={!canInteract} onClick={() => onReact(emoji)} className="px-1.5 py-0.5 bg-white dark:bg-slate-600 rounded-full text-sm shadow flex items-center space-x-1 disabled:opacity-70 disabled:cursor-not-allowed">
