@@ -1,10 +1,10 @@
 // frontend/src/pages/PlaylistPage.jsx
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useTitle from '../hooks/useTitle';
-import { Loader2, Play, Music, Clock, ArrowLeft, PlusCircle, Edit, Trash2, Shuffle } from 'lucide-react';
+import { Loader2, Play, Music, Clock, ArrowLeft, PlusCircle, Edit, Trash2, Shuffle, MoreHorizontal } from 'lucide-react';
 import { useMusicPlayer } from '../context/MusicPlayerContext';
 import { useUser } from '../hooks/useUser';
 import Avatar from '../components/Avatar';
@@ -16,6 +16,7 @@ import toast from 'react-hot-toast';
 import ColorThief from 'colorthief';
 import { useCachedImage } from '../hooks/useCachedImage';
 import PageWrapper from '../components/PageWrapper';
+import { Menu, Transition } from '@headlessui/react'; // --- НОВЫЙ ИМПОРТ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -225,9 +226,11 @@ const PlaylistPage = () => {
                     }}
                 >
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-lg"></div>
-                     <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">
-                        <ArrowLeft size={16}/> <span>Назад</span>
-                    </button>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3 --- */}
+                <button onClick={() => navigate(-1)} className="absolute top-4 left-4 md:left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">
+                    <ArrowLeft size={16}/> <span>Назад</span>
+                </button>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                     <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6 text-white">
                         <div className={`w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl ${getCoverGridClass()}`}>
                              {renderPlaylistCover()}
@@ -249,20 +252,55 @@ const PlaylistPage = () => {
 
                 <div className="p-6 md:p-8 bg-slate-100 dark:bg-slate-900">
                     
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-8">
-                        <div className="flex items-center space-x-4">
-                            <button onClick={() => handlePlayPlaylist(false)} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
-                                <Play size={24} fill="currentColor" />
-                                <span>Слушать</span>
-                            </button>
-                            <button onClick={() => handlePlayPlaylist(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Слушать вперемешку"><Shuffle /></button>
-                        </div>
+                    <div className="flex items-center space-x-4 mb-8">
+                        <button onClick={() => handlePlayPlaylist(false)} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
+                            <Play size={24} fill="currentColor" />
+                            <span>Слушать</span>
+                        </button>
+                        <button onClick={() => handlePlayPlaylist(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Слушать вперемешку"><Shuffle /></button>
                         {isOwner && (
-                            <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                            <>
                                 <button onClick={() => setAddTracksModalOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Добавить треки"><PlusCircle /></button>
-                                <button onClick={() => setEditModalOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Редактировать"><Edit /></button>
-                                <button onClick={handleDeletePlaylist} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Удалить плейлист"><Trash2 /></button>
-                            </div>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4 --- */}
+                                <div className="md:hidden">
+                                    <Menu as="div" className="relative">
+                                        <Menu.Button className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">
+                                            <MoreHorizontal />
+                                        </Menu.Button>
+                                        <Transition
+                                            as={Fragment}
+                                            enter="transition ease-out duration-100"
+                                            enterFrom="transform opacity-0 scale-95"
+                                            enterTo="transform opacity-100 scale-100"
+                                            leave="transition ease-in duration-75"
+                                            leaveFrom="transform opacity-100 scale-100"
+                                            leaveTo="transform opacity-0 scale-95"
+                                        >
+                                            <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl ios-glass-popover p-2 z-20">
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <button onClick={() => setEditModalOpen(true)} className={`group flex w-full items-center rounded-md px-3 py-2 text-sm ${active ? 'bg-slate-200 dark:bg-slate-700' : ''}`}>
+                                                            <Edit className="mr-2 h-5 w-5" /> Редактировать плейлист
+                                                        </button>
+                                                    )}
+                                                </Menu.Item>
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <button onClick={handleDeletePlaylist} className={`group flex w-full items-center rounded-md px-3 py-2 text-sm text-red-500 ${active ? 'bg-red-500/10' : ''}`}>
+                                                            <Trash2 className="mr-2 h-5 w-5" /> Удалить плейлист
+                                                        </button>
+                                                    )}
+                                                </Menu.Item>
+                                            </Menu.Items>
+                                        </Transition>
+                                    </Menu>
+                                </div>
+                                <div className="hidden md:flex items-center space-x-4">
+                                    <button onClick={() => setEditModalOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Редактировать"><Edit /></button>
+                                    <button onClick={handleDeletePlaylist} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Удалить плейлист"><Trash2 /></button>
+                                </div>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
+                            </>
                         )}
                     </div>
 

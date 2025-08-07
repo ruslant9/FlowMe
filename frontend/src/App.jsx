@@ -2,9 +2,9 @@
 
 import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
-import { Sun, Moon, Loader2, ShieldAlert, LogOut, Home, Search, Music, Newspaper, Users, MessageSquare, UserIcon } from 'lucide-react';
+import { Sun, Moon, Loader2, ShieldAlert, LogOut, Menu, Home, Search, Music, ListMusic, Star } from 'lucide-react';
 import { useUser } from './hooks/useUser';
 const LiquidGlassBackground = React.lazy(() => import('./components/LiquidGlassBackground'));
 import LoginPage from './pages/LoginPage';
@@ -63,7 +63,11 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
+  // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist)\/[^/]+/.test(location.pathname) || /^\/messages\/.+/.test(location.pathname);
+  // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
     currentTrack,
     isPlaying,
@@ -88,15 +92,6 @@ const MainLayout = ({ children }) => {
     openFullScreenPlayer,
   } = useMusicPlayer();
 
-  const navItems = useMemo(() => [
-    { label: "Лента", path: "/", icon: Newspaper },
-    { label: "Друзья", path: "/friends", icon: Users },
-    { label: "Чаты", path: "/messages", icon: MessageSquare },
-    { label: "Музыка", path: "/music", icon: Music },
-    { label: "Профиль", path: "/profile", icon: UserIcon } // Assuming UserIcon is imported
-  ], []);
-
-
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -117,8 +112,10 @@ const MainLayout = ({ children }) => {
  };
 
   return (
-    <div className={`w-full font-sans transition-colors duration-300 relative h-[100dvh] pb-[76px] md:pb-0 ${currentTrack ? 'pb-[176px] md:pb-[100px]' : ''} ${
+    <div className={`w-full font-sans transition-colors duration-300 relative h-[100dvh] ${
       theme === 'dark' ? 'bg-liquid-background text-white' : 'bg-slate-100 text-slate-900'
+       } ${
+      currentTrack ? 'pb-[100px]' : ''
     }`}>
       {theme === 'dark' && (
         <Suspense fallback={null}>
@@ -126,13 +123,20 @@ const MainLayout = ({ children }) => {
         </Suspense>
       )}
 
+      <button 
+        onClick={() => setIsMobileNavOpen(true)}
+        className={`md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || isFullBleedLayout ? 'hidden' : 'block'}`}
+      >
+        <Menu />
+      </button>
+
       <AnimatePresence>
           {isFullScreenPlayerOpen && <FullScreenPlayer />}
       </AnimatePresence>
 
 
       {currentTrack && (
-        <div className="fixed bottom-[76px] md:bottom-0 left-0 right-0 z-40 border-t border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80"> 
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80"> 
           <MusicPlayerBar
             track={currentTrack}
             isPlaying={isPlaying}
@@ -158,17 +162,14 @@ const MainLayout = ({ children }) => {
         </div>
       )}
       
-      <footer className="block md:hidden fixed inset-x-0 bottom-0 z-30">
-          <ResponsiveNav items={navItems} visibleCount={5} activePath={location.pathname} />
-      </footer>
       
-      <div className="flex relative h-full overflow-hidden">
+      <div className={`flex relative h-full overflow-hidden`}>
         <Sidebar 
           themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} 
-          isMobileNavOpen={false}
-          onMobileNavClose={() => {}}
+          isMobileNavOpen={isMobileNavOpen}
+          onMobileNavClose={() => setIsMobileNavOpen(false)}
         />
-        <div className="flex-1 relative overflow-y-auto transform-gpu transition-all duration-300">
+        <div className={`flex-1 relative overflow-y-auto transform-gpu transition-all duration-300 ${isFullBleedLayout ? '' : 'pt-16 md:pt-0'}`}>
           {children}
         </div>
       </div>
@@ -315,6 +316,38 @@ const AdminProtectedLayout = () => {
   }
 
   return <Outlet />;
+};
+
+const navItems = [
+  { path: '/', label: 'Главная', icon: Home },
+  { path: '/search', label: 'Поиск', icon: Search },
+  { path: '/my-music', label: 'Моя музыка', icon: Music },
+  { path: '/playlists', label: 'Плейлисты', icon: ListMusic },
+  { path: '/favorites', label: 'Избранное', icon: Star },
+];
+
+// Компонент-обертка, чтобы получить доступ к useLocation
+const AppContent = () => {
+  const location = useLocation();
+
+  return (
+    <div className="font-sans min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
+      {/* Контент страницы */}
+      <main className="flex-1 p-4 text-center text-slate-800 dark:text-white">
+        <h1 className="text-3xl font-bold">Текущая страница</h1>
+        <p className="mt-2 bg-slate-200 dark:bg-slate-700 inline-block px-4 py-1 rounded-full">{location.pathname}</p>
+      </main>
+
+      {/* Наша навигационная панель в футере */}
+      <footer className="sticky bottom-0 p-4">
+        <ResponsiveNav 
+          items={navItems} 
+          visibleCount={3} // Показываем 2 кнопки + кнопка "Еще"
+          activePath={location.pathname}
+        />
+      </footer>
+    </div>
+  );
 };
 
 function App() {
