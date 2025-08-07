@@ -1,4 +1,4 @@
-// frontend/src/pages/MusicPage.jsx --- ФАЙЛ С ЛОГИРОВАНИЕМ ---
+// frontend/src/pages/MusicPage.jsx
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -19,7 +19,7 @@ import ArtistCard from '../components/music/ArtistCard';
 import AlbumCard from '../components/music/AlbumCard';
 import { useModal } from '../hooks/useModal';
 import PageWrapper from '../components/PageWrapper';
-import ResponsiveNav from '../components/ResponsiveNav';
+import ResponsiveNav from '../components/ResponsiveNav'; // Импорт можно оставить, он не влияет на рендер
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -28,7 +28,7 @@ const TabButton = ({ children, active, onClick }) => (
         onClick={onClick}
         className={`flex-shrink-0 flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${
             active
-                ? 'border-blue-500 text-blue-500'
+                ? 'border-blue-500 text-blue-500' 
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
         }`}
     >
@@ -37,11 +37,10 @@ const TabButton = ({ children, active, onClick }) => (
 );
 
 const MusicPage = () => {
-    console.log('MusicPage: Компонент рендерится');
     useTitle('Музыка');
     const location = useLocation();
     const navigate = useNavigate();
-
+    
     const getInitialTab = () => {
         if (location.state?.defaultTab) return location.state.defaultTab;
         const savedTab = localStorage.getItem('musicActiveTab');
@@ -55,19 +54,19 @@ const MusicPage = () => {
     const [recentlyPlayed, setRecentlyPlayed] = useState([]);
     const [playlists, setPlaylists] = useState([]);
     const [loadingTabData, setLoadingTabData] = useState(false);
-
-    const {
+    
+    const { 
         playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds,
-        progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause
-    } = useMusicPlayer();
-
+        progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause 
+    } = useMusicPlayer(); 
+    
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState({ tracks: [], playlists: [], artists: [], albums: [] });
     const [loadingSearch, setLoadingSearch] = useState(false);
     const [searchPage, setSearchPage] = useState(1);
     const [hasMoreSearchResults, setHasMoreSearchResults] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-
+    
     const [isUploadModalOpen, setUploadModalOpen] = useState(false);
     const [isCreatePlaylistModalOpen, setCreatePlaylistModalOpen] = useState(false);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -75,7 +74,6 @@ const MusicPage = () => {
     const { showConfirmation } = useModal();
 
     const fetchDataForTab = useCallback(async (tab, query = '', page = 1) => {
-        console.log(`fetchDataForTab: Запрос данных для вкладки: ${tab}, запрос: "${query}", страница: ${page}`);
         const token = localStorage.getItem('token');
         const headers = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -84,16 +82,15 @@ const MusicPage = () => {
             setSearchResults({ tracks: [], playlists: [], artists: [], albums: [] });
             setHasMoreSearchResults(true);
         };
-
+        
         switch (tab) {
             case 'my-music':
                 setLoadingTabData(true);
                 resetSearchState();
                 try {
                     const res = await axios.get(`${API_URL}/api/music/saved`, headers);
-                    console.log('fetchDataForTab (my-music): Получены данные', res.data);
                     setMyMusicTracks(res.data);
-                } catch (e) { toast.error('Не удалось загрузить Мою музыку.'); console.error('Ошибка загрузки "Моя музыка":', e); }
+                } catch (e) { toast.error('Не удалось загрузить Мою музыку.'); }
                 setLoadingTabData(false);
                 break;
 
@@ -102,9 +99,8 @@ const MusicPage = () => {
                 resetSearchState();
                 try {
                     const res = await axios.get(`${API_URL}/api/playlists`, headers);
-                    console.log('fetchDataForTab (playlists): Получены данные', res.data);
                     setPlaylists(res.data);
-                } catch (e) { toast.error('Не удалось загрузить плейлисты.'); console.error('Ошибка загрузки плейлистов:', e); }
+                } catch (e) { toast.error('Не удалось загрузить плейлисты.'); }
                 setLoadingTabData(false);
                 break;
 
@@ -113,25 +109,23 @@ const MusicPage = () => {
                 resetSearchState();
                 try {
                     const res = await axios.get(`${API_URL}/api/music/history`, headers);
-                    console.log('fetchDataForTab (recently-played): Получены данные', res.data);
                     setRecentlyPlayed(res.data);
-                } catch (e) { toast.error('Не удалось загрузить историю.'); console.error('Ошибка загрузки истории:', e); }
+                } catch (e) { toast.error('Не удалось загрузить историю.'); }
                 setLoadingTabData(false);
                 break;
-
+            
             case 'search':
                 if (!query.trim()) {
                     setSearchResults({ tracks: [], playlists: [], artists: [], albums: [] });
                     setHasMoreSearchResults(false);
                     return;
                 }
-
+                
                 if (page === 1) setLoadingSearch(true);
                 else setLoadingMore(true);
 
                 try {
                     const res = await axios.get(`${API_URL}/api/music/search-all?q=${encodeURIComponent(query)}&page=${page}`, headers);
-                    console.log(`fetchDataForTab (search): Получены результаты поиска для запроса "${query}", страница ${page}`, res.data);
                     setSearchResults(prev => {
                         if (page === 1) {
                             return res.data;
@@ -143,8 +137,8 @@ const MusicPage = () => {
                     });
                     setHasMoreSearchResults(res.data.hasMore);
                     setSearchPage(page);
-                } catch (error) { toast.error("Ошибка при поиске."); console.error('Ошибка при поиске:', error); }
-
+                } catch (error) { toast.error("Ошибка при поиске."); }
+                
                 setLoadingSearch(false);
                 setLoadingMore(false);
                 break;
@@ -152,13 +146,12 @@ const MusicPage = () => {
     }, []);
 
     useEffect(() => {
-        console.log(`useEffect (activeTab): Активная вкладка изменена на: ${activeTab}`);
         if (location.state?.defaultTab) {
             navigate(location.pathname, { replace: true, state: {} });
         }
         localStorage.setItem('musicActiveTab', activeTab);
     }, [activeTab, location, navigate]);
-
+    
     useEffect(() => {
         fetchDataForTab(activeTab);
     }, [activeTab, fetchDataForTab]);
@@ -172,7 +165,7 @@ const MusicPage = () => {
         }, 300);
         return () => clearTimeout(debounce);
     }, [searchQuery, activeTab, fetchDataForTab]);
-
+    
     useEffect(() => {
         const handleMyMusicUpdate = () => {
             if (activeTab === 'my-music') {
@@ -190,33 +183,29 @@ const MusicPage = () => {
         if (activeTab === 'my-music') currentPlaylist = myMusicTracks;
         else if (activeTab === 'recently-played') currentPlaylist = recentlyPlayed;
         else currentPlaylist = searchResults.tracks;
-        console.log('handleSelectTrack: Выбран трек', track, 'Текущий плейлист:', currentPlaylist);
-        playTrack(track, currentPlaylist);
+        playTrack(track, currentPlaylist); 
     }, [myMusicTracks, recentlyPlayed, searchResults, activeTab, playTrack]);
-
+    
     const handlePlayWave = useCallback(async () => {
         const toastId = toast.loading("Настраиваем вашу волну...");
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/wave`, { headers: { Authorization: `Bearer ${token}` } });
-            console.log('handlePlayWave: Получены треки для волны', res.data);
             if (res.data?.length > 0) {
                 playTrack(res.data[0], res.data);
                 toast.success("Ваша волна запущена!", { id: toastId });
             } else {
                 toast.error("Не удалось найти треки для вашей волны.", { id: toastId });
             }
-        } catch (error) { toast.error("Ошибка при запуске волны.", { id: toastId }); console.error('Ошибка при запуске волны:', error); }
+        } catch (error) { toast.error("Ошибка при запуске волны.", { id: toastId }); }
     }, [playTrack]);
 
     const handleEditPlaylist = (playlist) => {
-        console.log('handleEditPlaylist: Редактирование плейлиста', playlist);
         setPlaylistToEdit(playlist);
         setEditModalOpen(true);
     };
 
     const handleDeletePlaylist = (playlistId) => {
-        console.log('handleDeletePlaylist: Попытка удаления плейлиста с ID', playlistId);
         showConfirmation({
             title: "Удалить плейлист?",
             message: "Это действие необратимо. Плейлист будет удален навсегда.",
@@ -224,19 +213,18 @@ const MusicPage = () => {
                 const toastId = toast.loading('Удаление...');
                 try {
                     const token = localStorage.getItem('token');
-                    await axios.delete(`${API_URL}/api/playlists/${playlistId}`, {
-                        headers: { Authorization: `Bearer ${token}` }
+                    await axios.delete(`${API_URL}/api/playlists/${playlistId}`, { 
+                        headers: { Authorization: `Bearer ${token}` } 
                     });
                     toast.success('Плейлист удален', { id: toastId });
                     fetchDataForTab('playlists');
                 } catch (error) {
                     toast.error('Ошибка при удалении плейлиста.', { id: toastId });
-                    console.error('Ошибка при удалении плейлиста:', error);
                 }
             }
         });
     };
-
+    
     const navItems = [
         { key: 'my-music', label: 'Моя музыка', icon: Music, onClick: () => setActiveTab('my-music') },
         { key: 'search', label: 'Поиск', icon: Search, onClick: () => setActiveTab('search') },
@@ -244,8 +232,6 @@ const MusicPage = () => {
         { key: 'recently-played', label: 'Вы слушали', icon: History, onClick: () => setActiveTab('recently-played') }
     ];
     
-    console.log('MusicPage: Рендеринг JSX, активная вкладка:', activeTab);
-
     return (
         <PageWrapper>
             <main className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
@@ -262,7 +248,7 @@ const MusicPage = () => {
                             <UploadCloud size={18} /> <span>Загрузить аудио</span>
                         </button>
                     </div>
-
+                    
                     <div className="px-6 md:px-8">
                         <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 overflow-x-auto no-scrollbar">
                             <div className="flex items-center gap-x-2 -mb-px">
@@ -274,17 +260,20 @@ const MusicPage = () => {
                             </div>
                         </div>
 
+                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Компонент ResponsiveNav временно удален для диагностики --- */}
+                        {/*
                         <div className="md:hidden mb-6">
-                            <ResponsiveNav
+                            <ResponsiveNav 
                                 items={navItems}
                                 visibleCount={4}
                                 activeKey={activeTab}
                             />
                         </div>
+                        */}
+                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     </div>
-
+                    
                     <div className="p-6 md:p-8">
-                        {console.log(`Рендеринг контента для вкладки: ${activeTab}`)}
                         {activeTab === 'search' && (
                             <div>
                                 <div className="relative mb-4">
@@ -292,17 +281,14 @@ const MusicPage = () => {
                                     <input type="text" placeholder="Артист, альбом или трек..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus
                                         className="w-full pl-12 pr-4 py-3 bg-slate-200/70 dark:bg-black/30 text-slate-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:focus:ring-blue-500 rounded-lg" />
                                 </div>
-                                {console.log('Вкладка Поиск: loadingSearch:', loadingSearch, 'searchQuery:', searchQuery.trim())}
                                 {loadingSearch ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                                     !searchQuery.trim() ? <div className="text-center py-10 text-slate-500">Начните вводить что-нибудь для поиска.</div> :
-                                    (searchResults.artists.length === 0 && searchResults.albums.length === 0 && searchResults.tracks.length === 0 && searchResults.playlists.length === 0) ?
+                                    (searchResults.artists.length === 0 && searchResults.albums.length === 0 && searchResults.tracks.length === 0 && searchResults.playlists.length === 0) ? 
                                     <p className="text-center py-10 text-slate-500">Ничего не найдено.</p> :
                                     <div className="space-y-8">
-                                        {console.log('Вкладка Поиск: Рендеринг результатов', searchResults)}
                                         {searchResults.tracks.length > 0 && (
                                             <div>
                                                 <h3 className="text-xl font-bold mb-3">Треки</h3>
-                                                {console.log('Рендеринг TrackList для поиска. Треки:', searchResults.tracks)}
                                                 <TrackList
                                                     tracks={searchResults.tracks}
                                                     onSelectTrack={handleSelectTrack}
@@ -334,7 +320,6 @@ const MusicPage = () => {
                                             <div>
                                                 <h3 className="text-xl font-bold mb-3">Артисты</h3>
                                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
-                                                    {console.log('Рендеринг ArtistCard. Артисты:', searchResults.artists)}
                                                     {searchResults.artists.map(artist => <ArtistCard key={artist._id} artist={artist} />)}
                                                 </div>
                                             </div>
@@ -343,7 +328,6 @@ const MusicPage = () => {
                                             <div>
                                                 <h3 className="text-xl font-bold mb-3">Альбомы</h3>
                                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
-                                                     {console.log('Рендеринг AlbumCard. Альбомы:', searchResults.albums)}
                                                     {searchResults.albums.map(album => <AlbumCard key={album._id} album={album} />)}
                                                 </div>
                                             </div>
@@ -352,7 +336,6 @@ const MusicPage = () => {
                                             <div>
                                                 <h3 className="text-xl font-bold mb-3">Открытые плейлисты</h3>
                                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
-                                                    {console.log('Рендеринг PlaylistCard для поиска. Плейлисты:', searchResults.playlists)}
                                                     {searchResults.playlists.map(p => <PlaylistCard key={p._id} playlist={p} onClick={() => navigate(`/music/playlist/${p._id}`)} />)}
                                                 </div>
                                             </div>
@@ -361,12 +344,12 @@ const MusicPage = () => {
                                 )}
                             </div>
                         )}
-
+                        
                         {['my-music', 'recently-played', 'playlists'].includes(activeTab) && (
-                             loadingTabData ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
+                            loadingTabData ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                                 <div>
-                                    {activeTab === 'my-music' && (myMusicTracks.length > 0 ? (console.log('Рендеринг TrackList для Моя музыка. Треки:', myMusicTracks), <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/>) : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
-                                    {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? (console.log('Рендеринг TrackList для Вы слушали. Треки:', recentlyPlayed), <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/>) : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
+                                    {activeTab === 'my-music' && (myMusicTracks.length > 0 ? <TrackList tracks={myMusicTracks} onSelectTrack={(track) => playTrack(track, myMusicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Ваша музыка пуста.</p>)}
+                                    {activeTab === 'recently-played' && (recentlyPlayed.length > 0 ? <TrackList tracks={recentlyPlayed} onSelectTrack={(track) => playTrack(track, recentlyPlayed)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, onToggleLike, myMusicTrackIds, progress, duration, onSeek, loadingTrackId, buffered, togglePlayPause}}/> : <p className="text-center py-10 text-slate-500">Вы еще ничего не слушали.</p>)}
                                     {activeTab === 'playlists' && (
                                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4">
                                             <div className="relative group aspect-square">
@@ -375,13 +358,12 @@ const MusicPage = () => {
                                                     <span className="mt-2 font-semibold text-center">Создать плейлист</span>
                                                 </button>
                                             </div>
-                                            {console.log('Рендеринг PlaylistCard для вкладки Плейлисты. Плейлисты:', playlists)}
-                                            {playlists.map(p =>
-                                                <PlaylistCard
-                                                    key={p._id}
-                                                    playlist={p}
-                                                    onClick={() => navigate(`/music/playlist/${p._id}`)}
-                                                    onEdit={handleEditPlaylist}
+                                            {playlists.map(p => 
+                                                <PlaylistCard 
+                                                    key={p._id} 
+                                                    playlist={p} 
+                                                    onClick={() => navigate(`/music/playlist/${p._id}`)} 
+                                                    onEdit={handleEditPlaylist} 
                                                     onDelete={handleDeletePlaylist} />
                                             )}
                                         </div>

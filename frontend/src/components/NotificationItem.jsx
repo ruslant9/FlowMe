@@ -250,18 +250,18 @@ const NotificationItem = ({ notification, onDelete, onAction }) => {
                         </div>
                     </div>
                     <div className="flex-1 min-w-0"> 
-                        {/* Десктопная версия (остается как была) */}
+                        {/* Десктопная версия */}
                         <div className="hidden sm:block">
-                            <p className="text-base">{renderText()}</p>
-                            <p className="text-sm text-slate-500 dark:text-white/60 mt-1">
+                            <p className="text-sm">{renderText()}</p>
+                            <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
                                 {formatDistanceToNow(new Date(notification.updatedAt), { addSuffix: true, locale: customRuLocale })}
                             </p>
                         </div>
-                        {/* Мобильная версия (новая) */}
+                        {/* Мобильная версия */}
                         <div className="sm:hidden">
-                            <p className="text-sm">{renderTextContent()}</p>
+                            <p className="text-xs">{renderTextContent()}</p>
                             {details.previewFormat && (
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                     {details.previewFormat(notification)}
                                 </p>
                             )}

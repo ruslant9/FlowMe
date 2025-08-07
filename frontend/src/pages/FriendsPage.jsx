@@ -428,7 +428,6 @@ const FriendsPage = () => {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                 >
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлен заголовок и кнопка сброса --- */}
                     <div className="pt-4 space-y-4 border-t border-slate-200 dark:border-white/10">
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold text-lg">Фильтры</h3>
@@ -436,7 +435,6 @@ const FriendsPage = () => {
                                 Сбросить
                             </button>
                         </div>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-semibold text-slate-600 dark:text-white/70 mb-1 block">Страна</label>
@@ -489,11 +487,10 @@ const FriendsPage = () => {
                                 </div>
                             )}
                         </div>
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменен вид кнопки сброса --- */}
-                        <div className="flex justify-center md:justify-end pt-2">
-                            <button onClick={resetFilters} className="w-full md:w-auto px-4 py-2 text-sm font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg">
-                                <span className="md:hidden">Сбросить фильтры</span>
-                                <span className="hidden md:inline">Сбросить</span>
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка сброса теперь видна только на десктопе --- */}
+                        <div className="hidden md:flex justify-end pt-2">
+                            <button onClick={resetFilters} className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg">
+                                Сбросить
                             </button>
                         </div>
                         {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
