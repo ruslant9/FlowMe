@@ -71,18 +71,17 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.newReleases?.length > 0 && (
                 <section>
                     <SectionHeader title="Новинки" icon={Disc} />
-                    <div className="flex space-x-4 -mx-4 px-4 overflow-x-auto pb-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {recommendations.newReleases.slice(0, 6).map(track => (
-                            <div key={track._id} className="w-1/2 sm:w-1/4 md:w-1/5 lg:w-[14%] flex-shrink-0">
-                                <RecommendationCard 
-                                    track={track}
-                                    onSelectTrack={() => playTrack(track, recommendations.newReleases)}
-                                    isCurrent={track._id === currentTrack?._id}
-                                    isPlaying={isPlaying && track._id === currentTrack?._id}
-                                    isLoading={loadingTrackId === track._id}
-                                    onPlayPause={togglePlayPause}
-                                />
-                            </div>
+                            <RecommendationCard 
+                                key={track._id}
+                                track={track}
+                                onSelectTrack={() => playTrack(track, recommendations.newReleases)}
+                                isCurrent={track._id === currentTrack?._id}
+                                isPlaying={isPlaying && track._id === currentTrack?._id}
+                                isLoading={loadingTrackId === track._id}
+                                onPlayPause={togglePlayPause}
+                            />
                         ))}
                     </div>
                 </section>
@@ -91,19 +90,18 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.popularHits?.length > 0 && (
                 <section>
                     <SectionHeader title="Популярные хиты" icon={Music} />
-                    <div className="flex space-x-4 -mx-4 px-4 overflow-x-auto pb-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {recommendations.popularHits.slice(0, 6).map((track, index) => (
-                             <div key={track._id} className="w-1/2 sm:w-1/4 md:w-1/5 lg:w-[14%] flex-shrink-0">
-                                <RecommendationCard 
-                                    track={track}
-                                    onSelectTrack={() => playTrack(track, recommendations.popularHits)}
-                                    isCurrent={track._id === currentTrack?._id}
-                                    isPlaying={isPlaying && track._id === currentTrack?._id}
-                                    isLoading={loadingTrackId === track._id}
-                                    onPlayPause={togglePlayPause}
-                                    isHit={index === 0}
-                                />
-                            </div>
+                            <RecommendationCard 
+                                key={track._id}
+                                track={track}
+                                onSelectTrack={() => playTrack(track, recommendations.popularHits)}
+                                isCurrent={track._id === currentTrack?._id}
+                                isPlaying={isPlaying && track._id === currentTrack?._id}
+                                isLoading={loadingTrackId === track._id}
+                                onPlayPause={togglePlayPause}
+                                isHit={index === 0}
+                            />
                         ))}
                     </div>
                 </section>
@@ -436,7 +434,7 @@ const MusicPage = () => {
                     <div className="md:hidden mb-6">
                         <ResponsiveNav 
                             items={navItems}
-                            visibleCount={4}
+                            visibleCount={4} 
                             activeKey={activeTab}
                         />
                     </div>
@@ -451,7 +449,8 @@ const MusicPage = () => {
                         >
                             {activeTab === 'recommendations' && <RecommendationsView recommendations={recommendations} loading={loading.recommendations} onPlayWave={handlePlayWave} onSeeAll={(q) => { setActiveTab('search'); setSearchQuery(q); }} />}
                             {activeTab === 'my-music' && <MusicListView tracks={myMusic} loading={loading.myMusic} title="Моя музыка" emptyMessage="Вы еще не добавили ни одного трека." onPlayTrack={(track) => playTrack(track, myMusic)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
-                            {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}                            {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
+                            {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
+                            {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
                             {activeTab === 'search' && <SearchView query={searchQuery} setQuery={setSearchQuery} results={searchResults} loading={loading.search} onSearchMore={handleSearchMore} hasMore={hasMore} onPlayTrack={(track, tracklist) => playTrack(track, tracklist)} loadingMore={loadingMore} />}
                         </motion.div>
                     </AnimatePresence>

@@ -176,7 +176,7 @@ const MonthYearPicker = ({ value, onChange }) => {
                         <option key={month.value} value={month.value}>{month.name}</option>
                     ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-700 dark:text-slate-300">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center -mr-2 px-2 text-slate-700 dark:text-slate-300">
                     <ChevronDown size={16} />
                 </div>
             </div>
@@ -186,7 +186,7 @@ const MonthYearPicker = ({ value, onChange }) => {
                         <option key={year} value={year}>{year}</option>
                     ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-700 dark:text-slate-300">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center -mr-2 px-2 text-slate-700 dark:text-slate-300">
                     <ChevronDown size={16} />
                 </div>
             </div>

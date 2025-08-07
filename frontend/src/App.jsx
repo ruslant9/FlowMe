@@ -63,7 +63,7 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)\/[^/]+/.test(location.pathname);
+  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)/.test(location.pathname);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
