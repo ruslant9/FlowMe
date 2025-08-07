@@ -1,4 +1,4 @@
-// frontend/src/components/music/FullScreenPlayer.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/components/music/FullScreenPlayer.jsx --- ИЗМЕНЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -18,12 +18,10 @@ const formatTime = (seconds) => {
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
 
-// --- ИЗМЕНЕНИЕ 1: Добавлены хелперы для свайпа ---
 const swipeConfidenceThreshold = 10000;
 const swipePower = (offset, velocity) => {
   return Math.abs(offset) * velocity;
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
 const CachedImage = ({ src, alt, style, className, key, initial, animate, transition }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -41,7 +39,6 @@ const cleanTitle = (title) => {
     ).trim();
 };
 
-// --- ИЗМЕНЕНИЕ 2: Функция теперь принимает `closePlayer` для закрытия плеера ---
 const formatArtistName = (artistData, closePlayer) => {
     if (!artistData) return '';
     if (Array.isArray(artistData)) {
@@ -63,7 +60,6 @@ const formatArtistName = (artistData, closePlayer) => {
     }
     return <span>{artistData.toString()}</span>;
 };
-// --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
 
 const FullScreenPlayer = () => {
@@ -92,6 +88,18 @@ const FullScreenPlayer = () => {
     
     const [rotate, setRotate] = useState({ x: 0, y: 0 });
     const parallaxRef = useRef(null);
+
+    // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+    const [clickRotate, setClickRotate] = useState({ x: 0, y: 0, z: 0 });
+
+    const handleCoverClick = () => {
+        // Генерируем случайные углы поворота от -180 до 180 градусов
+        const randomX = Math.random() * 360 - 180;
+        const randomY = Math.random() * 360 - 180;
+        const randomZ = Math.random() * 360 - 180;
+        setClickRotate({ x: randomX, y: randomY, z: randomZ });
+    };
+    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
     const handleMouseMove = (e) => {
         if (!parallaxRef.current) return;
@@ -151,17 +159,23 @@ const FullScreenPlayer = () => {
                              className="w-full h-full flex items-center justify-center"
                         >
                             <motion.div
+                                // --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
+                                onClick={handleCoverClick}
                                 animate={{
                                     scale: isPlaying ? [1, 1.03, 1] : 1,
-                                    rotateX: rotate.x,
-                                    rotateY: rotate.y
+                                    // Объединяем эффект параллакса и эффект от клика
+                                    rotateX: rotate.x + clickRotate.x,
+                                    rotateY: rotate.y + clickRotate.y,
+                                    rotateZ: clickRotate.z
                                 }}
                                 transition={{
                                     scale: { duration: 1.2, repeat: isPlaying ? Infinity : 0, ease: "easeInOut" },
+                                    // Добавляем плавную пружинную анимацию для вращения
                                     rotateX: { type: 'spring', stiffness: 400, damping: 30 },
-                                    rotateY: { type: 'spring', stiffness: 400, damping: 30 }
+                                    rotateY: { type: 'spring', stiffness: 400, damping: 30 },
+                                    rotateZ: { type: 'spring', stiffness: 400, damping: 30 }
                                 }}
-                                // --- ИЗМЕНЕНИЕ 1 (продолжение): Добавлены свойства для свайпа ---
+                                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
                                 drag="x"
                                 dragConstraints={{ left: 0, right: 0 }}
                                 dragElastic={0.5}
@@ -173,7 +187,6 @@ const FullScreenPlayer = () => {
                                         prevTrack();
                                     }
                                 }}
-                                // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
                                 style={{ transformStyle: 'preserve-3d' }}
                                 className="w-full max-w-[70vw] md:max-w-md"
                             >
@@ -181,7 +194,7 @@ const FullScreenPlayer = () => {
                                     key={track._id}
                                     src={track.albumArtUrl} 
                                     alt={track.title} 
-                                    className="w-full aspect-square rounded-2xl object-cover" 
+                                    className="w-full aspect-square rounded-2xl object-cover cursor-pointer" 
                                     style={{
                                         filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.5))'
                                     }}
@@ -196,7 +209,6 @@ const FullScreenPlayer = () => {
                     <div className="w-full max-w-md pb-4">
                         <div className="text-center mb-6">
                             <h2 className="text-2xl md:text-3xl font-bold truncate">{cleanTitle(track.title)}</h2>
-                            {/* --- ИЗМЕНЕНИЕ 2 (продолжение): Передаем `closeFullScreenPlayer` в функцию форматирования */}
                             <div className="text-base md:text-lg opacity-70 truncate">{formatArtistName(track.artist, closeFullScreenPlayer)}</div>
                         </div>
                         

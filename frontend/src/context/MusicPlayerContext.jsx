@@ -33,16 +33,16 @@ export const MusicPlayerProvider = ({ children }) => {
     const [buffered, setBuffered] = useState(0);
     const [playerNotification, setPlayerNotification] = useState(null);
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
-
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Создаем ref для AbortController ---
     const abortControllerRef = useRef(null); 
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
     const audioRef = useRef(new Audio());
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
     const notificationTimeoutRef = useRef(null);
     const currentObjectUrlRef = useRef(null);
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Ref для requestAnimationFrame ---
+    const animationFrameIdRef = useRef(null);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const cleanTitle = (title) => {
         if (!title) return '';
@@ -103,12 +103,10 @@ export const MusicPlayerProvider = ({ children }) => {
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
         
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Отменяем предыдущий запрос ---
         if (abortControllerRef.current) {
             abortControllerRef.current.abort('New track selected');
         }
         abortControllerRef.current = new AbortController();
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         setLoadingTrackId(trackData._id);
         setCurrentTrack(trackData);
@@ -126,12 +124,10 @@ export const MusicPlayerProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             const audio = audioRef.current;
             
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем signal в запрос ---
             const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
                 headers: { Authorization: `Bearer ${token}` },
                 signal: abortControllerRef.current.signal
             });
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             const streamUrl = res.data.url;
             if (!streamUrl) throw new Error("Stream URL not found.");
@@ -166,19 +162,15 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsShuffle(startShuffled);
             setIsRepeat(startRepeat);
         } catch (error) {
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверяем, была ли ошибка отменой ---
             if (axios.isCancel(error)) {
                 console.log("Загрузка предыдущего трека отменена.");
             } else {
                 toast.error("Не удалось воспроизвести трек. Возможно, он недоступен.");
                 setCurrentTrack(null);
             }
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         } finally {
             setLoadingTrackId(null);
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Очищаем контроллер ---
             abortControllerRef.current = null;
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         }
     }, [volume, logMusicAction]);
 
@@ -226,15 +218,32 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем timeupdate на requestAnimationFrame ---
+    const updateProgressLoop = useCallback(() => {
+        if (audioRef.current) {
+            setProgress(audioRef.current.currentTime);
+        }
+        animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
+    }, []);
+
     useEffect(() => {
         const audio = audioRef.current;
         
-        const handleTimeUpdate = () => setProgress(audio.currentTime);
+        const startLoop = () => {
+            cancelAnimationFrame(animationFrameIdRef.current); // Очищаем предыдущий цикл на всякий случай
+            animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
+        };
+
+        const stopLoop = () => {
+            cancelAnimationFrame(animationFrameIdRef.current);
+        };
+
         const handleDurationChange = () => setDuration(audio.duration);
         const handleEnded = () => {
+            stopLoop(); // Останавливаем цикл
             if (isRepeat) {
                 audio.currentTime = 0;
-                audio.play();
+                audio.play(); // `play` событие снова запустит цикл
                 logMusicAction(currentTrack, 'listen');
             } else {
                 handleNextTrack();
@@ -246,20 +255,24 @@ export const MusicPlayerProvider = ({ children }) => {
             }
         };
         
-        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('play', startLoop);
+        audio.addEventListener('pause', stopLoop);
         audio.addEventListener('durationchange', handleDurationChange);
         audio.addEventListener('ended', handleEnded);
         audio.addEventListener('progress', handleProgress);
 
         return () => {
-            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            stopLoop(); // Очищаем цикл при размонтировании
+            audio.removeEventListener('play', startLoop);
+            audio.removeEventListener('pause', stopLoop);
             audio.removeEventListener('durationchange', handleDurationChange);
             audio.removeEventListener('ended', handleEnded);
             audio.removeEventListener('progress', handleProgress);
         };
-    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
+    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction, updateProgressLoop]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-    // Этот useEffect устанавливает статическую информацию о треке и обработчики кнопок
+
     useEffect(() => {
         const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
         if (!link.parentElement) {
@@ -282,12 +295,9 @@ export const MusicPlayerProvider = ({ children }) => {
                 navigator.mediaSession.setActionHandler('pause', togglePlayPause);
                 navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
                 navigator.mediaSession.setActionHandler('nexttrack', handleNextTrack);
-                
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                 navigator.mediaSession.setActionHandler('seekto', (details) => {
                     seekTo(details.seekTime);
                 });
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             }
         } else {
             link.href = '/favicon.svg';
@@ -297,14 +307,11 @@ export const MusicPlayerProvider = ({ children }) => {
                 navigator.mediaSession.setActionHandler('pause', null);
                 navigator.mediaSession.setActionHandler('previoustrack', null);
                 navigator.mediaSession.setActionHandler('nexttrack', null);
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                 navigator.mediaSession.setActionHandler('seekto', null);
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             }
         }
-    }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack, seekTo]); // Добавляем seekTo в зависимости
+    }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack, seekTo]);
 
-    // Этот useEffect ОБНОВЛЯЕТ позицию плеера на экране блокировки
     useEffect(() => {
         if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
             navigator.mediaSession.setPositionState({

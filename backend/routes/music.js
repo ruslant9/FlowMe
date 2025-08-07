@@ -91,30 +91,27 @@ const logMusicAction = async (req, track, action) => {
 
 // --- МАРШРУТЫ ДЛЯ "МОЕЙ МУЗЫКИ" И ИСТОРИИ ---
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.post('/toggle-save', authMiddleware, async (req, res) => {
     try {
         const trackDataFromClient = req.body;
         const userId = req.user.userId;
 
-        let libraryTrack;
-
-        if (trackDataFromClient.type === 'library_track') {
-            libraryTrack = await Track.findById(trackDataFromClient._id);
-        } else if (trackDataFromClient.sourceId) {
-            libraryTrack = await Track.findById(trackDataFromClient.sourceId);
+        // 1. Определяем ID оригинального трека в библиотеке
+        const libraryTrackId = trackDataFromClient.sourceId || trackDataFromClient._id;
+        if (!mongoose.Types.ObjectId.isValid(libraryTrackId)) {
+            return res.status(400).json({ message: 'Неверный ID трека.' });
         }
 
-        if (!libraryTrack || libraryTrack.type !== 'library_track') {
-            return res.status(404).json({ message: 'Трек не найден в библиотеке.' });
-        }
-
+        // 2. Ищем, есть ли у пользователя уже сохраненная копия этого трека
         const existingSavedTrack = await Track.findOne({
             user: userId,
-            sourceId: libraryTrack._id,
+            sourceId: libraryTrackId,
             type: 'saved'
         });
 
         if (existingSavedTrack) {
+            // 3a. Если есть - удаляем
             await Playlist.updateMany(
                 { user: userId },
                 { $pull: { tracks: existingSavedTrack._id } }
@@ -122,6 +119,12 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
             await Track.deleteOne({ _id: existingSavedTrack._id });
             res.status(200).json({ message: 'Трек удален из Моей музыки.', saved: false });
         } else {
+            // 3b. Если нет - находим оригинальный трек и создаем копию
+            const libraryTrack = await Track.findOne({ _id: libraryTrackId, type: 'library_track' });
+            if (!libraryTrack) {
+                return res.status(404).json({ message: 'Оригинальный трек не найден в библиотеке.' });
+            }
+
             const newSavedTrack = new Track({
                 ...libraryTrack.toObject(),
                 _id: new mongoose.Types.ObjectId(),
@@ -142,6 +145,7 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера при обновлении трека.' });
     }
 });
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 router.get('/saved', authMiddleware, async (req, res) => {
