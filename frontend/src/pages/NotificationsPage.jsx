@@ -5,39 +5,41 @@ import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus } from 'lucide-react';
+import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus, MoreHorizontal } from 'lucide-react';
 import { useModal } from '../hooks/useModal';
 import NotificationItem from '../components/NotificationItem';
 import { AnimatePresence } from 'framer-motion';
 import PostViewModal from '../components/modals/PostViewModal';
+import MorePanel from '../components/MorePanel';
 import PageWrapper from '../components/PageWrapper';
-import ResponsiveNav from '../components/ResponsiveNav';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем классы flex-1 и justify-center ---
 const TabButton = ({ active, onClick, children, count }) => (
     <button
         onClick={onClick}
-        className={`flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${
+        className={`flex-1 justify-center px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${
             active 
-            ? 'border-blue-500 text-blue-500' 
-            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
+            ? 'bg-blue-600 text-white' 
+            : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10'
         }`}
     >
         {children}
         {typeof count === 'number' && count > 0 && 
-            <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>
+            <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>
         }
     </button>
 );
+// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
-const FilterButton = ({ active, onClick, children }) => (
+const SubTabButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
-        className={`flex-shrink-0 px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${
+        className={`flex-shrink-0 px-2.5 py-1 text-[11px] font-semibold rounded-full transition-colors flex items-center space-x-1.5 ${
             active
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
+                ? 'bg-slate-200 dark:bg-white/20 text-slate-800 dark:text-white'
+                : 'text-slate-500 dark:text-white/60 hover:bg-slate-200/50 dark:hover:bg-white/10'
         }`}
     >
         {children}
@@ -57,6 +59,7 @@ const NotificationsPage = () => {
     const { showConfirmation } = useModal();
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
     const [modalPostData, setModalPostData] = useState(null);
+    const [isMorePanelOpen, setIsMorePanelOpen] = useState(false);
 
     const openPostInModal = useCallback(async (postId, highlightCommentId) => {
         try {
@@ -233,7 +236,7 @@ const NotificationsPage = () => {
         return groups;
     }, [filteredNotifications]);
     
-    const filterItems = useMemo(() => {
+    const subTabs = useMemo(() => {
         const tabs = [{ key: 'all', label: 'Все', icon: Bell, onClick: () => setActiveFilter('all') }];
         if (activeTab === 'personal') {
             tabs.push({ key: 'requests', label: 'Заявки', icon: UserPlus, onClick: () => setActiveFilter('requests') });
@@ -248,6 +251,11 @@ const NotificationsPage = () => {
         return tabs;
     }, [activeTab]);
 
+    const subVisibleCount = 3;
+    const subVisibleItems = subTabs.slice(0, subVisibleCount);
+    const subHiddenItems = subTabs.slice(subVisibleCount);
+    const isSubMoreButtonActive = subHiddenItems.some(item => item.key === activeFilter);
+
     return (
         <PageWrapper>
             <main className="flex-1 p-4 md:p-8">
@@ -258,46 +266,56 @@ const NotificationsPage = () => {
                         onDeletePost={() => fetchNotifications()}
                     />
                 )}
-                <div className="w-full max-w-4xl mx-auto">
+                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <div className="flex items-center space-x-3">
+                            <Bell size={28} />
                             <h1 className="text-3xl font-bold">Уведомления</h1>
+                            {notificationsData[activeTab].list.length > 0 && (
+                                <button onClick={handleDeleteAll} className="md:hidden p-2 rounded-full text-red-500 hover:bg-red-500/10">
+                                    <Trash2 size={18} />
+                                </button>
+                            )}
                         </div>
                         {notificationsData[activeTab].list.length > 0 && (
-                            <button onClick={handleDeleteAll} className="flex-shrink-0 flex items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10">
+                            <button onClick={handleDeleteAll} className="hidden md:flex flex-shrink-0 items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10">
                                 <Trash2 size={16} /><span className="whitespace-nowrap">Очистить все</span>
                             </button>
                         )}
                     </div>
 
-                    <div className="border-b border-slate-200 dark:border-white/10 mb-4">
-                        <div className="flex items-center flex-wrap gap-2">
-                            <TabButton active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} count={notificationsData.personal.unreadCount}><User size={16} /> <span>Личные</span></TabButton>
-                            <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
-                        </div>
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Удаляем flex-wrap и меняем gap --- */}
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-200 dark:border-white/10 pb-4">
+                        <TabButton active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} count={notificationsData.personal.unreadCount}><User size={16} /> <span>Личные</span></TabButton>
+                        <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
                     </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                     
-                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-6">
-                        {filterItems.map(tab => (
-                            <FilterButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
-                                <tab.icon size={16} /> <span>{tab.label}</span>
-                            </FilterButton>
+                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                        {subTabs.map(tab => (
+                            <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
+                                <tab.icon size={14} /> <span>{tab.label}</span>
+                            </SubTabButton>
                         ))}
                     </div>
-
-                    <div className="md:hidden mb-6">
-                        <ResponsiveNav
-                            items={filterItems}
-                            visibleCount={4}
-                            activeKey={activeFilter}
-                        />
+                    
+                    <div className="md:hidden flex items-center gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
+                        {subVisibleItems.map(tab => (
+                             <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
+                                <tab.icon size={14} /> <span>{tab.label}</span>
+                            </SubTabButton>
+                        ))}
+                        {subHiddenItems.length > 0 && (
+                            <SubTabButton active={isSubMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
+                                <MoreHorizontal size={14} /> <span>Еще</span>
+                            </SubTabButton>
+                        )}
                     </div>
                     
                     {loading ? (
                         <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></div>
                     ) : filteredNotifications.length === 0 ? (
                         <div className="text-center py-20 text-slate-500 dark:text-white/60">
-                            <Bell size={48} className="mx-auto mb-4" />
                             <p>Уведомлений этого типа пока нет.</p>
                         </div>
                     ) : (
@@ -325,6 +343,21 @@ const NotificationsPage = () => {
                         </div>
                     )}
                 </div>
+                
+                <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
+                    {subHiddenItems.map(item => (
+                        <button
+                            key={item.key}
+                            onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
+                            className={`w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
+                            ${activeFilter === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
+                            `}
+                        >
+                            <item.icon size={22} className={activeFilter === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+                </MorePanel>
             </main>
         </PageWrapper>
     );

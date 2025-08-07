@@ -13,12 +13,10 @@ import LikesPopover from './LikesPopover';
 import Comment from './Comment';
 import { motion, AnimatePresence } from 'framer-motion';
 import PostViewModal from './modals/PostViewModal';
-import { Listbox, Transition } from '@headlessui/react';
 import AttachedTrack from './music/AttachedTrack';
 import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
-import AnimatedAccent from '../components/AnimatedAccent';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import { useEmojiPicker } from '../../hooks/useEmojiPicker';
 
