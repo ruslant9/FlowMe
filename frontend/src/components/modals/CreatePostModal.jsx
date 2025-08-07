@@ -1,6 +1,5 @@
 // frontend/src/components/modals/CreatePostModal.jsx
 
-// --- ИЗМЕНЕНИЕ 1: Импортируем ReactDOM для создания портала ---
 import React, { useState, useRef, useEffect, Suspense, Fragment, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,12 +16,12 @@ import AttachedTrack from '../music/AttachedTrack';
 import Avatar from '../Avatar';
 import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage';
+import EmojiPickerPopover from '../EmojiPickerPopover'; // --- ИСПРАВЛЕНИЕ: Импортируем обертку для Picker
 
 registerLocale('ru', ru);
 const Picker = React.lazy(() => import('emoji-picker-react'));
 
 const API_URL = import.meta.env.VITE_API_URL;
-const EMOJI_PICKER_HEIGHT = 450;
 
 const CachedImage = ({ src }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -48,9 +47,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const [commentsDisabled, setCommentsDisabled] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isPickerVisible, setIsPickerVisible] = useState(false);
-    const [pickerPosition, setPickerPosition] = useState('top');
     const [editingImage, setEditingImage] = useState(null);
-    const pickerRef = useRef(null);
     const fileInputRef = useRef(null);
     const smileButtonRef = useRef(null);
     const textareaRef = useRef(null);
@@ -141,22 +138,9 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     };
 
     const togglePicker = () => {
-        if (smileButtonRef.current) {
-            const rect = smileButtonRef.current.getBoundingClientRect();
-            if (window.innerHeight - rect.bottom < EMOJI_PICKER_HEIGHT) setPickerPosition('top'); else setPickerPosition('bottom');
-        }
         setIsPickerVisible(p => !p);
     };
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if ((smileButtonRef.current && smileButtonRef.current.contains(event.target)) || (pickerRef.current && pickerRef.current.contains(event.target))) return;
-            setIsPickerVisible(false);
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
+    
     const removeImage = (indexToRemove) => {
         setImages(prev => {
             URL.revokeObjectURL(prev[indexToRemove].preview);
@@ -217,13 +201,19 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         e.target.style.height = `${e.target.scrollHeight}px`;
     };
 
-    // --- ИЗМЕНЕНИЕ 2: Оборачиваем всю разметку модального окна в ReactDOM.createPortal ---
     return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
                     <ImageAttachmentModal isOpen={!!editingImage} onClose={() => setEditingImage(null)} file={editingImage?.file} onSave={handleEditComplete} showCaptionInput={false} />
                     <AttachTrackModal isOpen={isAttachTrackModalOpen} onClose={() => setIsAttachTrackModalOpen(false)} onSelectTrack={setAttachedTrack} />
+                    {/* --- ИСПРАВЛЕНИЕ: Используем EmojiPickerPopover вместо прямого рендеринга Picker --- */}
+                    <EmojiPickerPopover 
+                        isOpen={isPickerVisible}
+                        targetRef={smileButtonRef}
+                        onEmojiClick={(emojiObject) => setText(prev => prev + emojiObject.emoji)}
+                        onClose={() => setIsPickerVisible(false)}
+                    />
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={(e) => e.stopPropagation()} className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
                             <div className="flex justify-between items-center mb-6">
@@ -260,7 +250,8 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center">
                                                                                 <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{communityOption.name}</span>
-                                                                                {option.type === 'user' && option.premium?.isActive && (
+                                                                                {/* --- ИСПРАВЛЕНИЕ: option -> communityOption --- */}
+                                                                                {communityOption.type === 'user' && communityOption.premium?.isActive && (
                                                                                     <span className="ml-1.5 premium-shimmer-text text-[10px] font-bold">Premium</span>
                                                                                 )}
                                                                             </div>
@@ -308,7 +299,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                 </>
             )}
         </AnimatePresence>,
-        // --- ИЗМЕНЕНИЕ 3: Указываем, куда "телепортировать" модальное окно ---
         document.getElementById('modal-root')
     );
 };

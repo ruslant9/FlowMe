@@ -3,10 +3,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
-import { useCachedImage } from '../../hooks/useCachedImage';
+import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
 
 const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack, isHit }) => {
     
+    // Используем хук для получения кешированного URL
     const { finalSrc, loading: imageLoading } = useCachedImage(track.albumArtUrl);
 
     const cleanTitle = (title) => {
@@ -31,33 +32,33 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
     };
 
     const getReleaseBadge = (releaseDate) => {
-    if (!releaseDate) return null;
+        if (!releaseDate) return null;
 
-    const [year, month] = releaseDate.split('-').map(Number);
-    if (!year || !month) return null;
+        const now = new Date();
+        const release = new Date(releaseDate);
+        
+        // Проверяем, валидна ли дата релиза
+        if (isNaN(release.getTime())) return null;
 
-    const release = new Date(year, month - 1); 
-    const now = new Date();
+        // Нормализуем даты до полуночи по UTC, чтобы игнорировать время и часовые пояса
+        const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        release.setHours(0, 0, 0, 0);
 
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
+        const diffDays = (utcNow - utcRelease) / (1000 * 60 * 60 * 24);
 
-    const releaseYear = release.getFullYear();
-    const releaseMonth = release.getMonth();
+        if (diffDays >= 0 && diffDays <= 14) {
+            return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
+        }
 
-    if (releaseYear === currentYear && releaseMonth === currentMonth) {
-        return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
-    }
+        if (diffDays > 14 && diffDays <= 60) {
+            return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
+        }
+        
+        return null;
+    };
 
-    const isPreviousMonthSameYear = (releaseYear === currentYear && releaseMonth === currentMonth - 1);
-    const isPreviousMonthDifferentYear = (currentMonth === 0 && releaseYear === currentYear - 1 && releaseMonth === 11);
-
-    if (isPreviousMonthSameYear || isPreviousMonthDifferentYear) {
-        return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
-    }
-
-    return null;
-};
 
     const handlePlayClick = (e) => {
         e.stopPropagation();
@@ -109,8 +110,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </div>
 
             <div className="relative z-10 text-white mt-auto">
-                <h3 className="text-xs md:text-sm font-bold truncate">{cleanTitle(track.title)}</h3>
-                <p className="text-[10px] md:text-[11px] leading-tight opacity-80 truncate">{formatArtistName(track.artist)}</p>
+                <h3 className="text-base font-bold truncate">{cleanTitle(track.title)}</h3>
+                <p className="text-xs opacity-80 truncate">{formatArtistName(track.artist)}</p>
             </div>
         </motion.div>
     );
