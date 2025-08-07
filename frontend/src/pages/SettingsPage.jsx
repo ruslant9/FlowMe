@@ -16,6 +16,7 @@ import { Listbox, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDynamicPosition } from '../hooks/useDynamicPosition';
 import PageWrapper from '../components/PageWrapper';
+import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ КОМПОНЕНТА ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -33,6 +34,7 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
     </button>
 );
 
+// ... (Остальные хелперы и импорты остаются без изменений) ...
 const privacyOptions = [
     { id: 'everyone', name: 'Все' },
     { id: 'friends', name: 'Только друзья' },
@@ -405,26 +407,38 @@ const handlePasswordChange = async (e) => {
     finally { setPasswordChangeLoading(false); }
 };
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Создаем массив для ResponsiveNav ---
+    const navItems = [
+        { key: 'privacy', label: 'Приватность', icon: Lock, onClick: () => setActiveTab('privacy') },
+        { key: 'security', label: 'Безопасность', icon: Shield, onClick: () => setActiveTab('security') },
+        { key: 'notifications', label: 'Уведомления', icon: Bell, onClick: () => setActiveTab('notifications') },
+        { key: 'danger', label: 'Опасная зона', icon: ShieldAlert, onClick: () => setActiveTab('danger') },
+    ];
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 return (
     <PageWrapper>
         <main className="flex-1 p-4 md:p-8">
             <div className="w-full max-w-7xl mx-auto">
                 <h1 className="text-3xl font-bold mb-6 text-center">Настройки</h1>
 
-                <div className="flex border-b border-slate-300 dark:border-slate-700 mb-8 overflow-x-auto no-scrollbar">
-                    <TabButton active={activeTab === 'privacy'} onClick={() => setActiveTab('privacy')} icon={Lock}>
-                        Приватность
-                    </TabButton>
-                    <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} icon={Shield}>
-                        Безопасность
-                    </TabButton>
-                    <TabButton active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} icon={Bell}>
-                        Уведомления
-                    </TabButton>
-                    <TabButton active={activeTab === 'danger'} onClick={() => setActiveTab('danger')} icon={ShieldAlert}>
-                        Опасная зона
-                    </TabButton>
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Адаптивная навигация --- */}
+                <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-8 justify-center">
+                    {navItems.map(item => (
+                        <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon}>
+                            {item.label}
+                        </TabButton>
+                    ))}
                 </div>
+                
+                <div className="md:hidden mb-6">
+                    <ResponsiveNav 
+                        items={navItems}
+                        visibleCount={4}
+                        activeKey={activeTab}
+                    />
+                </div>
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -439,7 +453,7 @@ return (
                                 <h2 className="text-2xl font-bold mb-2">Настройки приватности</h2>
                                 <p className="text-sm text-slate-500 dark:text-white/60 mb-6">Управляйте тем, кто может видеть вашу информацию и взаимодействовать с вами.</p>
                                 {loadingPrivacySettings || !privacySettings ? <div className="flex justify-center"><Loader2 className="animate-spin"/></div> : (
-                                    <div className="space-y-4">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                         <PrivacySettingControl label="Кто видит дату рождения" icon={Calendar} value={privacySettings.viewDOB} onChange={(v) => handlePrivacyChange('viewDOB', v)} options={privacyOptions}>{privacySettings.viewDOB !== 'private' && (<label className="flex items-center space-x-2 text-sm text-slate-600 dark:text-white/70"><input type="checkbox" checked={privacySettings.hideDOBYear} onChange={(e) => handleToggleChange('hideDOBYear', e.target.checked)} className="form-checkbox h-4 w-4 rounded" /><span>Скрыть год</span></label>)}</PrivacySettingControl>
                                         <PrivacySettingControl label="Кто видит аватар" icon={ImageIcon} value={privacySettings.viewAvatar} onChange={(v) => handlePrivacyChange('viewAvatar', v)} options={privacyOptions} />
                                         <PrivacySettingControl label="Кто видит почту" icon={Mail} value={privacySettings.viewEmail} onChange={(v) => handlePrivacyChange('viewEmail', v)} options={privacyOptions} />
@@ -455,7 +469,7 @@ return (
                                         <PrivacySettingControl label="Кто может приглашать в сообщества" icon={Briefcase} value={privacySettings.inviteToCommunity} onChange={(v) => handlePrivacyChange('inviteToCommunity', v)} options={communityInviteOptions} />
                                         <PrivacySettingControl label="Кто видит мою музыку" icon={Music} value={privacySettings.viewMusic} onChange={(v) => handlePrivacyChange('viewMusic', v)} options={privacyOptions} />
                                         
-                                        <div className="flex justify-end pt-4">
+                                        <div className="lg:col-span-2 flex justify-end pt-4">
                                             <button onClick={savePrivacySettings} disabled={!haveSettingsChanged()} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50">Сохранить изменения</button>
                                         </div>
                                     </div>
@@ -469,20 +483,20 @@ return (
                                 <p className="text-sm text-slate-500 dark:text-white/60 mb-6">Управление паролем и активными сессиями.</p>
                                 <div className="space-y-8">
                                     <div>
-                                        <h3 className="text-lg font-semibold mb-2">Смена пароля</h3>
-                                        <form onSubmit={handlePasswordChange} className="space-y-3 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                        <h3 className="text-lg font-semibold mb-4">Смена пароля</h3>
+                                        <form onSubmit={handlePasswordChange} className="space-y-3">
                                             {verificationRequired ? (
                                                 <>
                                                     <p className="text-sm text-center text-green-600 dark:text-green-400">На вашу почту отправлен код подтверждения. Введите его ниже.</p>
-                                                    <input type="text" placeholder="Код из письма" value={passwordData.verificationCode} onChange={(e) => setPasswordData(p => ({...p, verificationCode: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
+                                                    <input type="text" placeholder="Код из письма" value={passwordData.verificationCode} onChange={(e) => setPasswordData(p => ({...p, verificationCode: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
                                                 </>
                                             ) : (
                                                 <>
                                                     {currentUser?.hasPassword && (
-                                                        <input type="password" placeholder="Текущий пароль (если сессия старше 1 часа)" value={passwordData.currentPassword} onChange={(e) => setPasswordData(p => ({...p, currentPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                                                        <input type="password" placeholder="Текущий пароль (если сессия старше 1 часа)" value={passwordData.currentPassword} onChange={(e) => setPasswordData(p => ({...p, currentPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" />
                                                     )}
-                                                    <input type="password" placeholder={currentUser?.hasPassword ? "Новый пароль" : "Задайте пароль для входа"} value={passwordData.newPassword} onChange={(e) => setPasswordData(p => ({...p, newPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
-                                                    <input type="password" placeholder="Подтвердите новый пароль" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} className="w-full p-2 bg-slate-200 dark:bg-slate-700 rounded-lg" required />
+                                                    <input type="password" placeholder={currentUser?.hasPassword ? "Новый пароль" : "Задайте пароль для входа"} value={passwordData.newPassword} onChange={(e) => setPasswordData(p => ({...p, newPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
+                                                    <input type="password" placeholder="Подтвердите новый пароль" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
                                                 </>
                                             )}
                                             <div className="flex justify-end pt-2">
@@ -492,8 +506,11 @@ return (
                                             </div>
                                         </form>
                                     </div>
+                                    
+                                    <hr className="my-8 border-slate-200 dark:border-slate-700" />
+
                                     <div>
-                                        <h3 className="text-lg font-semibold mb-2">Активные сессии</h3>
+                                        <h3 className="text-lg font-semibold mb-4">Активные сессии</h3>
                                         {loadingSessions ? <Loader2 className="animate-spin"/> : (
                                             <div className="space-y-2">
                                                 {(sessionsExpanded ? sessions : sessions.slice(0, 3)).map(session => {

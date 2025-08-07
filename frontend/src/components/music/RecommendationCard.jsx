@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
 
 const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack }) => {
     
@@ -11,19 +11,23 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
     const { finalSrc, loading: imageLoading } = useCachedImage(track.albumArtUrl);
 
     const cleanTitle = (title) => {
-        if (!title) return '';
+        if (!title || typeof title !== 'string') return '';
         return title.replace(
             /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
             ''
         ).trim();
     };
+
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
-            return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
+            return artistData
+                .map(a => (a?.name || '').replace(' - Topic', '').trim())
+                .filter(Boolean)
+                .join(', ');
         }
         if (typeof artistData === 'object' && artistData.name) {
-            return artistData.name.replace(' - Topic', '').trim();
+            return (artistData.name || '').replace(' - Topic', '').trim();
         }
         if (typeof artistData === 'string') {
             return artistData.replace(' - Topic', '').trim();
@@ -40,7 +44,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         const release = new Date(releaseDate);
         release.setHours(0, 0, 0, 0);
 
-        if (release.getFullYear() > now.getFullYear() || (release.getFullYear() === now.getFullYear() && release.getMonth() >= now.getMonth())) {
+        if (release.getFullYear() > now.getFullYear() || 
+            (release.getFullYear() === now.getFullYear() && release.getMonth() >= now.getMonth())) {
             return { text: 'Свежее', color: 'bg-lime-400 text-lime-900' };
         }
 
@@ -49,7 +54,6 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         if (release.getFullYear() === lastMonth.getFullYear() && release.getMonth() === lastMonth.getMonth()) {
             return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
         }
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         return null;
     };
@@ -64,6 +68,10 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
     };
 
     const badge = getReleaseBadge(track.releaseDate);
+
+    // Безопасно приводим к строке на всякий случай
+    const displayTitle = cleanTitle(track.title) || '';
+    const displayArtist = formatArtistName(track.artist) || '';
 
     return (
         <motion.div
@@ -103,8 +111,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </div>
 
             <div className="relative z-10 text-white mt-auto">
-                <h3 className="text-base font-bold truncate">{cleanTitle(track.title)}</h3>
-                <p className="text-xs opacity-80 truncate">{formatArtistName(track.artist)}</p>
+                <h3 className="text-base font-bold truncate">{displayTitle}</h3>
+                <p className="text-xs opacity-80 truncate">{displayArtist}</p>
             </div>
         </motion.div>
     );

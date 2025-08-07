@@ -33,7 +33,7 @@ const TabButton = ({ active, onClick, children, count }) => (
 const FilterButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
-        className={`flex-shrink-0 px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${
+        className={`flex-shrink-0 px-3 py-1.5 text-xs md:px-4 md:py-2 md:text-sm font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${
             active
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'

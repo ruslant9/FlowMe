@@ -36,17 +36,23 @@ const AdminUserManager = () => {
         }
     }, [page, search]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    // Этот хук теперь отвечает ТОЛЬКО за логику поиска: сброс на первую страницу.
     useEffect(() => {
         const debounce = setTimeout(() => {
             setPage(1);
-            fetchData();
         }, 300);
         return () => clearTimeout(debounce);
-    }, [search, fetchData]);
+    }, [search]);
 
+    // Этот хук отвечает за загрузку данных. Он запускается, когда меняется страница ИЛИ когда поиск сбрасывает страницу на первую.
+    // Мы убрали `fetchData` из массива зависимостей, чтобы разорвать цикл.
     useEffect(() => {
         fetchData();
-    }, [page, fetchData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, search]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const handleOpenOverlay = (user) => {
         setSelectedUser(user);
