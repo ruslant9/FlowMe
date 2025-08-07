@@ -81,6 +81,7 @@ const EmojiPickerPopover = ({ isOpen, targetRef, onEmojiClick, onClose }) => {
                                     height={isMobile ? 350 : 450}
                                     searchPlaceholder="Поиск"
                                     previewConfig={{ showPreview: !isMobile }}
+                                    autoFocusSearch={false}
                                 />
                             </div>
                         </Suspense>

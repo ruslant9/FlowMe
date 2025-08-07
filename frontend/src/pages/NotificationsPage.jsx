@@ -18,15 +18,15 @@ const API_URL = import.meta.env.VITE_API_URL;
 const TabButton = ({ active, onClick, children, count }) => (
     <button
         onClick={onClick}
-        className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${
-            active
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10'
+        className={`flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${
+            active 
+            ? 'border-blue-500 text-blue-500' 
+            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
         }`}
     >
         {children}
         {typeof count === 'number' && count > 0 && 
-            <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>
+            <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>
         }
     </button>
 );
@@ -264,30 +264,26 @@ const NotificationsPage = () => {
                         onDeletePost={() => fetchNotifications()}
                     />
                 )}
-                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
+                <div className="w-full max-w-4xl mx-auto">
                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <div className="flex items-center space-x-3">
-                            <Bell size={28} />
                             <h1 className="text-3xl font-bold">Уведомления</h1>
-                            {notificationsData[activeTab].list.length > 0 && (
-                                <button onClick={handleDeleteAll} className="md:hidden p-2 rounded-full text-red-500 hover:bg-red-500/10">
-                                    <Trash2 size={18} />
-                                </button>
-                            )}
                         </div>
                         {notificationsData[activeTab].list.length > 0 && (
-                            <button onClick={handleDeleteAll} className="hidden md:flex flex-shrink-0 items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10">
+                            <button onClick={handleDeleteAll} className="flex-shrink-0 flex items-center space-x-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10">
                                 <Trash2 size={16} /><span className="whitespace-nowrap">Очистить все</span>
                             </button>
                         )}
                     </div>
 
-                    <div className="flex items-center flex-wrap gap-2 mb-4 border-b border-slate-200 dark:border-white/10 pb-4">
-                        <TabButton active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} count={notificationsData.personal.unreadCount}><User size={16} /> <span>Личные</span></TabButton>
-                        <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
+                    <div className="border-b border-slate-200 dark:border-white/10 mb-4">
+                        <div className="flex items-center flex-wrap gap-2">
+                            <TabButton active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} count={notificationsData.personal.unreadCount}><User size={16} /> <span>Личные</span></TabButton>
+                            <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
+                        </div>
                     </div>
                     
-                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-6">
                         {subTabs.map(tab => (
                             <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
                                 <tab.icon size={14} /> <span>{tab.label}</span>
@@ -295,7 +291,7 @@ const NotificationsPage = () => {
                         ))}
                     </div>
                     
-                    <div className="md:hidden flex items-center gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
+                    <div className="md:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar">
                         {subVisibleItems.map(tab => (
                              <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
                                 <tab.icon size={14} /> <span>{tab.label}</span>
@@ -312,6 +308,7 @@ const NotificationsPage = () => {
                         <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></div>
                     ) : filteredNotifications.length === 0 ? (
                         <div className="text-center py-20 text-slate-500 dark:text-white/60">
+                            <Bell size={48} className="mx-auto mb-4" />
                             <p>Уведомлений этого типа пока нет.</p>
                         </div>
                     ) : (

@@ -168,12 +168,12 @@ export const AdminContentManager = () => {
                             return (
                                 <tr key={item._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
                                     <td className="p-2">
-                                        <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="block w-10 h-10">
+                                        <Link to={linkTo} rel="noopener noreferrer" className="block w-10 h-10">
                                             <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
                                         </Link>
                                     </td>
                                     <td className="p-2 font-semibold">
-                                        <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-blue-500 transition-colors">
+                                        <Link to={linkTo} rel="noopener noreferrer" className="hover:underline hover:text-blue-500 transition-colors">
                                             {item.name || item.title}
                                         </Link>
                                     </td>
@@ -206,12 +206,12 @@ export const AdminContentManager = () => {
                                        `/single/${item._id}`;
                         return (
                             <div key={item._id} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg flex gap-4 items-center">
-                                <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-14 h-14">
+                                <Link to={linkTo} rel="noopener noreferrer" className="flex-shrink-0 w-14 h-14">
                                     <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
                                 </Link>
                                 
                                 <div className="flex-1 min-w-0">
-                                    <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="block">
+                                    <Link to={linkTo} rel="noopener noreferrer" className="block">
                                         <p className="font-bold truncate">{item.name || item.title}</p>
                                     </Link>
                                     {activeType !== 'artists' && (

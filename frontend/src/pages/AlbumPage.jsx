@@ -1,5 +1,4 @@
 // frontend/src/pages/AlbumPage.jsx
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -111,6 +110,7 @@ const AlbumPage = () => {
                     <div 
                         className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
                     />
+                    {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: меняем top-10 на top-6 --- */}
                     <button 
                         onClick={() => navigate(-1)} 
                         className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
@@ -129,9 +129,8 @@ const AlbumPage = () => {
                                 {isSingle ? 'Сингл' : 'Альбом'}
                             </span>
                             <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{album.title}</h1>
-                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
                             <div className="flex items-center space-x-2 mt-3 md:mt-4 text-sm flex-wrap justify-center md:justify-start" style={{ color: textColor, opacity: 0.9 }}>
-                                <Link to={`/artist/${album.artist._id}`} className="hover:underline mb-1 md:mb-0">
+                                <Link to={`/artist/${album.artist._id}`} className="hover:underline">
                                     <div className="flex items-center space-x-2">
                                         <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
                                         <span className="font-bold">{album.artist.name}</span>
@@ -146,7 +145,6 @@ const AlbumPage = () => {
                                     </span>
                                 )}
                             </div>
-                            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                         </div>
                     </div>
                 </div>
