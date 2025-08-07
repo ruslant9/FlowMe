@@ -443,6 +443,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             onClose={() => setIsEditingPostImage(false)}
                             onSave={handleImageUpdate} />
                     )}
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -450,8 +451,9 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
                         style={{ maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' }}
-                        className="overflow-hidden w-full max-w-6xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
+                        className="overflow-hidden w-full max-w-screen-2xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
                     >
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors z-[101] bg-white/30 dark:bg-black/30 rounded-full p-1"><X size={24} /></button>
 
                         {isLoading && !activePost ? (
@@ -460,7 +462,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             <>
                                 {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
                                 
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                 <div className={`w-full ${hasImages ? 'md:w-3/5' : 'hidden md:w-2/5'} flex-shrink-0 bg-black flex items-center justify-center relative`}>
                                     {hasImages ? (
                                         <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
@@ -470,8 +471,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>
                                     )}
                                 </div>
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-
+                                
                                 <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
                                     {/* --- ШАПКА ПОСТА (ФИКСИРОВАННАЯ) --- */}
                                     <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between space-x-3 flex-shrink-0">

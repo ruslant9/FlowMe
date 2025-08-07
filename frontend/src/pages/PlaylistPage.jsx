@@ -225,7 +225,8 @@ const PlaylistPage = () => {
                     }}
                 >
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-lg"></div>
-                <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">                        <ArrowLeft size={16}/> <span>Назад</span>
+                     <button onClick={() => navigate(-1)} className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">
+                        <ArrowLeft size={16}/> <span>Назад</span>
                     </button>
                     <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6 text-white">
                         <div className={`w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl ${getCoverGridClass()}`}>
@@ -248,18 +249,20 @@ const PlaylistPage = () => {
 
                 <div className="p-6 md:p-8 bg-slate-100 dark:bg-slate-900">
                     
-                    <div className="flex items-center space-x-4 mb-8">
-                        <button onClick={() => handlePlayPlaylist(false)} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
-                            <Play size={24} fill="currentColor" />
-                            <span>Слушать</span>
-                        </button>
-                        <button onClick={() => handlePlayPlaylist(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Слушать вперемешку"><Shuffle /></button>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-8">
+                        <div className="flex items-center space-x-4">
+                            <button onClick={() => handlePlayPlaylist(false)} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-full flex items-center space-x-2 hover:scale-105 transition-transform">
+                                <Play size={24} fill="currentColor" />
+                                <span>Слушать</span>
+                            </button>
+                            <button onClick={() => handlePlayPlaylist(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Слушать вперемешку"><Shuffle /></button>
+                        </div>
                         {isOwner && (
-                            <>
+                            <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
                                 <button onClick={() => setAddTracksModalOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Добавить треки"><PlusCircle /></button>
                                 <button onClick={() => setEditModalOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Редактировать"><Edit /></button>
                                 <button onClick={handleDeletePlaylist} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Удалить плейлист"><Trash2 /></button>
-                            </>
+                            </div>
                         )}
                     </div>
 

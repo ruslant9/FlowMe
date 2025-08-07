@@ -1,4 +1,4 @@
-// frontend/src/components/PostCard.jsx
+// frontend/src/components/PostCard.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useRef, Suspense, useCallback, Fragment, useMemo } from 'react';
 import { Link } from 'react-router-dom';
@@ -14,13 +14,13 @@ import Comment from './Comment';
 import { motion, AnimatePresence } from 'framer-motion';
 import PostViewModal from './modals/PostViewModal';
 import { Listbox, Transition } from '@headlessui/react';
-import EmojiPickerPopover from './EmojiPickerPopover';
 import AttachedTrack from './music/AttachedTrack';
 import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
 import AnimatedAccent from './AnimatedAccent';
-import { useCachedImage } from '../hooks/useCachedImage'; 
+import { useCachedImage } from '../hooks/useCachedImage';
+import { useEmojiPicker } from '../hooks/useEmojiPicker'; // --- ИМПОРТ НОВОГО ХУКА ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
@@ -90,17 +90,16 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
     
     const [commentAs, setCommentAs] = useState(null);
     const [commentingOptions, setCommentingOptions] = useState([]);
-    const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [showPostMenu, setShowPostMenu] = useState(false);
     const postMenuRef = useRef(null);
     
     const [loadingMore, setLoadingMore] = useState(false);
+    
+    // --- ИЗМЕНЕНИЕ: Используем глобальный picker ---
+    const { showPicker } = useEmojiPicker();
+    // --- Удаляем старые состояния: isPickerVisible, pickerPosition, pickerRef ---
 
     const userAccent = currentPost.user?.premiumCustomization?.activeCardAccent;
-
-    const togglePicker = () => { 
-        setIsPickerVisible(v => !v);
-    };
 
     const userVote = useMemo(() => {
         if (!currentUser || !currentPost.poll || !currentPost.poll.options) return null;
@@ -154,6 +153,20 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
 
         fetchCommentingOptions();
     }, [currentUser, post.community]);
+
+    const sortLabels = {
+        newest: 'Сначала новые',
+        oldest: 'Сначала старые',
+        popular: 'Популярные'
+    };
+
+    const displayDate = currentPost.publishedAt || currentPost.createdAt;
+    const timeAgo = formatDistanceToNow(new Date(displayDate), { addSuffix: true, locale: customRuLocale });
+    
+    const isLiked = currentPost.likes.some(like => {
+        if (!like) return false;
+        return (typeof like === 'string' ? like : like._id) === currentUserId;
+    });
 
     const fetchComments = useCallback(async (page = 1, sortBy = 'newest') => {
         if (currentPost.commentsDisabled) return;
@@ -243,13 +256,11 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
             if (sortMenuRef.current && !sortMenuRef.current.contains(event.target)) {
                 setShowSortMenu(false);
             }
-            if (isPickerVisible && smileButtonRef.current && !smileButtonRef.current.contains(event.target) && !event.target.closest('[data-emoji-picker="true"]')) {
-                setIsPickerVisible(false);
-            }
+            // Удаляем логику для isPickerVisible
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isPickerVisible]);
+    }, []);
 
     useEffect(() => {
         setHighlightedCommentId(initialHighlightCommentId);
@@ -260,59 +271,9 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
     }, [initialHighlightCommentId]);
     
     const handleVote = useCallback(async (optionId) => {
-        const originalPoll = JSON.parse(JSON.stringify(currentPost.poll));
-        const newPoll = { ...originalPoll };
-        
-        let alreadyVotedOption = null;
-        newPoll.options.forEach(opt => {
-            const voteIndex = opt.votes.findIndex(v => (typeof v === 'string' ? v : v._id) === currentUser._id);
-            if (voteIndex > -1) {
-                alreadyVotedOption = opt._id;
-                opt.votes.splice(voteIndex, 1);
-            }
-        });
-        
-        const targetOption = newPoll.options.find(opt => opt._id === optionId);
-        if (targetOption && alreadyVotedOption !== optionId) {
-            targetOption.votes.push(currentUser._id);
-        }
+        window.dispatchEvent(new CustomEvent('voteOnPoll', { detail: { postId: currentPost._id, optionId } }));
+    }, [currentPost._id]);
 
-        setCurrentPost(prev => ({ ...prev, poll: newPoll }));
-        
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/api/posts/${currentPost._id}/poll/vote`, { optionId }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при голосовании.");
-            setCurrentPost(prev => ({ ...prev, poll: originalPoll }));
-        }
-    }, [currentPost, currentUser]);
-
-    useEffect(() => {
-        const voteHandler = (event) => {
-            if (event.detail.postId === currentPost._id) {
-                handleVote(event.detail.optionId);
-            }
-        };
-        window.addEventListener('voteOnPoll', voteHandler);
-        return () => window.removeEventListener('voteOnPoll', voteHandler);
-    }, [currentPost._id, handleVote]);
-
-    const sortLabels = {
-        newest: 'Сначала новые',
-        oldest: 'Сначала старые',
-        popular: 'Популярные'
-    };
-
-    const displayDate = currentPost.publishedAt || currentPost.createdAt;
-    const timeAgo = formatDistanceToNow(new Date(displayDate), { addSuffix: true, locale: customRuLocale });
-    
-    const isLiked = currentPost.likes.some(like => {
-        if (!like) return false;
-        return (typeof like === 'string' ? like : like._id) === currentUserId;
-    });
 
     const handleLike = async (e) => {
         e.stopPropagation();
@@ -374,7 +335,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
             fetchComments(1, sortOrder);
 
             setNewCommentText('');
-            setIsPickerVisible(false);
             setReplyingTo(null);
         } catch (error) {
             toast.error(error.response?.data?.message || 'Не удалось отправить комментарий');
@@ -518,12 +478,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
 
     return (
         <>
-            <EmojiPickerPopover 
-                isOpen={isPickerVisible}
-                targetRef={smileButtonRef}
-                onEmojiClick={(emojiObject) => setNewCommentText(prev => prev + emojiObject.emoji)}
-                onClose={() => setIsPickerVisible(false)}
-            />
             {isPostViewModalOpen && postViewModalData && (
                 <PostViewModal
                     posts={postViewModalData.posts}
@@ -726,7 +680,9 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                 <div className="p-6 pt-2">
                     <div onClick={isScheduled ? undefined : handleOpenPostInModal} className={isScheduled ? '' : 'cursor-pointer'}>
                         {currentPost.text && <p className="mb-4 whitespace-pre-wrap break-words">{currentPost.text}</p>}
+                    
                         {currentPost.poll && <PollDisplay poll={currentPost.poll} onVote={handleVote} isScheduled={isScheduled} />}
+                        
                         {currentPost.imageUrls && currentPost.imageUrls.length > 0 && (
                             <div className="relative group mb-4">
                                 <div className="relative aspect-square md:aspect-video bg-black rounded-lg overflow-hidden">
@@ -959,7 +915,11 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                     disabled={!!editingCommentId || commentSelectionMode || isSendingComment}
                                                 />
                                                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                                    <button ref={smileButtonRef} type="button" onClick={togglePicker} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white" disabled={!!editingCommentId || commentSelectionMode}>
+                                                    <button 
+                                                        ref={smileButtonRef} 
+                                                        type="button" 
+                                                        onClick={() => showPicker(smileButtonRef, (emojiObject) => setNewCommentText(prev => prev + emojiObject.emoji))}
+                                                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white" disabled={!!editingCommentId || commentSelectionMode}>
                                                         <Smile size={18} />
                                                     </button>
                                                 </div>

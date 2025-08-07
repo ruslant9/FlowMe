@@ -2,12 +2,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Smile, X, Paperclip, Check, Loader2, Music } from 'lucide-react';
-import Picker from 'emoji-picker-react';
 import { useWebSocket } from '../../context/WebSocketContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import AttachTrackModal from '../music/AttachTrackModal';
 import AttachedTrack from '../music/AttachedTrack';
+// --- ИСПРАВЛЕНИЕ 1: Импортируем EmojiPickerPopover ---
+import EmojiPickerPopover from '../EmojiPickerPopover';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -17,7 +18,6 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
     const [isSending, setIsSending] = useState(false);
     const [attachedTrack, setAttachedTrack] = useState(null);
     const [isAttachTrackModalOpen, setIsAttachTrackModalOpen] = useState(false);
-    const pickerRef = useRef(null);
     const fileInputRef = useRef(null);
     const inputRef = useRef(null);
     const smileButtonRef = useRef(null);
@@ -31,19 +31,6 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
             setText('');
         }
     }, [editingMessage]);
-
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (smileButtonRef.current && smileButtonRef.current.contains(event.target)) {
-                return;
-            }
-            if (pickerRef.current && !pickerRef.current.contains(event.target)) {
-                setPickerVisible(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const sendTypingStatus = (isTyping) => {
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -109,7 +96,7 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
             const formData = new FormData();
             formData.append('recipientId', recipientId);
             formData.append('text', optimisticMessage.text);
-            formData.append('uuid', optimisticMessage.uuid); // Отправляем UUID
+            formData.append('uuid', optimisticMessage.uuid); 
             if (replyingTo) formData.append('replyToMessageId', replyingTo._id);
             if (attachedTrack) formData.append('attachedTrackId', attachedTrack._id);
 
@@ -124,7 +111,7 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
             setTimeout(() => inputRef.current?.focus(), 0);
         } catch (error) {
             toast.error("Не удалось отправить сообщение.");
-            onSendFail(optimisticMessage.uuid); // Сообщаем об ошибке
+            onSendFail(optimisticMessage.uuid); 
         } finally {
             setIsSending(false);
         }
@@ -153,11 +140,13 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
                     setIsAttachTrackModalOpen(false);
                 }}
             />
-            <div ref={pickerRef} className="absolute bottom-full right-4 mb-2 z-20">
-                {isPickerVisible && (
-                    <Picker onEmojiClick={(emojiObject) => setText(prev => prev + emojiObject.emoji)} theme={document.documentElement.classList.contains('dark') ? "dark" : "light"} />
-                )}
-            </div>
+            {/* --- ИСПРАВЛЕНИЕ 2: Используем EmojiPickerPopover --- */}
+            <EmojiPickerPopover
+                isOpen={isPickerVisible}
+                targetRef={smileButtonRef}
+                onEmojiClick={(emojiObject) => setText(prev => prev + emojiObject.emoji)}
+                onClose={() => setPickerVisible(false)}
+            />
             
             <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-2">
                 {editingMessage && (
@@ -233,11 +222,12 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
                         autoFocus={!!editingMessage}
                         disabled={isSending}
                     />
-
+                    
+                    {/* --- ИСПРАВЛЕНИЕ 3: Добавляем e.preventDefault() --- */}
                     <button
                         ref={smileButtonRef}
                         type="button"
-                        onClick={() => setPickerVisible(v => !v)}
+                        onClick={(e) => { e.preventDefault(); setPickerVisible(v => !v); }}
                         disabled={isSending}
                         className="p-2 rounded-full text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 disabled:opacity-50"
                     >

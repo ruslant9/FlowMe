@@ -1,4 +1,4 @@
-// frontend/src/components/modals/CreatePostModal.jsx
+// frontend/src/components/modals/CreatePostModal.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useRef, useEffect, Suspense, Fragment, useCallback } from 'react';
 import ReactDOM from 'react-dom';
@@ -16,10 +16,10 @@ import AttachedTrack from '../music/AttachedTrack';
 import Avatar from '../Avatar';
 import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage';
-import EmojiPickerPopover from '../EmojiPickerPopover'; // --- ИСПРАВЛЕНИЕ: Импортируем обертку для Picker
+import { useEmojiPicker } from '../../hooks/useEmojiPicker'; // --- ИМПОРТ НОВОГО ХУКА ---
 
 registerLocale('ru', ru);
-const Picker = React.lazy(() => import('emoji-picker-react'));
+// Удаляем ленивую загрузку Picker отсюда
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -46,11 +46,14 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const [images, setImages] = useState([]);
     const [commentsDisabled, setCommentsDisabled] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [editingImage, setEditingImage] = useState(null);
     const fileInputRef = useRef(null);
     const smileButtonRef = useRef(null);
     const textareaRef = useRef(null);
+
+    // --- ИЗМЕНЕНИЕ: Используем глобальный picker ---
+    const { showPicker } = useEmojiPicker();
+    // --- Удаляем старые состояния: isPickerVisible, pickerPosition, pickerRef ---
 
     const [selectedCommunity, setSelectedCommunity] = useState(null);
     const [myCommunities, setMyCommunities] = useState([]);
@@ -137,9 +140,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         setImages(prev => [...prev, ...files.map(file => ({ file, preview: URL.createObjectURL(file) }))]);
     };
 
-    const togglePicker = () => {
-        setIsPickerVisible(p => !p);
-    };
+    // --- Удаляем togglePicker и useEffect(handleClickOutside) ---
 
     const removeImage = (indexToRemove) => {
         setImages(prev => {
@@ -207,12 +208,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                 <>
                     <ImageAttachmentModal isOpen={!!editingImage} onClose={() => setEditingImage(null)} file={editingImage?.file} onSave={handleEditComplete} showCaptionInput={false} />
                     <AttachTrackModal isOpen={isAttachTrackModalOpen} onClose={() => setIsAttachTrackModalOpen(false)} onSelectTrack={setAttachedTrack} />
-                    <EmojiPickerPopover 
-                        isOpen={isPickerVisible}
-                        targetRef={smileButtonRef}
-                        onEmojiClick={(emojiObject) => setText(prev => prev + emojiObject.emoji)}
-                        onClose={() => setIsPickerVisible(false)}
-                    />
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={(e) => e.stopPropagation()} className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
                             <div className="flex justify-between items-center mb-6">
@@ -266,8 +261,8 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                         </Listbox>
                                     </div>
                                 </div>
-                                {/* --- ИСПРАВЛЕНИЕ: Добавлен класс min-h-0 --- */}
-                                <div className="flex-1 overflow-y-auto pr-2 -mr-4 space-y-4 min-h-0">
+
+                                <div className="flex-1 overflow-y-auto pr-2 -mr-4 space-y-4">
                                     <textarea ref={textareaRef} value={text} onChange={handleTextareaChange} placeholder="Что у вас нового?" className="w-full text-xl bg-transparent resize-none focus:outline-none placeholder-slate-500 dark:placeholder-white/50 min-h-[80px]" />
                                     {images.length > 0 && <div className="grid grid-cols-3 md:grid-cols-5 gap-2">{images.map((img, index) => <div key={index} className="relative aspect-square"><CachedImage src={img.preview} /><button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full"><X size={14}/></button></div>)}</div>}
                                     {attachedTrack && <div className="relative"><div className="p-2 bg-slate-100 dark:bg-slate-800/50 rounded-lg"><AttachedTrack track={attachedTrack} /></div><button type="button" onClick={() => setAttachedTrack(null)} className="absolute top-2 right-2 p-1"><XCircle size={18}/></button></div>}
@@ -281,11 +276,11 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                             { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                             { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                             { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                            { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: togglePicker },
+                                            { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: () => showPicker(smileButtonRef, (emojiObject) => setText(prev => prev + emojiObject.emoji)) },
                                         ].map((item, idx) => (
                                             item.isDatePicker ?
                                                 <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={20} /></button>} /> :
-                                                <button key={idx} type="button" ref={item.ref} onClick={item.onClick} title={item.title} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={20} /></button>
+                                                <button key={idx} type="button" ref={item.ref} onClick={(e) => { e.preventDefault(); item.onClick(); }} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={20} /></button>
                                         ))}
                                         <input type="file" ref={fileInputRef} hidden multiple accept="image/*" onChange={handleFileChange} />
                                     </div>

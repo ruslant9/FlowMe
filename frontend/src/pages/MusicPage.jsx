@@ -19,7 +19,6 @@ import ArtistCard from '../components/music/ArtistCard';
 import AlbumCard from '../components/music/AlbumCard';
 import { useModal } from '../hooks/useModal';
 import PageWrapper from '../components/PageWrapper';
-// --- ИЗМЕНЕНИЕ 1: Импортируем ResponsiveNav ---
 import ResponsiveNav from '../components/ResponsiveNav';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -158,7 +157,7 @@ const MusicPage = () => {
 
     useEffect(() => {
         if (location.state?.defaultTab) {
-            navigate(location.pathname, { replace: true });
+            navigate(location.pathname, { replace: true, state: {} });
         }
         localStorage.setItem('musicActiveTab', activeTab);
     }, [activeTab, location, navigate]);
@@ -237,7 +236,6 @@ const MusicPage = () => {
         });
     };
 
-    // --- ИЗМЕНЕНИЕ 2: Создаем массив для навигации ---
     const navItems = [
         { key: 'recommendations', label: 'Главная', icon: Star, onClick: () => setActiveTab('recommendations') },
         { key: 'search', label: 'Поиск', icon: Search, onClick: () => setActiveTab('search') },
@@ -263,9 +261,7 @@ const MusicPage = () => {
                         </button>
                     </div>
                     
-                    {/* --- ИЗМЕНЕНИЕ 3: Адаптивная навигация --- */}
                     <div className="px-6 md:px-8">
-                        {/* Навигация для десктопа */}
                         <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 overflow-x-auto no-scrollbar">
                             <div className="flex items-center gap-x-2 -mb-px">
                                 {navItems.map(item => (
@@ -276,7 +272,6 @@ const MusicPage = () => {
                             </div>
                         </div>
 
-                        {/* Навигация для мобильных */}
                         <div className="md:hidden mb-6">
                             <ResponsiveNav 
                                 items={navItems}
@@ -285,7 +280,6 @@ const MusicPage = () => {
                             />
                         </div>
                     </div>
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     
                     <div className="p-6 md:p-8">
                         {activeTab === 'recommendations' && (
