@@ -20,6 +20,9 @@ const AlbumCard = ({ album }) => {
     const linkTo = album.isSingle ? `/single/${album._id}` : `/album/${album._id}`;
     
     // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    // Эта функция правильно обрабатывает данные об артисте.
+    // Она извлекает имя (name) из объекта или объединяет имена из массива,
+    // чтобы React мог отобразить их как строку, а не объект.
     const getArtistDisplay = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
