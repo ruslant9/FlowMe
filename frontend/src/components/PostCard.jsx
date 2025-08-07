@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import AnimatedAccent from './AnimatedAccent';
 import { useCachedImage } from '../hooks/useCachedImage';
 import { useEmojiPicker } from '../hooks/useEmojiPicker'; // --- ИМПОРТ НОВОГО ХУКА ---
+import Twemoji from './Twemoji'; // --- ИМПОРТ КОМПОНЕНТА ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
@@ -95,10 +96,8 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
     
     const [loadingMore, setLoadingMore] = useState(false);
     
-    // --- ИЗМЕНЕНИЕ: Используем глобальный picker ---
     const { showPicker } = useEmojiPicker();
-    // --- Удаляем старые состояния: isPickerVisible, pickerPosition, pickerRef ---
-
+    
     const userAccent = currentPost.user?.premiumCustomization?.activeCardAccent;
 
     const userVote = useMemo(() => {
@@ -256,7 +255,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
             if (sortMenuRef.current && !sortMenuRef.current.contains(event.target)) {
                 setShowSortMenu(false);
             }
-            // Удаляем логику для isPickerVisible
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -679,7 +677,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
 
                 <div className="p-6 pt-2">
                     <div onClick={isScheduled ? undefined : handleOpenPostInModal} className={isScheduled ? '' : 'cursor-pointer'}>
-                        {currentPost.text && <p className="mb-4 whitespace-pre-wrap break-words">{currentPost.text}</p>}
+                        {currentPost.text && <p className="mb-4 whitespace-pre-wrap break-words"><Twemoji text={currentPost.text} /></p>}
                     
                         {currentPost.poll && <PollDisplay poll={currentPost.poll} onVote={handleVote} isScheduled={isScheduled} />}
                         

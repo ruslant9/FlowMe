@@ -11,11 +11,11 @@ import { useModal } from '../hooks/useModal';
 import LikesPopover from './LikesPopover';
 import { Link } from 'react-router-dom';
 
+import Twemoji from './Twemoji'; // --- ИМПОРТ КОМПОНЕНТА ---
 const Picker = React.lazy(() => import('emoji-picker-react'));
 const EMOJI_PICKER_HEIGHT = 450;
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем кастомные форматы времени ---
 const customRuLocale = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -38,7 +38,6 @@ const formatShortDistanceToNow = (dateStr) => {
     if (diffDays < 7) return `${diffDays}д`;
     return format(date, 'dd.MM');
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 
 const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommunityId, onCommentUpdate, onReply, editingCommentId, setEditingCommentId, selectionMode, onToggleSelect, isSelected }) => {
@@ -150,11 +149,18 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                     const restOfText = text.substring(matchedMention.length);
                     const parentAuthorModel = parent.authorModel || 'User';
                     const linkTo = parentAuthorModel === 'Community' ? `/communities/${parentAuthorObject._id}` : `/profile/${parentAuthorObject._id}`;
-                    return (<><Link to={linkTo} className="text-blue-400 hover:underline font-semibold" onClick={e => e.stopPropagation()}>{matchedMention}</Link><span>{restOfText}</span></>);
+                    return (
+                        <>
+                            <Link to={linkTo} className="text-blue-400 hover:underline font-semibold" onClick={e => e.stopPropagation()}>
+                                {matchedMention}
+                            </Link>
+                            <Twemoji text={restOfText} />
+                        </>
+                    );
                 }
             }
         }
-        return text;
+        return <Twemoji text={text} />;
     };
 
     const handleLike = async () => {
@@ -177,14 +183,12 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const authorIsPremium = authorModel === 'User' && authorObject.premium?.isActive;
     const authorCustomBorder = authorModel === 'User' ? authorObject.premiumCustomization?.avatarBorder : null;
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Создаем блок кнопок для переиспользования ---
     const renderActionButtons = () => (
         <>
             {isCommentOwner && <button onClick={() => setEditingCommentId(localComment._id)} className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><Pencil size={14} /></button>}
             {canDelete && <button onClick={handleDelete} className="p-1 text-slate-500 dark:text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>}
         </>
     );
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     return (
         <div>
@@ -236,7 +240,6 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                 </div>
                             ) : (
                                 <>
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Новая верстка для хедера комментария --- */}
                                     <div className="flex justify-between items-center">
                                         <div className="text-sm flex items-center space-x-2 min-w-0">
                                             <Link to={authorLink} className="font-bold hover:underline truncate">{authorName}</Link>
@@ -277,7 +280,6 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                             </div>
                                         )}
                                     </div>
-                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                                 </>
                             )}
                         </div>

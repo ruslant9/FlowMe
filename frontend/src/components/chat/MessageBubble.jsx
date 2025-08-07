@@ -10,6 +10,7 @@ import 'tippy.js/dist/tippy.css';
 import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
+import Twemoji from './Twemoji'; // --- ИМПОРТ КОМПОНЕНТА ---
 import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -193,28 +194,27 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
 
     const renderMessageWithHighlight = useMemo(() => {
         if (!isCurrentSearchResult || !searchQuery || !message.text) {
-            return message.text;
+            return <Twemoji text={message.text} />;
         }
-
+    
         const escapedQuery = searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         const regex = new RegExp(`(${escapedQuery})`, 'gi');
         const parts = message.text.split(regex);
-
+    
         return (
             <>
                 {parts.map((part, index) =>
                     regex.test(part) ? (
                         <mark key={index} className="bg-orange-300 dark:bg-orange-500 text-black dark:text-white rounded px-0.5 py-0">
-                            {part}
+                            <Twemoji text={part} />
                         </mark>
                     ) : (
-                        part
+                        <Twemoji key={index} text={part} />
                     )
                 )}
             </>
         );
     }, [message.text, isCurrentSearchResult, searchQuery]);
-
 
     return (
         <div
@@ -232,7 +232,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             
             <div className={`relative flex-shrink-0 ${isOwnMessage ? 'order-1' : 'order-2'}`}>
                 {!selectionMode && !message.isSending && !message.isFailed && (
-                     // --- НАЧАЛО ИЗМЕНЕНИЯ: Упрощаем структуру. Tippy теперь один и открывает меню действий. ---
                      <Tippy
                         interactive
                         placement={menuPosition === 'bottom' ? 'bottom-end' : 'top-end'}
@@ -247,7 +246,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         popperOptions={{ strategy: 'fixed' }}
                         render={attrs => (
                             <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
-                                {/* ReactionsPopover теперь является частью меню и имеет свой триггер */}
                                 <ReactionsPopover onSelect={(emoji) => { onReact(emoji); onToggleMenu(null); }}>
                                      <button
                                         disabled={!canInteract}
@@ -290,7 +288,6 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                             <MoreHorizontal size={18}/>
                          </TippyWrapper>
                      </Tippy>
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
                 )}
             </div>
 

@@ -5,7 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Loader2, Search, Shield, ShieldCheck, ShieldAlert, User, Mail, Calendar } from 'lucide-react';
 import AdminUserManagementOverlay from './AdminUserManagementOverlay';
-import { useUser } from '../../hooks/useUser'; // --- ИМПОРТ ХУКА ДЛЯ ПОЛУЧЕНИЯ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ ---
+import { useUser } from '../../hooks/useUser';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -19,7 +19,6 @@ const AdminUserManager = () => {
     const [isOverlayOpen, setIsOverlayOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     
-    // --- ИСПОЛЬЗУЕМ ХУК ДЛЯ ПОЛУЧЕНИЯ ДАННЫХ АДМИНИСТРАТОРА ---
     const { currentUser } = useUser();
 
     const fetchData = useCallback(async () => {
@@ -49,7 +48,7 @@ const AdminUserManager = () => {
 
     useEffect(() => {
         fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page]);
 
 
@@ -95,7 +94,8 @@ const AdminUserManager = () => {
                                 <th className="p-2 font-semibold">Email</th>
                                 <th className="p-2 font-semibold">Дата регистрации</th>
                                 <th className="p-2 font-semibold">Статус бана</th>
-                                <th className="p-2 text-right">Действия</th>
+                                {/* --- ИСПРАВЛЕНИЕ: ВЫРАВНИВАНИЕ ЗАГОЛОВКА ПО ЦЕНТРУ --- */}
+                                <th className="p-2 text-center">Действия</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -121,8 +121,8 @@ const AdminUserManager = () => {
                                     </td>
                                     <td className="p-2">{renderBanStatus(user)}</td>
                                     <td className="p-2">
-                                        <div className="flex items-center justify-end">
-                                            {/* --- ИСПРАВЛЕНИЕ: ПРОВЕРКА, ЧТОБЫ НЕ ЗАБЛОКИРОВАТЬ СЕБЯ --- */}
+                                        {/* --- ИСПРАВЛЕНИЕ: ВЫРАВНИВАНИЕ КОНТЕНТА В ЯЧЕЙКЕ ПО ЦЕНТРУ --- */}
+                                        <div className="flex items-center justify-center">
                                             {currentUser?._id !== user._id ? (
                                                 <button 
                                                     onClick={() => handleOpenOverlay(user)} 
@@ -151,7 +151,6 @@ const AdminUserManager = () => {
                                     <p className="font-bold truncate">{user.fullName || user.username}</p>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                                 </div>
-                                {/* --- ИСПРАВЛЕНИЕ: ПРОВЕРКА, ЧТОБЫ НЕ ЗАБЛОКИРОВАТЬ СЕБЯ --- */}
                                 {currentUser?._id !== user._id ? (
                                     <button 
                                         onClick={() => handleOpenOverlay(user)} 
@@ -191,7 +190,6 @@ const AdminUserManager = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    {/* --- ИСПРАВЛЕНИЕ: ИЗМЕНЕНЫ СТИЛИ ПОЛЯ ВВОДА --- */}
                     <input 
                         type="text" 
                         value={search} 

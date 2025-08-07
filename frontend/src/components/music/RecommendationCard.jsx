@@ -5,56 +5,56 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Loader2 } from 'lucide-react';
 import { useCachedImage } from '../../hooks/useCachedImage';
 
-const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack }) => {
+const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPause, onSelectTrack, isHit }) => {
     
-    // Используем хук для получения кешированного URL
     const { finalSrc, loading: imageLoading } = useCachedImage(track.albumArtUrl);
 
     const cleanTitle = (title) => {
-        if (!title || typeof title !== 'string') return '';
+        if (!title) return '';
         return title.replace(
             /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
             ''
         ).trim();
     };
 
+    // --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+    // Эта функция максимально безопасно преобразует данные об артисте в строку.
+    // Она проверяет, является ли artistData массивом, объектом с полем 'name', строкой,
+    // или чем-то еще, и в любом случае возвращает строку.
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
-            return artistData
-                .map(a => (a?.name || '').replace(' - Topic', '').trim())
-                .filter(Boolean)
-                .join(', ');
+            // Безопасно обрабатываем каждый элемент массива
+            return artistData.map(a => (a?.name || '').replace(' - Topic', '').trim()).join(', ');
         }
-        if (typeof artistData === 'object' && artistData.name) {
-            return (artistData.name || '').replace(' - Topic', '').trim();
+        if (typeof artistData === 'object' && artistData !== null && artistData.name) {
+            return artistData.name.replace(' - Topic', '').trim();
         }
         if (typeof artistData === 'string') {
             return artistData.replace(' - Topic', '').trim();
         }
+        // Если формат неизвестен, возвращаем пустую строку, чтобы избежать ошибки
         return '';
     };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     const getReleaseBadge = (releaseDate) => {
         if (!releaseDate) return null;
-
-        const now = new Date();
-        now.setHours(0, 0, 0, 0); // Сбрасываем время для корректного сравнения дат
-
         const release = new Date(releaseDate);
-        release.setHours(0, 0, 0, 0);
+        if (isNaN(release.getTime())) return null;
+        const now = new Date();
+        const startOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const startOfReleaseDayUTC = new Date(Date.UTC(release.getUTCFullYear(), release.getUTCMonth(), release.getUTCDate()));
+        const diffTime = startOfTodayUTC.getTime() - startOfReleaseDayUTC.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (release.getFullYear() > now.getFullYear() || 
-            (release.getFullYear() === now.getFullYear() && release.getMonth() >= now.getMonth())) {
-            return { text: 'Свежее', color: 'bg-lime-400 text-lime-900' };
+        if (diffDays >= 0 && diffDays <= 14) {
+            return { text: 'Новое', color: 'bg-lime-400 text-lime-900' };
         }
-
-        // "Недавнее": если релиз был в прошлом месяце
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        if (release.getFullYear() === lastMonth.getFullYear() && release.getMonth() === lastMonth.getMonth()) {
+        if (diffDays > 14 && diffDays <= 60) {
             return { text: 'Недавнее', color: 'bg-orange-400 text-orange-900' };
         }
-
         return null;
     };
 
@@ -67,11 +67,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         }
     };
 
-    const badge = getReleaseBadge(track.releaseDate);
-
-    // Безопасно приводим к строке на всякий случай
-    const displayTitle = cleanTitle(track.title) || '';
-    const displayArtist = formatArtistName(track.artist) || '';
+    const dateBadge = getReleaseBadge(track.releaseDate);
+    const finalBadge = isHit ? { text: 'Хит', color: 'bg-red-500 text-white' } : dateBadge;
 
     return (
         <motion.div
@@ -89,14 +86,14 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
             
             <AnimatePresence>
-                {badge && (
+                {finalBadge && (
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold z-10 ${badge.color}`}
+                        className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold z-10 ${finalBadge.color}`}
                     >
-                        {badge.text}
+                        {finalBadge.text}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -111,8 +108,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </div>
 
             <div className="relative z-10 text-white mt-auto">
-                <h3 className="text-base font-bold truncate">{displayTitle}</h3>
-                <p className="text-xs opacity-80 truncate">{displayArtist}</p>
+                <h3 className="text-sm md:text-base font-bold truncate">{cleanTitle(track.title)}</h3>
+                <p className="text-[11px] md:text-xs leading-tight opacity-80 truncate">{formatArtistName(track.artist)}</p>
             </div>
         </motion.div>
     );
