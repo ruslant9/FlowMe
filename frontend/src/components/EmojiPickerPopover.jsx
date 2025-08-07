@@ -1,65 +1,91 @@
 // frontend/src/components/EmojiPickerPopover.jsx
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Picker = React.lazy(() => import('emoji-picker-react'));
 
 const EmojiPickerPopover = ({ isOpen, targetRef, onEmojiClick, onClose }) => {
-    if (!isOpen || !targetRef.current) {
+    // --- ИСПРАВЛЕНИЕ: Переносим всю логику рендеринга внутрь AnimatePresence, чтобы она была доступна, когда isOpen=true ---
+    const isMobile = useMemo(() => window.innerWidth < 768, []);
+
+    const getPickerPosition = () => {
+        if (!targetRef.current || isMobile) return {};
+        const rect = targetRef.current.getBoundingClientRect();
+        const EMOJI_PICKER_HEIGHT = 450;
+        const EMOJI_PICKER_WIDTH = 350;
+
+        const positionY = window.innerHeight - rect.bottom < EMOJI_PICKER_HEIGHT 
+            ? rect.top - EMOJI_PICKER_HEIGHT - 10 
+            : rect.bottom + 10; 
+
+        const positionX = window.innerWidth - rect.right < EMOJI_PICKER_WIDTH
+            ? rect.right - EMOJI_PICKER_WIDTH
+            : rect.left;
+            
+        return { top: `${positionY}px`, left: `${positionX}px` };
+    };
+
+    if (!isOpen) {
         return null;
     }
-
-    const rect = targetRef.current.getBoundingClientRect();
-    
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-    const isMobile = window.innerWidth < 480; // Точка для переключения на мобильный вид
-    const EMOJI_PICKER_HEIGHT = isMobile ? 350 : 450; // Уменьшаем высоту на мобильных
-    const EMOJI_PICKER_WIDTH = isMobile ? window.innerWidth * 0.95 : 350; // Ширина 95% от экрана на мобильных
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
-    // Определяем позицию: открывать вверх или вниз
-    const positionY = window.innerHeight - rect.bottom < EMOJI_PICKER_HEIGHT 
-        ? rect.top - EMOJI_PICKER_HEIGHT - 10 // Сверху
-        : rect.bottom + 10; // Снизу
-
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Адаптивная позиция по горизонтали ---
-    // На мобильных устройствах центрируем панель, на десктопе - выравниваем по кнопке
-    const positionX = isMobile
-        ? (window.innerWidth - EMOJI_PICKER_WIDTH) / 2 // Центрируем
-        : window.innerWidth - rect.right < EMOJI_PICKER_WIDTH
-            ? rect.right - EMOJI_PICKER_WIDTH // Слева от кнопки
-            : rect.left; // Справа от кнопки
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    style={{
-                        position: 'fixed',
-                        top: `${positionY}px`,
-                        left: `${positionX}px`,
-                        zIndex: 100,
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <Suspense fallback={<div className="w-80 h-96 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">...</div>}>
-                        <Picker 
-                            onEmojiClick={onEmojiClick}
-                            theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
-                            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Применяем адаптивные размеры ---
-                            width={EMOJI_PICKER_WIDTH}
-                            height={EMOJI_PICKER_HEIGHT}
-                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                <>
+                    {/* --- ИСПРАВЛЕНИЕ: Добавляем фон-затемнение только для мобильных --- */}
+                    {isMobile && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/30 z-[120]"
                         />
-                    </Suspense>
-                </motion.div>
+                    )}
+                    <motion.div
+                        // --- ИСПРАВЛЕНИЕ: Добавляем атрибут для отслеживания кликов ---
+                        data-emoji-picker="true"
+                        // --- ИСПРАВЛЕНИЕ: Адаптивные стили и анимация ---
+                        initial={isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 10 }}
+                        animate={isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+                        exit={isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 10 }}
+                        transition={{ duration: 0.25, ease: 'easeOut' }}
+                        style={isMobile ? {
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            zIndex: 130,
+                        } : {
+                            position: 'fixed',
+                            ...getPickerPosition(),
+                            zIndex: 130,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <Suspense fallback={<div className="w-full h-[350px] bg-slate-200 dark:bg-slate-700 rounded-t-2xl md:rounded-lg flex items-center justify-center">...</div>}>
+                            <div className={isMobile ? "bg-slate-100 dark:bg-slate-800 rounded-t-2xl overflow-hidden" : ""}>
+                                <Picker 
+                                    onEmojiClick={(emojiObject, event) => {
+                                        onEmojiClick(emojiObject, event);
+                                        // Не закрываем на мобильных, чтобы можно было выбрать несколько
+                                        if (!isMobile) {
+                                            onClose();
+                                        }
+                                    }}
+                                    theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
+                                    width={isMobile ? '100%' : 350}
+                                    height={isMobile ? 350 : 450}
+                                    searchPlaceholder="Поиск"
+                                    previewConfig={{ showPreview: !isMobile }}
+                                />
+                            </div>
+                        </Suspense>
+                    </motion.div>
+                </>
             )}
         </AnimatePresence>,
         document.getElementById('modal-root')

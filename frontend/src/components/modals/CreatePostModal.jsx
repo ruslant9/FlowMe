@@ -140,7 +140,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const togglePicker = () => {
         setIsPickerVisible(p => !p);
     };
-    
+
     const removeImage = (indexToRemove) => {
         setImages(prev => {
             URL.revokeObjectURL(prev[indexToRemove].preview);
@@ -207,7 +207,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                 <>
                     <ImageAttachmentModal isOpen={!!editingImage} onClose={() => setEditingImage(null)} file={editingImage?.file} onSave={handleEditComplete} showCaptionInput={false} />
                     <AttachTrackModal isOpen={isAttachTrackModalOpen} onClose={() => setIsAttachTrackModalOpen(false)} onSelectTrack={setAttachedTrack} />
-                    {/* --- ИСПРАВЛЕНИЕ: Используем EmojiPickerPopover вместо прямого рендеринга Picker --- */}
                     <EmojiPickerPopover 
                         isOpen={isPickerVisible}
                         targetRef={smileButtonRef}
@@ -250,7 +249,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center">
                                                                                 <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{communityOption.name}</span>
-                                                                                {/* --- ИСПРАВЛЕНИЕ: option -> communityOption --- */}
                                                                                 {communityOption.type === 'user' && communityOption.premium?.isActive && (
                                                                                     <span className="ml-1.5 premium-shimmer-text text-[10px] font-bold">Premium</span>
                                                                                 )}
@@ -268,8 +266,8 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                         </Listbox>
                                     </div>
                                 </div>
-
-                                <div className="flex-1 overflow-y-auto pr-2 -mr-4 space-y-4">
+                                {/* --- ИСПРАВЛЕНИЕ: Добавлен класс min-h-0 --- */}
+                                <div className="flex-1 overflow-y-auto pr-2 -mr-4 space-y-4 min-h-0">
                                     <textarea ref={textareaRef} value={text} onChange={handleTextareaChange} placeholder="Что у вас нового?" className="w-full text-xl bg-transparent resize-none focus:outline-none placeholder-slate-500 dark:placeholder-white/50 min-h-[80px]" />
                                     {images.length > 0 && <div className="grid grid-cols-3 md:grid-cols-5 gap-2">{images.map((img, index) => <div key={index} className="relative aspect-square"><CachedImage src={img.preview} /><button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full"><X size={14}/></button></div>)}</div>}
                                     {attachedTrack && <div className="relative"><div className="p-2 bg-slate-100 dark:bg-slate-800/50 rounded-lg"><AttachedTrack track={attachedTrack} /></div><button type="button" onClick={() => setAttachedTrack(null)} className="absolute top-2 right-2 p-1"><XCircle size={18}/></button></div>}

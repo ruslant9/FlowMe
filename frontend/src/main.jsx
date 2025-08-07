@@ -10,6 +10,8 @@ import { WebSocketProvider } from './context/WebSocketContext.jsx';
 import { UserProvider } from './context/UserContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import { MusicPlayerProvider } from './context/MusicPlayerContext.jsx';
+// --- ИМПОРТИРУЕМ НОВЫЙ ПРОВАЙДЕР ---
+import { EmojiPickerProvider } from './context/EmojiPickerProvider.jsx';
 import axios from 'axios';
 
 import './index.css';
@@ -28,17 +30,20 @@ if (token) {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <UserProvider>
-        <NotificationProvider>
-          <MusicPlayerProvider> 
-            <WebSocketProvider>
-              <ModalProvider>
-                <App />
-              </ModalProvider>
-            </WebSocketProvider>
-          </MusicPlayerProvider>
-        </NotificationProvider>
-      </UserProvider>
+      {/* --- ОБАРАЧИВАЕМ ВСЕ ОСТАЛЬНЫЕ ПРОВАЙДЕРЫ --- */}
+      <EmojiPickerProvider>
+        <UserProvider>
+          <NotificationProvider>
+            <MusicPlayerProvider> 
+              <WebSocketProvider>
+                <ModalProvider>
+                  <App />
+                </ModalProvider>
+              </WebSocketProvider>
+            </MusicPlayerProvider>
+          </NotificationProvider>
+        </UserProvider>
+      </EmojiPickerProvider>
       <Toaster 
         position="bottom-right"
         toastOptions={{
