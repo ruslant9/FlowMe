@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
-import { Sun, Moon, Loader2, ShieldAlert, LogOut, Home, Search, Music, Newspaper, Users, MessageSquare } from 'lucide-react';
+import { Sun, Moon, Loader2, ShieldAlert, LogOut, Home, Search, Music, Newspaper, Users, MessageSquare, UserIcon } from 'lucide-react';
 import { useUser } from './hooks/useUser';
 const LiquidGlassBackground = React.lazy(() => import('./components/LiquidGlassBackground'));
 import LoginPage from './pages/LoginPage';
