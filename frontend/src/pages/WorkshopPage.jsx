@@ -13,7 +13,7 @@ import { useModal } from '../hooks/useModal';
 import PackPreviewModal from '../components/workshop/PackPreviewModal';
 import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 import PageWrapper from '../components/PageWrapper';
-import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ НОВОГО КОМПОНЕНТА ---
+import ResponsiveNav from '../components/ResponsiveNav';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -176,14 +176,14 @@ const WorkshopPage = () => {
         }
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Создаем массив для ResponsiveNav ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем кнопку "Создать" в массив навигации ---
     const navItems = [
         { key: 'my', label: 'Мои паки', icon: Brush, onClick: () => setActiveTab('my') },
         { key: 'added', label: 'Добавленные', icon: Library, onClick: () => setActiveTab('added') },
         { key: 'search', label: 'Поиск', icon: Search, onClick: () => setActiveTab('search') },
+        { key: 'create', label: 'Создать', icon: PlusCircle, onClick: handleCreatePack },
     ];
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
     const renderContent = () => {
         let packs, emptyMessage, cardActions;
@@ -318,7 +318,7 @@ const WorkshopPage = () => {
                 <div className="w-full max-w-7xl mx-auto space-y-8">
                     <div className="flex items-center justify-between gap-4">
                         <h1 className="text-4xl font-bold">Мастерская</h1>
-                         <button onClick={handleCreatePack} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold p-2 md:px-4 md:py-2 rounded-lg transition-colors">
+                         <button onClick={handleCreatePack} className="hidden md:flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold p-2 md:px-4 md:py-2 rounded-lg transition-colors">
                             <PlusCircle size={18} />
                             <span className="hidden md:inline">Создать пак</span>
                         </button>
@@ -328,12 +328,12 @@ const WorkshopPage = () => {
                     <div className="md:hidden">
                         <ResponsiveNav 
                             items={navItems}
-                            visibleCount={3}
+                            visibleCount={4}
                             activeKey={activeTab}
                         />
                     </div>
-                    <div className="hidden md:flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
                     {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                    <div className="hidden md:flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
                         <div className="flex items-center gap-x-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg w-full md:w-auto">
                             <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
                             <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>

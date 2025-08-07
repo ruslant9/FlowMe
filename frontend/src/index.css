@@ -223,20 +223,17 @@ html.dark .tippy-arrow {
   vertical-align: -0.2em; 
 }
 
-/* --- НАЧАЛО ИЗМЕНЕНИЯ: Новые стили для сообщений только с эмодзи --- */
 .emoji-only {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem; /* Небольшой отступ между смайликами */
-    padding: 0.25rem; /* Небольшой внутренний отступ для самого контейнера */
+    /* Свойства display: flex и flex-wrap удалены */
+    padding: 0.25rem;
 }
 
 .emoji-only .emoji {
     width: 2.5rem;  /* Увеличенный размер для больших эмодзи */
     height: 2.5rem;
     vertical-align: middle; /* Улучшенное выравнивание */
+    display: inline-block; /* Это ключевое изменение, которое ставит эмодзи в ряд */
 }
-/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */
 
 .rc-slider {
   position: relative;

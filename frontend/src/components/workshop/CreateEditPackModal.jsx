@@ -5,29 +5,43 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Image as ImageIcon, Trash2, PlusCircle, AlertTriangle, Crown } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useUser } from '../../hooks/useUser'; // --- НОВЫЙ ИМПОРТ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-const ToggleSwitch = ({ checked, onChange, label, description }) => (
-    <label htmlFor="premium-toggle" className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg cursor-pointer">
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Обновленный компонент ToggleSwitch ---
+const ToggleSwitch = ({ checked, onChange, label, description, disabled = false }) => (
+    <div 
+        onClick={disabled ? () => toast.error('Эта функция доступна только для Premium-пользователей.') : null}
+        className={`flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg transition-opacity ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+    >
         <div>
-            <span className="font-semibold text-slate-700 dark:text-white">{label}</span>
+            <div className="flex items-center space-x-2">
+                {disabled && <Crown size={16} className="text-yellow-500" />}
+                <span className="font-semibold text-slate-700 dark:text-white">{label}</span>
+            </div>
             <p className="text-xs text-slate-500 dark:text-white/60">{description}</p>
         </div>
         <div className="relative inline-flex items-center flex-shrink-0">
-            <input type="checkbox" id="premium-toggle" className="sr-only peer" checked={checked} onChange={e => onChange(e.target.checked)} />
+            <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={checked}
+                onChange={disabled ? undefined : e => onChange(e.target.checked)}
+                disabled={disabled}
+            />
             <div className="w-11 h-6 bg-gray-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </div>
-    </label>
+    </div>
 );
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 
 const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave }) => {
+    const { currentUser } = useUser(); // Получаем данные текущего пользователя
     const [name, setName] = useState('');
     const [type, setType] = useState('sticker');
-    const [isPremiumOnly, setIsPremiumOnly] = useState(false); // Новое состояние
+    const [isPremiumOnly, setIsPremiumOnly] = useState(false);
     const [existingItems, setExistingItems] = useState([]);
     const [newFiles, setNewFiles] = useState([]);
     const [itemsToDelete, setItemsToDelete] = useState([]);
@@ -117,8 +131,10 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
     return (
         <AnimatePresence>
             {isOpen && (
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Изменены классы для позиционирования ---
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center z-[110] p-4 pt-20 md:pt-4">
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                     <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
                         onClick={(e) => e.stopPropagation()}
                         className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
@@ -145,14 +161,17 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
                                 </div>
                             )}
 
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1 (продолжение): Добавлено свойство disabled --- */}
                             {type === 'emoji' && (
                                 <ToggleSwitch 
                                     checked={isPremiumOnly}
                                     onChange={setIsPremiumOnly}
                                     label="Только для Premium"
                                     description="Этот пак будет доступен только пользователям с Premium-подпиской."
+                                    disabled={!currentUser?.premium?.isActive}
                                 />
                             )}
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 (продолжение) --- */}
 
                             <div className="flex-1 overflow-y-auto -mr-2 pr-2 border-t border-b border-slate-200 dark:border-slate-700 py-4">
                                 <label className="block text-sm font-semibold mb-2">Изображения</label>

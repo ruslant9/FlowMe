@@ -1,4 +1,4 @@
-// frontend/src/pages/MusicPage.jsx
+// frontend/src/pages/MusicPage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -41,11 +41,14 @@ const MusicPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const getInitialTab = () => {
         if (location.state?.defaultTab) return location.state.defaultTab;
         const savedTab = localStorage.getItem('musicActiveTab');
-        return ['search', 'recommendations', 'my-music', 'recently-played', 'playlists'].includes(savedTab) ? savedTab : 'recommendations';
+        // Убрали 'recommendations' и сделали 'my-music' по умолчанию
+        return ['search', 'my-music', 'recently-played', 'playlists'].includes(savedTab) ? savedTab : 'my-music';
     };
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     const [activeTab, setActiveTab] = useState(getInitialTab);
     const [mainPageData, setMainPageData] = useState({ newReleases: [], popularHits: [], popularArtists: [] });
@@ -84,7 +87,7 @@ const MusicPage = () => {
         };
         
         switch (tab) {
-            case 'recommendations':
+            case 'recommendations': // Логика осталась, но не будет вызываться
                 setLoadingRecommendations(true);
                 resetSearchState();
                 try {
@@ -188,14 +191,15 @@ const MusicPage = () => {
         };
     }, [activeTab, fetchDataForTab]);
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const handleSelectTrack = useCallback((track) => {
         let currentPlaylist = [];
         if (activeTab === 'my-music') currentPlaylist = myMusicTracks;
         else if (activeTab === 'recently-played') currentPlaylist = recentlyPlayed;
-        else if (activeTab === 'recommendations') currentPlaylist = mainPageData.newReleases.concat(mainPageData.popularHits);
         else currentPlaylist = searchResults.tracks;
         playTrack(track, currentPlaylist); 
-    }, [myMusicTracks, recentlyPlayed, mainPageData, searchResults, activeTab, playTrack]);
+    }, [myMusicTracks, recentlyPlayed, searchResults, activeTab, playTrack]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     const handlePlayWave = useCallback(async () => {
         const toastId = toast.loading("Настраиваем вашу волну...");
@@ -235,14 +239,15 @@ const MusicPage = () => {
             }
         });
     };
-
+    
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const navItems = [
-        { key: 'recommendations', label: 'Главная', icon: Star, onClick: () => setActiveTab('recommendations') },
-        { key: 'search', label: 'Поиск', icon: Search, onClick: () => setActiveTab('search') },
         { key: 'my-music', label: 'Моя музыка', icon: Music, onClick: () => setActiveTab('my-music') },
+        { key: 'search', label: 'Поиск', icon: Search, onClick: () => setActiveTab('search') },
         { key: 'playlists', label: 'Плейлисты', icon: ListMusic, onClick: () => setActiveTab('playlists') },
         { key: 'recently-played', label: 'Вы слушали', icon: History, onClick: () => setActiveTab('recently-played') }
     ];
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     
     return (
         <PageWrapper>
@@ -282,6 +287,7 @@ const MusicPage = () => {
                     </div>
                     
                     <div className="p-6 md:p-8">
+                        {/* Код для вкладки recommendations остался, но он не будет отображаться */}
                         {activeTab === 'recommendations' && (
                             loadingRecommendations ? <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin"/></div> : (
                                 <div className="space-y-10">

@@ -168,33 +168,38 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                         onSave={handleImageEdited}
                         showCaptionInput={false}
                     />
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Изменены классы для мобильной адаптации --- */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={handleCloseModal}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-4 pt-20"
                     >
                         <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
+                            initial={{ y: "100%", opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: "100%", opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 40 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="ios-glass-final w-full max-w-3xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
+                            className="ios-glass-final w-full max-w-2xl bg-slate-100 dark:bg-slate-800 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                         >
-                            <div className="flex justify-between items-center mb-4">
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
+                            <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                                 <h2 className="text-xl font-bold">Создать сообщество</h2>
                                 <button onClick={handleCloseModal} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"><X /></button>
                             </div>
                             
-                            <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-4">
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Добавлена обертка для прокрутки --- */}
+                            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                                 <div>
                                     <label htmlFor="name" className="block text-sm font-semibold mb-1">Название сообщества</label>
-                                    <input type="text" id="name" name="name" value={communityData.name} onChange={handleChange} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Например, 'Любители кошек'" required />
+                                    <input type="text" id="name" name="name" value={communityData.name} onChange={handleChange} className="w-full p-2 bg-white dark:bg-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Например, 'Любители кошек'" required />
                                 </div>
                                 <div>
                                     <label htmlFor="description" className="block text-sm font-semibold mb-1">Описание</label>
-                                    <textarea id="description" name="description" value={communityData.description} onChange={handleChange} rows="3" className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Расскажите о чем ваше сообщество..."></textarea>
+                                    <textarea id="description" name="description" value={communityData.description} onChange={handleChange} rows="3" className="w-full p-2 bg-white dark:bg-slate-700 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Расскажите о чем ваше сообщество..."></textarea>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -202,7 +207,7 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                         <label htmlFor="topic" className="block text-sm font-semibold mb-1">Тематика</label>
                                         <Listbox value={communityData.topic} onChange={(value) => setCommunityData(prev => ({ ...prev, topic: value }))}>
                                             <div className="relative mt-1">
-                                                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-slate-100 dark:bg-slate-800 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
+                                                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                                                     <span className="block truncate">{selectedTopic.name}</span>
                                                     <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                                                         <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -229,7 +234,7 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                         <label htmlFor="visibility" className="block text-sm font-semibold mb-1">Видимость</label>
                                         <Listbox value={communityData.visibility} onChange={(value) => setCommunityData(prev => ({ ...prev, visibility: value }))}>
                                             <div className="relative mt-1">
-                                                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-slate-100 dark:bg-slate-800 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
+                                                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                                                     <span className="block truncate">{communityData.visibility === 'public' ? 'Публичное' : communityData.visibility === 'private' ? 'Приватное' : 'Секретное'}</span>
                                                     <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" /></span>
                                                 </Listbox.Button>
@@ -249,7 +254,7 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                         <label htmlFor="joinPolicy" className="block text-sm font-semibold mb-1">Политика вступления</label>
                                         <Listbox value={communityData.joinPolicy} onChange={(value) => setCommunityData(prev => ({ ...prev, joinPolicy: value }))}>
                                             <div className="relative mt-1">
-                                                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-slate-100 dark:bg-slate-800 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
+                                                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                                                     <span className="block truncate">{communityData.joinPolicy === 'open' ? 'Открытое' : communityData.joinPolicy === 'approval_required' ? 'По заявке' : 'По приглашению'}</span>
                                                     <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" /></span>
                                                 </Listbox.Button>
@@ -267,7 +272,6 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                     </div>
                                 </div>
                                 
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Новая верстка для блоков с изображениями --- */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                     <div>
                                         <label className="block text-sm font-semibold mb-2">Аватар сообщества</label>
@@ -318,10 +322,9 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                         </div>
                                     </div>
                                 </div>
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
 
 
-                                <div className="flex justify-end mt-6">
+                                <div className="flex justify-end mt-6 flex-shrink-0">
                                     <button
                                         type="submit"
                                         disabled={loading}
