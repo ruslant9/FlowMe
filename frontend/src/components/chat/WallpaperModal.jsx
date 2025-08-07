@@ -302,11 +302,13 @@ const WallpaperModal = ({ isOpen, onClose, conversationId, currentWallpaper }) =
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[110] p-0 md:p-4">
                     <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
-                    <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                    <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 40 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="ios-glass-final w-full max-w-4xl p-4 md:p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
+                        className="ios-glass-final w-full max-w-4xl p-4 md:p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[85vh] relative">
+                        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full md:hidden"></div>
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg md:text-xl font-bold">Выбор обоев для чата</h2>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10">

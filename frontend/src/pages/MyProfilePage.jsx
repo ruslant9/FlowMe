@@ -139,7 +139,7 @@ const MyProfilePage = () => {
     const getStatus = (user) => {
         if (!user) return null;
         const status = userStatuses && userStatuses[user._id];
-        if (status?.isOnline) return <span className="text-green-400">Онлайн</span>;
+        if (status?.isOnline) return <span className="text-green-600 dark:text-green-400">Онлайн</span>;
         if (user.lastSeen) return `Был(а) ${timeAgo(user.lastSeen)}`;
         return null;
     };
@@ -253,7 +253,7 @@ const MyProfilePage = () => {
             <main className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto p-4 md:p-8">
                     {/* HERO SECTION */}
-                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8">
+                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8 bg-slate-200 dark:bg-transparent">
                         {userAccent && <AnimatedAccent backgroundUrl={userAccent.backgroundUrl || userAccent} emojis={userAccent.emojis || []} />}
                         <div className="relative z-10 flex-shrink-0 group">
                             <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} size="2xl" isPremium={user.premium?.isActive} customBorder={user.premiumCustomization?.avatarBorder} onClick={() => {}} >
@@ -265,44 +265,45 @@ const MyProfilePage = () => {
                             <input type="file" ref={avatarInputRef} hidden accept="image/*" onChange={handleAvatarUpload} />
                         </div>
                         <div className="relative z-10">
-                            <h1 className="text-4xl md:text-5xl font-extrabold text-white flex items-center justify-center md:justify-start" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены адаптивные цвета текста --- */}
+                            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center md:justify-start" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                                 {user.fullName || user.username}
                                 {user.premiumCustomization?.usernameEmoji?.url && (<img src={user.premiumCustomization.usernameEmoji.url} alt="emoji" className="w-8 h-8 ml-3" />)}
                             </h1>
-                            <p className="text-lg text-slate-300 mt-1" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>@{user.username}</p>
+                            <p className="text-lg text-slate-600 dark:text-slate-300 mt-1" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>@{user.username}</p>
                             
                             {user.status ? (
                                 <div onClick={() => setIsStatusModalOpen(true)} className="mt-3 cursor-pointer group/status">
-                                    <p className="text-white/90 whitespace-pre-wrap break-words">{user.status}</p>
-                                    <span className="text-xs text-blue-400 opacity-0 group-hover/status:opacity-100 transition-opacity">Изменить статус</span>
+                                    <p className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words">{user.status}</p>
+                                    <span className="text-xs text-blue-500 dark:text-blue-400 opacity-0 group-hover/status:opacity-100 transition-opacity">Изменить статус</span>
                                 </div>
                             ) : (
-                                <button onClick={() => setIsStatusModalOpen(true)} className="flex items-center justify-center md:justify-start mx-auto md:mx-0 space-x-2 text-sm text-blue-400 hover:underline mt-2">
+                                <button onClick={() => setIsStatusModalOpen(true)} className="flex items-center justify-center md:justify-start mx-auto md:mx-0 space-x-2 text-sm text-blue-500 hover:underline mt-2">
                                     <Edit2 size={14} /><span>Установить статус</span>
                                 </button>
                             )}
 
-                            <div className="flex items-center justify-center md:justify-start space-x-3 mt-3 text-xs text-slate-300" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
+                            <div className="flex items-center justify-center md:justify-start space-x-3 mt-3 text-xs text-slate-500 dark:text-slate-300" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
                                 <span>Регистрация: {format(new Date(user.createdAt), 'dd.MM.yyyy', { locale: ru })}</span>
                                 {getStatus(user) && (<span>• {getStatus(user)}</span>)}
                             </div>
                             
                             <div className="mt-6 flex flex-wrap justify-center md:justify-start gap-3">
-                                <button onClick={() => setIsEditProfileModalOpen(true)} className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-colors flex items-center space-x-2">
+                                <button onClick={() => setIsEditProfileModalOpen(true)} className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/20 dark:hover:bg-white/30 text-slate-800 dark:text-white backdrop-blur-sm transition-colors flex items-center space-x-2">
                                     <Edit2 size={16} /><span>Редактировать</span>
                                 </button>
-                                <button onClick={handleCustomizationClick} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg' : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm'}`}>
-                                    <Crown size={16} className={user.premium?.isActive ? 'premium-icon-glow text-yellow-400' : 'text-white'} />
-                                    <span className="text-white">Кастомизация</span>
+                                <button onClick={handleCustomizationClick} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg' : 'bg-black/5 hover:bg-black/10 dark:bg-white/20 dark:hover:bg-white/30 backdrop-blur-sm'}`}>
+                                    <Crown size={16} className={user.premium?.isActive ? 'premium-icon-glow text-yellow-400' : 'text-slate-800 dark:text-white'} />
+                                    <span className="text-slate-800 dark:text-white">Кастомизация</span>
                                 </button>
                             </div>
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
                     </div>
 
                     {/* MAIN GRID */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-1 flex flex-col gap-6">
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменены классы --- */}
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-4">
                                 <ProfileStats stats={stats} onShowUsers={handleShowUsers} />
                             </div>
@@ -329,11 +330,9 @@ const MyProfilePage = () => {
                                 {loadingPostsAndStats ? <div className="flex justify-center py-4"><Loader2 className="animate-spin text-slate-400"/></div> : 
                                  musicTracks.length > 0 ? <TrackList tracks={musicTracks.slice(0, 3)} onSelectTrack={(track) => playTrack(track, musicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, myMusicTrackIds}} /> : <p className="text-slate-500 dark:text-slate-400 text-sm">Добавьте любимые треки в свою коллекцию.</p>}
                             </div>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
 
                         <div className="lg:col-span-2 flex flex-col gap-6">
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменены классы --- */}
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 flex items-center space-x-4">
                                 <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} size="md"/>
                                 <button onClick={() => setIsCreatePostModalOpen(true)} className="flex-1 text-left px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
@@ -356,7 +355,6 @@ const MyProfilePage = () => {
                                         (scheduledPosts.length > 0 ? scheduledPosts.map(p => <PostCard key={p._id} post={p} onPostDelete={handlePostDeleteInPlace} onPostUpdate={handlePostUpdateInPlace} currentUser={user} myMusicTrackIds={myMusicTrackIds} onEditRequest={setEditingPost} isScheduled={true}/>) : <p className="text-center py-10 text-slate-500 dark:text-slate-400">У вас нет запланированных постов.</p>)}
                                 </div>
                             </div>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
                     </div>
                 </div>

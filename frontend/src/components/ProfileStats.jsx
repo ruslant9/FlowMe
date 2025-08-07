@@ -2,14 +2,15 @@
 import React from 'react';
 
 const StatItem = ({ label, value, onClick, accentTextColor }) => {
-    // Класс для подписи (label) изменен на статичный светло-серый.
-    const labelClasses = accentTextColor ? '' : 'text-slate-400 group-hover:text-blue-300';
-    const valueClasses = accentTextColor ? '' : 'group-hover:text-blue-400';
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    // Классы для подписи (label) и значения (value) теперь адаптивные
+    const labelClasses = accentTextColor ? '' : 'text-slate-500 dark:text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400';
+    const valueClasses = accentTextColor ? '' : 'text-slate-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400';
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const labelStyle = accentTextColor ? { color: accentTextColor, opacity: 0.7 } : {};
 
     const content = (
         <div className="flex flex-col items-center">
-            {/* Основной текст (value) унаследует белый цвет. */}
             <p className={`text-base font-bold transition-colors ${valueClasses}`}>{value}</p>
             <p className={`text-[11px] transition-colors whitespace-nowrap ${labelClasses}`} style={labelStyle}>{label}</p>
         </div>
@@ -38,8 +39,8 @@ const ProfileStats = ({ stats, onShowUsers, accentTextColor }) => {
             <div className="flex items-center justify-around flex-nowrap my-4 gap-x-1 animate-pulse">
                 {[...Array(5)].map((_, i) => (
                      <div key={i} className="flex flex-col items-center p-1">
-                        <div className="h-6 w-8 bg-slate-300 dark:bg-slate-700 rounded-md mb-1.5"></div>
-                        <div className="h-3 w-12 bg-slate-300 dark:bg-slate-700 rounded-md"></div>
+                        <div className="h-6 w-8 bg-slate-200 dark:bg-slate-700 rounded-md mb-1.5"></div>
+                        <div className="h-3 w-12 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
                     </div>
                 ))}
             </div>

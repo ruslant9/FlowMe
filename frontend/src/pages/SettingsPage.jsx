@@ -34,7 +34,6 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
     </button>
 );
 
-// ... (Остальные хелперы и импорты остаются без изменений) ...
 const privacyOptions = [
     { id: 'everyone', name: 'Все' },
     { id: 'friends', name: 'Только друзья' },
@@ -69,14 +68,15 @@ const getDeviceIcon = (deviceString) => {
 
 
 const ToggleControl = ({ label, checked, onChange, description }) => (
-    <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm">
+    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-transparent">
         <div>
             <p className="font-semibold text-slate-700 dark:text-white">{label}</p>
             {description && <p className="text-sm text-slate-500 dark:text-white/60">{description}</p>}
         </div>
         <label htmlFor={label.replace(/\s+/g, '-')} className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id={label.replace(/\s+/g, '-')} className="sr-only peer" checked={checked} onChange={onChange} />
-            <div className="w-11 h-6 bg-gray-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            <div className="w-11 h-6 bg-gray-200 dark:bg-gray-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
     </div>
 );
@@ -85,7 +85,8 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
     const [buttonRef, position] = useDynamicPosition();
 
     return (
-        <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm flex-wrap gap-4">
+        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-transparent flex-wrap gap-4">
             <div className="flex items-center space-x-3">
                 <Icon size={20} className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
                 <div>
@@ -96,7 +97,7 @@ const PrivacySettingControl = ({ label, icon: Icon, value, onChange, description
             <div className="flex items-center flex-wrap gap-4 w-full sm:w-auto justify-end sm:justify-start">
                 <Listbox value={value} onChange={onChange}>
                     <div className="relative w-full sm:w-48">
-                        <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
+                        <Listbox.Button ref={buttonRef} className="relative w-full cursor-pointer rounded-lg bg-slate-100 dark:bg-slate-700 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm">
                             <span className="block truncate">{options.find(opt => opt.id === value)?.name}</span>
                             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" /></span>
                         </Listbox.Button>
@@ -252,7 +253,8 @@ const renderContent = () => {
 };
 
 return (
-    <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg flex flex-col items-start gap-3">
+    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+    <div className="p-4 bg-white dark:bg-slate-800 rounded-lg flex flex-col items-start gap-3 border border-slate-200 dark:border-transparent">
         <div>
             <p className="font-semibold text-slate-700 dark:text-white">Push-уведомления</p>
             <p className="text-sm text-slate-500 dark:text-white/60">Получайте уведомления, даже когда сайт закрыт.</p>
@@ -261,6 +263,7 @@ return (
     </div>
 );
 };
+
 
 const SettingsPage = () => {
     useTitle('Настройки');
@@ -418,9 +421,9 @@ return (
     <PageWrapper>
         <main className="flex-1 p-4 md:p-8">
             <div className="w-full max-w-7xl mx-auto">
-                <h1 className="text-3xl font-bold mb-6 text-center">Настройки</h1>
+                <h1 className="text-3xl font-bold mb-6 text-center text-slate-900 dark:text-white">Настройки</h1>
 
-                <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-8 justify-center">
+                <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700 mb-8 justify-center">
                     {navItems.map(item => (
                         <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon}>
                             {item.label}
@@ -428,7 +431,6 @@ return (
                     ))}
                 </div>
                 
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
                 <div className="md:hidden mb-6">
                     <ResponsiveNav 
                         items={navItems}
@@ -436,7 +438,6 @@ return (
                         activeKey={activeTab}
                     />
                 </div>
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -448,7 +449,7 @@ return (
                     >
                         {activeTab === 'privacy' && (
                             <section>
-                                <h2 className="text-2xl font-bold mb-2">Настройки приватности</h2>
+                                <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Настройки приватности</h2>
                                 <p className="text-sm text-slate-500 dark:text-white/60 mb-6">Управляйте тем, кто может видеть вашу информацию и взаимодействовать с вами.</p>
                                 {loadingPrivacySettings || !privacySettings ? <div className="flex justify-center"><Loader2 className="animate-spin"/></div> : (
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -468,7 +469,6 @@ return (
                                         <PrivacySettingControl label="Кто видит мою музыку" icon={Music} value={privacySettings.viewMusic} onChange={(v) => handlePrivacyChange('viewMusic', v)} options={privacyOptions} />
                                         
                                         <div className="lg:col-span-2 flex justify-end pt-4">
-                                            {/* --- ИЗМЕНЕНИЕ: Добавляем w-full md:w-auto --- */}
                                             <button onClick={savePrivacySettings} disabled={!haveSettingsChanged()} className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50">Сохранить изменения</button>
                                         </div>
                                     </div>
@@ -478,28 +478,28 @@ return (
 
                         {activeTab === 'security' && (
                             <section>
-                                <h2 className="text-2xl font-bold mb-2">Безопасность и вход</h2>
+                                <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Безопасность и вход</h2>
                                 <p className="text-sm text-slate-500 dark:text-white/60 mb-6">Управление паролем и активными сессиями.</p>
                                 <div className="space-y-8">
                                     <div>
                                         <h3 className="text-lg font-semibold mb-4">Смена пароля</h3>
+                                        {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
                                         <form onSubmit={handlePasswordChange} className="space-y-3">
                                             {verificationRequired ? (
                                                 <>
                                                     <p className="text-sm text-center text-green-600 dark:text-green-400">На вашу почту отправлен код подтверждения. Введите его ниже.</p>
-                                                    <input type="text" placeholder="Код из письма" value={passwordData.verificationCode} onChange={(e) => setPasswordData(p => ({...p, verificationCode: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
+                                                    <input type="text" placeholder="Код из письма" value={passwordData.verificationCode} onChange={(e) => setPasswordData(p => ({...p, verificationCode: e.target.value}))} className="w-full p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700" required />
                                                 </>
                                             ) : (
                                                 <>
                                                     {currentUser?.hasPassword && (
-                                                        <input type="password" placeholder="Текущий пароль (если сессия старше 1 часа)" value={passwordData.currentPassword} onChange={(e) => setPasswordData(p => ({...p, currentPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                                                        <input type="password" placeholder="Текущий пароль (если сессия старше 1 часа)" value={passwordData.currentPassword} onChange={(e) => setPasswordData(p => ({...p, currentPassword: e.target.value}))} className="w-full p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700" />
                                                     )}
-                                                    <input type="password" placeholder={currentUser?.hasPassword ? "Новый пароль" : "Задайте пароль для входа"} value={passwordData.newPassword} onChange={(e) => setPasswordData(p => ({...p, newPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
-                                                    <input type="password" placeholder="Подтвердите новый пароль" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" required />
+                                                    <input type="password" placeholder={currentUser?.hasPassword ? "Новый пароль" : "Задайте пароль для входа"} value={passwordData.newPassword} onChange={(e) => setPasswordData(p => ({...p, newPassword: e.target.value}))} className="w-full p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700" required />
+                                                    <input type="password" placeholder="Подтвердите новый пароль" value={passwordData.confirmPassword} onChange={(e) => setPasswordData(p => ({...p, confirmPassword: e.target.value}))} className="w-full p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700" required />
                                                 </>
                                             )}
                                             <div className="flex justify-end pt-2">
-                                                {/* --- ИЗМЕНЕНИЕ: Добавляем w-full md:w-auto --- */}
                                                 <button type="submit" disabled={passwordChangeLoading} className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center min-w-[180px]">
                                                     {passwordChangeLoading ? <Loader2 className="animate-spin" /> : (verificationRequired ? 'Подтвердить' : (currentUser?.hasPassword ? 'Сменить пароль' : 'Установить пароль'))}
                                                 </button>
@@ -518,11 +518,12 @@ return (
                                                     const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
                                                     const primaryIp = session.ipAddress && typeof session.ipAddress === 'string' ? session.ipAddress.split(',')[0].trim() : 'Неизвестный IP';
                                                     return (
-                                                        <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3">
+                                                        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                                                        <div key={session._id} className="p-3 bg-white dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3 border border-slate-200 dark:border-transparent">
                                                             <div className="flex items-start space-x-3 min-w-0">
                                                                 <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 mt-1">{getDeviceIcon(session.device)}</div>
                                                                 <div className="min-w-0">
-                                                                    <p className="font-semibold truncate text-sm sm:text-base">{session.browser || 'Unknown'} on {session.os || 'Unknown'}{isCurrent && <span className="text-xs text-green-500 ml-2">(Текущая)</span>}</p>
+                                                                    <p className="font-semibold truncate text-sm sm:text-base text-slate-800 dark:text-white">{session.browser || 'Unknown'} on {session.os || 'Unknown'}{isCurrent && <span className="text-xs text-green-500 ml-2">(Текущая)</span>}</p>
                                                                     <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2">
                                                                         {isLocal ? (<span className="font-semibold text-cyan-500">Локальная сессия</span>) : (<div className="flex items-center space-x-2">{session.countryCode && session.countryCode !== 'xx' && (<img src={`https://flagcdn.com/w20/${session.countryCode}.png`} alt={session.countryCode} className="w-5 h-auto rounded-sm"/>)}<span className="truncate">{primaryIp}</span></div>)}
                                                                         <span className="hidden sm:inline">•</span><span>{format(new Date(session.lastActive), 'dd.MM.yyyy HH:mm')}</span>
@@ -546,7 +547,7 @@ return (
 
                         {activeTab === 'notifications' && (
                              <section>
-                                <h2 className="text-2xl font-bold mb-2">Уведомления</h2>
+                                <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Уведомления</h2>
                                 <p className="text-sm text-slate-500 dark:text-white/60 mb-6">Настройте, как и когда вы хотите получать уведомления.</p>
                                 <div className="space-y-4">
                                     <NotificationToggle />
@@ -564,16 +565,13 @@ return (
                         
                         {activeTab === 'danger' && (
                             <section>
-                                {/* --- ИЗМЕНЕНИЕ: Добавляем text-center md:text-left --- */}
                                 <h2 className="text-2xl font-bold mb-2 text-red-500 text-center md:text-left">Опасная зона</h2>
                                 <p className="text-sm text-slate-500 dark:text-white/60 mb-6 text-center md:text-left">Действия в этом разделе необратимы. Пожалуйста, будьте внимательны.</p>
-                                {/* --- ИЗМЕНЕНИЕ: Адаптивные классы для контейнера --- */}
                                 <div className="bg-red-500/10 dark:bg-red-900/20 p-4 rounded-lg flex flex-col md:flex-row items-center md:items-center justify-center md:justify-between gap-4 text-center md:text-left">
                                     <div>
                                         <h3 className="font-bold text-red-700 dark:text-red-300">Удаление аккаунта</h3>
                                         <p className="text-sm text-red-600 dark:text-red-400">Это действие нельзя будет отменить.</p>
                                     </div>
-                                    {/* --- ИЗМЕНЕНИЕ: Добавляем w-full md:w-auto --- */}
                                     <button onClick={handleDeleteAccount} disabled={loadingAccountDelete} className="w-full md:w-auto flex items-center justify-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50">
                                         {loadingAccountDelete ? <Loader2 className="animate-spin" /> : <Trash2 />}<span>Удалить аккаунт</span>
                                     </button>

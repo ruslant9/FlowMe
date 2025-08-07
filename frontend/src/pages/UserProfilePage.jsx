@@ -25,9 +25,11 @@ import PremiumRequiredModal from '../components/modals/PremiumRequiredModal';
 import { UserDataCache } from '../utils/UserDataCacheService'; 
 import ProfileField from '../components/ProfileField'; 
 import PageWrapper from '../components/PageWrapper';
+import AnimatedAccent from '../components/AnimatedAccent'; // --- ИМПОРТ
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// ... (остальной код компонента, который был выше)
 const customRuLocaleForDistance = {
     ...ru,
     formatDistance: (token, count, options) => {
@@ -130,6 +132,7 @@ const UserInteractionButtons = ({ status, onAction, user, isProcessing, onWriteM
 
 
 const UserProfilePage = () => {
+    // ... (весь код, который был до return)
     const { userId } = useParams();
     const navigate = useNavigate();
     const [profileData, setProfileData] = useState(null);
@@ -189,7 +192,7 @@ const UserProfilePage = () => {
                                      (privacySetting === 'friends' && friendshipStatus === 'friend');
 
         if (interlocutorStatus?.isOnline && canSeeDetailedStatus) {
-            return <span className="text-green-400">Онлайн</span>;
+            return <span className="text-green-600 dark:text-green-400">Онлайн</span>;
         }
 
         if (canSeeDetailedStatus) {
@@ -468,7 +471,7 @@ const UserProfilePage = () => {
             <main className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto p-4 md:p-8">
                     {/* HERO SECTION */}
-                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8">
+                    <div className="relative rounded-3xl overflow-hidden mb-6 p-8 flex flex-col md:flex-row items-center text-center md:text-left gap-8 bg-slate-200 dark:bg-transparent">
                         {userAccent && <AnimatedAccent backgroundUrl={userAccent.backgroundUrl || userAccent} emojis={userAccent.emojis || []} />}
                         <div className="relative z-10 flex-shrink-0 group">
                             <Avatar
@@ -481,7 +484,8 @@ const UserProfilePage = () => {
                             />
                         </div>
                         <div className="relative z-10">
-                            <h1 className="text-4xl md:text-5xl font-extrabold text-white flex items-center justify-center md:justify-start" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены адаптивные цвета текста --- */}
+                            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center md:justify-start" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                                 {user.fullName || user.username}
                                 {user.premiumCustomization?.usernameEmoji?.url && (
                                     <button onClick={handlePremiumFeatureClick} className="ml-3 focus:outline-none" title="Функция Premium">
@@ -493,16 +497,15 @@ const UserProfilePage = () => {
                                     </button>
                                 )}
                             </h1>
-                            <p className="text-lg text-slate-300 mt-1" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>@{user.username}</p>
+                            <p className="text-lg text-slate-600 dark:text-slate-300 mt-1" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>@{user.username}</p>
                             
                             {user.status && (
                                 <div className="mt-3">
-                                    <p className="text-white/90 whitespace-pre-wrap break-words">{user.status}</p>
+                                    <p className="text-slate-800 dark:text-white/90 whitespace-pre-wrap break-words">{user.status}</p>
                                 </div>
                             )}
 
-                            {/* --- ИСПРАВЛЕНИЕ: Блок с датой регистрации и онлайном --- */}
-                            <div className="flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 mt-3 text-xs text-slate-300" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
+                            <div className="flex flex-col md:flex-row items-center justify-center md:justify-start md:space-x-3 mt-3 text-xs text-slate-500 dark:text-slate-300" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
                                 <span>Регистрация: {format(new Date(user.createdAt), 'dd.MM.yyyy', { locale: ru })}</span>
                                 {getDisplayOnlineStatus() && (
                                     <>
@@ -513,7 +516,7 @@ const UserProfilePage = () => {
                             </div>
                             
                              {mutualFriendsCount > 0 && (
-                                <p className="text-sm text-slate-300 mt-2" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
+                                <p className="text-sm text-slate-500 dark:text-slate-300 mt-2" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>
                                     Общих друзей: {mutualFriendsCount}
                                 </p>
                             )}
@@ -528,6 +531,7 @@ const UserProfilePage = () => {
                                     onInvite={() => setIsInviteModalOpen(true)}
                                 />
                             </div>
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
                     </div>
 
@@ -535,41 +539,41 @@ const UserProfilePage = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-1 flex flex-col gap-6">
                              {stats && (
-                                <div className="bg-slate-800 rounded-2xl p-4">
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl p-4">
                                     <ProfileStats stats={stats} onShowUsers={handleShowUsers} />
                                 </div>
                             )}
-                            <div className="bg-slate-800 rounded-2xl p-6 space-y-4">
-                               <h3 className="text-xl font-bold text-white mb-2">Основная информация</h3>
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 space-y-4">
+                               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Основная информация</h3>
                                <ProfileField label="Местоположение" value={user.city || user.country ? [user.city, user.country].filter(Boolean).join(', ') : null} />
                                <ProfileField label="Дата рождения" value={displayDOB()} />
                                <ProfileField label="Пол" value={user.gender} />
                             </div>
-                             <div className="bg-slate-800 rounded-2xl p-6">
+                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xl font-bold text-white">Интересы</h3>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Интересы</h3>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     {user.interests && user.interests.length > 0 ? (
                                         user.interests.map(interest => (
-                                            <div key={interest} className="bg-blue-500/20 text-blue-300 rounded-full px-3 py-1 text-sm">
+                                            <div key={interest} className="bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 rounded-full px-3 py-1 text-sm">
                                                 {interest}
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-slate-400 text-sm">Пользователь не добавил интересы.</p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm">Пользователь не добавил интересы.</p>
                                     )}
                                 </div>
                             </div>
                              
-                            <div className="bg-slate-800 rounded-2xl p-6">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xl font-bold text-white">Музыка пользователя</h3>
-                                    {totalMusicCount > 0 && <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-400 hover:underline">Все ({totalMusicCount})</button>}
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Музыка пользователя</h3>
+                                    {totalMusicCount > 0 && <button onClick={() => setIsMusicModalOpen(true)} className="text-sm font-semibold text-blue-500 hover:underline">Все ({totalMusicCount})</button>}
                                 </div>
-                                {musicError ? <p className="text-slate-400 text-sm">{musicError}</p> : 
+                                {musicError ? <p className="text-slate-500 dark:text-slate-400 text-sm">{musicError}</p> : 
                                  loading ? <div className="flex justify-center py-4"><Loader2 className="animate-spin text-slate-400"/></div> : 
-                                 musicTracks.length > 0 ? <TrackList tracks={musicTracks} onSelectTrack={(track) => playTrack(track, musicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, myMusicTrackIds}} /> : <p className="text-slate-400 text-sm">У пользователя нет сохраненной музыки.</p>}
+                                 musicTracks.length > 0 ? <TrackList tracks={musicTracks} onSelectTrack={(track) => playTrack(track, musicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, myMusicTrackIds}} /> : <p className="text-slate-500 dark:text-slate-400 text-sm">У пользователя нет сохраненной музыки.</p>}
                             </div>
                         </div>
 
@@ -586,7 +590,7 @@ const UserProfilePage = () => {
                                     />
                                 ))
                             ) : (
-                                 <div className="bg-slate-800 rounded-2xl p-6 w-full">
+                                 <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full">
                                     <div className="p-10 text-center text-slate-500 dark:text-white/60">
                                         <p>У пользователя пока нет постов.</p>
                                     </div>

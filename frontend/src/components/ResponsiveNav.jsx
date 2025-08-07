@@ -16,24 +16,21 @@ const NavItem = ({ item, isActive, onClick }) => {
         ? 'text-blue-600 dark:text-blue-400'
         : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
       }`;
-
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем flex и items-center для центрирования счётчика ---
-    const labelClasses = 'flex items-center space-x-1 text-center text-[11px] leading-tight';
-    const countClasses = `px-1.5 py-0.5 rounded-full text-[10px] ${isActive ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`;
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+      
+    const labelClasses = 'text-center text-[11px] leading-tight';
 
     const icon = renderIcon(item.icon, { size: 22, strokeWidth: isActive ? 2.5 : 2 });
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем отображение счётчика ---
-    const labelContent = (
-        <span className={labelClasses}>
-            <span>{item.label}</span>
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменена верстка иконки и счётчика ---
+    const iconWithBadge = (
+        <div className="relative">
+            {icon}
             {typeof item.count === 'number' && item.count > 0 && (
-                <span className={countClasses}>
+                <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 min-w-[18px] h-[18px] flex items-center justify-center border-2 border-white dark:border-slate-800">
                     {item.count > 9 ? '9+' : item.count}
                 </span>
             )}
-        </span>
+        </div>
     );
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
@@ -41,8 +38,8 @@ const NavItem = ({ item, isActive, onClick }) => {
     if (item.path) {
         return (
             <NavLink to={item.path} className={commonClasses}>
-                {icon}
-                {labelContent}
+                {iconWithBadge}
+                <span className={labelClasses}>{item.label}</span>
             </NavLink>
         );
     }
@@ -50,8 +47,8 @@ const NavItem = ({ item, isActive, onClick }) => {
     if (item.onClick) {
         return (
             <button onClick={onClick} className={commonClasses}>
-                {icon}
-                {labelContent}
+                {iconWithBadge}
+                <span className={labelClasses}>{item.label}</span>
             </button>
         );
     }
@@ -120,7 +117,6 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
                     const iconClasses = isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500';
                     const icon = renderIcon(item.icon, { size: 22, className: iconClasses });
 
-                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем отображение счётчика в выпадающем меню ---
                     const labelContent = (
                         <div className="flex items-center space-x-4">
                             {icon}
@@ -133,7 +129,6 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
                             {item.count > 9 ? '9+' : item.count}
                         </span>
                     );
-                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
                     if (item.path) {

@@ -15,11 +15,11 @@ import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем классы flex-1 и justify-center ---
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Улучшена контрастность для светлой темы ---
 const TabButton = ({ active, onClick, children, count }) => (
     <button
         onClick={onClick}
-        className={`flex-1 justify-center px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${
+        className={`flex-1 justify-center px-3 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${
             active 
             ? 'bg-blue-600 text-white' 
             : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10'
@@ -32,6 +32,7 @@ const TabButton = ({ active, onClick, children, count }) => (
     </button>
 );
 // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
+
 
 const SubTabButton = ({ active, onClick, children }) => (
     <button
@@ -266,7 +267,8 @@ const NotificationsPage = () => {
                         onDeletePost={() => fetchNotifications()}
                     />
                 )}
-                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Удален оборачивающий div.ios-glass-final --- */}
+                <div className="w-full max-w-4xl mx-auto">
                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <div className="flex items-center space-x-3">
                             <Bell size={28} />
@@ -284,14 +286,12 @@ const NotificationsPage = () => {
                         )}
                     </div>
 
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Удаляем flex-wrap и меняем gap --- */}
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-200 dark:border-white/10 pb-4">
+                    <div className="flex items-center gap-2 mb-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
                         <TabButton active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} count={notificationsData.personal.unreadCount}><User size={16} /> <span>Личные</span></TabButton>
                         <TabButton active={activeTab === 'community'} onClick={() => setActiveTab('community')} count={notificationsData.community.unreadCount}><Users size={16} /> <span>Сообщества</span></TabButton>
                     </div>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                     
-                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
                         {subTabs.map(tab => (
                             <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
                                 <tab.icon size={14} /> <span>{tab.label}</span>
@@ -299,7 +299,7 @@ const NotificationsPage = () => {
                         ))}
                     </div>
                     
-                    <div className="md:hidden flex items-center gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
+                    <div className="md:hidden flex items-center gap-2 mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto no-scrollbar">
                         {subVisibleItems.map(tab => (
                              <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
                                 <tab.icon size={14} /> <span>{tab.label}</span>
@@ -343,6 +343,7 @@ const NotificationsPage = () => {
                         </div>
                     )}
                 </div>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                 
                 <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
                     {subHiddenItems.map(item => (

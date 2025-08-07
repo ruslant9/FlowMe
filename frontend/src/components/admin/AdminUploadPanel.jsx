@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -8,10 +9,11 @@ import { MicVocal, Disc, Music, Loader2 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
     <button
         onClick={onClick}
-        className={`flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+        className={`flex flex-1 items-center justify-center space-x-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
             active
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
@@ -21,19 +23,18 @@ const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
         <span>{children}</span>
     </button>
 );
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 export const AdminUploadPanel = () => {
     const [activeSubTab, setActiveSubTab] = useState('artist');
     const [artists, setArtists] = useState([]);
     const [albums, setAlbums] = useState([]);
-    const [loadingData, setLoadingData] = useState(true); // Состояние для общей загрузки
+    const [loadingData, setLoadingData] = useState(true);
 
-    // --- ИЗМЕНЕНИЕ 1: Создаем единую функцию для загрузки данных ---
     const refetchData = useCallback(async () => {
         setLoadingData(true);
         try {
             const token = localStorage.getItem('token');
-            // Запрашиваем данные параллельно для скорости
             const [artistsRes, albumsRes] = await Promise.all([
                 axios.get(`${API_URL}/api/music/artists/all`, { headers: { Authorization: `Bearer ${token}` } }),
                 axios.get(`${API_URL}/api/music/albums/all`, { headers: { Authorization: `Bearer ${token}` } })
@@ -47,7 +48,6 @@ export const AdminUploadPanel = () => {
         }
     }, []);
 
-    // --- ИЗМЕНЕНИЕ 2: Используем useEffect для первоначальной загрузки данных ---
     useEffect(() => {
         refetchData();
     }, [refetchData]);
@@ -67,7 +67,6 @@ export const AdminUploadPanel = () => {
                 </div>
             ) : (
                 <>
-                    {/* --- ИЗМЕНЕНИЕ 3: Передаем функцию refetchData в дочерние компоненты --- */}
                     {activeSubTab === 'artist' && <CreateArtistForm onSuccess={refetchData} />}
                     {activeSubTab === 'album' && <CreateAlbumForm artists={artists} onSuccess={refetchData} />}
                     {activeSubTab === 'track' && <UploadTrackForm artists={artists} albums={albums} onSuccess={refetchData} />}
