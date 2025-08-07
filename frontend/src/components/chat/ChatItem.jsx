@@ -341,15 +341,8 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                             {usernameEmoji?.url && (
                                 <img src={usernameEmoji.url} alt="emoji" className="w-4 h-4 ml-1.5" />
                             )}
-                            {/* --- ИСПРАВЛЕНИЕ 2: Иконка "без звука" теперь здесь --- */}
                             {conversation.isMuted && <BellOff size={14} className="text-slate-400 dark:text-slate-500 ml-2 flex-shrink-0" />}
                         </p>
-                        <div className="flex flex-col items-end flex-shrink-0 ml-2">
-                            <div className="flex items-center space-x-1 text-xs text-slate-400">
-                                <ReadReceipt />
-                                <span>{lastMessageTime}</span>
-                            </div>
-                        </div>
                     </div>
                     <div className="flex justify-between items-end mt-0.5">
                         {renderLastMessage()}
@@ -359,70 +352,71 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                 </div>
 
-                 {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-                 <div className="flex flex-col items-end justify-between flex-shrink-0">
-                 {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-                    <Tippy
-                        interactive
-                        placement="bottom-end"
-                        visible={isMenuVisible}
-                        onClickOutside={() => setIsMenuVisible(false)}
-                        popperOptions={{ strategy: 'fixed' }}
-                        render={attrs => (
-                            <div className="ios-glass-popover w-52 rounded-xl shadow-lg p-1" {...attrs}>
-                                {!isSavedMessages && (
-                                    (conversation.unreadCount > 0 || conversation.isMarkedAsUnread) ? (
-                                        <button onClick={handleMarkAsRead} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                                            <MailCheck size={14}/> <span>Отметить прочитанным</span>
-                                        </button>
-                                    ) : (
-                                        <button onClick={handleMarkAsUnread} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                                            <MailWarning size={14}/> <span>Отметить непрочитанным</span>
-                                        </button>
-                                    )
-                                )}
-                                <button onClick={handleMuteToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                                    {conversation.isMuted ? <Bell size={14} /> : <BellOff size={14} />}
-                                    <span>{conversation.isMuted ? 'Включить увед.' : 'Отключить увед.'}</span>
-                                </button>
-                                {!isSavedMessages && (
-                                    <button onClick={handlePinToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                                        <Pin size={14}/>
-                                        <span>{isPinned ? 'Открепить' : 'Закрепить'}</span>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                <div className="flex flex-col items-end justify-between flex-shrink-0 h-[48px]">
+                    <div className='flex items-center'>
+                         <div className="flex items-center space-x-1 text-xs text-slate-400">
+                            <ReadReceipt />
+                            <span>{lastMessageTime}</span>
+                        </div>
+                        <Tippy
+                            interactive
+                            placement="bottom-end"
+                            visible={isMenuVisible}
+                            onClickOutside={() => setIsMenuVisible(false)}
+                            popperOptions={{ strategy: 'fixed' }}
+                            render={attrs => (
+                                <div className="ios-glass-popover w-52 rounded-xl shadow-lg p-1" {...attrs}>
+                                    {!isSavedMessages && (
+                                        (conversation.unreadCount > 0 || conversation.isMarkedAsUnread) ? (
+                                            <button onClick={handleMarkAsRead} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                                                <MailCheck size={14}/> <span>Отметить прочитанным</span>
+                                            </button>
+                                        ) : (
+                                            <button onClick={handleMarkAsUnread} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                                                <MailWarning size={14}/> <span>Отметить непрочитанным</span>
+                                            </button>
+                                        )
+                                    )}
+                                    <button onClick={handleMuteToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                                        {conversation.isMuted ? <Bell size={14} /> : <BellOff size={14} />}
+                                        <span>{conversation.isMuted ? 'Включить увед.' : 'Отключить увед.'}</span>
                                     </button>
-                                )}
-                                {!isSavedMessages && (
-                                    <button onClick={handleArchiveToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
-                                        {conversation.isArchived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
-                                        <span>{conversation.isArchived ? 'Разархивировать' : 'В архив'}</span>
+                                    {!isSavedMessages && (
+                                        <button onClick={handlePinToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                                            <Pin size={14}/>
+                                            <span>{isPinned ? 'Открепить' : 'Закрепить'}</span>
+                                        </button>
+                                    )}
+                                    {!isSavedMessages && (
+                                        <button onClick={handleArchiveToggle} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                                            {conversation.isArchived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+                                            <span>{conversation.isArchived ? 'Разархивировать' : 'В архив'}</span>
+                                        </button>
+                                    )}
+                                    <button onClick={handleDeleteClick} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">
+                                        <Trash2 size={14}/> <span className="dark:text-red-400">{isSavedMessages ? 'Очистить историю' : 'Удалить'}</span>
                                     </button>
-                                )}
-                                <button onClick={handleDeleteClick} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">
-                                    <Trash2 size={14}/> <span className="dark:text-red-400">{isSavedMessages ? 'Очистить историю' : 'Удалить'}</span>
+                                    <div className="tippy-arrow" data-popper-arrow></div>
+                                </div>
+                            )}
+                        >
+                            <TippyWrapper>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsMenuVisible(v => !v); }}
+                                    className="p-1 rounded-full text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                >
+                                    <MoreHorizontal size={16}/>
                                 </button>
-                                <div className="tippy-arrow" data-popper-arrow></div>
-                            </div>
-                        )}
-                    >
-                        <TippyWrapper>
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setIsMenuVisible(v => !v); }}
-                                className="p-1 rounded-full text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-opacity"
-                            >
-                                <MoreHorizontal size={16}/>
-                            </button>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-                        </TippyWrapper>
-                    </Tippy>
+                            </TippyWrapper>
+                        </Tippy>
+                    </div>
                     
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-                    <div className="h-[14px] flex items-center justify-end">
+                    <div className="flex items-center justify-end">
                         {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
                     </div>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-
                 </div>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             </div>
         </div>
     );
