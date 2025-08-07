@@ -1099,8 +1099,8 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                     ) : (
                         <>
                             <div className="flex items-center space-x-2 min-w-0">
-                                <button onClick={onDeselectConversation} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-[color:var(--chat-header-text-color,inherit)]"><CornerUpLeft size={20} /></button>
-                                <Link to={`/profile/${liveInterlocutor._id}`} className="flex items-center space-x-3 group min-w-0">
+                               <button onClick={onDeselectConversation} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-[color:var(--chat-header-text-color,inherit)] flex-shrink-0"><CornerUpLeft size={20} /></button>
+                                <Link to={`/profile/${liveInterlocutor._id}`} className="flex items-center space-x-3 group min-w-0 flex-1">
                                     {(() => {
                                         const border = liveInterlocutor?.premiumCustomization?.avatarBorder;
                                         const borderClass = border?.type?.startsWith('animated') ? `premium-border-${border.type}` : '';

@@ -13,9 +13,10 @@ import { useWebSocket } from '../context/WebSocketContext';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
+import PageWrapper from '../components/PageWrapper';
+import ResponsiveNav from '../components/ResponsiveNav';
 import { useUser } from '../hooks/useUser';
 import MorePanel from '../components/MorePanel';
-import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const MAX_HISTORY_ITEMS = 5;
@@ -66,12 +67,6 @@ const UserCardSkeleton = () => (
         </div>
         <div className="h-8 w-20 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
     </div>
-);
-const TabButton = ({ children, active, onClick, count }) => (
-    <button onClick={onClick} className={`flex-shrink-0 flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${ active ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10' }`}>
-        {children}
-        {typeof count === 'number' && count > 0 && <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${active ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>}
-    </button>
 );
 
 const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteMessage, currentUser }) => {
@@ -264,6 +259,20 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
         </Link>
     );
 };
+
+const TabButton = ({ children, active, onClick, count }) => (
+    <button
+        onClick={onClick}
+        className={`flex-shrink-0 flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${
+            active 
+            ? 'border-blue-500 text-blue-500' 
+            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
+        }`}
+    >
+        {children}
+        {typeof count === 'number' && count > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>}
+    </button>
+);
 
 const FriendsPage = () => {
     useTitle('Друзья');
@@ -569,17 +578,6 @@ const FriendsPage = () => {
         }
     };
 
-    const navItems = [
-        { key: 'friends', label: 'Мои друзья', icon: UserCheck, count: allFriends.length, onClick: () => handleTabClick('friends') },
-        { key: 'incoming', label: 'Входящие', icon: UserPlus, count: incoming.length, onClick: () => handleTabClick('incoming') },
-        { key: 'outgoing', label: 'Исходящие', icon: Clock, count: outgoing.length, onClick: () => handleTabClick('outgoing') },
-        { key: 'blacklist', label: 'Черный список', icon: ShieldOff, count: blacklist.length, onClick: () => handleTabClick('blacklist') }
-    ];
-    const visibleCount = 2;
-    const visibleItems = navItems.slice(0, visibleCount);
-    const hiddenItems = navItems.slice(visibleCount);
-    const isMoreButtonActive = hiddenItems.some(item => item.key === activeTab);
-    
     const renderTabContent = () => {
         if (loading) return (<div className="space-y-2">{[...Array(3)].map((_, i) => <UserCardSkeleton key={i} />)}</div>);
         let list, status, emptyMessage;
@@ -633,70 +631,82 @@ const FriendsPage = () => {
         return (<div className="space-y-2">{list.map(user => { if (!user) return null; return (<UserCard key={user._id} user={user} status={user.status || status} onAction={handleAction} isProcessing={processingActions.includes(user._id)} userStatuses={userStatuses} onWriteMessage={() => handleWriteMessage(user)} currentUser={currentUser} />); })}</div>);
     };
 
+    const navItems = [
+        { key: 'friends', label: 'Мои друзья', icon: UserCheck, count: allFriends.length, onClick: () => handleTabClick('friends') },
+        { key: 'incoming', label: 'Входящие', icon: UserPlus, count: incoming.length, onClick: () => handleTabClick('incoming') },
+        { key: 'outgoing', label: 'Исходящие', icon: Clock, count: outgoing.length, onClick: () => handleTabClick('outgoing') },
+        { key: 'blacklist', label: 'Черный список', icon: ShieldOff, count: blacklist.length, onClick: () => handleTabClick('blacklist') }
+    ];
+
     return (
         <PageWrapper>
             <main className="flex-1 p-4 md:p-8">
-                <div className="ios-glass-final rounded-3xl p-6 w-full max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-bold mb-6">Друзья</h1>
+                <div className="w-full max-w-4xl mx-auto">
+                    <div className="flex items-center justify-between mb-6">
+                        <h1 className="text-3xl font-bold">Друзья</h1>
+                    </div>
+                    
                     <div className="relative mb-6" ref={searchWrapperRef}>
                         <div className="flex items-center space-x-2">
                             <div className="relative flex-grow">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40" size={20} />
-                                <input ref={searchInputRef} type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onFocus={handleSearchInputFocus} placeholder="Поиск по имени или @username" className="w-full pl-12 pr-10 py-3 rounded-lg bg-slate-200/70 dark:bg-black/30 text-slate-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:focus:ring-blue-500" />
-                                {isSearching && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/60"><Spinner size={18} /></div>}
+                                <input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onFocus={handleSearchInputFocus}
+                                    placeholder="Поиск по имени или @username"
+                                    className="w-full pl-12 pr-10 py-3 rounded-lg bg-slate-200/70 dark:bg-black/30 text-slate-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:focus:ring-blue-500"
+                                />
+                                {isSearching && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/60"><Spinner size={18} /></div>
+                                )}
                             </div>
-                            <button onClick={() => setShowFilters(f => !f)} className={`p-3 rounded-lg transition-colors flex-shrink-0 ${showFilters ? 'bg-blue-600 text-white' : 'bg-slate-200/70 dark:bg-black/30 hover:bg-slate-300 dark:hover:bg-black/40'}`} title="Фильтры">
+                            <button
+                                onClick={() => setShowFilters(f => !f)}
+                                className={`p-3 rounded-lg transition-colors flex-shrink-0 ${showFilters ? 'bg-blue-600 text-white' : 'bg-slate-200/70 dark:bg-black/30 hover:bg-slate-300 dark:hover:bg-black/40'}`}
+                                title="Фильтры"
+                            >
                                 <Filter size={20} />
                             </button>
                         </div>
                         {renderFilters()}
                         <AnimatePresence>
-                            {isDropdownVisible && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">{renderDropdownContent()}</motion.div>}
-                        </AnimatePresence>                </div>
+                            {isDropdownVisible && (
+                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">
+                                    {renderDropdownContent()}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                     
-                    <div className="hidden md:flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4 overflow-x-auto">
+                    <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
                         {navItems.map(item => (
-                            <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
-                                <item.icon size={16} /><span>{item.label}</span>
-                            </TabButton>
-                        ))}
-                    </div>
-                    
-                    <div className="md:hidden flex items-center space-x-2 border-b border-slate-200 dark:border-white/10 pb-4 mb-4">
-                        {visibleItems.map(item => (
-                            <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} count={item.count}>
-                                <item.icon size={16} /><span>{item.label}</span>
-                            </TabButton>
-                        ))}
-                        {hiddenItems.length > 0 && (
-                            <TabButton active={isMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
-                                <MoreHorizontal size={16} /><span>Еще</span>
-                            </TabButton>
-                        )}
-                    </div>
-                    
-                    <div>{renderTabContent()}</div>
-                </div>
-                
-                <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
-                    {hiddenItems.map(item => (
-                        <button
-                            key={item.key}
-                            onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
-                              ${activeTab === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
-                            `}
-                        >
-                            <div className="flex items-center space-x-4">
-                                <item.icon size={22} className={activeTab === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
+                            <TabButton 
+                                key={item.key}
+                                active={activeTab === item.key}
+                                onClick={item.onClick}
+                                count={item.count}
+                            >
+                                <item.icon size={16} />
                                 <span>{item.label}</span>
-                            </div>
-                            {item.count > 0 && 
-                                <span className="px-2 py-0.5 rounded-full text-xs bg-slate-200 dark:bg-white/10">{item.count > 9 ? '9+' : item.count}</span>
-                            }
-                        </button>
-                    ))}
-                </MorePanel>
+                            </TabButton>
+                        ))}
+                    </div>
+                    
+                    <div className="md:hidden mb-6">
+                         <ResponsiveNav 
+                            items={navItems}
+                            visibleCount={4}
+                            activeKey={activeTab}
+                        />
+                    </div>
+                    
+                    <div className="ios-glass-final rounded-3xl p-4">
+                        {renderTabContent()}
+                    </div>
+                </div>
             </main>
         </PageWrapper>
     );
