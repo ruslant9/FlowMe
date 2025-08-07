@@ -51,24 +51,19 @@ const TippyWrapper = forwardRef((props, ref) => {
 });
 TippyWrapper.displayName = 'TippyWrapper';
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Функция теперь возвращает количество эмодзи ---
 const getEmojiOnlyCount = (text) => {
     if (!text) return 0;
-    // Регулярное выражение для поиска большинства современных эмодзи
     const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
     
-    // Удаляем все эмодзи и пробелы, чтобы проверить, остался ли какой-то текст
     const nonEmojiText = text.replace(emojiRegex, '').replace(/\s/g, '');
     
     if (nonEmojiText.length > 0) {
-        return 0; // Сообщение содержит не только эмодзи
+        return 0; 
     }
 
-    // Считаем количество найденных эмодзи
     const matches = text.match(emojiRegex);
     return matches ? matches.length : 0;
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 
 const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply, onEdit, onPerformDelete, onForward, onSelect, isSelected, selectionMode, openMenuId, onToggleMenu, onScrollToMessage, highlightedMessageId, isBlockingInterlocutor, isBlockedByInterlocutor, searchQuery, isCurrentSearchResult, canInteract, isPinned, onPin, onUnpin, onImageClick }) => {
@@ -236,10 +231,8 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
         );
     }, [message.text, isCurrentSearchResult, searchQuery]);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем новую функцию для определения "больших" эмодзи ---
     const emojiOnlyCount = useMemo(() => getEmojiOnlyCount(message.text), [message.text]);
     const isJumboEmoji = emojiOnlyCount > 0 && emojiOnlyCount <= 3;
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     return (
         <div
@@ -317,13 +310,10 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </div>
 
             <div
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Убираем условие, делающее фон прозрачным ---
                 className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
                     ${isOwnMessage ? `bg-chat-bubble-own text-chat-bubble-own ${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `bg-chat-bubble-other text-chat-bubble-other ${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
                     ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : ''}
-                    ${isJumboEmoji ? 'bg-transparent dark:bg-transparent shadow-none' : ''}
                 `}
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
             >
                 
                 <div className="pt-2"> 
@@ -372,11 +362,9 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 <div className={`relative ${Object.values(groupedReactions).length > 0 ? 'pb-7' : ''}`}>
                     <div className="flex items-end flex-wrap px-3 pt-2 pb-2">
                         {message.text && (
-                            // --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Условие для больших эмодзи применяется к <p> ---
                              <p className={`whitespace-pre-wrap break-words mr-2 min-w-0 ${isJumboEmoji ? 'emoji-only' : ''}`}>
                                 {renderMessageWithHighlight}
                             </p>
-                            // --- КОНЕЦ ИСПРАВЛЕНИЯ 4 ---
                         )}
                         <div className="inline-flex items-center gap-1 text-xs opacity-70 flex-shrink-0 min-w-max self-end ml-auto">
                             {isPinned && <Pin size={12} className="text-current" />}

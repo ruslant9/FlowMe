@@ -11,7 +11,7 @@ const renderIcon = (Icon, props = {}) => {
         : React.createElement(Icon, props);
 };
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлена логика для count ---
 const NavItem = ({ item, isActive, onClick }) => {
     const commonClasses = `flex flex-col items-center justify-center space-y-0.5 px-1 py-1.5 rounded-lg transition-colors text-xs font-medium
       ${isActive
@@ -22,27 +22,34 @@ const NavItem = ({ item, isActive, onClick }) => {
     const labelClasses = 'text-center text-[11px] leading-tight';
 
     const icon = renderIcon(item.icon, { size: 20, strokeWidth: isActive ? 2.5 : 2 });
+    const count = item.count;
+    const formattedCount = count > 9 ? '9+' : count;
+
+    const content = (
+        <>
+            <div className="relative">
+                {icon}
+                {count > 0 && 
+                    <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 min-w-[16px] h-[16px] flex items-center justify-center border-2 border-white dark:border-slate-800">
+                        {formattedCount}
+                    </span>
+                }
+            </div>
+            <span className={labelClasses}>{item.label}</span>
+        </>
+    );
 
     if (item.path) {
-        return (
-            <NavLink to={item.path} className={commonClasses}>
-                {icon}
-                <span className={labelClasses}>{item.label}</span>
-            </NavLink>
-        );
+        return <NavLink to={item.path} className={commonClasses}>{content}</NavLink>;
     }
 
     if (item.onClick) {
-        return (
-            <button onClick={onClick} className={commonClasses}>
-                {icon}
-                <span className={labelClasses}>{item.label}</span>
-            </button>
-        );
+        return <button onClick={onClick} className={commonClasses}>{content}</button>;
     }
 
     return null;
 };
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const MoreButton = ({ onClick, isActive }) => (
     <button
@@ -58,7 +65,6 @@ const MoreButton = ({ onClick, isActive }) => (
         <span className="text-[11px] leading-tight">Еще</span>
     </button>
 );
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
     const [isMorePanelOpen, setIsMorePanelOpen] = useState(false);
@@ -79,9 +85,7 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
 
     return (
         <>
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
             <div className="w-full max-w-sm mx-auto p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 <div className="flex items-center justify-evenly">
                     {visibleItems.map(item => (
                         <NavItem
