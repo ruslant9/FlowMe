@@ -168,7 +168,6 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                         onSave={handleImageEdited}
                         showCaptionInput={false}
                     />
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Изменены классы для мобильной адаптации --- */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -184,15 +183,15 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                             onClick={(e) => e.stopPropagation()}
                             className="ios-glass-final w-full max-w-2xl bg-slate-100 dark:bg-slate-800 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                         >
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
                             <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                                 <h2 className="text-xl font-bold">Создать сообщество</h2>
                                 <button onClick={handleCloseModal} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"><X /></button>
                             </div>
                             
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Добавлена обертка для прокрутки --- */}
-                            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                            <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <div>
                                     <label htmlFor="name" className="block text-sm font-semibold mb-1">Название сообщества</label>
                                     <input type="text" id="name" name="name" value={communityData.name} onChange={handleChange} className="w-full p-2 bg-white dark:bg-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Например, 'Любители кошек'" required />
@@ -276,7 +275,7 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                     <div>
                                         <label className="block text-sm font-semibold mb-2">Аватар сообщества</label>
                                         <div className="flex items-center space-x-4">
-                                            <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0 flex items-center justify-center">
+                                            <div className="w-16 h-16 rounded-full overflow-hidden bg-white dark:bg-slate-700 flex-shrink-0 flex items-center justify-center">
                                                 {avatarFile?.preview ? (<img src={avatarFile.preview} alt="Avatar Preview" className="w-full h-full object-cover" />) : (<ImageIcon size={24} className="text-slate-400" />)}
                                             </div>
                                             <div className="flex flex-col items-start space-y-2">
@@ -300,7 +299,7 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                     <div>
                                         <label className="block text-sm font-semibold mb-2">Обложка сообщества</label>
                                         <div className="flex items-center space-x-4">
-                                            <div className="w-24 h-16 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0 flex items-center justify-center">
+                                            <div className="w-24 h-16 rounded-lg overflow-hidden bg-white dark:bg-slate-700 flex-shrink-0 flex items-center justify-center">
                                                 {coverFile?.preview ? (<img src={coverFile.preview} alt="Cover Preview" className="w-full h-full object-cover" />) : (<ImageIcon size={24} className="text-slate-400" />)}
                                             </div>
                                             <div className="flex flex-col items-start space-y-2">
@@ -322,9 +321,10 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                         </div>
                                     </div>
                                 </div>
-
-
-                                <div className="flex justify-end mt-6 flex-shrink-0">
+                                </div>
+                                
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Футер с кнопкой вынесен из прокручиваемой области --- */}
+                                <div className="flex justify-end mt-auto p-4 border-t border-slate-200 dark:border-slate-700/50 flex-shrink-0">
                                     <button
                                         type="submit"
                                         disabled={loading}
@@ -334,6 +334,7 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                                         {loading ? 'Создание...' : 'Создать сообщество'}
                                     </button>
                                 </div>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                             </form>
                         </motion.div>
                     </motion.div>
