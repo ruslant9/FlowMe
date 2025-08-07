@@ -5,7 +5,7 @@ import Tippy from '@tippyjs/react/headless';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../../hooks/useUser';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
-import { Sparkles, Loader2, Search } from 'lucide-react';
+import { Sparkles, Loader2, Search, MoreHorizontal } from 'lucide-react';
 import { regularReactions, emojiPacks, allPremiumReactionUrls } from '../../data/emojiData';
 import EmojiPreviewModal from '../modals/EmojiPreviewModal';
 import { useCachedImage } from '../../hooks/useCachedImage';
@@ -140,7 +140,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.9 }}
                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="ios-glass-popover p-2 rounded-xl shadow-lg w-auto max-w-sm"
+                        className="ios-glass-popover p-2 rounded-xl shadow-lg w-[calc(100vw-2rem)] sm:w-auto sm:max-w-sm"
                         {...attrs}
                     >
                         <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg">
@@ -165,9 +165,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                 />
                             </div>
                         )}
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Уменьшена высота контейнера --- */}
                         <div className="h-40">
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={activeTab}
@@ -180,7 +178,6 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                     {activeTab === 'regular' && (
                                         <div className="flex-1 overflow-y-auto pt-2 -mx-1 px-1">
                                             <div className="flex flex-wrap gap-x-1 gap-y-2 justify-center">
-                                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Удалена логика показа части эмодзи и кнопки "Еще" --- */}
                                                 {regularReactions.map(emoji => (
                                                     <button
                                                         key={emoji}
@@ -190,7 +187,6 @@ const ReactionsPopover = ({ onSelect, children }) => {
                                                         {emoji}
                                                     </button>
                                                 ))}
-                                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                             </div>
                                         </div>
                                     )}

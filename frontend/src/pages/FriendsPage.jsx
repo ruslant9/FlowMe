@@ -163,10 +163,24 @@ const UserCard = ({ user, status, onAction, isProcessing, userStatuses, onWriteM
             case 'search_result':
                 mainButtons = (
                      <>
-                        {renderButton('add', 'Добавить', UserPlus, 'bg-blue-500 text-white hover:bg-blue-600')}
-                        <button onClick={(e) => handleMessageClick(e, user)} className="p-2 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Написать сообщение">
-                            <MessageSquare size={18} />
-                        </button>
+                        {/* Mobile View */}
+                        <div className="flex sm:hidden items-center space-x-2 w-full">
+                            {renderButton('add', 'Добавить', UserPlus, 'bg-blue-500 text-white hover:bg-blue-600')}
+                            <button
+                                onClick={(e) => handleMessageClick(e, user)}
+                                className="flex-1 justify-center px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20"
+                                disabled={isProcessing}
+                            >
+                                <MessageSquare size={16} /> <span>Написать</span>
+                            </button>
+                        </div>
+                        {/* Desktop View */}
+                        <div className="hidden sm:flex items-center space-x-2">
+                            {renderButton('add', 'Добавить', UserPlus, 'bg-blue-500 text-white hover:bg-blue-600')}
+                            <button onClick={(e) => handleMessageClick(e, user)} className="p-2 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Написать сообщение">
+                                <MessageSquare size={18} />
+                            </button>
+                        </div>
                     </>
                 );
                 break;
@@ -607,11 +621,9 @@ const FriendsPage = () => {
             else if (!isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Ничего не найдено.</div>;
             else return (
                 <div>
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлен счётчик результатов --- */}
                     <p className="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-white/50">
                         Результаты поиска: {searchResults.length}
                     </p>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     <div className="space-y-1">
                         {searchResults.map(user => (<UserCard key={user._id} user={user} status={user.status === 'none' ? 'search_result' : user.status} onAction={handleAction} isProcessing={processingActions.includes(user._id)} userStatuses={userStatuses} onWriteMessage={() => handleWriteMessage(user)} currentUser={currentUser} />))}
                     </div>
@@ -671,6 +683,11 @@ const FriendsPage = () => {
         { key: 'outgoing', label: 'Исходящие', icon: Clock, count: outgoing.length, onClick: () => handleTabClick('outgoing') },
         { key: 'blacklist', label: 'Черный список', icon: ShieldOff, count: blacklist.length, onClick: () => handleTabClick('blacklist') }
     ];
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Переменная для определения активного поиска (включая фильтры) ---
+    const hasActiveSearch = searchTerm.trim() || filters.city || filters.interests.length > 0;
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     return (
         <PageWrapper>
@@ -716,7 +733,7 @@ const FriendsPage = () => {
                             <AnimatePresence>
                                 {isDropdownVisible && (
                                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} 
-                                      className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 p-2 md:max-h-80 md:overflow-y-auto"
+                                      className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 md:max-h-80 md:overflow-y-auto p-2"
                                     >
                                         {renderDropdownContent()}
                                     </motion.div>
@@ -725,35 +742,45 @@ const FriendsPage = () => {
                         </div>
                     </div>
                     
-                    {!showFilters && (
-                        <>
-                            <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
-                                {navItems.map(item => (
-                                    <TabButton 
-                                        key={item.key}
-                                        active={activeTab === item.key}
-                                        onClick={item.onClick}
-                                        count={item.count}
-                                    >
-                                        <item.icon size={16} />
-                                        <span>{item.label}</span>
-                                    </TabButton>
-                                ))}
-                            </div>
-                            
-                            <div className="md:hidden mb-6">
-                                 <ResponsiveNav 
-                                    items={navItems}
-                                    visibleCount={4}
-                                    activeKey={activeTab}
-                                />
-                            </div>
-                            
-                            <div className="bg-white dark:bg-slate-800 md:ios-glass-final rounded-3xl p-2 md:p-4">
-                                {renderTabContent()}
-                            </div>
-                        </>
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Скрываем этот блок, если открыты фильтры или идет поиск --- */}
+                    {!showFilters && !hasActiveSearch && (
+                    <>
+                        <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
+                            {navItems.map(item => (
+                                <TabButton 
+                                    key={item.key}
+                                    active={activeTab === item.key}
+                                    onClick={item.onClick}
+                                    count={item.count}
+                                >
+                                    <item.icon size={16} />
+                                    <span>{item.label}</span>
+                                </TabButton>
+                            ))}
+                        </div>
+                        
+                        <div className="md:hidden mb-6">
+                             <ResponsiveNav 
+                                items={navItems}
+                                visibleCount={4}
+                                activeKey={activeTab}
+                            />
+                        </div>
+                        
+                        <div className="bg-white dark:bg-slate-800 md:ios-glass-final rounded-3xl p-2 md:p-4">
+                            {renderTabContent()}
+                        </div>
+                    </>
                     )}
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                    
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Показываем результаты поиска отдельным блоком --- */}
+                    {hasActiveSearch && !isDropdownVisible && (
+                        <div className="mt-6">
+                           {renderDropdownContent()}
+                        </div>
+                    )}
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             </main>
         </PageWrapper>

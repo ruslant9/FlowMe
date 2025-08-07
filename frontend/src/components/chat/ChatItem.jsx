@@ -352,7 +352,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                 </div>
 
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                 <div className="flex flex-col items-end justify-between flex-shrink-0 h-[48px]">
                     <div className='flex items-center'>
                          <div className="flex items-center space-x-1 text-xs text-slate-400">
@@ -401,7 +400,8 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                                 </div>
                             )}
                         >
-                            <TippyWrapper>
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                            <TippyWrapper className="ml-1">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setIsMenuVisible(v => !v); }}
                                     className="p-1 rounded-full text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -409,6 +409,7 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                                     <MoreHorizontal size={16}/>
                                 </button>
                             </TippyWrapper>
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </Tippy>
                     </div>
                     
@@ -416,7 +417,6 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                         {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
                     </div>
                 </div>
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             </div>
         </div>
     );
