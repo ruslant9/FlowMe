@@ -15,11 +15,17 @@ const CachedImage = ({ src, alt }) => {
 };
 
 const AlbumCard = ({ album }) => {
+    if (!album || !album._id) {
+        console.warn("AlbumCard получил некорректные данные альбома:", album);
+        return null; // Не рендерим ничего, если данные неполные
+    }
+
     const linkTo = album.isSingle ? `/single/${album._id}` : `/album/${album._id}`;
     
     // --- НАЧАЛО ИСПРАВЛЕНИЯ: Функция сделана более надежной ---
     const getArtistDisplay = (artistData) => {
         if (!artistData) return '';
+
         if (Array.isArray(artistData)) {
             // Безопасно обрабатываем каждый элемент массива
             return artistData.map(a => (a?.name || '')).filter(Boolean).join(', ');
