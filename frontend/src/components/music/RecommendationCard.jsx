@@ -30,17 +30,17 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         return '';
     };
 
-    // --- ФИНАЛЬНАЯ ЛОГИКА ОТОБРАЖЕНИЯ МЕТОК ---
     const getReleaseBadge = (releaseDate) => {
     if (!releaseDate) return null;
 
-    const release = new Date(`${releaseDate}-01`);
-    if (isNaN(release.getTime())) return null;
+    const [year, month] = releaseDate.split('-').map(Number);
+    if (!year || !month) return null;
 
+    const release = new Date(year, month - 1); 
     const now = new Date();
 
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0 - январь
+    const currentMonth = now.getMonth();
 
     const releaseYear = release.getFullYear();
     const releaseMonth = release.getMonth();
@@ -58,7 +58,6 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
 
     return null;
 };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const handlePlayClick = (e) => {
         e.stopPropagation();
