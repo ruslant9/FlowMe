@@ -62,60 +62,56 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
         </div>
     );
 
-    return (
-        <AnimatePresence>
-            {isOpen && (
-                isMobile ? (
+    return ReactDOM.createPortal(
+    <AnimatePresence>
+        {isOpen && (
+            isMobile ? (
+                <motion.div
+                    key="mobile-panel"
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                    className={`fixed inset-0 bg-slate-100 dark:bg-slate-800 z-[60] flex flex-col ${currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'}`}
+                >
+                    <header className="flex items-center p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
+                        <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                            <ArrowLeft size={20} />
+                        </button>
+                        <h3 className="font-bold text-lg mx-auto">Об исполнителе</h3>
+                        <div className="w-9 h-9"></div>
+                    </header>
+                    <PanelContent />
+                </motion.div>
+            ) : (
+                <motion.div
+                    key="desktop-panel"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="fixed inset-0 bg-black/60 z-[60]"
+                >
                     <motion.div
-                        key="mobile-panel"
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-                        className={`fixed inset-0 bg-slate-100 dark:bg-slate-800 z-[60] flex flex-col ${
-                            currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
-                        }`}
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`absolute top-0 right-0 w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col ${currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'}`}
                     >
-                        <header className="flex items-center p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
-                            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
-                                <ArrowLeft size={20} />
-                            </button>
-                            <h3 className="font-bold text-lg mx-auto">Об исполнителе</h3>
-                            <div className="w-9 h-9"></div>
+                        <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
+                            <h3 className="font-bold text-lg">Об исполнителе</h3>
+                            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X size={20} /></button>
                         </header>
                         <PanelContent />
                     </motion.div>
-                ) : (
-                    <motion.div
-                        key="desktop-panel"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        className="fixed inset-0 bg-black/60 z-[60]"
-                    >
-                        <motion.div
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '100%' }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`absolute top-0 right-0 w-full md:w-[420px] bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700/50 flex flex-col ${
-                                currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
-                            }`}
-                        >
-                            <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0">
-                                <h3 className="font-bold text-lg">Об исполнителе</h3>
-                                <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X size={20} /></button>
-                            </header>
-                            <PanelContent />
-                        </motion.div>
-                    </motion.div>
-                )
-            )}
-        </AnimatePresence>,
-        document.getElementById('modal-root')
-    );
+                </motion.div>
+            )
+        )}
+    </AnimatePresence>,
+    document.getElementById('modal-root')
+);
 };
 
 export default ArtistInfoPanel;
