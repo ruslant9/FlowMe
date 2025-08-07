@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // Убедитесь, что путь к модели User правильный
-const User = require('../models/User');
+const User = require('./models/User');
 
 // --- НАСТРОЙКИ СКРИПТА ---
 const NUMBER_OF_USERS = 10;

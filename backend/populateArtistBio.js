@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const axios =require('axios');
 require('dotenv').config();
 
-const Artist = require('../models/Artist'); // Нам нужна только модель Артиста
+const Artist = require('./models/Artist'); // Нам нужна только модель Артиста
 
 const BATCH_SIZE = 200; // Можно обрабатывать больше артистов за раз, т.к. запросы проще
 const DELAY_MS = 1000; // 1 секунда задержки между запросами для безопасности

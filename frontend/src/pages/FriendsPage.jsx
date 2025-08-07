@@ -487,13 +487,11 @@ const FriendsPage = () => {
                                 </div>
                             )}
                         </div>
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка сброса теперь видна только на десктопе --- */}
                         <div className="hidden md:flex justify-end pt-2">
                             <button onClick={resetFilters} className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg">
                                 Сбросить
                             </button>
                         </div>
-                         {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
                 </motion.div>
             )}
@@ -705,16 +703,19 @@ const FriendsPage = () => {
                             </div>
                             {renderFilters()}
                             <AnimatePresence>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем ограничение высоты и скролл --- */}
                                 {isDropdownVisible && (
-                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 max-h-80 overflow-y-auto p-2">
+                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} 
+                                      className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 p-2 md:max-h-80 md:overflow-y-auto"
+                                    >
                                         {renderDropdownContent()}
                                     </motion.div>
                                 )}
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </AnimatePresence>
                         </div>
                     </div>
                     
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Контейнер для скрытия на мобильных, когда фильтры открыты --- */}
                     {!showFilters && (
                         <>
                             <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
@@ -744,7 +745,6 @@ const FriendsPage = () => {
                             </div>
                         </>
                     )}
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
             </main>
         </PageWrapper>
