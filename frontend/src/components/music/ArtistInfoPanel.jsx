@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft } from 'lucide-react';
 import Avatar from '../Avatar';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
-import ReactDOM from 'react-dom';
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Кастомный хук для определения размера экрана ---
+// Этот хук позволяет компоненту реагировать на изменения ширины окна браузера.
 const useMediaQuery = (query) => {
   const [matches, setMatches] = useState(false);
 
@@ -121,8 +122,7 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                     </motion.div>
                 )
             )}
-        </AnimatePresence>,
-        document.getElementById('modal-root')
+        </AnimatePresence>
     );
     // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 };
