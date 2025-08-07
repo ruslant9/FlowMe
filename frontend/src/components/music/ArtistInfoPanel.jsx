@@ -33,9 +33,13 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
     useEffect(() => {
         setPortalContainer(document.getElementById('modal-root'));
     }, []);
+    
+    // Проверка, что artist не null и не undefined перед рендерингом
+    if (!artist) {
+        return null;
+    }
 
     const PanelContent = () => (
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain text-slate-800 dark:text-slate-200">
             <div className="flex flex-col items-center text-center">
                 <Avatar size="2xl" username={artist.name} avatarUrl={artist.avatarUrl} />
@@ -68,7 +72,6 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                 <p className="text-center text-slate-500 dark:text-slate-400 py-10">Информация об исполнителе отсутствует.</p>
             )}
         </div>
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     );
     
     if (!portalContainer) {
@@ -89,7 +92,6 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                             currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
                         }`}
                     >
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                         <header className="flex items-center p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0 text-slate-900 dark:text-slate-100">
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
                                 <ArrowLeft size={20} />
@@ -97,7 +99,6 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                             <h3 className="font-bold text-lg mx-auto">Об исполнителе</h3>
                             <div className="w-9 h-9"></div>
                         </header>
-                         {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <PanelContent />
                     </motion.div>
                 ) : (
@@ -119,12 +120,10 @@ const ArtistInfoPanel = ({ artist, isOpen, onClose }) => {
                                 currentTrack ? 'h-[calc(100%-100px)]' : 'h-full'
                             }`}
                         >
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                             <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700/50 flex-shrink-0 text-slate-900 dark:text-slate-100">
                                 <h3 className="font-bold text-lg">Об исполнителе</h3>
                                 <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X size={20} /></button>
                             </header>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <PanelContent />
                         </motion.div>
                     </motion.div>

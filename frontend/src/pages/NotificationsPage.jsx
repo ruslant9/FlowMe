@@ -8,12 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus, MoreHorizontal } from 'lucide-react';
 import { useModal } from '../hooks/useModal';
 import NotificationItem from '../components/NotificationItem';
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем импорт 'motion' ---
 import { motion, AnimatePresence } from 'framer-motion';
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 import PostViewModal from '../components/modals/PostViewModal';
 import MorePanel from '../components/MorePanel';
 import PageWrapper from '../components/PageWrapper';
+import ResponsiveNav from '../components/ResponsiveNav'; // --- ИМПОРТ ResponsiveNav ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -29,12 +28,12 @@ const TabButton = ({ active, onClick, children, count, icon: Icon }) => (
         <Icon size={18} />
         <span>{children}</span>
         {typeof count === 'number' && count > 0 && 
-            <span className={`px-2 py-0.5 rounded-full text-xs ${active ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>
+            <span className={`px-2 py-0-5 rounded-full text-xs ${active ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`}>{count > 9 ? '9+' : count}</span>
         }
     </button>
 );
 
-const SubTabButton = ({ active, onClick, children }) => (
+const SubTabButton = ({ active, onClick, children, icon: Icon }) => ( // --- Добавил icon в props ---
     <button
         onClick={onClick}
         className={`flex-shrink-0 px-2.5 py-1 text-[11px] font-semibold rounded-full transition-colors flex items-center space-x-1.5 ${
@@ -43,7 +42,9 @@ const SubTabButton = ({ active, onClick, children }) => (
                 : 'text-slate-500 dark:text-white/60 hover:bg-slate-200/50 dark:hover:bg-white/10'
         }`}
     >
-        {children}
+        {/* --- Отображаем иконку --- */}
+        {Icon && <Icon size={14} />} 
+        <span>{children}</span>
     </button>
 );
 
@@ -138,7 +139,6 @@ const NotificationsPage = () => {
             const token = localStorage.getItem('token');
             let endpoint = '';
             let method = 'post';
-
             if (action === 'accept_invite') {
                 endpoint = '/api/communities/invites/accept';
             } else if (action === 'decline_invite') {
@@ -244,11 +244,6 @@ const NotificationsPage = () => {
         );
         return tabs;
     }, [activeTab]);
-
-    const subVisibleCount = 3;
-    const subVisibleItems = subTabs.slice(0, subVisibleCount);
-    const subHiddenItems = subTabs.slice(subVisibleCount);
-    const isSubMoreButtonActive = subHiddenItems.some(item => item.key === activeFilter);
     
     const navItems = [
         { key: 'personal', label: 'Личные', icon: User, onClick: () => setActiveTab('personal'), count: notificationsData.personal.unreadCount },
@@ -276,7 +271,7 @@ const NotificationsPage = () => {
                             </button>
                         )}
                     </div>
-
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Заменяем мобильные табы на ResponsiveNav --- */}
                     <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 -mx-4 px-4 overflow-x-auto">
                         {navItems.map(item => (
                             <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon} count={item.count}>
@@ -284,44 +279,21 @@ const NotificationsPage = () => {
                             </TabButton>
                         ))}
                     </div>
-                    
                     <div className="md:hidden mb-6">
-                        <div className="p-1 bg-slate-200/70 dark:bg-black/30 rounded-xl flex items-center gap-1">
-                             {navItems.map(item => (
-                                <button
-                                    key={item.key}
-                                    onClick={item.onClick}
-                                    className={`relative flex-1 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center space-x-2 ${
-                                        activeTab === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'
-                                    }`}
-                                >
-                                    {activeTab === item.key && <motion.div layoutId="notif-active-tab" className="absolute inset-0 bg-white dark:bg-slate-700 shadow rounded-lg" />}
-                                    <span className="relative z-10">{item.label}</span>
-                                    {item.count > 0 && <span className="relative z-10 px-2 py-0.5 rounded-full text-xs bg-red-500 text-white">{item.count}</span>}
-                                </button>
-                            ))}
-                        </div>
+                        <ResponsiveNav
+                            items={navItems}
+                            visibleCount={2}
+                            activeKey={activeTab}
+                        />
                     </div>
-
-                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                        {subTabs.map(tab => (
-                            <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
-                                <tab.icon size={14} /> <span>{tab.label}</span>
-                            </SubTabButton>
-                        ))}
-                    </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                     
-                    <div className="md:hidden flex items-center gap-2 mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto no-scrollbar">
-                        {subVisibleItems.map(tab => (
-                             <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
-                                <tab.icon size={14} /> <span>{tab.label}</span>
-                            </SubTabButton>
-                        ))}
-                        {subHiddenItems.length > 0 && (
-                            <SubTabButton active={isSubMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
-                                <MoreHorizontal size={14} /> <span>Еще</span>
-                            </SubTabButton>
-                        )}
+                    <div className="mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                        <ResponsiveNav 
+                            items={subTabs.map(tab => ({ ...tab, label: tab.label }))}
+                            visibleCount={4} // Показываем все 4 кнопки
+                            activeKey={activeFilter}
+                        />
                     </div>
                     
                     {loading ? (
@@ -356,8 +328,9 @@ const NotificationsPage = () => {
                     )}
                 </div>
                 
+                {/* MorePanel остается для других случаев, где он может быть нужен */}
                 <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
-                    {subHiddenItems.map(item => (
+                    {subTabs.map(item => (
                         <button
                             key={item.key}
                             onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}

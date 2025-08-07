@@ -1,4 +1,4 @@
-// frontend/src/pages/MusicPage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/pages/MusicPage.jsx
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useTitle from '../hooks/useTitle';

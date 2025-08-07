@@ -17,7 +17,7 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         ).trim();
     };
 
-    // --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     // Эта функция максимально безопасно преобразует данные об артисте в строку.
     // Она проверяет, является ли artistData массивом, объектом с полем 'name', строкой,
     // или чем-то еще, и в любом случае возвращает строку.
@@ -37,7 +37,6 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         return '';
     };
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
     const getReleaseBadge = (releaseDate) => {
         if (!releaseDate) return null;
