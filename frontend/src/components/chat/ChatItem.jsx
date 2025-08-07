@@ -410,7 +410,7 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                     </div>
                     
                     {/* --- ИСПРАВЛЕНИЕ: UnreadIndicator и Pin теперь здесь --- */}
-                    <div className="flex items-center justify-end space-x-2 min-h-[14px]">
+                    <div className="flex items-center justify-end space-x-2 min-h-[14px] mr-7">
                         <UnreadIndicator />
                         {isPinned && <Pin size={14} className="text-slate-400 dark:text-slate-500" />}
                     </div>

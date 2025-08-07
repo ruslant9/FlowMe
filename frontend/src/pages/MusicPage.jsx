@@ -401,6 +401,7 @@ const MusicPage = () => {
         { key: 'playlists', label: 'Плейлисты', icon: ListMusic, onClick: () => handleTabClick('playlists') },
         { key: 'history', label: 'История', icon: Clock, onClick: () => handleTabClick('history') },
         { key: 'search', label: 'Поиск', icon: Search, onClick: () => handleTabClick('search') },
+        { key: 'upload', label: 'Загрузить', icon: PlusCircle, onClick: () => setIsUploadModalOpen(true) },
     ];
     
     return (
@@ -450,8 +451,7 @@ const MusicPage = () => {
                         >
                             {activeTab === 'recommendations' && <RecommendationsView recommendations={recommendations} loading={loading.recommendations} onPlayWave={handlePlayWave} onSeeAll={(q) => { setActiveTab('search'); setSearchQuery(q); }} />}
                             {activeTab === 'my-music' && <MusicListView tracks={myMusic} loading={loading.myMusic} title="Моя музыка" emptyMessage="Вы еще не добавили ни одного трека." onPlayTrack={(track) => playTrack(track, myMusic)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
-                            {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
-                            {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
+                            {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}                            {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
                             {activeTab === 'search' && <SearchView query={searchQuery} setQuery={setSearchQuery} results={searchResults} loading={loading.search} onSearchMore={handleSearchMore} hasMore={hasMore} onPlayTrack={(track, tracklist) => playTrack(track, tracklist)} loadingMore={loadingMore} />}
                         </motion.div>
                     </AnimatePresence>

@@ -108,7 +108,6 @@ const MainLayout = ({ children }) => {
     } 
     setTheme(newTheme);
  };
-
   return (
     <div className={`w-full font-sans transition-colors duration-300 relative h-[100dvh] ${
       theme === 'dark' ? 'bg-liquid-background text-white' : 'bg-slate-100 text-slate-900'
@@ -120,25 +119,15 @@ const MainLayout = ({ children }) => {
           <LiquidGlassBackground />
         </Suspense>
       )}
-
-      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
-      {/* 
-        Кнопка скрыта на странице диалога (/messages/:id) на мобильных устройствах,
-        чтобы не перегружать интерфейс и не конфликтовать с элементами управления чата.
-      */}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || location.pathname.startsWith('/messages/') ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
+        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || location.pathname.startsWith('/messages') ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
       >
         <Menu />
       </button>
-      {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-
       <AnimatePresence>
           {isFullScreenPlayerOpen && <FullScreenPlayer />}
       </AnimatePresence>
-
-
       {currentTrack && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80"> 
           <MusicPlayerBar
@@ -164,9 +153,7 @@ const MainLayout = ({ children }) => {
             openFullScreenPlayer={openFullScreenPlayer}
           />
         </div>
-      )}
-      
-      
+      )}   
       <div className={`flex relative h-full overflow-hidden`}>
         <Sidebar 
           themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} 
