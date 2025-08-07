@@ -17,15 +17,32 @@ const NavItem = ({ item, isActive, onClick }) => {
         : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
       }`;
 
-    const labelClasses = 'text-center text-[11px] leading-tight';
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем flex и items-center для центрирования счётчика ---
+    const labelClasses = 'flex items-center space-x-1 text-center text-[11px] leading-tight';
+    const countClasses = `px-1.5 py-0.5 rounded-full text-[10px] ${isActive ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' : 'bg-slate-200 dark:bg-white/10'}`;
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const icon = renderIcon(item.icon, { size: 22, strokeWidth: isActive ? 2.5 : 2 });
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем отображение счётчика ---
+    const labelContent = (
+        <span className={labelClasses}>
+            <span>{item.label}</span>
+            {typeof item.count === 'number' && item.count > 0 && (
+                <span className={countClasses}>
+                    {item.count > 9 ? '9+' : item.count}
+                </span>
+            )}
+        </span>
+    );
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     if (item.path) {
         return (
             <NavLink to={item.path} className={commonClasses}>
                 {icon}
-                <span className={labelClasses}>{item.label}</span>
+                {labelContent}
             </NavLink>
         );
     }
@@ -34,7 +51,7 @@ const NavItem = ({ item, isActive, onClick }) => {
         return (
             <button onClick={onClick} className={commonClasses}>
                 {icon}
-                <span className={labelClasses}>{item.label}</span>
+                {labelContent}
             </button>
         );
     }
@@ -98,10 +115,26 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
             <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
                 {hiddenItems.map(item => {
                     const isActive = item.path ? activePath === item.path : activeKey === item.key;
-                    const commonClasses = `w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
+                    const commonClasses = `w-full flex items-center justify-between p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
               ${isActive ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}`;
                     const iconClasses = isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500';
                     const icon = renderIcon(item.icon, { size: 22, className: iconClasses });
+
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем отображение счётчика в выпадающем меню ---
+                    const labelContent = (
+                        <div className="flex items-center space-x-4">
+                            {icon}
+                            <span>{item.label}</span>
+                        </div>
+                    );
+
+                    const countContent = item.count > 0 && (
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-slate-200 dark:bg-white/10">
+                            {item.count > 9 ? '9+' : item.count}
+                        </span>
+                    );
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
                     if (item.path) {
                         return (
@@ -111,8 +144,8 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
                                 onClick={() => setIsMorePanelOpen(false)}
                                 className={commonClasses}
                             >
-                                {icon}
-                                <span>{item.label}</span>
+                                {labelContent}
+                                {countContent}
                             </NavLink>
                         );
                     }
@@ -127,8 +160,8 @@ const ResponsiveNav = ({ items, visibleCount = 3, activePath, activeKey }) => {
                                 }}
                                 className={commonClasses}
                             >
-                                {icon}
-                                <span>{item.label}</span>
+                                {labelContent}
+                                {countContent}
                             </button>
                         );
                     }
