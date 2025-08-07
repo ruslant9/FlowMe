@@ -267,7 +267,8 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         popperOptions={{ strategy: 'fixed' }}
                         render={attrs => (
                             <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
-                                <ReactionsPopover onSelect={(emoji) => { onReact(emoji); onToggleMenu(null); }}>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем onToggleMenu в onOpen --- */}
+                                <ReactionsPopover onSelect={(emoji) => { onReact(emoji); onToggleMenu(null); }} onOpen={() => onToggleMenu(null)}>
                                      <button
                                         disabled={!canInteract}
                                         className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -275,6 +276,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                                        <span className="text-xl">❤️</span> <span>Реагировать</span>
                                     </button>
                                 </ReactionsPopover>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                 <button onClick={() => { onReply(message); onToggleMenu(null); }} disabled={!canInteract} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
                                    <CornerDownRight size={16}/> <span>Ответить</span>
                                 </button>

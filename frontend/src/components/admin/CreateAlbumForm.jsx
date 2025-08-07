@@ -383,11 +383,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                 {currentUser.role !== 'admin' && !isEditMode && <p className="text-xs text-slate-500 -mt-3">Альбом будет отправлен на проверку администраторам.</p>}
             </div>
 
-            {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Основной контейнер для двух колонок --- */}
             <div className="flex flex-col md:flex-row gap-6 mt-6 flex-1 min-h-0">
                 
-                {/* --- Левая колонка: Информация об альбоме --- */}
-                <div className="md:w-1/2 flex flex-col space-y-4">
+                <div className={`${isEditMode ? 'md:w-1/2' : 'w-full'} flex flex-col space-y-4`}>
                     <div>
                         <label className="text-sm font-semibold block mb-1">Исполнитель *</label>
                         <ArtistAutocomplete artists={artists} onSelect={setArtistId} initialArtistId={artistId} />
@@ -421,9 +419,8 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                     </div>
                 </div>
 
-                {/* --- Правая колонка: Список треков --- */}
-                <div className="md:w-1/2 flex flex-col min-h-0">
-                    {isEditMode && (
+                {isEditMode && (
+                    <div className="md:w-1/2 flex flex-col min-h-0">
                         <div className="flex flex-col h-full">
                             <div className="flex justify-between items-center mb-2 flex-shrink-0">
                                 <h4 className="font-bold text-md">Треки в альбоме ({albumTracks.length})</h4>
@@ -457,11 +454,9 @@ export const CreateAlbumForm = ({ artists, onSuccess, isEditMode = false, initia
                                 </DndContext>
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
-
 
             <div className="flex justify-end pt-6 mt-6 border-t border-slate-200 dark:border-slate-700 flex-shrink-0">
                 <button type="submit" disabled={loading} className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg flex items-center justify-center disabled:opacity-50">

@@ -10,7 +10,7 @@ import { Sparkles, Loader2, Search } from 'lucide-react';
 import { regularReactions, emojiPacks, allPremiumReactionUrls } from '../../data/emojiData';
 import EmojiPreviewModal from '../modals/EmojiPreviewModal';
 import { useCachedImage } from '../../hooks/useCachedImage';
-import useMediaQuery from '../../hooks/useMediaQuery'; // Импортируем хук для определения размера экрана
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 const CachedEmoji = ({ src, alt }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -26,9 +26,9 @@ const preloadImages = (urls) => {
     });
 };
 
-const ReactionsPopover = ({ onSelect, children }) => {
+const ReactionsPopover = ({ onSelect, children, onOpen }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
-    const [isPanelOpen, setIsPanelOpen] = useState(false); // Состояние для мобильной панели
+    const [isPanelOpen, setIsPanelOpen] = useState(false); 
 
     const [activeTab, setActiveTab] = useState('regular');
     const [searchQuery, setSearchQuery] = useState('');
@@ -124,6 +124,11 @@ const ReactionsPopover = ({ onSelect, children }) => {
         if (!searchQuery) return allEmojis;
         return allEmojis.filter(emoji => emoji.name.toLowerCase().includes(searchQuery.toLowerCase()));
     }, [activeTab, activeUserPackName, userFreeEmojiPacks, searchQuery]);
+
+    const handlePanelOpen = () => {
+        if (onOpen) onOpen();
+        setIsPanelOpen(true);
+    };
 
     const PanelContent = ({ closePanel }) => (
         <div className="flex flex-col h-full">
@@ -253,7 +258,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
             <>
                 <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
                 <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
-                {React.cloneElement(children, { onClick: () => setIsPanelOpen(true) })}
+                {React.cloneElement(children, { onClick: handlePanelOpen })}
                 {ReactDOM.createPortal(
                     <AnimatePresence>
                         {isPanelOpen && (
@@ -295,6 +300,7 @@ const ReactionsPopover = ({ onSelect, children }) => {
                 delay={[100, 100]}
                 appendTo={() => document.body}
                 popperOptions={{ strategy: 'fixed' }}
+                onShow={() => { if (onOpen) onOpen(); }}
                 onClickOutside={(instance, event) => {
                     const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
                     if (isClickOnPreviewOverlay) return false;

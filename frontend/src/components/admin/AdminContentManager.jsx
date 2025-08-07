@@ -231,7 +231,6 @@ export const AdminContentManager = () => {
     };
 
     return (
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены классы flex flex-col flex-1 ---
         <div className="space-y-4 flex flex-col flex-1">
             <EditContentModal 
                 isOpen={isEditModalOpen}
@@ -243,7 +242,6 @@ export const AdminContentManager = () => {
                 onSuccess={handleModalSuccess}
             />
             
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменена структура для лучшего расположения поиска --- */}
             <div className="flex flex-col md:flex-row items-center gap-4">
                 <div className="flex items-center space-x-2 self-start md:self-center flex-shrink-0">
                     <SubTabButton active={activeType === 'artists'} onClick={() => setActiveType('artists')} icon={MicVocal}>Артисты</SubTabButton>
@@ -261,9 +259,7 @@ export const AdminContentManager = () => {
                     />
                 </div>
             </div>
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены обертки для управления высотой --- */}
             <div className="flex-1">
                 {renderContent()}
             </div>
@@ -277,7 +273,6 @@ export const AdminContentManager = () => {
                     </div>
                 )}
             </div>
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
         </div>
     );
 };

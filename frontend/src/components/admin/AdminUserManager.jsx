@@ -86,7 +86,7 @@ const AdminUserManager = () => {
         return (
             <>
                 {/* Desktop Table View */}
-                <div className="overflow-x-auto hidden md:block">
+                <div className="overflow-auto hidden md:block h-full">
                     <table className="w-full text-left min-w-[700px]">
                         <thead>
                             <tr className="border-b dark:border-slate-700">
@@ -179,7 +179,7 @@ const AdminUserManager = () => {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 flex flex-col h-full">
              <AdminUserManagementOverlay 
                 isOpen={isOverlayOpen}
                 onClose={() => setIsOverlayOpen(false)}
@@ -187,7 +187,7 @@ const AdminUserManager = () => {
                 onSuccess={handleSuccess}
              />
            
-            <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center justify-between gap-4">
                 <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
@@ -199,7 +199,7 @@ const AdminUserManager = () => {
                     />
                 </div>
             </div>
-            {renderContent()}
+             <div className="flex-1 min-h-0">{renderContent()}</div>
              {totalPages > 1 && (
                 <div className="flex justify-center items-center space-x-2 mt-4">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>

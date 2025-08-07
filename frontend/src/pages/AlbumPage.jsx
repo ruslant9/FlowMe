@@ -129,7 +129,7 @@ const AlbumPage = () => {
                                 {isSingle ? 'Сингл' : 'Альбом'}
                             </span>
                             <h1 className="text-4xl md:text-6xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{album.title}</h1>
-                            <div className="flex items-center space-x-2 mt-2 md:mt-3 text-sm flex-wrap justify-center md:justify-start" style={{ color: textColor, opacity: 0.9 }}>
+                            <div className="flex items-center space-x-2 mt-2 md:mt-5 text-sm flex-wrap justify-center md:justify-start" style={{ color: textColor, opacity: 0.9 }}>
                                 <Link to={`/artist/${album.artist._id}`} className="hover:underline">
                                     <div className="flex items-center space-x-2">
                                         <Avatar size="sm" username={album.artist.name} avatarUrl={album.artist.avatarUrl} />
