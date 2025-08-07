@@ -10,7 +10,7 @@ const { createStorage, cloudinary } = require('../config/cloudinary');
 const multer = require('multer');
 const sharp = require('sharp');
 const { Readable } = require('stream');
-const { sanitize } = require('../utils/sanitize'); // <-- ИМПОРТ
+const { sanitize } = require('../utils/sanitize');
 
 const memoryStorage = multer.memoryStorage();
 const upload = multer({ storage: memoryStorage });
@@ -76,16 +76,25 @@ const processAndUpload = (req, res, next) => {
 router.post('/packs', authMiddleware, upload.array('items', 20), processAndUpload, async (req, res) => {
     try {
         const { name, type, isPremiumOnly } = req.body;
-        const sanitizedName = sanitize(name); // <-- ИСПРАВЛЕНИЕ: Санитизация названия
+        const sanitizedName = sanitize(name);
 
-        if (!sanitizedName || !type || !['emoji', 'sticker'].includes(type)) { // <-- ИСПРАВЛЕНИЕ: Проверка очищенного названия
+        if (!sanitizedName || !type || !['emoji', 'sticker'].includes(type)) {
             return res.status(400).json({ message: 'Неверные данные для создания пака.' });
         }
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: 'Добавьте хотя бы один файл.' });
         }
+        
+        // --- Проверка Premium-статуса на сервере ---
+        if (type === 'emoji' && isPremiumOnly === 'true') {
+            const user = await User.findById(req.user.userId).select('premium');
+            if (!user || !user.premium || !user.premium.isActive) {
+                return res.status(403).json({ message: 'Только Premium-пользователи могут создавать эксклюзивные паки.' });
+            }
+        }
+        
         const newPack = new ContentPack({
-            name: sanitizedName, // <-- ИСПРАВЛЕНИЕ: Сохранение очищенного названия
+            name: sanitizedName,
             type,
             creator: req.user.userId,
             isPremium: type === 'emoji' ? (isPremiumOnly === 'true') : false,
@@ -202,7 +211,7 @@ router.put('/packs/:packId', authMiddleware, canModifyPack, upload.array('newIte
         const { name, itemsToDelete, isPremiumOnly } = req.body;
         const pack = req.pack;
         if (name) {
-            pack.name = sanitize(name); // <-- ИСПРАВЛЕНИЕ: Санитизация
+            pack.name = sanitize(name);
         }
         if (itemsToDelete) {
             const toDelete = JSON.parse(itemsToDelete);
@@ -215,6 +224,15 @@ router.put('/packs/:packId', authMiddleware, canModifyPack, upload.array('newIte
         if (isPremiumOnly !== undefined && pack.type === 'emoji') {
             pack.isPremium = isPremiumOnly === 'true';
         }
+
+        // --- Проверка Premium-статуса при редактировании ---
+        if (pack.isPremium && pack.isModified('isPremium')) {
+             const user = await User.findById(req.user.userId).select('premium');
+             if (!user || !user.premium || !user.premium.isActive) {
+                return res.status(403).json({ message: 'Только Premium-пользователи могут делать паки эксклюзивными.' });
+            }
+        }
+
         await pack.save();
         res.json(pack);
     } catch (error) {

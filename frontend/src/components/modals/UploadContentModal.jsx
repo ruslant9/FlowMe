@@ -22,14 +22,14 @@ const UploadContentModal = ({ isOpen, onClose }) => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center pt-20 px-4 pb-4 z-[110]"
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center p-4 overflow-y-auto z-[110]"
                 >
                     <motion.div
                         initial={{ scale: 0.9, y: 20 }}
                         animate={{ scale: 1, y: 0 }}
                         exit={{ scale: 0.9, y: 20 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
+                        className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                     >
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">Предложить контент</h2>
