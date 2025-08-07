@@ -127,6 +127,8 @@ const ReactionsPopover = ({ onSelect, children }) => {
                 interactive
                 placement="auto"
                 delay={[100, 100]}
+                appendTo={() => document.body}
+                popperOptions={{ strategy: 'fixed' }}
                 onClickOutside={(instance, event) => {
                     const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
                     if (isClickOnPreviewOverlay) {

@@ -163,7 +163,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
         e.stopPropagation();
         if (menuButtonRef.current) {
             const rect = menuButtonRef.current.getBoundingClientRect();
-            if (window.innerHeight - rect.bottom < 250) {
+            if (window.innerHeight - rect.bottom < 300) {
                 setMenuPosition('top');
             } else {
                 setMenuPosition('bottom');
@@ -313,12 +313,10 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </div>
 
             <div
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Удаляем условие, которое делало фон прозрачным ---
                 className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
                     ${isOwnMessage ? `bg-chat-bubble-own text-chat-bubble-own ${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `bg-chat-bubble-other text-chat-bubble-other ${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
                     ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : ''}
                 `}
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             >
                 
                 <div className="pt-2"> 

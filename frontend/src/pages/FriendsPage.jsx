@@ -320,9 +320,6 @@ const FriendsPage = () => {
     const [loading, setLoading] = useState(true);
     const [isSearching, setIsSearching] = useState(false);
     const [processingActions, setProcessingActions] = useState([]);
-    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-    const searchWrapperRef = useRef(null);
-    const searchInputRef = useRef(null);
     const { showConfirmation } = useModal();
     const { userStatuses } = useWebSocket();
     const navigate = useNavigate();
@@ -390,7 +387,6 @@ const FriendsPage = () => {
         }
 
         setIsSearching(true);
-        setIsDropdownVisible(true);
         try {
             const token = localStorage.getItem('token');
             const params = new URLSearchParams();
@@ -576,8 +572,8 @@ const FriendsPage = () => {
         };
         if (currentAction.confirm) { showConfirmation({ title: currentAction.confirm.title, message: currentAction.confirm.message, onConfirm: performApiCall, }); } else { performApiCall(); }
     };
-    const handleTabClick = (tab) => { setActiveTab(tab); setSearchTerm(''); setSearchResults([]); setIsDropdownVisible(false); };
-    const handleSearchInputFocus = () => { setIsDropdownVisible(true); };
+    const handleTabClick = (tab) => { setActiveTab(tab); setSearchTerm(''); setSearchResults([]); };
+    const handleSearchInputFocus = () => { /* No longer needed to show dropdown */ };
     const handleSearchHistoryClick = (historyTerm) => { setSearchTerm(historyTerm); searchInputRef.current?.focus(); };
     const clearSearchHistory = () => { setSearchHistory([]); };
     const sortedAllFriends = useMemo(() => {
@@ -614,26 +610,24 @@ const FriendsPage = () => {
         }
         setSortConfig({ key, direction });
     };
-    const renderDropdownContent = () => {
-        const hasActiveSearch = searchTerm.trim() || filters.city || filters.interests.length > 0;
-        if (hasActiveSearch) {
-            if (isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Поиск...</div>;
-            else if (!isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Ничего не найдено.</div>;
-            else return (
-                <div>
-                    <p className="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-white/50">
-                        Результаты поиска: {searchResults.length}
-                    </p>
-                    <div className="space-y-1">
-                        {searchResults.map(user => (<UserCard key={user._id} user={user} status={user.status === 'none' ? 'search_result' : user.status} onAction={handleAction} isProcessing={processingActions.includes(user._id)} userStatuses={userStatuses} onWriteMessage={() => handleWriteMessage(user)} currentUser={currentUser} />))}
-                    </div>
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Переименована и упрощена функция ---
+    const renderSearchResults = () => {
+        if (isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Поиск...</div>;
+        if (!isSearching && searchResults.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Ничего не найдено.</div>;
+        
+        return (
+            <div>
+                <p className="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-white/50">
+                    Результаты поиска: {searchResults.length}
+                </p>
+                <div className="space-y-1">
+                    {searchResults.map(user => (<UserCard key={user._id} user={user} status={user.status === 'none' ? 'search_result' : user.status} onAction={handleAction} isProcessing={processingActions.includes(user._id)} userStatuses={userStatuses} onWriteMessage={() => handleWriteMessage(user)} currentUser={currentUser} />))}
                 </div>
-            );
-        } else {
-            if (searchHistory.length === 0) return <div className="text-center p-4 text-slate-500 dark:text-white/60">Нет недавних запросов.</div>;
-            return (<div className="space-y-1"><p className="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-white/50">Недавние запросы</p>{searchHistory.map((term, index) => (<div key={index} className="flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-100/50 dark:hover:bg-white/5 cursor-pointer" onClick={() => handleSearchHistoryClick(term)}><div className="flex items-center space-x-2"><History size={16} className="text-slate-400 dark:text-white/40 flex-shrink-0" /><span className="truncate">{term}</span></div></div>))}<div className="border-t border-slate-200 dark:border-white/10 pt-2 mt-2"><button onClick={clearSearchHistory} className="w-full text-left flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"><TrashIcon size={16} /><span>Очистить историю поиска</span></button></div></div>);
-        }
+            </div>
+        );
     };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const renderTabContent = () => {
         if (loading) return (<div className="space-y-2">{[...Array(3)].map((_, i) => <UserCardSkeleton key={i} />)}</div>);
@@ -684,10 +678,7 @@ const FriendsPage = () => {
         { key: 'blacklist', label: 'Черный список', icon: ShieldOff, count: blacklist.length, onClick: () => handleTabClick('blacklist') }
     ];
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Переменная для определения активного поиска (включая фильтры) ---
     const hasActiveSearch = searchTerm.trim() || filters.city || filters.interests.length > 0;
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
     return (
         <PageWrapper>
@@ -713,7 +704,6 @@ const FriendsPage = () => {
                                         type="text"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        onFocus={handleSearchInputFocus}
                                         placeholder="Поиск по имени или @username"
                                         className="w-full pl-12 pr-10 py-3 rounded-lg bg-slate-200/70 dark:bg-black/30 text-slate-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none focus:ring-2 focus:focus:ring-blue-500"
                                     />
@@ -730,55 +720,42 @@ const FriendsPage = () => {
                                 </button>
                             </div>
                             {renderFilters()}
-                            <AnimatePresence>
-                                {isDropdownVisible && (
-                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} 
-                                      className="absolute top-full mt-2 w-full bg-slate-50 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg shadow-xl z-10 md:max-h-80 md:overflow-y-auto p-2"
-                                    >
-                                        {renderDropdownContent()}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
                         </div>
                     </div>
                     
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Скрываем этот блок, если открыты фильтры или идет поиск --- */}
-                    {!showFilters && !hasActiveSearch && (
-                    <>
-                        <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
-                            {navItems.map(item => (
-                                <TabButton 
-                                    key={item.key}
-                                    active={activeTab === item.key}
-                                    onClick={item.onClick}
-                                    count={item.count}
-                                >
-                                    <item.icon size={16} />
-                                    <span>{item.label}</span>
-                                </TabButton>
-                            ))}
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменена логика отображения --- */}
+                    {hasActiveSearch ? (
+                        <div className="mt-6 md:mt-0">
+                            {renderSearchResults()}
                         </div>
-                        
-                        <div className="md:hidden mb-6">
-                             <ResponsiveNav 
-                                items={navItems}
-                                visibleCount={4}
-                                activeKey={activeTab}
-                            />
-                        </div>
-                        
-                        <div className="bg-white dark:bg-slate-800 md:ios-glass-final rounded-3xl p-2 md:p-4">
-                            {renderTabContent()}
-                        </div>
-                    </>
-                    )}
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-                    
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Показываем результаты поиска отдельным блоком --- */}
-                    {hasActiveSearch && !isDropdownVisible && (
-                        <div className="mt-6">
-                           {renderDropdownContent()}
-                        </div>
+                    ) : (
+                        <>
+                            <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 overflow-x-auto no-scrollbar">
+                                {navItems.map(item => (
+                                    <TabButton 
+                                        key={item.key}
+                                        active={activeTab === item.key}
+                                        onClick={item.onClick}
+                                        count={item.count}
+                                    >
+                                        <item.icon size={16} />
+                                        <span>{item.label}</span>
+                                    </TabButton>
+                                ))}
+                            </div>
+                            
+                            <div className="md:hidden mb-6">
+                                 <ResponsiveNav 
+                                    items={navItems}
+                                    visibleCount={4}
+                                    activeKey={activeTab}
+                                />
+                            </div>
+                            
+                            <div className="bg-white dark:bg-slate-800 md:ios-glass-final rounded-3xl p-2 md:p-4">
+                                {renderTabContent()}
+                            </div>
+                        </>
                     )}
                     {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 </div>
