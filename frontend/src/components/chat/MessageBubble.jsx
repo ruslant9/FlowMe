@@ -10,7 +10,7 @@ import 'tippy.js/dist/tippy.css';
 import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
-import Twemoji from '../Twemoji';
+import Twemoji from './Twemoji';
 import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -51,13 +51,24 @@ const TippyWrapper = forwardRef((props, ref) => {
 });
 TippyWrapper.displayName = 'TippyWrapper';
 
-const isOnlyEmojis = (str) => {
-    if (!str) return false;
-    const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
-    const nonWhitespaceText = str.replace(/\s/g, '');
-    const emojiOnlyText = (nonWhitespaceText.match(emojiRegex) || []).join('');
-    return nonWhitespaceText.length > 0 && nonWhitespaceText.length === emojiOnlyText.length;
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Функция теперь возвращает количество эмодзи ---
+const getEmojiOnlyCount = (text) => {
+    if (!text) return 0;
+    // Регулярное выражение для поиска большинства современных эмодзи
+    const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
+    
+    // Удаляем все эмодзи и пробелы, чтобы проверить, остался ли какой-то текст
+    const nonEmojiText = text.replace(emojiRegex, '').replace(/\s/g, '');
+    
+    if (nonEmojiText.length > 0) {
+        return 0; // Сообщение содержит не только эмодзи
+    }
+
+    // Считаем количество найденных эмодзи
+    const matches = text.match(emojiRegex);
+    return matches ? matches.length : 0;
 };
+// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 
 const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply, onEdit, onPerformDelete, onForward, onSelect, isSelected, selectionMode, openMenuId, onToggleMenu, onScrollToMessage, highlightedMessageId, isBlockingInterlocutor, isBlockedByInterlocutor, searchQuery, isCurrentSearchResult, canInteract, isPinned, onPin, onUnpin, onImageClick }) => {
@@ -224,8 +235,11 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </>
         );
     }, [message.text, isCurrentSearchResult, searchQuery]);
-
-    const onlyEmojis = useMemo(() => isOnlyEmojis(message.text), [message.text]);
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем новую функцию для определения "больших" эмодзи ---
+    const emojiOnlyCount = useMemo(() => getEmojiOnlyCount(message.text), [message.text]);
+    const isJumboEmoji = emojiOnlyCount > 0 && emojiOnlyCount <= 3;
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     return (
         <div
@@ -303,13 +317,13 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </div>
 
             <div
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем жестко заданные классы на динамические ---
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Убираем условие, делающее фон прозрачным ---
                 className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
                     ${isOwnMessage ? `bg-chat-bubble-own text-chat-bubble-own ${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `bg-chat-bubble-other text-chat-bubble-other ${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
                     ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : ''}
-                    ${onlyEmojis ? 'bg-transparent dark:bg-transparent shadow-none' : ''}
+                    ${isJumboEmoji ? 'bg-transparent dark:bg-transparent shadow-none' : ''}
                 `}
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
             >
                 
                 <div className="pt-2"> 
@@ -358,9 +372,11 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 <div className={`relative ${Object.values(groupedReactions).length > 0 ? 'pb-7' : ''}`}>
                     <div className="flex items-end flex-wrap px-3 pt-2 pb-2">
                         {message.text && (
-                             <p className={`whitespace-pre-wrap break-words mr-2 min-w-0 ${onlyEmojis ? 'emoji-only' : ''}`}>
+                            // --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Условие для больших эмодзи применяется к <p> ---
+                             <p className={`whitespace-pre-wrap break-words mr-2 min-w-0 ${isJumboEmoji ? 'emoji-only' : ''}`}>
                                 {renderMessageWithHighlight}
                             </p>
+                            // --- КОНЕЦ ИСПРАВЛЕНИЯ 4 ---
                         )}
                         <div className="inline-flex items-center gap-1 text-xs opacity-70 flex-shrink-0 min-w-max self-end ml-auto">
                             {isPinned && <Pin size={12} className="text-current" />}

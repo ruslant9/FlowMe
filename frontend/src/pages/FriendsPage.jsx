@@ -29,7 +29,6 @@ const availableInterests = [
     "Футбол", "Баскетбол", "Хоккей", "Теннис", "Автоспорт", "Киберспорт", "Йога", "Бег", "Плавание"
 ];
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Новая константа для лимита интересов на мобильных ---
 const MOBILE_INTEREST_LIMIT = 12;
 
 const customRuLocaleForDistance = {
@@ -335,7 +334,6 @@ const FriendsPage = () => {
     const [citySearchQuery, setCitySearchQuery] = useState('');
     const [loadingCities, setLoadingCities] = useState(false);
     const [searchHistory, setSearchHistory] = useState([]);
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Новое состояние для раскрытия списка интересов ---
     const [interestsExpanded, setInterestsExpanded] = useState(false);
 
     useEffect(() => {
@@ -434,7 +432,6 @@ const FriendsPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-semibold text-slate-600 dark:text-white/70 mb-1 block">Страна</label>
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены стили для полей --- */}
                                 <Listbox value={selectedCountry} onChange={(country) => { setSelectedCountry(country); setFilters(prev => ({ ...prev, city: '' })); }}>
                                     <div className="relative">
                                         <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-slate-800 py-2.5 pl-3 pr-10 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 h-[44px] border border-slate-200 dark:border-slate-700">
@@ -463,12 +460,10 @@ const FriendsPage = () => {
                                         </Combobox.Options>
                                     </div>
                                 </Combobox>
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </div>
                         </div>
                         <div>
                             <label className="text-sm font-semibold text-slate-600 dark:text-white/70 mb-2 block">Интересы</label>
-                             {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика скрытия/показа интересов --- */}
                             <div className="flex flex-wrap gap-2">
                                 {availableInterests.slice(0, interestsExpanded ? availableInterests.length : MOBILE_INTEREST_LIMIT).map(interest => {
                                     const isSelected = filters.interests.includes(interest);
@@ -485,11 +480,15 @@ const FriendsPage = () => {
                                     </button>
                                 </div>
                             )}
-                             {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
-                        <div className="flex justify-end pt-2">
-                            <button onClick={resetFilters} className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg">Сбросить</button>
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Адаптивная кнопка сброса --- */}
+                        <div className="flex justify-center md:justify-end pt-2">
+                            <button onClick={resetFilters} className="w-full md:w-auto px-4 py-2 text-sm font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg">
+                                <span className="md:hidden">Сбросить фильтры</span>
+                                <span className="hidden md:inline">Сбросить</span>
+                            </button>
                         </div>
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     </div>
                 </motion.div>
             )}

@@ -8,15 +8,15 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus, MoreHorizontal } from 'lucide-react';
 import { useModal } from '../hooks/useModal';
 import NotificationItem from '../components/NotificationItem';
-import { AnimatePresence } from 'framer-motion';
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем импорт 'motion' ---
+import { motion, AnimatePresence } from 'framer-motion';
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 import PostViewModal from '../components/modals/PostViewModal';
 import MorePanel from '../components/MorePanel';
 import PageWrapper from '../components/PageWrapper';
-import ResponsiveNav from '../components/ResponsiveNav';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Обновляем стили кнопок-вкладок ---
 const TabButton = ({ active, onClick, children, count, icon: Icon }) => (
     <button
         onClick={onClick}
@@ -46,7 +46,6 @@ const SubTabButton = ({ active, onClick, children }) => (
         {children}
     </button>
 );
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 const NotificationsPage = () => {
     useTitle('Уведомления');
@@ -84,9 +83,7 @@ const NotificationsPage = () => {
                 openPostInModal(postId, highlightCommentId);
             }
         };
-
         window.addEventListener('openPostModal', handleOpenPostModal);
-
         return () => {
             window.removeEventListener('openPostModal', handleOpenPostModal);
         };
@@ -98,7 +95,6 @@ const NotificationsPage = () => {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/user/notifications`, { headers: { Authorization: `Bearer ${token}` } });
             setNotificationsData(res.data);
-
             if (res.data.personal.unreadCount > 0 || res.data.community.unreadCount > 0) {
                 setTimeout(async () => {
                     try {
@@ -151,15 +147,12 @@ const NotificationsPage = () => {
                 toast.dismiss(toastId);
                 return;
             }
-
             const response = await axios[method](`${API_URL}${endpoint}`, { notificationId }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
             toast.success(response.data.message, { id: toastId });
             fetchNotifications(false);
             window.dispatchEvent(new CustomEvent('NEW_NOTIFICATION'));
-
         } catch (error) {
             toast.error(error.response?.data?.message || 'Ошибка при выполнении действия.', { id: toastId });
         }
@@ -228,7 +221,6 @@ const NotificationsPage = () => {
         const today = new Date();
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-
         filteredNotifications.forEach(notif => {
             const notifDate = new Date(notif.updatedAt); 
             if (notifDate.toDateString() === today.toDateString()) groups.today.push(notif);
@@ -258,12 +250,10 @@ const NotificationsPage = () => {
     const subHiddenItems = subTabs.slice(subVisibleCount);
     const isSubMoreButtonActive = subHiddenItems.some(item => item.key === activeFilter);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Создаем массив для ResponsiveNav ---
     const navItems = [
         { key: 'personal', label: 'Личные', icon: User, onClick: () => setActiveTab('personal'), count: notificationsData.personal.unreadCount },
         { key: 'community', label: 'Сообщества', icon: Users, onClick: () => setActiveTab('community'), count: notificationsData.community.unreadCount }
     ];
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     return (
         <PageWrapper>
@@ -275,7 +265,6 @@ const NotificationsPage = () => {
                         onDeletePost={() => fetchNotifications()}
                     />
                 )}
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Перестраиваем структуру страницы --- */}
                 <div className="w-full max-w-4xl mx-auto">
                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <div className="flex items-center space-x-3">
@@ -366,7 +355,6 @@ const NotificationsPage = () => {
                         </div>
                     )}
                 </div>
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                 
                 <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
                     {subHiddenItems.map(item => (
