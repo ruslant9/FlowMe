@@ -19,7 +19,6 @@ import AttachedTrack from './music/AttachedTrack';
 import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
-import EmojiParsedText from './common/EmojiParsedText';
 import { useCachedImage } from '../hooks/useCachedImage'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
