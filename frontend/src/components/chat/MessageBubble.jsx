@@ -10,7 +10,7 @@ import 'tippy.js/dist/tippy.css';
 import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
-import Twemoji from './Twemoji';
+import Twemoji from '../Twemoji';
 import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
