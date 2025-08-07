@@ -3,7 +3,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import AdminUploadPanel from '../admin/AdminUploadPanel'; // Переиспользуем нашу панель!
+import AdminUploadPanel from '../admin/AdminUploadPanel';
+import ReactDOM from 'react-dom';
 
 const UploadContentModal = ({ isOpen, onClose }) => {
     
@@ -36,17 +37,13 @@ const UploadContentModal = ({ isOpen, onClose }) => {
                         </div>
                         
                         <div className="flex-1 overflow-y-auto pr-2 -mr-4">
-                            {/* 
-                                Передаем функцию handleSuccess в панель.
-                                Компоненты-формы внутри панели должны будут вызывать её 
-                                после успешной отправки заявки.
-                            */}
                             <AdminUploadPanel onSuccess={handleSuccess} />
                         </div>
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 

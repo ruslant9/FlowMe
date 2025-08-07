@@ -1,6 +1,6 @@
 // frontend/src/components/chat/MessageBubble.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
-import React, { useMemo, useRef, useState, forwardRef } from 'react';
+import React, { useMemo, useRef, useState, forwardRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -11,8 +11,7 @@ import ReactionsPopover from './ReactionsPopover';
 import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
 import { useCachedImage } from '../../hooks/useCachedImage';
-import ReactDOM from 'react-dom'; // <-- ИМПОРТ
-import EmojiParsedText from '../common/EmojiParsedText'; // <-- ИМПОРТ
+import twemoji from 'twemoji'; // <-- ИМПОРТ TWEMOJI
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -57,6 +56,17 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
     const time = format(new Date(message.createdAt), 'HH:mm');
     const menuButtonRef = useRef(null);
     const [menuPosition, setMenuPosition] = useState('bottom');
+    const textContainerRef = useRef(null); // <-- 1. REF ДЛЯ ТЕКСТА
+
+    // <-- 2. useEffect ДЛЯ ПРИМЕНЕНИЯ TWEMOJI ---
+    useEffect(() => {
+        if (textContainerRef.current) {
+            twemoji.parse(textContainerRef.current, {
+                folder: 'svg',
+                ext: '.svg'
+            });
+        }
+    }, [message.text, isCurrentSearchResult, searchQuery]); // Перепарсиваем при изменении текста или поиска
 
     const isMenuOpen = openMenuId === message._id;
 
@@ -192,19 +202,17 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             ].reverse()
         });
     };
-
+    
+    // <-- 3. ФУНКЦИЯ ТЕПЕРЬ ВОЗВРАЩАЕТ JSX, А НЕ КОМПОНЕНТ ---
     const renderMessageWithHighlight = useMemo(() => {
         if (!message.text) return null;
-    
         if (!isCurrentSearchResult || !searchQuery) {
-            return <EmojiParsedText text={message.text} />;
+            return message.text;
         }
-    
         const escapedQuery = searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         const regex = new RegExp(`(${escapedQuery})`, 'gi');
         const parts = message.text.split(regex);
-    
-        const contentJsx = (
+        return (
             <>
                 {parts.map((part, index) =>
                     regex.test(part) ? (
@@ -217,15 +225,8 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                 )}
             </>
         );
-    
-        // Временный div для преобразования JSX в HTML-строку
-        const tempDiv = document.createElement('div');
-        ReactDOM.render(contentJsx, tempDiv);
-        const htmlString = tempDiv.innerHTML;
-        
-        return <EmojiParsedText text={htmlString} />;
-    
     }, [message.text, isCurrentSearchResult, searchQuery]);
+
 
     return (
         <div
@@ -303,11 +304,12 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
             </div>
 
             <div
-                className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
-                    ${isOwnMessage ? `${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
-                    ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : (isOwnMessage ? 'bg-chat-bubble-own' : 'bg-chat-bubble-other')}
-                `}
-            >
+    className={`max-w-xs md:max-w-md lg:max-w-lg rounded-3xl relative transition-colors duration-300 ${isOwnMessage ? 'order-2' : 'order-1'} ${message.isSending ? 'opacity-70' : ''}
+        ${isOwnMessage ? `${isConsecutive ? 'rounded-br-md' : 'rounded-br-lg'}` : `${isConsecutive ? 'rounded-bl-md' : 'rounded-bl-lg'}`}
+        ${highlightedMessageId === message._id ? 'bg-orange-400/50 dark:bg-orange-500/40' : (isOwnMessage ? 'bg-chat-bubble-own' : 'bg-chat-bubble-other')}
+    `}
+>
+                
                 <div className="pt-2"> 
                     {message.forwardedFrom && (
                         <Link to={`/profile/${message.forwardedFrom._id}`} className="flex items-center space-x-1.5 text-xs opacity-80 mb-1.5 px-3 cursor-pointer hover:underline">
@@ -316,6 +318,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         </Link>
                     )}
                 </div>
+
                 {message.replyTo && (
                      <div className="px-3 pt-2">
                          <button 
@@ -349,12 +352,14 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         />
                     </div>
                 )}
+                
                 <div className={`relative ${Object.values(groupedReactions).length > 0 ? 'pb-7' : ''}`}>
                     <div className="flex items-end flex-wrap px-3 pt-2 pb-2">
+                        {/* --- 4. РЕНДЕРИМ ТЕКСТ В КОНТЕЙНЕР С REF --- */}
                         {message.text && (
-                             <div className="whitespace-pre-wrap break-words mr-2 min-w-0">
+                             <p ref={textContainerRef} className="whitespace-pre-wrap break-words mr-2 min-w-0">
                                 {renderMessageWithHighlight}
-                            </div>
+                            </p>
                         )}
                         <div className="inline-flex items-center gap-1 text-xs opacity-70 flex-shrink-0 min-w-max self-end ml-auto">
                             {isPinned && <Pin size={12} className="text-current" />}
@@ -362,6 +367,7 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                             <ReadReceipt />
                         </div>
                     </div>
+                    
                     <div className={`absolute bottom-1 right-2 z-10 flex items-center space-x-1`}>
                         {Object.values(groupedReactions).map(({ emoji, count, users = [] }) => {
                             const tippyContent = users.length > 0 ? users.join(', ') : '';

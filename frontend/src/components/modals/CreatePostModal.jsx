@@ -1,6 +1,8 @@
 // frontend/src/components/modals/CreatePostModal.jsx
 
+// --- ИЗМЕНЕНИЕ 1: Импортируем ReactDOM для создания портала ---
 import React, { useState, useRef, useEffect, Suspense, Fragment, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Image as ImageIcon, Loader2, Smile, Music, XCircle, BarChart2 as PollIcon, Calendar as CalendarIcon, Text, Check, ChevronDown } from 'lucide-react';
 import axios from 'axios';
@@ -215,7 +217,8 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         e.target.style.height = `${e.target.scrollHeight}px`;
     };
 
-    return (
+    // --- ИЗМЕНЕНИЕ 2: Оборачиваем всю разметку модального окна в ReactDOM.createPortal ---
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -257,7 +260,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center">
                                                                                 <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{communityOption.name}</span>
-                                                                                {communityOption.type === 'user' && communityOption.premium?.isActive && (
+                                                                                {option.type === 'user' && option.premium?.isActive && (
                                                                                     <span className="ml-1.5 premium-shimmer-text text-[10px] font-bold">Premium</span>
                                                                                 )}
                                                                             </div>
@@ -304,7 +307,9 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                     </motion.div>
                 </>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        // --- ИЗМЕНЕНИЕ 3: Указываем, куда "телепортировать" модальное окно ---
+        document.getElementById('modal-root')
     );
 };
 

@@ -472,7 +472,12 @@ return (
                                     {(sessionsExpanded ? sessions : sessions.slice(0, 3)).map(session => {
                                         const isCurrent = session._id === currentSessionId;
                                         const isLocal = session.ipAddress === '::1' || session.ipAddress === '127.0.0.1';
-                                        const primaryIp = session.ipAddress ? session.ipAddress.split(',').trim() : 'Неизвестный IP';
+                                        
+                                        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                                        const primaryIp = session.ipAddress && typeof session.ipAddress === 'string'
+                                            ? session.ipAddress.split(',')[0].trim()
+                                            : 'Неизвестный IP';
+                                        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
                                         return (
                                             <div key={session._id} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-start justify-between gap-3">
