@@ -72,20 +72,16 @@ export const AdminContentManager = () => {
         }
     }, []);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Реструктуризация useEffect для корректной работы пагинации и поиска ---
-    // Этот хук сбрасывает на первую страницу при любом изменении фильтров или поиска
     useEffect(() => {
         setPage(1);
     }, [search, activeType, sortBy, sortOrder]);
 
-    // Этот хук запускает загрузку данных при изменении любых параметров, включая страницу
     useEffect(() => {
         const debounce = setTimeout(() => {
             fetchData();
-        }, search ? 300 : 0); // Добавляем задержку только при поиске
+        }, search ? 300 : 0);
         return () => clearTimeout(debounce);
     }, [fetchData]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
     
     useEffect(() => {
         fetchAuxiliaryData();
@@ -142,8 +138,8 @@ export const AdminContentManager = () => {
     );
 
     const renderContent = () => {
-        if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin w-8 h-8" /></div>;
-        if (items.length === 0) return <p className="text-center text-slate-500 p-8">Ничего не найдено.</p>;
+        if (loading && items.length === 0) return <div className="flex justify-center p-8"><Loader2 className="animate-spin w-8 h-8" /></div>;
+        if (items.length === 0 && !loading) return <p className="text-center text-slate-500 p-8">Ничего не найдено.</p>;
         
         return (
             <>
@@ -235,7 +231,8 @@ export const AdminContentManager = () => {
     };
 
     return (
-        <div className="space-y-4">
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены классы flex flex-col flex-1 ---
+        <div className="space-y-4 flex flex-col flex-1">
             <EditContentModal 
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
@@ -246,33 +243,41 @@ export const AdminContentManager = () => {
                 onSuccess={handleModalSuccess}
             />
             
-            <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center space-x-2">
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Изменена структура для лучшего расположения поиска --- */}
+            <div className="flex flex-col md:flex-row items-center gap-4">
+                <div className="flex items-center space-x-2 self-start md:self-center flex-shrink-0">
                     <SubTabButton active={activeType === 'artists'} onClick={() => setActiveType('artists')} icon={MicVocal}>Артисты</SubTabButton>
                     <SubTabButton active={activeType === 'albums'} onClick={() => setActiveType('albums')} icon={Disc}>Альбомы</SubTabButton>
                     <SubTabButton active={activeType === 'tracks'} onClick={() => setActiveType('tracks')} icon={Music}>Сольные треки</SubTabButton>
                 </div>
-                <div className="relative">
+                <div className="relative w-full md:flex-1 md:max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Добавлены стили для поля поиска --- */}
                     <input 
                         type="text" 
                         value={search} 
                         onChange={e => setSearch(e.target.value)} 
                         placeholder="Поиск..." 
-                        className="pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-slate-800 w-full sm:w-64 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                 </div>
             </div>
-            {renderContent()}
-            {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-2 mt-4">
-                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>
-                    <span>Стр. {page} из {totalPages}</span>
-                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Вперед</button>
-                </div>
-            )}
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены обертки для управления высотой --- */}
+            <div className="flex-1">
+                {renderContent()}
+            </div>
+            
+            <div className="flex-shrink-0">
+                {totalPages > 1 && (
+                    <div className="flex justify-center items-center space-x-2 mt-4">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>
+                        <span>Стр. {page} из {totalPages}</span>
+                        <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Вперед</button>
+                    </div>
+                )}
+            </div>
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
         </div>
     );
 };

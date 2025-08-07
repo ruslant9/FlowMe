@@ -1,4 +1,5 @@
 // frontend/src/hooks/useDynamicAccent.js
+
 import { useState, useEffect } from 'react';
 import ColorThief from 'colorthief';
 
@@ -16,14 +17,42 @@ const getContrastingTextColor = ([r, g, b]) => {
 };
 
 export const useDynamicAccent = (imageUrl) => {
-    const [accent, setAccent] = useState({
-        gradient: 'linear-gradient(to bottom, #1f2937, #111827)', // default dark
-        dominantColor: '#facc15', // default yellow
-        textColor: '#FFFFFF' // default white text
-    });
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Добавляем состояние для отслеживания темы ---
+    const [theme, setTheme] = useState(() => 
+        document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    );
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
+    const [accent, setAccent] = useState({
+        gradient: 'linear-gradient(to bottom, #1f2937, #111827)',
+        dominantColor: '#facc15',
+        textColor: '#FFFFFF'
+    });
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Добавляем useEffect для отслеживания смены темы ---
     useEffect(() => {
-        const isDarkMode = document.documentElement.classList.contains('dark');
+        // Создаем наблюдатель за изменениями атрибутов на <html>
+        const observer = new MutationObserver((mutationsList) => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const newTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                    setTheme(newTheme);
+                }
+            }
+        });
+
+        // Начинаем наблюдение
+        observer.observe(document.documentElement, { attributes: true });
+
+        // Функция очистки: прекращаем наблюдение при размонтировании компонента
+        return () => observer.disconnect();
+    }, []);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Добавляем 'theme' в зависимости этого useEffect ---
+    useEffect(() => {
+        const isDarkMode = theme === 'dark';
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
 
         const defaultAccent = {
             gradient: isDarkMode 
@@ -77,7 +106,9 @@ export const useDynamicAccent = (imageUrl) => {
 
         img.src = imageUrl;
 
-    }, [imageUrl]);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Добавляем 'theme' в массив зависимостей ---
+    }, [imageUrl, theme]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 4 ---
 
     return accent;
 };

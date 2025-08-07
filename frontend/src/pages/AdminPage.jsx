@@ -51,14 +51,16 @@ const AdminPage = () => {
 
     return (
         <PageWrapper>
-            <main className="flex-1 p-4 md:p-8">
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены классы flex и flex-col --- */}
+            <main className="flex-1 p-4 md:p-8 flex flex-col">
                <CodeViewerModal
                    isOpen={isCodeViewerOpen}
                    onClose={() => setIsCodeViewerOpen(false)}
                    title="Исходный код: MyProfilePage.jsx"
                    code={myProfilePageSource}
                />
-                <div className="max-w-7xl mx-auto">
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены классы flex, flex-col и flex-1 --- */}
+                <div className="max-w-7xl mx-auto w-full flex flex-col flex-1">
                     <div className="flex items-center justify-between mb-6">
                         <h1 className="text-3xl font-bold">Панель администратора</h1>
                     </div>
@@ -84,7 +86,8 @@ const AdminPage = () => {
                         />
                     </div>
         
-                    <div className="mt-6">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены классы flex-1, flex и flex-col --- */}
+                    <div className="mt-6 flex-1 flex flex-col">
                         {renderContent()}
                     </div>
                 </div>
