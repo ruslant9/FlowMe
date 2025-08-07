@@ -2,12 +2,14 @@
 import React from 'react';
 
 const StatItem = ({ label, value, onClick, accentTextColor }) => {
-    const labelClasses = accentTextColor ? '' : 'text-slate-500 dark:text-white/60 group-hover:text-blue-300';
+    // Класс для подписи (label) изменен на статичный светло-серый.
+    const labelClasses = accentTextColor ? '' : 'text-slate-400 group-hover:text-blue-300';
     const valueClasses = accentTextColor ? '' : 'group-hover:text-blue-400';
     const labelStyle = accentTextColor ? { color: accentTextColor, opacity: 0.7 } : {};
 
     const content = (
         <div className="flex flex-col items-center">
+            {/* Основной текст (value) унаследует белый цвет. */}
             <p className={`text-base font-bold transition-colors ${valueClasses}`}>{value}</p>
             <p className={`text-[11px] transition-colors whitespace-nowrap ${labelClasses}`} style={labelStyle}>{label}</p>
         </div>
@@ -45,7 +47,6 @@ const ProfileStats = ({ stats, onShowUsers, accentTextColor }) => {
     }
 
     return (
-        // --- ИСПРАВЛЕНИЕ: Убираем flex-wrap и gap, используем justify-around ---
         <div className="flex items-start justify-around my-4">
             <StatItem label="Посты" value={stats.posts} accentTextColor={accentTextColor} />
             <StatItem label="Друзья" value={stats.friends} onClick={onShowUsers ? () => onShowUsers('friends') : undefined} accentTextColor={accentTextColor} />

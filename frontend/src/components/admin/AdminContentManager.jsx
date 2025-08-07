@@ -11,7 +11,6 @@ import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Компонент для кешированного изображения
 const CachedImage = ({ src }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) {
@@ -52,7 +51,6 @@ export const AdminContentManager = () => {
             });
             setItems(res.data.items);
             setTotalPages(res.data.totalPages);
-            setPage(res.data.currentPage);
         } catch (error) {
             toast.error(`Не удалось загрузить ${activeType}.`);
         } finally {
@@ -74,18 +72,20 @@ export const AdminContentManager = () => {
         }
     }, []);
 
-    useEffect(() => {
-        const debounce = setTimeout(() => {
-            setPage(1);
-            fetchData();
-        }, 300);
-        return () => clearTimeout(debounce);
-    }, [search]);
-
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Реструктуризация useEffect для корректной работы пагинации и поиска ---
+    // Этот хук сбрасывает на первую страницу при любом изменении фильтров или поиска
     useEffect(() => {
         setPage(1);
-        fetchData();
-    }, [activeType, sortBy, sortOrder]);
+    }, [search, activeType, sortBy, sortOrder]);
+
+    // Этот хук запускает загрузку данных при изменении любых параметров, включая страницу
+    useEffect(() => {
+        const debounce = setTimeout(() => {
+            fetchData();
+        }, search ? 300 : 0); // Добавляем задержку только при поиске
+        return () => clearTimeout(debounce);
+    }, [fetchData]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
     
     useEffect(() => {
         fetchAuxiliaryData();
@@ -168,12 +168,12 @@ export const AdminContentManager = () => {
                             return (
                                 <tr key={item._id} className="border-b dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800">
                                     <td className="p-2">
-                                        <Link to={linkTo} rel="noopener noreferrer" className="block w-10 h-10">
+                                        <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="block w-10 h-10">
                                             <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
                                         </Link>
                                     </td>
                                     <td className="p-2 font-semibold">
-                                        <Link to={linkTo} rel="noopener noreferrer" className="hover:underline hover:text-blue-500 transition-colors">
+                                        <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-blue-500 transition-colors">
                                             {item.name || item.title}
                                         </Link>
                                     </td>
@@ -206,12 +206,12 @@ export const AdminContentManager = () => {
                                        `/single/${item._id}`;
                         return (
                             <div key={item._id} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg flex gap-4 items-center">
-                                <Link to={linkTo} rel="noopener noreferrer" className="flex-shrink-0 w-14 h-14">
+                                <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-14 h-14">
                                     <CachedImage src={item.avatarUrl || item.coverArtUrl || item.albumArtUrl} />
                                 </Link>
                                 
                                 <div className="flex-1 min-w-0">
-                                    <Link to={linkTo} rel="noopener noreferrer" className="block">
+                                    <Link to={linkTo} target="_blank" rel="noopener noreferrer" className="block">
                                         <p className="font-bold truncate">{item.name || item.title}</p>
                                     </Link>
                                     {activeType !== 'artists' && (
@@ -254,10 +254,25 @@ export const AdminContentManager = () => {
                 </div>
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск..." className="pl-10 pr-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 w-full sm:w-64" />
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Добавлены стили для поля поиска --- */}
+                    <input 
+                        type="text" 
+                        value={search} 
+                        onChange={e => setSearch(e.target.value)} 
+                        placeholder="Поиск..." 
+                        className="pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-slate-800 w-full sm:w-64 border border-slate-200 dark:border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                 </div>
             </div>
             {renderContent()}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-2 mt-4">
+                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Назад</button>
+                    <span>Стр. {page} из {totalPages}</span>
+                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Вперед</button>
+                </div>
+            )}
         </div>
     );
 };
