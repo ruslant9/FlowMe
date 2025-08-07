@@ -5,12 +5,11 @@ import useTitle from '../hooks/useTitle';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus, MoreHorizontal } from 'lucide-react';
+import { Bell, Loader2, Trash2, User, Users, Heart, MessageCircle, UserPlus } from 'lucide-react';
 import { useModal } from '../hooks/useModal';
 import NotificationItem from '../components/NotificationItem';
 import { AnimatePresence } from 'framer-motion';
 import PostViewModal from '../components/modals/PostViewModal';
-import MorePanel from '../components/MorePanel';
 import PageWrapper from '../components/PageWrapper';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -31,13 +30,13 @@ const TabButton = ({ active, onClick, children, count }) => (
     </button>
 );
 
-const SubTabButton = ({ active, onClick, children }) => (
+const FilterButton = ({ active, onClick, children }) => (
     <button
         onClick={onClick}
-        className={`flex-shrink-0 px-2.5 py-1 text-[11px] font-semibold rounded-full transition-colors flex items-center space-x-1.5 ${
+        className={`flex-shrink-0 px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 ${
             active
-                ? 'bg-slate-200 dark:bg-white/20 text-slate-800 dark:text-white'
-                : 'text-slate-500 dark:text-white/60 hover:bg-slate-200/50 dark:hover:bg-white/10'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
         }`}
     >
         {children}
@@ -57,7 +56,6 @@ const NotificationsPage = () => {
     const { showConfirmation } = useModal();
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
     const [modalPostData, setModalPostData] = useState(null);
-    const [isMorePanelOpen, setIsMorePanelOpen] = useState(false);
 
     const openPostInModal = useCallback(async (postId, highlightCommentId) => {
         try {
@@ -234,7 +232,7 @@ const NotificationsPage = () => {
         return groups;
     }, [filteredNotifications]);
     
-    const subTabs = useMemo(() => {
+    const filters = useMemo(() => {
         const tabs = [{ key: 'all', label: 'Все', icon: Bell, onClick: () => setActiveFilter('all') }];
         if (activeTab === 'personal') {
             tabs.push({ key: 'requests', label: 'Заявки', icon: UserPlus, onClick: () => setActiveFilter('requests') });
@@ -248,11 +246,6 @@ const NotificationsPage = () => {
         );
         return tabs;
     }, [activeTab]);
-
-    const subVisibleCount = 3;
-    const subVisibleItems = subTabs.slice(0, subVisibleCount);
-    const subHiddenItems = subTabs.slice(subVisibleCount);
-    const isSubMoreButtonActive = subHiddenItems.some(item => item.key === activeFilter);
 
     return (
         <PageWrapper>
@@ -283,25 +276,12 @@ const NotificationsPage = () => {
                         </div>
                     </div>
                     
-                    <div className="hidden md:flex items-center flex-wrap gap-2 mb-6">
-                        {subTabs.map(tab => (
-                            <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
-                                <tab.icon size={14} /> <span>{tab.label}</span>
-                            </SubTabButton>
+                    <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar">
+                        {filters.map(tab => (
+                            <FilterButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
+                                <tab.icon size={16} /> <span>{tab.label}</span>
+                            </FilterButton>
                         ))}
-                    </div>
-                    
-                    <div className="md:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar">
-                        {subVisibleItems.map(tab => (
-                             <SubTabButton key={tab.key} active={activeFilter === tab.key} onClick={tab.onClick}>
-                                <tab.icon size={14} /> <span>{tab.label}</span>
-                            </SubTabButton>
-                        ))}
-                        {subHiddenItems.length > 0 && (
-                            <SubTabButton active={isSubMoreButtonActive} onClick={() => setIsMorePanelOpen(true)}>
-                                <MoreHorizontal size={14} /> <span>Еще</span>
-                            </SubTabButton>
-                        )}
                     </div>
                     
                     {loading ? (
@@ -336,21 +316,6 @@ const NotificationsPage = () => {
                         </div>
                     )}
                 </div>
-                
-                <MorePanel isOpen={isMorePanelOpen} onClose={() => setIsMorePanelOpen(false)}>
-                    {subHiddenItems.map(item => (
-                        <button
-                            key={item.key}
-                            onClick={() => { item.onClick(); setIsMorePanelOpen(false); }}
-                            className={`w-full flex items-center space-x-4 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors
-                            ${activeFilter === item.key ? 'bg-blue-100 dark:bg-blue-500/20 font-semibold' : ''}
-                            `}
-                        >
-                            <item.icon size={22} className={activeFilter === item.key ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'} />
-                            <span>{item.label}</span>
-                        </button>
-                    ))}
-                </MorePanel>
             </main>
         </PageWrapper>
     );
