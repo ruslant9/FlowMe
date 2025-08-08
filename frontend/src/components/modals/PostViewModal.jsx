@@ -474,7 +474,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                 
                                 <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
                                     {/* --- ШАПКА ПОСТА (ФИКСИРОВАННАЯ) --- */}
-                                    <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between space-x-3 flex-shrink-0">
+                                    <div className="p-4 pr-12 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between space-x-3 flex-shrink-0">
                                         {(() => {
                                             const author = activePost.community || activePost.user;
                                             const linkTo = activePost.community ? `/communities/${author._id}` : `/profile/${author._id}`;
