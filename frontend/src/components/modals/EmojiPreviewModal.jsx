@@ -30,8 +30,8 @@ const EmojiPreviewModal = ({ isOpen, onClose, emojiUrl }) => {
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         src={emojiUrl}
                         alt="Emoji Preview"
-                        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                        className="w-128 h-128 object-cover rounded-lg"
+                        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+                        className="w-80 h-80 object-contain"
                         onClick={(e) => e.stopPropagation()}
                     />
                 </motion.div>
