@@ -37,17 +37,24 @@ router.put('/privacy-settings', authMiddleware, async (req, res) => {
         const validFriendRequestSettings = ['everyone', 'private'];
         
         Object.keys(settings).forEach(key => {
-            const value = settings[key];
-            if (user.privacySettings[key] !== undefined) {
-                if (key === 'sendFriendRequest' && validFriendRequestSettings.includes(value)) {
-                    user.privacySettings[key] = value;
-                } else if ((key === 'hideDOBYear' || key === 'disableToasts') && typeof value === 'boolean') {
-                    user.privacySettings[key] = value;
-                } else if (validSettings.includes(value)) {
-                    user.privacySettings[key] = value;
-                }
+    const value = settings[key];
+    if (user.privacySettings[key] !== undefined) {
+        // Четко разделяем логику для каждого типа настроек
+        if (key === 'sendFriendRequest') {
+            if (validFriendRequestSettings.includes(value)) {
+                user.privacySettings[key] = value;
             }
-        });
+        } else if (key === 'hideDOBYear' || key === 'disableToasts') {
+            if (typeof value === 'boolean') {
+                user.privacySettings[key] = value;
+            }
+        } else if (validSettings.includes(value)) {
+            // Эта ветка теперь не будет выполняться для sendFriendRequest
+            // с некорректным значением.
+            user.privacySettings[key] = value;
+        }
+    }
+});
         
         await user.save();
         res.json({ message: 'Настройки приватности успешно обновлены.' });

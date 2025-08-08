@@ -1,4 +1,4 @@
-// frontend/src/App.jsx
+// frontend/src/App.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -63,7 +63,11 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
+  // --- ИЗМЕНЕНИЕ 1: Обновляем логику для isFullBleedLayout ---
   const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)/.test(location.pathname);
+  // --- ИЗМЕНЕНИЕ 2: Новая переменная для определения страниц с кнопкой "Назад" ---
+  const isDetailPageWithBackButton = /^\/(artist|album|single|communities(?!.*manage)|music\/playlist|messages)\/[^/]+/.test(location.pathname);
+  
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
@@ -121,7 +125,8 @@ const MainLayout = ({ children }) => {
       )}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || /^\/messages\/.+/.test(location.pathname) ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
+        // --- ИЗМЕНЕНИЕ 3: Обновляем условия видимости и позиционирования кнопки ---
+        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || /^\/messages\/.+/.test(location.pathname) ? 'hidden' : 'block'} ${isDetailPageWithBackButton ? 'right-4' : 'left-4'}`}
       >
         <Menu />
       </button>
@@ -160,6 +165,7 @@ const MainLayout = ({ children }) => {
           isMobileNavOpen={isMobileNavOpen}
           onMobileNavClose={() => setIsMobileNavOpen(false)}
         />
+        {/* --- ИЗМЕНЕНИЕ 1 (продолжение): Логика отступов теперь работает корректно благодаря обновленному isFullBleedLayout --- */}
         <div className={`flex-1 relative overflow-y-auto transform-gpu transition-all duration-300 ${isFullBleedLayout ? '' : 'pt-16 md:pt-0'}`}>
           {children}
         </div>
@@ -167,6 +173,8 @@ const MainLayout = ({ children }) => {
     </div>
   );
 };
+
+// ... (остальной код файла App.jsx остается без изменений) ...
 
 const BannedOverlay = ({ banInfo }) => {
     const { logout } = useWebSocket();
