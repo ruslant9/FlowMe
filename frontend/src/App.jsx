@@ -63,8 +63,8 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  // --- НАЧАЛО ИСПРАВЛЕНИЯ: Условие для полноэкранного режима теперь включает и /messages ---
-  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist)\/[^/]+/.test(location.pathname) || location.pathname.startsWith('/messages');
+  // --- НАЧАЛО ИСПРАВЛЕНИЯ: Условие для полноэкранного режима теперь более точное ---
+  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)\/[^/]+/.test(location.pathname);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
@@ -122,7 +122,7 @@ const MainLayout = ({ children }) => {
         </Suspense>
       )}
 
-      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка скрывается на всех полноэкранных страницах --- */}
+      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка скрывается на всех полноэкранных страницах, но видна на списке чатов --- */}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
         className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || isFullBleedLayout ? 'hidden' : 'block'} left-4`}
@@ -379,7 +379,10 @@ function App() {
             <Route path="/profile/:userId" element={<UserProfilePage />} />
             <Route path="/friends" element={<FriendsPage />} />
             <Route path="/messages" element={<MessagesPage />} />
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем отдельный маршрут для "Избранного" --- */}
+            <Route path="/messages/favorites" element={<MessagesPage />} />
             <Route path="/messages/:userId" element={<MessagesPage />} />
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/communities" element={<CommunitiesPage />} />

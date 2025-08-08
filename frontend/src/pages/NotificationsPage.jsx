@@ -33,20 +33,6 @@ const TabButton = ({ active, onClick, children, count, icon: Icon }) => (
     </button>
 );
 
-const SubTabButton = ({ active, onClick, children, icon: Icon }) => (
-    <button
-        onClick={onClick}
-        className={`flex-shrink-0 px-2.5 py-1 text-[11px] font-semibold rounded-full transition-colors flex items-center space-x-1.5 ${
-            active
-                ? 'bg-slate-200 dark:bg-white/20 text-slate-800 dark:text-white'
-                : 'text-slate-500 dark:text-white/60 hover:bg-slate-200/50 dark:hover:bg-white/10'
-        }`}
-    >
-        {Icon && <Icon size={14} />} 
-        <span>{children}</span>
-    </button>
-);
-
 const NotificationsPage = () => {
     useTitle('Уведомления');
     const [activeTab, setActiveTab] = useState('personal');
@@ -248,21 +234,18 @@ const NotificationsPage = () => {
         return tabs;
     }, [activeTab]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Создаем динамический массив для навигации ---
     const navItems = useMemo(() => {
         const baseItems = [
             { key: 'personal', label: 'Личные', icon: User, onClick: () => setActiveTab('personal'), count: notificationsData.personal.unreadCount },
             { key: 'community', label: 'Сообщества', icon: Users, onClick: () => setActiveTab('community'), count: notificationsData.community.unreadCount }
         ];
         
-        // Добавляем кнопку "Очистить" только если есть что очищать
         if (notificationsData[activeTab].list.length > 0) {
             baseItems.push({
                 key: 'clear',
                 label: 'Очистить все',
                 icon: Trash2,
                 onClick: handleDeleteAll,
-                // Добавляем кастомные классы для красного цвета
                 className: 'text-red-500 dark:text-red-400 hover:bg-red-500/10',
                 activeClassName: 'text-red-500 dark:text-red-400 bg-red-500/10'
             });
@@ -270,7 +253,6 @@ const NotificationsPage = () => {
 
         return baseItems;
     }, [activeTab, notificationsData, handleDeleteAll]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return (
         <PageWrapper>
@@ -287,10 +269,8 @@ const NotificationsPage = () => {
                         <div className="flex items-center space-x-3">
                             <h1 className="text-3xl font-bold">Уведомления</h1>
                         </div>
-                        {/* --- ИЗМЕНЕНИЕ: Кнопка "Очистить все" удалена отсюда и перенесена в навигацию --- */}
                     </div>
                     <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 -mx-4 px-4 overflow-x-auto">
-                        {/* Фильтруем кнопку "Очистить" для десктопных табов и рендерим ее отдельно */}
                         {navItems.filter(item => item.key !== 'clear').map(item => (
                             <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon} count={item.count}>
                                 {item.label}
@@ -305,18 +285,28 @@ const NotificationsPage = () => {
                     <div className="md:hidden mb-6">
                         <ResponsiveNav
                             items={navItems}
-                            visibleCount={3} // Показываем 2 табы + кнопку "Очистить" если есть место
+                            visibleCount={3}
                             activeKey={activeTab}
                         />
                     </div>
                     
-                    <div className="mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                    <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700 mb-4 -mx-4 px-4">
+                         {subTabs.map(item => (
+                            <TabButton key={item.key} active={activeFilter === item.key} onClick={item.onClick} icon={item.icon}>
+                                {item.label}
+                            </TabButton>
+                        ))}
+                    </div>
+
+                    <div className="md:hidden mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
                         <ResponsiveNav 
-                            items={subTabs.map(tab => ({ ...tab, label: tab.label }))}
+                            items={subTabs}
                             visibleCount={4}
                             activeKey={activeFilter}
                         />
                     </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     
                     {loading ? (
                         <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></div>

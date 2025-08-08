@@ -24,7 +24,6 @@ const MessagesPage = () => {
 
     const [conversations, setConversations] = useState([]);
     const [activeConversation, setActiveConversation] = useState(null);
-    // --- ИЗМЕНЕНИЕ 1: `loading` теперь отвечает только за первоначальную загрузку списка ---
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [typingStatuses, setTypingStatuses] = useState({});
@@ -43,6 +42,9 @@ const MessagesPage = () => {
     useEffect(() => {
         activeConversationRef.current = activeConversation;
     }, [activeConversation]);
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Определяем, находимся ли мы в "Избранном" ---
+    const isFavoritesChatActive = location.pathname === '/messages/favorites';
 
     const refetchSingleConversation = useCallback(async (conversationId) => {
         try {
@@ -96,7 +98,6 @@ const MessagesPage = () => {
     }, []);
 
     const findOrCreateConversationWithUser = useCallback(async (userId) => {
-        // Эта функция теперь не устанавливает глобальный лоадер
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/messages/conversations/with/${userId}`, {
@@ -120,8 +121,6 @@ const MessagesPage = () => {
         }
     }, [navigate]);
     
-    // --- ИЗМЕНЕНИЕ 2: Разделяем логику на два useEffect ---
-    // Этот useEffect отвечает только за первоначальную загрузку данных и подписки на WebSocket
     useEffect(() => {
         fetchConversations(true);
 
@@ -191,27 +190,33 @@ const MessagesPage = () => {
         };
     }, [fetchConversations, navigate, currentUser, refetchSingleConversation]);
 
-    // Этот useEffect отвечает за открытие нужного чата при изменении URL или state
     useEffect(() => {
         const conversationFromState = location.state?.conversation;
-
-        if (userIdFromParams) {
-            // Сначала ищем чат в уже загруженном списке для мгновенного открытия
+        
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика открытия чата ---
+        if (isFavoritesChatActive) {
+            const savedMessagesConv = conversations.find(c => c.isSavedMessages);
+            if (savedMessagesConv) {
+                setActiveConversation(savedMessagesConv);
+            } else if (!loading) {
+                // Если чат "Избранное" еще не создан, он будет создан при первом запросе `fetchConversations`.
+                // Этот useEffect сработает снова, когда `conversations` обновится.
+            }
+        } else if (userIdFromParams) {
             const existingConv = conversations.find(c => c.interlocutor?._id === userIdFromParams);
             if (existingConv) {
                 setActiveConversation(existingConv);
-            } else {
-                // Если не нашли (например, прямая ссылка на новый чат), то запрашиваем его
+            } else if (!loading) {
                 findOrCreateConversationWithUser(userIdFromParams);
             }
         } else if (conversationFromState) {
             setActiveConversation(conversationFromState);
-            navigate(location.pathname, { replace: true, state: {} }); // Очищаем state после использования
-        } else if (!userIdFromParams) {
-             // Если мы на главной странице /messages, сбрасываем активный чат
+            navigate(location.pathname, { replace: true, state: {} });
+        } else if (location.pathname === '/messages') {
             setActiveConversation(null);
         }
-    }, [userIdFromParams, location.state, conversations, findOrCreateConversationWithUser, navigate, location.pathname]);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    }, [userIdFromParams, location.state, conversations, findOrCreateConversationWithUser, navigate, location.pathname, isFavoritesChatActive, loading]);
 
 
     const cancelDeletion = () => {
@@ -295,12 +300,11 @@ const MessagesPage = () => {
     const pinnedCount = conversations.filter(c => c.isPinned).length;
     const pinLimit = currentUser?.premium?.isActive ? 8 : 4;
 
-    // --- ИЗМЕНЕНИЕ 3: Упрощаем обработчик выбора ---
-    // Теперь он просто устанавливает состояние, а useEffect выше подхватит изменение
     const handleSelectConversation = (conv) => {
-        const newPath = conv.isSavedMessages ? '/messages' : `/messages/${conv.interlocutor._id}`;
-        navigate(newPath); // Просто навигация, без replace
-        setActiveConversation(conv);
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Навигация на новый URL для "Избранного" ---
+        const newPath = conv.isSavedMessages ? '/messages/favorites' : `/messages/${conv.interlocutor._id}`;
+        navigate(newPath);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     };
 
     return (

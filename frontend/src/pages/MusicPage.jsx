@@ -71,8 +71,8 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.newReleases?.length > 0 && (
                 <section>
                     <SectionHeader title="Новинки" icon={Disc} />
-                    <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                        {recommendations.newReleases.slice(0, 10).map(track => (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                        {recommendations.newReleases.slice(0, 6).map(track => (
                             <RecommendationCard 
                                 key={track._id}
                                 track={track}
@@ -90,8 +90,8 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.popularHits?.length > 0 && (
                 <section>
                     <SectionHeader title="Популярные хиты" icon={Music} />
-                    <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                        {recommendations.popularHits.slice(0, 10).map((track, index) => (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                        {recommendations.popularHits.slice(0, 6).map((track, index) => (
                             <RecommendationCard 
                                 key={track._id}
                                 track={track}
@@ -110,9 +110,9 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.popularArtists?.length > 0 && (
                  <section>
                     <SectionHeader title="Популярные исполнители" icon={MicVocal} />
-                    <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-y-4 gap-x-2">
-                         {recommendations.popularArtists.slice(0, 10).map(artist => (
-                             <ArtistAvatar key={artist._id} artist={artist} size="md" />
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-y-4 gap-x-2">
+                         {recommendations.popularArtists.slice(0, 12).map(artist => (
+                             <ArtistAvatar key={artist._id} artist={artist} size="sm" />
                         ))}
                     </div>
                 </section>

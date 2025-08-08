@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Avatar from '../Avatar';
 import { Link } from 'react-router-dom';
 
-const ArtistAvatar = ({ artist }) => {
+const ArtistAvatar = ({ artist, size = 'xl' }) => {
     // Проверка на случай, если данные еще не загрузились или некорректны
     if (!artist || !artist._id) return null;
     
@@ -29,9 +29,9 @@ const ArtistAvatar = ({ artist }) => {
                 <Avatar
                     username={artistName}
                     avatarUrl={artist.avatarUrl}
-                    size="xl"
+                    size={size}
                 />
-                <p className="text-sm font-semibold text-center truncate w-24 group-hover:text-blue-400 transition-colors">
+                <p className={`text-sm font-semibold text-center truncate ${size === 'sm' ? 'w-16' : 'w-24'} group-hover:text-blue-400 transition-colors`}>
                     {artistName}
                 </p>
             </motion.div>

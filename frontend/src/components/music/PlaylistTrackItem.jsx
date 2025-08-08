@@ -75,13 +75,12 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
     };
 
     return (
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Убрана первая колонка `auto` из grid-cols, теперь `grid-cols-[1fr_auto]` ---
         <div 
             onDoubleClick={onPlay} 
-            className={`grid grid-cols-[auto_1fr_auto] items-center gap-x-4 px-2 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
+            className={`grid grid-cols-[1fr_auto] items-center gap-x-4 px-2 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
         >
-            <div className="flex items-center justify-center w-8 text-slate-600 dark:text-slate-400">
-                <span style={isCurrent ? { color: accentColor } : {}}>{index}</span>
-            </div>
+            {/* --- Блок с номером был полностью удален --- */}
             <div className="flex items-center space-x-4 min-w-0">
                 <div className="relative w-10 h-10 rounded object-cover flex-shrink-0 group/cover">
                     <CachedImage 
@@ -123,12 +122,14 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                             </p>
                         </Link>
                     </div>
+                    {/* --- ИЗМЕНЕНИЕ: Уменьшен размер шрифта для артистов на мобильных устройствах --- */}
                     <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate">
                         {renderArtistLinks(track.artist)}
                     </p>
                 </div>
             </div>
-            <div className="flex items-center space-x-4 text-slate-600 dark:text-slate-400">
+            {/* --- ИЗМЕНЕНИЕ: Уменьшен `space-x` для иконок --- */}
+            <div className="flex items-center space-x-2 md:space-x-4 text-slate-600 dark:text-slate-400">
                 {onRemoveFromPlaylist ? (
                      <button onClick={() => onRemoveFromPlaylist(track._id)} className="transition-colors text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-red-500">
                         <Trash2 size={18} />
