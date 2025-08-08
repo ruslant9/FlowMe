@@ -127,7 +127,7 @@ const InterestSelectionModal = ({ isOpen, onClose, onSave, initialSelectedIntere
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="ios-glass-final w-full max-w-3xl p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
+                    className="ios-glass-final w-full max-w-3xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                 >
                     <div className="flex justify-between items-center mb-4 flex-shrink-0">
                         <h2 className="text-xl font-bold">Выберите интересы</h2>
