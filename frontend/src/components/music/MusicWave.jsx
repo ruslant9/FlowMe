@@ -7,44 +7,68 @@ const MusicWave = ({ onPlay }) => {
     const bars = Array.from({ length: 30 });
 
     return (
-        <div 
+        <motion.div
             onClick={onPlay}
-            className="p-6 rounded-2xl cursor-pointer bg-gradient-to-br from-green-400 via-cyan-500 to-blue-600 group relative overflow-hidden h-40 flex flex-col justify-between"
+            className="p-6 rounded-3xl cursor-pointer relative overflow-hidden h-44 flex flex-col justify-between"
+            style={{
+                background: 'linear-gradient(135deg, #1db954 0%, #191414 100%)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4), 0 0 40px rgba(29,185,84,0.3)'
+            }}
+            whileHover={{ scale: 1.02 }}
         >
-            <div className="absolute inset-0 flex items-end justify-between px-4 pb-2 pointer-events-none z-0">
+            {/* Свечение в фоне */}
+            <div className="absolute inset-0">
+                <div
+                    className="absolute w-72 h-72 bg-green-400/30 blur-3xl rounded-full -top-20 -left-20"
+                    style={{ filter: 'blur(80px)' }}
+                />
+                <div
+                    className="absolute w-72 h-72 bg-emerald-500/20 blur-3xl rounded-full -bottom-20 -right-20"
+                    style={{ filter: 'blur(80px)' }}
+                />
+            </div>
+
+            {/* Волны */}
+            <div className="absolute inset-0 flex items-end justify-between px-4 pb-3 pointer-events-none z-0">
                 {bars.map((_, i) => (
                     <motion.div
                         key={i}
-                        className="bg-white/30 rounded-full"
-                        style={{ width: '2%', height: `${Math.random() * 60 + 10}%` }}
+                        className="bg-white/40 rounded-full"
+                        style={{ width: '2%', height: `${Math.random() * 50 + 20}%` }}
                         animate={{
-                            scaleY: [1, 0.2, 1],
+                            scaleY: [1, 0.3, 1],
                         }}
                         transition={{
-                            duration: Math.random() * 0.5 + 0.8,
+                            duration: Math.random() * 0.5 + 0.7,
                             repeat: Infinity,
                             repeatType: 'mirror',
                             ease: 'easeInOut',
-                            delay: Math.random() * 1,
+                            delay: i * 0.05
                         }}
                     />
                 ))}
             </div>
-            
+
+            {/* Текст + кнопка */}
             <div className="relative z-10 flex items-start justify-between">
                 <div>
-                    <p className="text-white font-semibold">Моя волна</p>
-                    <h3 className="text-white text-4xl font-extrabold" style={{ textShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>Поток музыки</h3>
+                    <p className="text-white/80 font-medium text-sm tracking-wide">Моя волна</p>
+                    <h3 className="text-white text-4xl font-extrabold leading-tight">
+                        Поток музыки
+                    </h3>
                 </div>
-                <motion.button 
-                    className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white flex-shrink-0"
-                    whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.3)' }}
+                <motion.button
+                    className="w-16 h-16 bg-green-500 shadow-lg shadow-green-500/40 rounded-full flex items-center justify-center text-white flex-shrink-0"
+                    whileHover={{
+                        scale: 1.15,
+                        boxShadow: '0 0 25px rgba(29,185,84,0.8)'
+                    }}
                     whileTap={{ scale: 0.9 }}
                 >
                     <Play size={32} fill="currentColor" />
                 </motion.button>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
