@@ -119,19 +119,19 @@ const InterestSelectionModal = ({ isOpen, onClose, onSave, initialSelectedIntere
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={handleClose}
-                // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Адаптивное позиционирование ---
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[60] p-4 pt-20 md:p-4"
-                // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Центрируем контент на всех экранах ---
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
             >
                 <motion.div
-                    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Анимация выезда снизу и адаптивные стили ---
-                    initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
-                    exit={{ y: "100%" }}
-                    transition={{ type: "spring", stiffness: 400, damping: 40 }}
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Анимация и стили теперь едины для всех экранов ---
+                    initial={{ scale: 0.95, y: 50 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.95, y: 50 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="ios-glass-final w-full max-w-3xl p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[85vh]"
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
+                    className="ios-glass-final w-full max-w-3xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
                 >
                     <div className="flex justify-between items-center mb-4 flex-shrink-0">
                         <h2 className="text-xl font-bold">Выберите интересы</h2>

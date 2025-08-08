@@ -213,7 +213,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="flex items-center space-x-3 mb-4">
+                                         <div className="flex items-center space-x-3 mb-4 flex-shrink-0">
                                             <Avatar username={currentUser?.username} fullName={currentUser?.fullName} avatarUrl={currentUser?.avatar} size="md"/>
                                             <div>
                                                 <Listbox value={selectedCommunity} onChange={setSelectedCommunity} disabled={fetchingCommunities}>
@@ -266,7 +266,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                             <AnimatePresence>{showPollCreator && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="space-y-3"><input type="text" placeholder="Вопрос опроса" value={pollData.question} onChange={(e) => setPollData(p => ({ ...p, question: e.target.value }))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" /><div className="space-y-2">{pollData.options.map((option, index) => <div key={index} className="flex items-center space-x-2"><input type="text" placeholder={`Вариант ${index + 1}`} value={option} onChange={(e) => handlePollChange(index, e.target.value)} className="flex-grow p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" />{pollData.options.length > 2 && <button type="button" onClick={() => removePollOption(index)}><XCircle size={18}/></button>}</div>)}</div><button type="button" onClick={addPollOption} className="text-sm">+ Добавить вариант</button><div className="flex flex-wrap gap-4 pt-2 border-t"><ToggleSwitch checked={isAnonymousPoll} onChange={setIsAnonymousPoll} label="Анонимный опрос" /><div className="flex items-center space-x-2"><label>Завершить:</label><DatePicker selected={pollExpiresAt} onChange={setPollExpiresAt} showTimeSelect dateFormat="d MMM, yyyy HH:mm" locale={ru} isClearable placeholderText="Никогда" className="w-48 text-sm p-1.5 bg-slate-200 dark:bg-slate-700 rounded-md" portalId="modal-root" /></div></div></motion.div>}</AnimatePresence>
                                         </div>
 
-                                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
+                                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-white/10 flex-shrink-0">
                                             <div className="flex items-center space-x-1 flex-wrap gap-y-2">
                                                 {[
                                                     { icon: ImageIcon, title: "Фото/Видео", onClick: () => fileInputRef.current.click() },
