@@ -112,7 +112,7 @@ const AdminUserManagementOverlay = ({ isOpen, onClose, user, onSuccess }) => {
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 400, damping: 40 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="ios-glass-final w-full max-w-lg rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
+                    className="ios-glass-final w-full max-w-lg rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[85vh]"
                 >
                     <div className="p-4 flex-shrink-0">
                         <div className="w-10 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-2 md:hidden"></div>
@@ -122,7 +122,7 @@ const AdminUserManagementOverlay = ({ isOpen, onClose, user, onSuccess }) => {
                         </div>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto space-y-6 px-4 pb-4 no-scrollbar">
+                    <div className="flex-1 overflow-y-auto space-y-6 px-4 pb-4 no-scrollbar overscroll-contain">
                         <div className="flex items-center space-x-4 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
                             <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} size="lg" />
                             <div>

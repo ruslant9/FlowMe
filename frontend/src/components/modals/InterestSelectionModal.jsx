@@ -110,10 +110,8 @@ const InterestSelectionModal = ({ isOpen, onClose, onSave, initialSelectedIntere
         );
     }, [searchQuery]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем проверку isOpen ---
     if (!isOpen) return null;
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем все в ReactDOM.createPortal ---
     return ReactDOM.createPortal(
         <AnimatePresence>
             <motion.div
@@ -121,23 +119,28 @@ const InterestSelectionModal = ({ isOpen, onClose, onSave, initialSelectedIntere
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={handleClose}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+                // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Адаптивное позиционирование ---
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[60] p-4 pt-20 md:p-4"
+                // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
             >
                 <motion.div
-                    initial={{ scale: 0.95, y: 20 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.95, y: 20 }}
+                    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Анимация выезда снизу и адаптивные стили ---
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ type: "spring", stiffness: 400, damping: 40 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="ios-glass-final w-full max-w-3xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
+                    className="ios-glass-final w-full max-w-3xl p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[85vh]"
+                    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
                 >
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center mb-4 flex-shrink-0">
                         <h2 className="text-xl font-bold">Выберите интересы</h2>
                         <p className={`font-semibold ${selectedInterests.length === MAX_INTERESTS ? 'text-red-500' : 'text-slate-500 dark:text-white/60'}`}>
                             {selectedInterests.length} / {MAX_INTERESTS}
                         </p>
                     </div>
                     
-                    <div className="relative mb-4">
+                    <div className="relative mb-4 flex-shrink-0">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                         <input
                             type="text"
@@ -148,7 +151,7 @@ const InterestSelectionModal = ({ isOpen, onClose, onSave, initialSelectedIntere
                         />
                     </div>
 
-                    <div className="flex-1 overflow-y-auto -mx-2 px-2 py-2">
+                    <div className="flex-1 overflow-y-auto -mx-2 px-2 py-2 min-h-0">
                         {filteredInterests ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                                 {filteredInterests.length > 0 ? (
@@ -188,7 +191,7 @@ const InterestSelectionModal = ({ isOpen, onClose, onSave, initialSelectedIntere
                         )}
                     </div>
                     
-                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 dark:border-white/10">
+                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 dark:border-white/10 flex-shrink-0">
                         <button onClick={handleClose} className="px-6 py-2.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors flex items-center space-x-2">
                             <ArrowLeft size={18} />
                             <span>Назад</span>
@@ -200,7 +203,7 @@ const InterestSelectionModal = ({ isOpen, onClose, onSave, initialSelectedIntere
                 </motion.div>
             </motion.div>
         </AnimatePresence>,
-        document.getElementById('modal-root') // --- Целевой контейнер для портала ---
+        document.getElementById('modal-root')
     );
 };
 

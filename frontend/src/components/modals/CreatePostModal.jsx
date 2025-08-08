@@ -16,7 +16,7 @@ import AttachedTrack from '../music/AttachedTrack';
 import Avatar from '../Avatar';
 import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage';
-import EmojiPickerPopover from '../EmojiPickerPopover'; // --- ИЗМЕНЕНИЕ 1: Импортируем новый компонент ---
+import { useEmojiPicker } from '../../hooks/useEmojiPicker';
 
 registerLocale('ru', ru);
 
@@ -41,6 +41,7 @@ const ToggleSwitch = ({ checked, onChange, label }) => (
 
 const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const { currentUser, loadingUser } = useUser();
+
     const [text, setText] = useState('');
     const [images, setImages] = useState([]);
     const [commentsDisabled, setCommentsDisabled] = useState(false);
@@ -49,10 +50,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const fileInputRef = useRef(null);
     const smileButtonRef = useRef(null);
     const textareaRef = useRef(null);
-
-    // --- ИЗМЕНЕНИЕ 2: Используем локальное состояние вместо хука ---
-    const [isPickerVisible, setIsPickerVisible] = useState(false);
-    
+    const { showPicker } = useEmojiPicker();
     const [selectedCommunity, setSelectedCommunity] = useState(null);
     const [myCommunities, setMyCommunities] = useState([]);
     const [fetchingCommunities, setFetchingCommunities] = useState(false);
@@ -201,13 +199,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                 <>
                     <ImageAttachmentModal isOpen={!!editingImage} onClose={() => setEditingImage(null)} file={editingImage?.file} onSave={handleEditComplete} showCaptionInput={false} />
                     <AttachTrackModal isOpen={isAttachTrackModalOpen} onClose={() => setIsAttachTrackModalOpen(false)} onSelectTrack={setAttachedTrack} />
-                    {/* --- ИЗМЕНЕНИЕ 3: Рендерим EmojiPickerPopover здесь --- */}
-                    <EmojiPickerPopover
-                        isOpen={isPickerVisible}
-                        targetRef={smileButtonRef}
-                        onEmojiClick={(emojiObject) => setText(prev => prev + emojiObject.emoji)}
-                        onClose={() => setIsPickerVisible(false)}
-                    />
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={(e) => e.stopPropagation()} className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
                             <div className="flex justify-between items-center mb-6">
@@ -269,7 +260,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                         </div>
 
                                         <div className="flex-1 overflow-y-auto pr-2 -mr-4 space-y-4">
-                                            <textarea ref={textareaRef} value={text} onChange={handleTextareaChange} placeholder="Что у вас нового?" className="w-full text-xl bg-transparent resize-none focus:outline-none placeholder-slate-500 dark:placeholder-white/50 min-h-[80px]" />
+                                            <textarea ref={textareaRef} value={text} onChange={handleTextareaChange} placeholder="Что у вас нового?" className="w-full text-xl bg-transparent resize-none placeholder-slate-500 dark:placeholder-white/50 min-h-[80px] border-b border-slate-200 dark:border-slate-700/50 pb-2 focus:outline-none focus:ring-0 focus:border-blue-500" />
                                             {images.length > 0 && <div className="grid grid-cols-3 md:grid-cols-5 gap-2">{images.map((img, index) => <div key={index} className="relative aspect-square"><CachedImage src={img.preview} /><button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full"><X size={14}/></button></div>)}</div>}
                                             {attachedTrack && <div className="relative"><div className="p-2 bg-slate-100 dark:bg-slate-800/50 rounded-lg"><AttachedTrack track={attachedTrack} /></div><button type="button" onClick={() => setAttachedTrack(null)} className="absolute top-2 right-2 p-1"><XCircle size={18}/></button></div>}
                                             <AnimatePresence>{showPollCreator && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="space-y-3"><input type="text" placeholder="Вопрос опроса" value={pollData.question} onChange={(e) => setPollData(p => ({ ...p, question: e.target.value }))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" /><div className="space-y-2">{pollData.options.map((option, index) => <div key={index} className="flex items-center space-x-2"><input type="text" placeholder={`Вариант ${index + 1}`} value={option} onChange={(e) => handlePollChange(index, e.target.value)} className="flex-grow p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" />{pollData.options.length > 2 && <button type="button" onClick={() => removePollOption(index)}><XCircle size={18}/></button>}</div>)}</div><button type="button" onClick={addPollOption} className="text-sm">+ Добавить вариант</button><div className="flex flex-wrap gap-4 pt-2 border-t"><ToggleSwitch checked={isAnonymousPoll} onChange={setIsAnonymousPoll} label="Анонимный опрос" /><div className="flex items-center space-x-2"><label>Завершить:</label><DatePicker selected={pollExpiresAt} onChange={setPollExpiresAt} showTimeSelect dateFormat="d MMM, yyyy HH:mm" locale={ru} isClearable placeholderText="Никогда" className="w-48 text-sm p-1.5 bg-slate-200 dark:bg-slate-700 rounded-md" portalId="modal-root" /></div></div></motion.div>}</AnimatePresence>
@@ -282,16 +273,15 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                     { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                                     { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                                     { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                    // --- ИЗМЕНЕНИЕ 4: Обновляем onClick ---
-                                                    { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: () => setIsPickerVisible(v => !v) },
-                                                ].map((item, idx) => (
-                                                    item.isDatePicker ?
-                                                        <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={20} /></button>} /> :
-                                                        <button key={idx} type="button" ref={item.ref} onClick={(e) => { e.preventDefault(); item.onClick(); }} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={20} /></button>
+                                                    { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: () => showPicker(smileButtonRef, (emojiObject) => setText(prev => prev + emojiObject.emoji)) },
+                                                ].map((item, idx) => ( // Уменьшаем кнопки для мобильных устройств
+                                                     item.isDatePicker ?
+                                                        <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} /> :
+                                                        <button key={idx} type="button" ref={item.ref} onClick={(e) => { e.preventDefault(); item.onClick(); }} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>
                                                 ))}
                                                 <input type="file" ref={fileInputRef} hidden multiple accept="image/*" onChange={handleFileChange} />
                                             </div>
-                                            <button type="submit" disabled={loading} className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center">{loading && <Loader2 className="animate-spin mr-2"/>}{scheduledFor ? 'Запланировать' : 'Опубликовать'}</button>
+                                            <button type="submit" disabled={loading} className="px-5 py-2 text-sm md:px-6 md:py-2.5 md:text-base bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center">{loading && <Loader2 className="animate-spin mr-2"/>}{scheduledFor ? 'Запланировать' : 'Опубликовать'}</button>
                                         </div>
                                     </>
                                 )}

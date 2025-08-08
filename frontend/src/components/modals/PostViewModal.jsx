@@ -16,16 +16,34 @@ import ImageEditorModal from './ImageEditorModal';
 import { Link } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import Comment from '../Comment';
+import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
 import EmojiPickerPopover from '../EmojiPickerPopover';
 import { useCachedImage } from '../../hooks/useCachedImage';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
 const EMOJI_PICKER_WIDTH_DESKTOP = 350;
 const EMOJI_PICKER_HEIGHT_MOBILE = 350;
+
+const COMMENT_PAGE_LIMIT = 5;
+
+const CachedMotionImage = ({ src, ...props }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+
+    if (loading) {
+        return (
+            <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
+                <Loader2 className="w-10 h-10 animate-spin text-white" />
+            </motion.div>
+        );
+    }
+
+    return <motion.img src={finalSrc} {...props} />;
+};
 
 const CachedImage = ({ src, alt, className }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -66,7 +84,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const [commentText, setCommentText] = useState('');
     const currentUserId = currentUser?._id;
     const [replyingTo, setReplyingTo] = useState(null);
-    const [pickerPosition, setPickerPosition] = useState('top');
+    const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [commentSelectionMode, setCommentSelectionMode] = useState(false);
     const [selectedComments, setSelectedComments] = useState([]);
@@ -74,29 +92,17 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const { showConfirmation } = useModal();
     const commentInputRef = useRef(null);
     const [isEditingPostImage, setIsEditingPostImage] = useState(false);
-
     const [sortOrder, setSortOrder] = useState('newest');
     const [showSortMenu, setShowSortMenu] = useState(false);
     const sortMenuRef = useRef(null);
     const postMenuRef = useRef(null);
     const [isSendingComment, setIsSendingComment] = useState(false);
     const smileButtonRef = useRef(null);
-    const pickerRef = useRef(null);
-
     const [commentAs, setCommentAs] = useState(null);
     const [commentingOptions, setCommentingOptions] = useState([]);
     const previousPostIdRef = useRef(null);
+    const isMobile = useMediaQuery('(max-width: 767px)');
     
-    const emojiPickerDimensions = useMemo(() => {
-        const isMobile = window.innerWidth < 768;
-        return {
-            height: isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : EMOJI_PICKER_HEIGHT_DESKTOP,
-            width: isMobile ? '100%' : EMOJI_PICKER_WIDTH_DESKTOP,
-        };
-    }, []);
-
-    const [isPickerVisible, setIsPickerVisible] = useState(false);
-
     const userVote = useMemo(() => {
         if (!currentUser || !activePost?.poll?.options) return null;
         for (const option of activePost.poll.options) {
@@ -154,18 +160,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
 
         fetchCommentingOptions();
     }, [currentUser, activePost]);
-
-    const togglePicker = () => { 
-        if (smileButtonRef.current) {
-            const rect = smileButtonRef.current.getBoundingClientRect();
-            if (window.innerHeight - rect.bottom < emojiPickerDimensions.height) {
-                setPickerPosition('top');
-            } else {
-                setPickerPosition('bottom');
-            }
-        }
-        setIsPickerVisible(v => !v);
-    };
 
     const sortLabels = {
         newest: 'Сначала новые',
@@ -431,28 +425,15 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
-                        style={{ maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' }}
+                        style={isMobile ? { maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' } : {}}
                         className="overflow-hidden w-full max-w-screen-2xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
                     >
-                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors z-[101] bg-white/30 dark:bg-black/30 rounded-full p-1"><X size={24} /></button>
-
                         {isLoading && !activePost ? (
                             <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
                         ) : activePost ? (
                             <>
-                                {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
-                                
-                                <div className={`w-full ${hasImages ? 'md:w-3/5' : 'hidden md:flex md:w-2/5'} flex-shrink-0 bg-black flex items-center justify-center relative`}>
-                                    {hasImages ? (
-                                        <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
-                                    ) : (
-                                        <div className="p-8">
-                                            {/* Контент, который будет показан, когда нет картинки */}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
-                                    <div className="p-4 pr-12 border-b border-slate-200 dark:border-slate-700 flex items-center space-x-3 flex-shrink-0">
+                                <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0 order-1">
+                                    <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                                         <Link to={activePost.community ? `/communities/${activePost.community._id}` : `/profile/${activePost.user._id}`} onClick={onClose} className="flex items-center space-x-3 group flex-1 min-w-0">
                                             {(() => {
                                                 const author = activePost.community || activePost.user;
@@ -473,54 +454,57 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                 <p className="text-xs text-slate-500 dark:text-slate-400">{formatDistanceToNow(new Date(activePost.createdAt), { addSuffix: true, locale: customRuLocale })}</p>
                                             </div>
                                         </Link>
-                                        {activePost.user._id === currentUserId && (
-                                            <div ref={postMenuRef} className="relative ml-auto flex-shrink-0">
-                                                <button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-                                                    <MoreHorizontal size={20}/>
-                                                </button>
-                                                {showPostMenu && (
-                                                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10 overflow-hidden p-1 space-y-1">
-                                                        <button onClick={handleDeletePost} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors">
-                                                            <Trash2 size={16} />
-                                                            <span>Удалить пост</span>
-                                                        </button>
-                                                        {activePost.comments.length > 0 && (
-                                                            <>
-                                                                <div className="my-1 h-px bg-slate-200 dark:bg-slate-700"></div>
-                                                                <button onClick={() => { handleDeleteAllComments(); setShowPostMenu(false); }} disabled={!!editingCommentId} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors">
-                                                                    <Trash2 size={16} />
-                                                                    <span>Удалить все комм.</span>
-                                                                </button>
-                                                                <button onClick={() => { setCommentSelectionMode(true); setSelectedComments([]); setShowPostMenu(false); }} disabled={!!editingCommentId} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors">
-                                                                    <Check size={16} />
-                                                                    <span>Выбрать комм.</span>
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                        <div className="flex items-center space-x-2">
+                                            {activePost.user._id === currentUserId && (
+                                                <div ref={postMenuRef} className="relative">
+                                                    <button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+                                                        <MoreHorizontal size={20}/>
+                                                    </button>
+                                                    {showPostMenu && (
+                                                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10 overflow-hidden p-1 space-y-1">
+                                                            <button onClick={handleDeletePost} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors">
+                                                                <Trash2 size={16} />
+                                                                <span>Удалить пост</span>
+                                                            </button>
+                                                            {activePost.comments.length > 0 && (
+                                                                <>
+                                                                    <div className="my-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                                                                    <button onClick={() => { handleDeleteAllComments(); setShowPostMenu(false); }} disabled={!!editingCommentId} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors">
+                                                                        <Trash2 size={16} />
+                                                                        <span>Удалить все комм.</span>
+                                                                    </button>
+                                                                    <button onClick={() => { setCommentSelectionMode(true); setSelectedComments([]); setShowPostMenu(false); }} disabled={!!editingCommentId} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors">
+                                                                        <Check size={16} />
+                                                                        <span>Выбрать комм.</span>
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X size={20}/></button>
+                                        </div>
                                     </div>
                                     
-                                    <div className="flex-1 overflow-y-auto min-h-0">
-                                        {(activePost.text || activePost.attachedTrack || activePost.poll) && (
-                                            <div className="p-4">
-                                                <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-4 py-2 space-y-3">
-                                                    {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
-                                                    {activePost.attachedTrack && 
-                                                        <AttachedTrack 
-                                                            track={{
-                                                                ...activePost.attachedTrack,
-                                                                albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl
-                                                            }} 
-                                                        />
-                                                    }
-                                                    {activePost.poll && <PollDisplay poll={activePost.poll} onVote={handleVote} />}
-                                                </div>
-                                            </div>
+                                    <div className="md:hidden">
+                                        <div className="p-4 pt-0">
+                                            {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
+                                            {activePost.attachedTrack && 
+                                                <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>
+                                            }
+                                            {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className={`w-full ${hasImages ? '' : 'hidden'} flex-shrink-0 bg-black flex items-center justify-center relative md:hidden`}>
+                                        {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
+                                        {hasImages && (
+                                            <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
                                         )}
-                                        
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto min-h-0">
                                         <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-4 border-b border-t border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-4">
@@ -671,21 +655,9 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                       disabled={!!editingCommentId || commentSelectionMode || isSendingComment}
                                                       className="w-full bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"/>
                                                   
-                                                  {isPickerVisible && (
-                                                      <div ref={pickerRef} className={`absolute z-20 right-0 ${pickerPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
-                                                          <Suspense fallback={<div className="w-80 h-96 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">...</div>}>
-                                                              <Picker 
-                                                                  onEmojiClick={(e) => setCommentText(p => p+e.emoji)} 
-                                                                  theme={localStorage.getItem('theme') === 'dark' ? "dark" : "light"} 
-                                                                  width={emojiPickerDimensions.width}
-                                                                  height={emojiPickerDimensions.height}
-                                                              />
-                                                          </Suspense>
-                                                      </div>
-                                                  )}
                                                   <button 
                                                       ref={smileButtonRef}
-                                                      type="button"
+                                                      type="button" 
                                                       onClick={(e) => { e.preventDefault(); setIsPickerVisible(v => !v); }}
                                                       disabled={!!editingCommentId}
                                                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
