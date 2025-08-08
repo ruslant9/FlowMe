@@ -111,8 +111,8 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
                  <section>
                     <SectionHeader title="Популярные исполнители" icon={MicVocal} />
                     <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-y-4 gap-x-2">
-                         {recommendations.popularArtists.slice(0, 10).map(artist => (
-                             <ArtistAvatar key={artist._id} artist={artist} size="md" />
+                        {recommendations.popularArtists.slice(0, 10).map(artist => (
+                            <ArtistAvatar key={artist._id} artist={artist} size="xl" />
                         ))}
                     </div>
                 </section>
@@ -415,10 +415,6 @@ const MusicPage = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex justify-between items-center mb-8">
                         <h1 className="text-4xl font-bold">Музыка</h1>
-                        <button onClick={() => setIsUploadModalOpen(true)} className="hidden md:flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-                            <PlusCircle size={18} />
-                            <span>Загрузить трек</span>
-                        </button>
                     </div>
 
                     <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 mb-8 overflow-x-auto no-scrollbar">

@@ -1,4 +1,4 @@
-// frontend/src/context/MusicPlayerContext.jsx
+// frontend/src/context/MusicPlayerContext.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
@@ -32,9 +32,7 @@ export const MusicPlayerProvider = ({ children }) => {
     const [loadingTrackId, setLoadingTrackId] = useState(null);
     const [buffered, setBuffered] = useState(0);
     const [playerNotification, setPlayerNotification] = useState(null);
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Новое состояние для уведомления о лайке ---
-    const [likeActionStatus, setLikeActionStatus] = useState(null); // 'liked', 'unliked', or null
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
+    const [likeActionStatus, setLikeActionStatus] = useState(null);
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
     
     const abortControllerRef = useRef(null); 
@@ -42,8 +40,9 @@ export const MusicPlayerProvider = ({ children }) => {
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
     const notificationTimeoutRef = useRef(null);
-    const likeStatusTimeoutRef = useRef(null); // --- НАЧАЛО ИСПРАВЛЕНИЯ 1.1: Ref для таймера лайка ---
+    const likeStatusTimeoutRef = useRef(null);
     const currentObjectUrlRef = useRef(null);
+    // --- НОВОЕ: Ref для хранения ID анимации ---
     const animationFrameIdRef = useRef(null);
     
     const cleanTitle = (title) => {
@@ -220,28 +219,35 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
 
-    
-
+    // --- НАЧАЛО ИСПРАВЛЕНИЙ: Полностью переработанный useEffect ---
     useEffect(() => {
         const audio = audioRef.current;
         
-         const updateProgressLoop = () => {
-            if (audioRef.current) setProgress(audioRef.current.currentTime);
+        // Функция, которая будет вызываться на каждом кадре анимации
+        const updateProgressLoop = () => {
+            if (audioRef.current) {
+                setProgress(audioRef.current.currentTime);
+            }
+            // Запрашиваем следующий кадр
             animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
         };
 
         const startLoop = () => {
+            // Отменяем предыдущую анимацию на всякий случай
             cancelAnimationFrame(animationFrameIdRef.current);
+            // Запускаем новый цикл
             animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
         };
 
         const stopLoop = () => {
+            // Отменяем цикл анимации
             cancelAnimationFrame(animationFrameIdRef.current);
         };
 
         const handleDurationChange = () => setDuration(audio.duration);
+        
         const handleEnded = () => {
-            stopLoop();
+            stopLoop(); // Останавливаем цикл при завершении
             if (isRepeat) {
                 audio.currentTime = 0;
                 audio.play();
@@ -250,20 +256,25 @@ export const MusicPlayerProvider = ({ children }) => {
                 handleNextTrack();
             }
         };
+        
         const handleProgress = () => {
             if (audio.buffered.length > 0 && audio.duration > 0) {
                 setBuffered(audio.buffered.end(audio.buffered.length - 1) / audio.duration);
             }
         };
         
+        // Запускаем цикл при воспроизведении
         audio.addEventListener('play', startLoop);
+        // Останавливаем цикл при паузе
         audio.addEventListener('pause', stopLoop);
+
         audio.addEventListener('durationchange', handleDurationChange);
         audio.addEventListener('ended', handleEnded);
         audio.addEventListener('progress', handleProgress);
 
+        // Функция очистки
         return () => {
-            stopLoop();
+            stopLoop(); // Обязательно останавливаем цикл при размонтировании
             audio.removeEventListener('play', startLoop);
             audio.removeEventListener('pause', stopLoop);
             audio.removeEventListener('durationchange', handleDurationChange);
@@ -271,6 +282,7 @@ export const MusicPlayerProvider = ({ children }) => {
             audio.removeEventListener('progress', handleProgress);
         };
     }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 
 
     useEffect(() => {
@@ -398,7 +410,6 @@ export const MusicPlayerProvider = ({ children }) => {
             setIsLiked(!wasLiked);
         }
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Показываем кастомное уведомление о лайке ---
         if (likeStatusTimeoutRef.current) {
             clearTimeout(likeStatusTimeoutRef.current);
         }
@@ -406,11 +417,9 @@ export const MusicPlayerProvider = ({ children }) => {
         likeStatusTimeoutRef.current = setTimeout(() => {
             setLikeActionStatus(null);
         }, 2500);
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
         try {
             const token = localStorage.getItem('token');
-            // Убираем toast отсюда, так как он теперь кастомный
             await axios.post(`${API_URL}/api/music/toggle-save`, trackData, { headers: { Authorization: `Bearer ${token}` } });
             if (!wasLiked) logMusicAction(trackData, 'like');
             window.dispatchEvent(new CustomEvent('myMusicUpdated'));
@@ -433,7 +442,7 @@ export const MusicPlayerProvider = ({ children }) => {
         loadingTrackId,
         buffered,
         playerNotification,
-        likeActionStatus, // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Передаем новое состояние в контекст ---
+        likeActionStatus,
         playTrack,
         togglePlayPause,
         seekTo,
