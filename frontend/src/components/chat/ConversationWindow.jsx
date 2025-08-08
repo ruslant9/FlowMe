@@ -30,7 +30,6 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
-const isMobile = useMediaQuery('(max-width: 768px)');
 
 const getImageUrl = (url) => {
     if (!url) return '';
@@ -84,7 +83,7 @@ const getContrastingTextColor = (hexColor) => {
 
 const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequest }) => {
     const [internalConversation, setInternalConversation] = useState(conversation);
-
+    const isMobile = useMediaQuery('(max-width: 768px)');
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);

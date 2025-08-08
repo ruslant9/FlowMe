@@ -16,35 +16,16 @@ import ImageEditorModal from './ImageEditorModal';
 import { Link } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import Comment from '../Comment';
-import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
-import Tippy from '@tippyjs/react/headless';
-import { format } from 'date-fns';
-import AnimatedAccent from '../AnimatedAccent';
+import EmojiPickerPopover from '../EmojiPickerPopover';
 import { useCachedImage } from '../../hooks/useCachedImage';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
 const EMOJI_PICKER_WIDTH_DESKTOP = 350;
 const EMOJI_PICKER_HEIGHT_MOBILE = 350;
-
-const COMMENT_PAGE_LIMIT = 5;
-
-const CachedMotionImage = ({ src, ...props }) => {
-    const { finalSrc, loading } = useCachedImage(src);
-
-    if (loading) {
-        return (
-            <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
-                <Loader2 className="w-10 h-10 animate-spin text-white" />
-            </motion.div>
-        );
-    }
-
-    return <motion.img src={finalSrc} {...props} />;
-};
 
 const CachedImage = ({ src, alt, className }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -85,7 +66,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const [commentText, setCommentText] = useState('');
     const currentUserId = currentUser?._id;
     const [replyingTo, setReplyingTo] = useState(null);
-    const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [pickerPosition, setPickerPosition] = useState('top');
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [commentSelectionMode, setCommentSelectionMode] = useState(false);
@@ -114,6 +94,8 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             width: isMobile ? '100%' : EMOJI_PICKER_WIDTH_DESKTOP,
         };
     }, []);
+
+    const [isPickerVisible, setIsPickerVisible] = useState(false);
 
     const userVote = useMemo(() => {
         if (!currentUser || !activePost?.poll?.options) return null;
@@ -229,12 +211,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             }
             if (postMenuRef.current && !postMenuRef.current.contains(event.target)) {
                 setShowPostMenu(false);
-            }
-            if (smileButtonRef.current && smileButtonRef.current.contains(event.target)) {
-                return;
-            }
-            if (pickerRef.current && !pickerRef.current.contains(event.target)) {
-                setIsPickerVisible(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -443,6 +419,12 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             onClose={() => setIsEditingPostImage(false)}
                             onSave={handleImageUpdate} />
                     )}
+                    <EmojiPickerPopover
+                        isOpen={isPickerVisible}
+                        targetRef={smileButtonRef}
+                        onEmojiClick={(emojiObject) => setCommentText(prev => prev + emojiObject.emoji)}
+                        onClose={() => setIsPickerVisible(false)}
+                    />
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -703,8 +685,8 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                   )}
                                                   <button 
                                                       ref={smileButtonRef}
-                                                      type="button" 
-                                                      onClick={togglePicker}
+                                                      type="button"
+                                                      onClick={(e) => { e.preventDefault(); setIsPickerVisible(v => !v); }}
                                                       disabled={!!editingCommentId}
                                                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                                   >
