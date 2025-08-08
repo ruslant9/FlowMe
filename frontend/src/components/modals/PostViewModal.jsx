@@ -450,7 +450,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
                         style={{ maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' }}
-                        className="overflow-hidden w-full max-w-screen-2xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
+                        className="overflow-hidden w-full max-w-screen-2xl flex flex-col-reverse md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
                     >
                         <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors z-[101] bg-white/30 dark:bg-black/30 rounded-full p-1"><X size={24} /></button>
 
@@ -460,6 +460,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             <>
                                 {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
                                 
+                                <div className={`w-full ${hasImages ? 'md:w-3/5' : 'hidden md:w-2/5'} flex-shrink-0 bg-black flex items-center justify-center relative`}>
+                                    {hasImages && (
+                                        <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
+                                    )}
+                                </div>
                                 <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
                                     <div className="p-4 pr-12 border-b border-slate-200 dark:border-slate-700 flex items-center space-x-3 flex-shrink-0">
                                         <Link to={activePost.community ? `/communities/${activePost.community._id}` : `/profile/${activePost.user._id}`} onClick={onClose} className="flex items-center space-x-3 group flex-1 min-w-0">
@@ -715,11 +720,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         <div className="p-4 border-t border-slate-200 dark:border-slate-700 text-center text-sm text-slate-500 dark:text-slate-400 flex-shrink-0">
                                             Комментарии к этому посту отключены.
                                         </div>
-                                    )}
-                                </div>
-                                <div className={`w-full ${hasImages ? 'md:w-3/5' : 'hidden'} flex-shrink-0 bg-black flex items-center justify-center relative`}>
-                                    {hasImages && (
-                                        <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
                                     )}
                                 </div>
                             </>

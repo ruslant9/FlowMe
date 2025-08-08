@@ -55,6 +55,11 @@ const formatLastSeen = (dateString) => {
     return `Был(а) ${format(date, 'd MMM yyyy в HH:mm', { locale: ru })}`;
 };
 
+const truncateName = (name, maxLength) => {
+    if (!name) return '';
+    return name.length > maxLength ? `${name.substring(0, maxLength)}...` : name;
+};
+
 
 const getContrastingTextColor = (hexColor) => {
     if (!hexColor || hexColor.length < 7) return '#111827'; 
@@ -1121,7 +1126,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                     })()}
                                     <div className="min-w-0">
                                         <h2 className="font-bold group-hover:underline flex items-center text-base md:text-lg truncate" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
-                                            {liveInterlocutor.fullName || liveInterlocutor.username}
+                                            {truncateName(liveInterlocutor.fullName || liveInterlocutor.username, 15)}
                                             {usernameEmoji?.url && (
                                                 <img src={usernameEmoji.url} alt="emoji" className="w-5 h-5 ml-1.5" />
                                             )}

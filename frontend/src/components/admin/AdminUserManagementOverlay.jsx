@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, ShieldAlert, ShieldCheck, ArrowLeft, Trash2, Crown } from 'lucide-react';
+import { X, Loader2, ShieldAlert, ShieldCheck, Trash2, Crown } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Avatar from '../Avatar';
@@ -99,7 +99,6 @@ const AdminUserManagementOverlay = ({ isOpen, onClose, user, onSuccess }) => {
 
     return ReactDOM.createPortal(
         <AnimatePresence>
-            {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1: Адаптивные классы для позиционирования --- */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -107,27 +106,23 @@ const AdminUserManagementOverlay = ({ isOpen, onClose, user, onSuccess }) => {
                 onClick={onClose}
                 className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-end md:items-center justify-center z-50 md:p-4"
             >
-            {/* --- КОНЕЦ ИЗМЕНЕНИЯ 1 --- */}
-
-                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 2: Адаптивная анимация и стили для панели --- */}
                 <motion.div
                     initial={{ y: "100%" }}
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 400, damping: 40 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="ios-glass-final w-full max-w-lg p-4 md:p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
+                    className="ios-glass-final w-full max-w-lg rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
                 >
-                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 2 --- */}
-                    
-                    <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                        <div className="flex items-center space-x-3">
-                            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ArrowLeft /></button>
+                    <div className="p-4 flex-shrink-0">
+                        <div className="w-10 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-2 md:hidden"></div>
+                        <div className="flex justify-between items-center">
                             <h2 className="text-xl md:text-2xl font-bold">Управление</h2>
+                            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
                         </div>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto space-y-6">
+                    <div className="flex-1 overflow-y-auto space-y-6 px-4 pb-4 no-scrollbar">
                         <div className="flex items-center space-x-4 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
                             <Avatar username={user.username} fullName={user.fullName} avatarUrl={user.avatar} size="lg" />
                             <div>
