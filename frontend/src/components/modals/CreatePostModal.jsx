@@ -198,14 +198,20 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                 <>
                     <ImageAttachmentModal isOpen={!!editingImage} onClose={() => setEditingImage(null)} file={editingImage?.file} onSave={handleEditComplete} showCaptionInput={false} />
                     <AttachTrackModal isOpen={isAttachTrackModalOpen} onClose={() => setIsAttachTrackModalOpen(false)} onSelectTrack={setAttachedTrack} />
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-                        <motion.div 
-                            initial={{ y: "100%" }} 
-                            animate={{ y: 0 }} 
-                            exit={{ y: "100%" }} 
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-4 pt-20"
+                    >
+                        <motion.div
+                            initial={{ y: "100%", opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: "100%", opacity: 0 }}
                             transition={{ type: "spring", stiffness: 400, damping: 40 }}
-                            onClick={(e) => e.stopPropagation()} 
-                            className="ios-glass-final w-full max-w-2xl flex flex-col text-slate-900 dark:text-white max-h-[95vh] rounded-t-3xl md:max-h-[90vh] md:rounded-3xl"
+                            onClick={(e) => e.stopPropagation()}
+                            className="ios-glass-final w-full max-w-2xl bg-slate-100 dark:bg-slate-800 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                         >
                             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
                                 <div className="p-6 pb-4 flex-shrink-0">

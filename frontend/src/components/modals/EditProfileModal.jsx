@@ -83,7 +83,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
     const [gender, setGender] = useState('Не указан');
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [selectedCity, setSelectedCity] = useState(null);
-
+    
     const [loading, setLoading] = useState(false);
     const genderOptions = ['Не указан', 'Мужской', 'Женский'];
     const [countries, setCountries] = useState([]);
@@ -94,10 +94,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
     const [citySearch, setCitySearch] = useState('');
     const debounceTimeout = useRef(null);
     const cityLoaderRef = useRef(null);
-
-    // --- Новые реф и состояние для управления раскрытием города ---
-    const cityInputRef = useRef(null);
-    const [cityListUp, setCityListUp] = useState(false);
 
     const fetchCountries = useCallback(async (initialCountryName) => {
         try {
@@ -137,7 +133,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
              fetchCities(1, selectedCountry.code, citySearch, true);
         }
     }, [selectedCountry, fetchCities]);
-
+    
     useEffect(() => {
         if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
         debounceTimeout.current = setTimeout(() => {
@@ -163,22 +159,12 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
     }, [cityLoaderRef, hasMoreCities, loadingCities, cityPage, selectedCountry, citySearch, fetchCities]);
 
-    // --- Функция, проверяющая место для выпадающего списка города ---
-    const handleCityDropdownOpen = () => {
-        if (cityInputRef.current) {
-            const rect = cityInputRef.current.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const spaceAbove = rect.top;
-            // Открывать вверх, если снизу меньше 250px, а сверху места больше
-            setCityListUp(spaceBelow < 250 && spaceAbove > spaceBelow);
-        }
-    };
-
     const handleSave = async () => {
         setLoading(true);
         const toastId = toast.loading('Сохранение изменений...');
         try {
             const token = localStorage.getItem('token');
+            // --- НАЧАЛО ИЗМЕНЕНИЯ: Удаляем интересы и кастомизацию из payload ---
             const payload = { 
                 fullName, 
                 username, 
@@ -187,6 +173,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                 country: selectedCountry?.name || '', 
                 city: selectedCity || '' 
             };
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
             const res = await axios.put(`${API_URL}/api/user/profile`, payload, { headers: { Authorization: `Bearer ${token}` } });
             
             const localUser = JSON.parse(localStorage.getItem('user'));
@@ -211,6 +198,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
                         </div>
                         
+                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Удаляем секции интересов и кастомизации --- */}
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <EditField label="Полное имя" name="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -238,108 +226,21 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">Страна</label>
-                                    <Combobox
-                                        value={selectedCountry}
-                                        onChange={(country) => { setSelectedCountry(country); setSelectedCity(null); setCitySearch(''); }}
-                                    >
-                                        <div className="relative">
-                                            <Combobox.Input
-                                                onChange={() => {}}
-                                                displayValue={(c) => c?.name || ''}
-                                                className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
-                                                <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                                            </Combobox.Button>
-                                            <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-30">
-                                                {countries.map((country) => (
-                                                    <Combobox.Option
-                                                        key={country.code}
-                                                        value={country}
-                                                        className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}
-                                                    >
-                                                        {({ selected }) => (
-                                                            <>
-                                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{country.name}</span>
-                                                                {selected ? (
-                                                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-white">
-                                                                        <Check className="h-5 w-5" />
-                                                                    </span>
-                                                                ) : null}
-                                                            </>
-                                                        )}
-                                                    </Combobox.Option>
-                                                ))}
-                                            </Combobox.Options>
-                                        </div>
-                                    </Combobox>
+                                    <Combobox value={selectedCountry} onChange={(country) => { setSelectedCountry(country); setSelectedCity(null); setCitySearch(''); }}><div className="relative"><Combobox.Input onChange={(e) => {}} displayValue={(c) => c?.name || ''} className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" /><Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true"/></Combobox.Button><Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-30">{countries.map((country) => <Combobox.Option key={country.code} value={country} className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}>{({ selected }) => <><span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{country.name}</span>{selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-white"><Check className="h-5 w-5"/></span> : null}</>}</Combobox.Option>)}</Combobox.Options></div></Combobox>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">Город</label>
-                                    <Combobox
-                                        value={selectedCity}
-                                        onChange={setSelectedCity}
-                                        disabled={!selectedCountry}
-                                        as="div"
-                                        className="relative"
-                                    >
-                                        <div className="relative">
-                                            <Combobox.Input
-                                                ref={cityInputRef}
-                                                onClick={handleCityDropdownOpen}
-                                                onChange={(e) => setCitySearch(e.target.value)}
-                                                displayValue={(c) => c || ''}
-                                                className={`w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!selectedCountry ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск города..."}
-                                            />
-                                            <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
-                                                <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                                            </Combobox.Button>
-
-                                            <Combobox.Options
-                                                className="fixed z-[9999] w-[calc(100%-2rem)] left-1/2 max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none"
-                                                style={{
-                                                    top: cityListUp
-                                                        ? `${cityInputRef.current?.getBoundingClientRect().top - 8 - 240}px` // 240 — примерная высота выпадашки
-                                                        : `${cityInputRef.current?.getBoundingClientRect().bottom + 4}px`
-                                                }}
-                                            >
-                                                {cities.length > 0 && cities.map((city, i) => (
-                                                    <Combobox.Option
-                                                        key={`${city}-${i}`}
-                                                        value={city}
-                                                        className={({ active }) =>
-                                                            `relative cursor-pointer select-none py-2 pl-4 pr-4 ${
-                                                                active ? 'bg-blue-100 dark:bg-blue-600' : ''
-                                                            }`
-                                                        }
-                                                    >
-                                                        {city}
-                                                    </Combobox.Option>
-                                                ))}
-
-                                                {hasMoreCities && (
-                                                    <div ref={cityLoaderRef} className="py-2 text-center">
-                                                        <Loader2 className="animate-spin inline-block" />
-                                                    </div>
-                                                )}
-
-                                                {!loadingCities && cities.length === 0 && citySearch.trim() !== '' && (
-                                                    <div className="relative cursor-default select-none py-2 px-4 text-slate-500 dark:text-slate-400">
-                                                        Город не найден.
-                                                    </div>
-                                                )}
-                                            </Combobox.Options>
-                                        </div>
-                                    </Combobox>
+                                    <Combobox value={selectedCity} onChange={setSelectedCity} disabled={!selectedCountry}><div className="relative"><Combobox.Input onChange={(e) => setCitySearch(e.target.value)} displayValue={(c) => c || ''} className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск города..."}/><Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400"/></Combobox.Button><Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-30">{cities.length > 0 && cities.map((city, i) => <Combobox.Option key={`${city}-${i}`} value={city} className={({ active }) => `relative cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}>{city}</Combobox.Option>)}{hasMoreCities && <div ref={cityLoaderRef} className="py-2 text-center"><Loader2 className="animate-spin inline-block"/></div>}{!loadingCities && cities.length === 0 && citySearch.trim() !== '' && (<div className="relative cursor-default select-none py-2 px-4 text-slate-500 dark:text-slate-400">Город не найден.</div>)}</Combobox.Options></div></Combobox>
                                 </div>
                             </div>
                         </div>
+                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
-                        <div className="mt-6 flex justify-end space-x-3">
-                            <button onClick={onClose} className="bg-gray-200 dark:bg-slate-700 rounded-md px-4 py-2 hover:bg-gray-300 dark:hover:bg-slate-600 transition">Отмена</button>
-                            <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white rounded-md px-4 py-2 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                {loading ? <Loader2 className="inline-block animate-spin" /> : 'Сохранить'}
+                        <div className="flex justify-end items-center mt-6 space-x-4">
+                            <button onClick={onClose} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">Отмена</button>
+                            <button onClick={handleSave} disabled={loading} className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center">
+                                {loading && <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />}
+                                <Save size={18} className="mr-2" /> Сохранить
                             </button>
                         </div>
                     </motion.div>
