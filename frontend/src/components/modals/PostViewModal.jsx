@@ -1,4 +1,4 @@
-// frontend/src/components/modals/PostViewModal.jsx
+// frontend/src/components/modals/PostViewModal.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useRef, Suspense, useCallback, Fragment, useMemo } from 'react';
 import ReactDOM from 'react-dom';
@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { useModal } from '../../hooks/useModal';
 import Picker from 'emoji-picker-react';
 import Tippy from '@tippyjs/react/headless';
-import LikesPopover from '../LikesPopover';
+import LikesPopover from './LikesPopover';
 import ImageEditorModal from './ImageEditorModal';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
@@ -428,7 +428,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
                         style={isMobile ? { maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' } : {}}
-                        className="overflow-hidden w-full max-w-screen-2xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
+                        className="overflow-hidden w-full max-w-7xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
                     >
                         {isLoading && !activePost ? (
                             <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
@@ -459,12 +459,20 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </Link>
                                         <div className="flex items-center space-x-2">
                                             {activePost.user._id === currentUserId && (
-                                                <div ref={postMenuRef} className="relative">
-                                                    <button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-                                                        <MoreHorizontal size={20}/>
-                                                    </button>
-                                                    {showPostMenu && (
-                                                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10 overflow-hidden p-1 space-y-1">
+                                                <Tippy
+                                                    interactive
+                                                    placement="bottom-end"
+                                                    delay={[100, 100]}
+                                                    visible={showPostMenu}
+                                                    onClickOutside={() => setShowPostMenu(false)}
+                                                    appendTo={() => document.body}
+                                                    popperOptions={{ strategy: 'fixed' }}
+                                                    render={(attrs) => (
+                                                        <div
+                                                            ref={postMenuRef}
+                                                            className="ios-glass-popover w-72 rounded-xl shadow-lg p-1"
+                                                            {...attrs}
+                                                        >
                                                             <button onClick={handleDeletePost} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors">
                                                                 <Trash2 size={16} />
                                                                 <span>Удалить пост</span>
@@ -484,7 +492,14 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                             )}
                                                         </div>
                                                     )}
-                                                </div>
+                                                >
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setShowPostMenu(v => !v); }}
+                                                        className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"
+                                                    >
+                                                        <MoreHorizontal />
+                                                    </button>
+                                                </Tippy>
                                             )}
                                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X size={20}/></button>
                                         </div>
@@ -505,7 +520,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="w-full h-full object-contain" />
                                         </div>
                                     )}
-
                                     <div className="flex-1 overflow-y-auto min-h-0">
                                         <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-4 border-b border-t border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between">
@@ -580,7 +594,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                           {replyingTo && (
                                               <div className="flex justify-between items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 mb-2 rounded-lg text-sm">
                                                   <span className="text-slate-500 dark:text-slate-400">Ответ пользователю <span className="font-bold text-slate-800 dark:text-white">{replyingTo.username}</span></span>
-                                                  <button onClick={()=>{setReplyingTo(null); setCommentText('')}} className="p-1 hover:text-slate-900"><X size={16} /></button>
+                                                  <button onClick={()=>{setReplyingTo(null); setNewCommentText('')}} className="p-1 hover:text-slate-900"><X size={16} /></button>
                                               </div>
                                           )}
 
@@ -692,7 +706,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                 </div>
                                 
                                 {/* --- Контейнер с картинкой (правая часть на десктопе) --- */}
-                                <div className="hidden md:flex w-3/5 flex-shrink-0 bg-black items-center justify-center relative">
+                                 <div className="hidden md:flex w-3/5 flex-shrink-0 bg-black items-center justify-center relative">
                                      {posts.length > 1 && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
                                      {hasImages ? (
                                          <AnimatePresence initial={false}>

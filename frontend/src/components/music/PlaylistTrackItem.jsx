@@ -1,7 +1,7 @@
 // frontend/src/components/music/PlaylistTrackItem.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React from 'react';
-import { Play, Pause, Heart, Trash2, Loader2, PlusCircle } from 'lucide-react'; // <-- Импортируем PlusCircle
+import { Play, Pause, Heart, Trash2, Loader2, Plus } from 'lucide-react'; // <-- Добавляем иконку Plus
 import { Link } from 'react-router-dom';
 import Tippy from '@tippyjs/react/headless';
 import { useCachedImage } from '../../hooks/useCachedImage';
@@ -15,8 +15,9 @@ const CachedImage = ({ src, alt, className }) => {
     return <img src={finalSrc} alt={alt} className={className} />;
 };
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем новый пропс onAddToPlaylist ---
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем новый пропс onAddToPlaylist ---
 const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15', onAddToPlaylist }) => {
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const { togglePlayPause, loadingTrackId } = useMusicPlayer();
     
     const cleanTitle = (title) => {
@@ -132,25 +133,23 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                     </p>
                 </div>
             </div>
-            
             <div className="flex items-center space-x-2 md:space-x-4 text-slate-600 dark:text-slate-400">
-                {/* --- НАЧАЛО БЛОКА ИЗМЕНЕНИЙ --- */}
-                {onAddToPlaylist && (
-                    <button onClick={() => onAddToPlaylist(track)} className="transition-colors text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-blue-500" title="Добавить в плейлист">
-                        <PlusCircle size={18} />
-                    </button>
-                )}
-                {/* --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ --- */}
-                
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем кнопки --- */}
                 {onRemoveFromPlaylist ? (
                      <button onClick={() => onRemoveFromPlaylist(track._id)} className="transition-colors text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-red-500">
                         <Trash2 size={18} />
                     </button>
                 ) : (
-                    <button onClick={() => onToggleSave(track)} className={`transition-colors ${isSaved ? 'text-red-500' : 'text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-slate-800 dark:hover:text-white'}`}>
-                        <Heart size={18} fill={isSaved ? 'currentColor' : 'none'}/>
-                    </button>
+                    <>
+                        <button onClick={(e) => { e.stopPropagation(); onToggleSave(track); }} className={`transition-colors ${isSaved ? 'text-red-500' : 'text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-slate-800 dark:hover:text-white'}`}>
+                            <Heart size={18} fill={isSaved ? 'currentColor' : 'none'}/>
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); onAddToPlaylist(track); }} className="transition-colors text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-slate-800 dark:hover:text-white" title="Добавить в плейлист">
+                            <Plus size={18} />
+                        </button>
+                    </>
                 )}
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 <span className="text-sm w-10 text-right">{formatDuration(track.durationMs)}</span>
             </div>
         </div>
