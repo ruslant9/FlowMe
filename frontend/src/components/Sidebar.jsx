@@ -180,10 +180,12 @@ const Sidebar = ({ themeSwitcher, isMobileNavOpen, onMobileNavClose }) => {
         { name: "Мастерская", path: "/workshop", icon: Brush, count: 0 },
     ], [summary]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const allNavItems = useMemo(() => [
         ...menuItems,
-        ...(user?.role === 'admin' ? [{ name: "Админ-панель", path: "/admin", icon: Shield, count: summary.submissionsCount }] : [])
+        ...(['junior_admin', 'super_admin'].includes(user?.role) ? [{ name: "Админ-панель", path: "/admin", icon: Shield, count: summary.submissionsCount }] : [])
     ], [user, summary, menuItems]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const NAV_ITEM_LIMIT = 7;
     const shouldTruncate = allNavItems.length > NAV_ITEM_LIMIT;
