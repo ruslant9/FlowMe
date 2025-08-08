@@ -4,12 +4,12 @@ import React, { useState, Fragment, useEffect, useCallback, useRef } from 'react
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Check, ChevronDown, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import axios from 'axios';
-import ReactDOM from 'react-dom';
 import toast from 'react-hot-toast';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
 import { getYear, getMonth } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import useMediaQuery from '../hooks/useMediaQuery'; // <-- ИМПОРТИРУЕМ ХУК
 
 import 'react-datepicker/dist/react-datepicker.css';
 import '../../styles/datepicker-custom.css';
@@ -94,6 +94,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
     const [citySearch, setCitySearch] = useState('');
     const debounceTimeout = useRef(null);
     const cityLoaderRef = useRef(null);
+    const isMobile = useMediaQuery('(max-width: 768px)'); // <-- ИСПОЛЬЗУЕМ ХУК
 
     const fetchCountries = useCallback(async (initialCountryName) => {
         try {
@@ -164,7 +165,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         const toastId = toast.loading('Сохранение изменений...');
         try {
             const token = localStorage.getItem('token');
-            // --- НАЧАЛО ИЗМЕНЕНИЯ: Удаляем интересы и кастомизацию из payload ---
             const payload = { 
                 fullName, 
                 username, 
@@ -173,7 +173,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                 country: selectedCountry?.name || '', 
                 city: selectedCity || '' 
             };
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
             const res = await axios.put(`${API_URL}/api/user/profile`, payload, { headers: { Authorization: `Bearer ${token}` } });
             
             const localUser = JSON.parse(localStorage.getItem('user'));
@@ -188,7 +187,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         }
     };
     
-    return ReactDOM.createPortal(
+    return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -198,7 +197,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X /></button>
                         </div>
                         
-                        {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Удаляем секции интересов и кастомизации --- */}
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <EditField label="Полное имя" name="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -218,6 +216,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                                         showYearDropdown
                                         dropdownMode="select"
                                         portalId="modal-root"
+                                        withPortal={isMobile}
                                     />
                                 </div>
                                 <div>
@@ -230,11 +229,10 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">Город</label>
-                                    <Combobox value={selectedCity} onChange={setSelectedCity} disabled={!selectedCountry}><div className="relative"><Combobox.Input onChange={(e) => setCitySearch(e.target.value)} displayValue={(c) => c || ''} className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск города..."}/><Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400"/></Combobox.Button><Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-30">{cities.length > 0 && cities.map((city, i) => <Combobox.Option key={`${city}-${i}`} value={city} className={({ active }) => `relative cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}>{city}</Combobox.Option>)}{hasMoreCities && <div ref={cityLoaderRef} className="py-2 text-center"><Loader2 className="animate-spin inline-block"/></div>}{!loadingCities && cities.length === 0 && citySearch.trim() !== '' && (<div className="relative cursor-default select-none py-2 px-4 text-slate-500 dark:text-slate-400">Город не найден.</div>)}</Combobox.Options></div></Combobox>
+                                    <Combobox value={selectedCity} onChange={setSelectedCity} disabled={!selectedCountry}><div className="relative"><Combobox.Input onChange={(e) => setCitySearch(e.target.value)} displayValue={(c) => c || ''} className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск города..."}/><Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400"/></Combobox.Button><Combobox.Options className={`absolute w-full z-30 ${isMobile ? 'bottom-full mb-1' : 'mt-1'} max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none`}>{cities.length > 0 && cities.map((city, i) => <Combobox.Option key={`${city}-${i}`} value={city} className={({ active }) => `relative cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}>{city}</Combobox.Option>)}{hasMoreCities && <div ref={cityLoaderRef} className="py-2 text-center"><Loader2 className="animate-spin inline-block"/></div>}{!loadingCities && cities.length === 0 && citySearch.trim() !== '' && (<div className="relative cursor-default select-none py-2 px-4 text-slate-500 dark:text-slate-400">Город не найден.</div>)}</Combobox.Options></div></Combobox>
                                 </div>
                             </div>
                         </div>
-                        {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
 
                         <div className="flex justify-end items-center mt-6 space-x-4">
                             <button onClick={onClose} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">Отмена</button>
@@ -246,8 +244,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>,
-        document.getElementById('modal-root')
+        </AnimatePresence>
     );
 };
 
