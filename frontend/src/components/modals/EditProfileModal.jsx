@@ -10,7 +10,7 @@ import DatePicker, { registerLocale } from 'react-datepicker';
 import { Listbox, Transition, Combobox } from '@headlessui/react';
 import { getYear, getMonth } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import useMediaQuery from '../hooks/useMediaQuery'; // <-- ИМПОРТИРУЕМ ХУК
+import useMediaQuery from '../../hooks/useMediaQuery'; // <-- ИМПОРТИРУЕМ ХУК
 
 import 'react-datepicker/dist/react-datepicker.css';
 import '../../styles/datepicker-custom.css';

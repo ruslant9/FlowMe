@@ -3,12 +3,12 @@
 import React, { Suspense, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const Picker = React.lazy(() => import('emoji-picker-react'));
 
 const EmojiPickerPopover = ({ isOpen, targetRef, onEmojiClick, onClose }) => {
-    // --- ИСПРАВЛЕНИЕ: Переносим всю логику рендеринга внутрь AnimatePresence, чтобы она была доступна, когда isOpen=true ---
-    const isMobile = useMemo(() => window.innerWidth < 768, []);
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
     const getPickerPosition = () => {
         if (!targetRef.current || isMobile) return {};
@@ -35,7 +35,6 @@ const EmojiPickerPopover = ({ isOpen, targetRef, onEmojiClick, onClose }) => {
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* --- ИСПРАВЛЕНИЕ: Добавляем фон-затемнение только для мобильных --- */}
                     {isMobile && (
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -46,9 +45,7 @@ const EmojiPickerPopover = ({ isOpen, targetRef, onEmojiClick, onClose }) => {
                         />
                     )}
                     <motion.div
-                        // --- ИСПРАВЛЕНИЕ: Добавляем атрибут для отслеживания кликов ---
                         data-emoji-picker="true"
-                        // --- ИСПРАВЛЕНИЕ: Адаптивные стили и анимация ---
                         initial={isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 10 }}
                         animate={isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
                         exit={isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 10 }}
@@ -71,7 +68,6 @@ const EmojiPickerPopover = ({ isOpen, targetRef, onEmojiClick, onClose }) => {
                                 <Picker 
                                     onEmojiClick={(emojiObject, event) => {
                                         onEmojiClick(emojiObject, event);
-                                        // Не закрываем на мобильных, чтобы можно было выбрать несколько
                                         if (!isMobile) {
                                             onClose();
                                         }
