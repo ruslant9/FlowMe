@@ -372,6 +372,7 @@ function App() {
             <Route path="/messages/:userId" element={<MessagesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/communities" element={<CommunitiesPage />} />
             <Route path="/communities/:communityId/manage" element={<CommunityManagementPage />} />
             <Route path="/communities/:communityId" element={<CommunityDetailPage />} />
             <Route path="/premium" element={<PremiumPage />} />
