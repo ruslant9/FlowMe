@@ -63,7 +63,10 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)/.test(location.pathname);
+  // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+  // Теперь `/communities` не считается полноэкранной страницей, а `/communities/*` — считается.
+  const isFullBleedLayout = /^\/(artist|album|single|communities\/.+|music\/playlist|messages)/.test(location.pathname);
+  // --- КОНЕЦ ИЗМЕНЕНИЯ ---
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
