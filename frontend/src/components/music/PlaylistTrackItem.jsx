@@ -22,6 +22,14 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const truncateTitle = (title, maxLength = 20) => {
+        if (!title) return '';
+        if (title.length <= maxLength) return title;
+        return `${title.substring(0, maxLength)}...`;
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     const renderArtistLinks = (artistData) => {
         if (!artistData) return 'Неизвестный исполнитель';
         const artists = Array.isArray(artistData) ? artistData : [artistData];
@@ -115,10 +123,10 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                         )}
                         <Link to={trackLink} onClick={(e) => e.stopPropagation()}>
                             <p 
-                                className="font-semibold truncate text-sm md:text-base hover:underline"
+                                className="font-semibold text-sm md:text-base hover:underline"
                                 style={isCurrent ? { color: accentColor } : {}}
                             >
-                                {cleanedTitle}
+                                {truncateTitle(cleanedTitle)}
                             </p>
                         </Link>
                     </div>
