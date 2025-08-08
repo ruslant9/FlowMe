@@ -229,8 +229,8 @@ html.dark .tippy-arrow {
 }
 
 .emoji-only .emoji {
-    width: 2.5rem;  /* Увеличенный размер для больших эмодзи */
-    height: 2.5rem;
+    width: 1.4rem;  /* Увеличенный размер для больших эмодзи */
+    height: 1.4rem;
     vertical-align: middle; /* Улучшенное выравнивание */
     display: inline-block; /* Это ключевое изменение, которое ставит эмодзи в ряд */
 }

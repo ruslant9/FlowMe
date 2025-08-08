@@ -123,7 +123,7 @@ const ChatList = ({ activeConversations, archivedConversations, onSelectConversa
         : `Бесплатный лимит — ${pinLimit} чата. Приобретите Premium, чтобы закреплять до 8 чатов.`;
 
     return (
-        <div className="h-full flex flex-col pt-16 md:pt-0">
+        <div className="h-full flex flex-col">
             <AnimatePresence>
                 {isAdminModalOpen && (
                     <motion.div
