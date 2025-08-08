@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { useModal } from '../../hooks/useModal';
 import Picker from 'emoji-picker-react';
 import Tippy from '@tippyjs/react/headless';
-import LikesPopover from './LikesPopover';
+import LikesPopover from '../LikesPopover';
 import ImageEditorModal from './ImageEditorModal';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
