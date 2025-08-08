@@ -22,7 +22,7 @@ import PinnedMessagesCarousel from './PinnedMessagesCarousel';
 import StatsPanel from './StatsPanel';
 import AttachmentsPanel from './AttachmentsPanel';
 import ImageViewer from '../ImageViewer';
-import DeletionTimerToast from './DeletionTimerToast';
+import useMediaQuery from '../../hooks/useMediaQuery';
 import WallpaperModal from './WallpaperModal';
 import ChatCalendarPanel from './ChatCalendarPanel';
 import { MessageCache } from '../../utils/MessageCacheService';
@@ -44,6 +44,7 @@ const formatLastSeen = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffSeconds = (now.getTime() - date.getTime()) / 1000;
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
     if (diffSeconds < 60) return "Был(а) только что";
     if (diffSeconds < 3600) return `Был(а) ${Math.round(diffSeconds / 60)}м назад`;
@@ -1126,7 +1127,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                     })()}
                                     <div className="min-w-0">
                                         <h2 className="font-bold group-hover:underline flex items-center text-base md:text-lg truncate" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
-                                            {truncateName(liveInterlocutor.fullName || liveInterlocutor.username, 15)}
+                                            {isMobile ? truncateName(liveInterlocutor.fullName || liveInterlocutor.username, 15) : (liveInterlocutor.fullName || liveInterlocutor.username)}
                                             {usernameEmoji?.url && (
                                                 <img src={usernameEmoji.url} alt="emoji" className="w-5 h-5 ml-1.5" />
                                             )}

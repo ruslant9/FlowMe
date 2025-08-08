@@ -19,6 +19,11 @@ const TippyWrapper = forwardRef((props, ref) => {
 });
 TippyWrapper.displayName = 'TippyWrapper';
 
+const truncateName = (name, maxLength) => {
+    if (!name) return '';
+    return name.length > maxLength ? `${name.substring(0, maxLength)}...` : name;
+};
+
 const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDeleteRequest, isPinned, pinnedCount, pinLimit, onOpenPremiumModal, onOptimisticUpdate }) => {
     const interlocutor = conversation.interlocutor;
     const lastMessage = conversation.lastMessage;
@@ -337,14 +342,13 @@ const ChatItem = ({ conversation, isSelected, onClick, onUpdate, isTyping, onDel
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
                         <p className="font-bold truncate flex items-center text-slate-800 dark:text-slate-100">
-                            {isSavedMessages ? 'Избранное' : (liveInterlocutor?.fullName || liveInterlocutor?.username)}
+                            {isSavedMessages ? 'Избранное' : truncateName(liveInterlocutor?.fullName || liveInterlocutor?.username, 15)}
                             {usernameEmoji?.url && (
                                 <img src={usernameEmoji.url} alt="emoji" className="w-4 h-4 ml-1.5" />
                             )}
                             {conversation.isMuted && <BellOff size={14} className="text-slate-400 dark:text-slate-500 ml-2 flex-shrink-0" />}
                         </p>
                     </div>
-                    {/* --- ИСПРАВЛЕНИЕ: Удален UnreadIndicator из этого блока --- */}
                     <div className="flex justify-between items-end mt-0.5">
                         {renderLastMessage()}
                     </div>
