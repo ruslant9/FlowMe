@@ -14,18 +14,14 @@ import { ru } from 'date-fns/locale';
 import { setHours, setMinutes, isToday } from 'date-fns';
 import AttachedTrack from '../music/AttachedTrack';
 import Avatar from '../Avatar';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage';
-// --- НАЧАЛО ИЗМЕНЕНИЯ 1: Импортируем правильный компонент и удаляем старый хук ---
+import { useEmojiPicker } from '../../hooks/useEmojiPicker';
 import EmojiPickerPopover from '../EmojiPickerPopover'; 
-// import { useEmojiPicker } from '../../hooks/useEmojiPicker'; // <-- УДАЛЯЕМ ЭТОТ ИМПОРТ
-// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 
 registerLocale('ru', ru);
 
 const API_URL = import.meta.env.VITE_API_URL;
-
-// ... (остальные компоненты, такие как CachedImage, ToggleSwitch, остаются без изменений)
 const CachedImage = ({ src }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) return <div className="w-full h-full object-cover rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
