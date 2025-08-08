@@ -312,7 +312,7 @@ const AdminProtectedLayout = () => {
     return null;
   }
 
-  if (currentUser && currentUser.role !== 'admin') {
+ if (currentUser && !['junior_admin', 'super_admin'].includes(currentUser.role)) {
     return <Navigate to="/page-not-found" replace />;
   }
 

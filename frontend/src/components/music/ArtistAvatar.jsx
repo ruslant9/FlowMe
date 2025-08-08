@@ -31,7 +31,7 @@ const ArtistAvatar = ({ artist, size = 'xl' }) => {
                     avatarUrl={artist.avatarUrl}
                     size={size}
                 />
-                <p className={`text-sm font-semibold text-center truncate ${size === 'sm' ? 'w-32' : 'w-48'} group-hover:text-blue-400 transition-colors`}>
+                <p className={`text-sm font-semibold text-center truncate ${size === 'sm' ? 'w-8' : 'w-12'} group-hover:text-blue-400 transition-colors`}>
                     {artistName}
                 </p>
             </motion.div>

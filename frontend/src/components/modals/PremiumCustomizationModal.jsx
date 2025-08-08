@@ -272,18 +272,16 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
             {isOpen && (
                 <>
                     <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлены классы для адаптивного позиционирования --- */}
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} 
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] md:p-4"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start md:items-center justify-center z-[100] p-4 pt-10 md:pt-4"
                     >
                         <motion.div 
-                            initial={{ scale: 0.95, y: "100%" }} 
+                            initial={{ scale: 0.95, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
-                            exit={{ scale: 0.95, y: "100%" }} 
+                            exit={{ scale: 0.95, y: -20 }} 
                             onClick={(e) => e.stopPropagation()} 
-                            className="ios-glass-final w-full max-w-2xl p-4 md:p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh] md:max-h-[85vh]"
+                            className="ios-glass-final w-full max-w-2xl p-4 md:p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                         >
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                                 <div className="flex items-center space-x-2">
                                     {view === 'editor' && <button onClick={() => setView('main')} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ArrowLeft /></button>}
@@ -304,7 +302,6 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                             >
                             {view === 'main' ? (
                                 <div className="flex-1 overflow-y-auto pr-2 -mr-4 space-y-6">
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Адаптивная сетка для основных блоков --- */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="flex flex-col">
                                             <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-2 block">Рамка аватара</label>
@@ -323,7 +320,6 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                         <div className="flex flex-col">
                                             <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-2 block">Эмодзи у ника</label>
                                             <div className="flex-1 flex flex-col min-h-0">
-                                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Горизонтальный скролл для табов --- */}
                                                 <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto no-scrollbar">
                                                     {emojiPacks.map(pack => (
                                                         <button key={pack.name} onClick={() => setActivePack(pack.name)} className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors flex-shrink-0 ${activePack === pack.name ? 'bg-blue-600 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
@@ -331,7 +327,6 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                                         </button>
                                                     ))}
                                                 </div>
-                                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                                 <div className="flex-1 overflow-y-auto grid grid-cols-[repeat(auto-fill,minmax(4rem,1fr))] gap-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg min-h-[120px]">
                                                     {activeEmojis.map((emoji) => {
                                                         const isSelected = draftData.usernameEmoji?.id === emoji.id;
@@ -344,14 +339,18 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                                                 onMouseLeave={handleMouseLeave}
                                                                 onTouchStart={() => handleMouseDown(emoji)}
                                                                 onTouchEnd={() => handleMouseUp(emoji)}
-                                                                className={`flex flex-col items-center justify-center p-2 rounded-lg aspect-square transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                                                                className={`flex flex-col items-center justify-center p-1 rounded-lg aspect-square transition-colors hover:bg-slate-200 dark:hover:bg-slate-700`}
                                                                 title={emoji.name}
                                                             >
-                                                                {emoji.url ? (
-                                                                    <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" />
-                                                                ) : (
-                                                                    <span className="text-xs">Нет</span>
-                                                                )}
+                                                                <div className={`p-1 rounded-md ${isSelected ? 'bg-blue-600' : ''}`}>
+                                                                    {emoji.url ? (
+                                                                        <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" />
+                                                                    ) : (
+                                                                        <div className="w-6 h-6 flex items-center justify-center">
+                                                                            <span className={`text-xs ${isSelected ? 'text-white' : ''}`}>Нет</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </button>
                                                         );
                                                     })}
@@ -362,7 +361,6 @@ const PremiumCustomizationModal = ({ isOpen, onClose, user }) => {
                                             </div>
                                         </div>
                                     </div>
-                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     <div>
                                         <div className="flex justify-between items-center mb-2">
                                             <label className="text-sm font-medium text-slate-600 dark:text-white/70 block">Акцент карточек</label>
