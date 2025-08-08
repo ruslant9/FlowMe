@@ -78,7 +78,7 @@ const UserSchema = new Schema({
     city: { type: String, trim: true, default: null },
     role: {
         type: String,
-        enum: ['user', 'admin'],
+        enum: ['user', 'junior_admin', 'super_admin'],
         default: 'user'
     },
     lastSeen: { type: Date, default: Date.now },

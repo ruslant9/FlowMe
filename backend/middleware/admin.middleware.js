@@ -9,11 +9,12 @@ module.exports = async (req, res, next) => {
             return res.status(401).json({ message: 'Пользователь не найден' });
         }
 
-        if (user.role !== 'admin') {
+        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        if (!['junior_admin', 'super_admin'].includes(user.role)) {
             return res.status(403).json({ message: 'Доступ запрещен. Требуются права администратора.' });
         }
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         
-        // Сохраняем полную модель пользователя для дальнейшего использования
         req.user = user; 
         next();
 

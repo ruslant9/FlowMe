@@ -121,7 +121,7 @@ const MainLayout = ({ children }) => {
       )}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || location.pathname.startsWith('/messages') ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
+        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || /^\/messages\/.+/.test(location.pathname) ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
       >
         <Menu />
       </button>

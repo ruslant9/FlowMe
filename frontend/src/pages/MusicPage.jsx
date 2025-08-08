@@ -71,8 +71,8 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.newReleases?.length > 0 && (
                 <section>
                     <SectionHeader title="Новинки" icon={Disc} />
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {recommendations.newReleases.slice(0, 6).map(track => (
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                        {recommendations.newReleases.slice(0, 8).map(track => (
                             <RecommendationCard 
                                 key={track._id}
                                 track={track}
@@ -90,8 +90,8 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.popularHits?.length > 0 && (
                 <section>
                     <SectionHeader title="Популярные хиты" icon={Music} />
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {recommendations.popularHits.slice(0, 6).map((track, index) => (
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                        {recommendations.popularHits.slice(0, 8).map((track, index) => (
                             <RecommendationCard 
                                 key={track._id}
                                 track={track}
@@ -110,11 +110,9 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.popularArtists?.length > 0 && (
                  <section>
                     <SectionHeader title="Популярные исполнители" icon={MicVocal} />
-                    <div className="flex space-x-4 -mx-4 px-4 overflow-x-auto pb-4">
-                         {recommendations.popularArtists.slice(0, 9).map(artist => (
-                             <div key={artist._id} className="w-1/4 sm:w-1/6 md:w-1/8 lg:w-[10%] flex-shrink-0">
-                                 <ArtistAvatar artist={artist} />
-                            </div>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4">
+                         {recommendations.popularArtists.slice(0, 12).map(artist => (
+                             <ArtistAvatar key={artist._id} artist={artist} size="lg" />
                         ))}
                     </div>
                 </section>

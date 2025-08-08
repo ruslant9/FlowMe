@@ -5,6 +5,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/auth.middleware');
 const adminMiddleware = require('../middleware/admin.middleware');
+const superAdminMiddleware = require('../middleware/superAdmin.middleware');
 
 // Модели
 const Artist = require('../models/Artist');
@@ -22,6 +23,68 @@ const { createStorage, cloudinary } = require('../config/cloudinary');
 const adminStorage = createStorage('music');
 const upload = multer({ storage: adminStorage });
 router.use(authMiddleware, adminMiddleware);
+
+
+// Получить список всех администраторов
+router.get('/administrators', async (req, res) => {
+    try {
+        const admins = await User.find({ role: { $in: ['junior_admin', 'super_admin'] } })
+            .select('username fullName email role avatar')
+            .sort({ role: -1, createdAt: 1 });
+        res.json(admins);
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка загрузки администраторов" });
+    }
+});
+
+// Поиск пользователей для назначения админом (только для super_admin)
+router.get('/search-users', superAdminMiddleware, async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q) return res.json([]);
+
+        const users = await User.find({
+            username: { $regex: q, $options: 'i' },
+            role: 'user' // Ищем только среди обычных пользователей
+        }).select('username fullName avatar').limit(10);
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Ошибка поиска пользователей" });
+    }
+});
+
+// Назначить младшего админа (только для super_admin)
+router.post('/grant-junior-admin/:userId', superAdminMiddleware, async (req, res) => {
+    try {
+        const userToPromote = await User.findById(req.params.userId);
+        if (!userToPromote) return res.status(404).json({ message: 'Пользователь не найден' });
+        if (userToPromote.role !== 'user') return res.status(400).json({ message: 'Пользователь уже является администратором.' });
+        
+        userToPromote.role = 'junior_admin';
+        await userToPromote.save();
+        res.json({ message: `Пользователь ${userToPromote.username} назначен младшим администратором.` });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка назначения администратора' });
+    }
+});
+
+// Снять права администратора (только для super_admin)
+router.post('/revoke-admin/:userId', superAdminMiddleware, async (req, res) => {
+    try {
+        const userToDemote = await User.findById(req.params.userId);
+        if (!userToDemote) return res.status(404).json({ message: 'Администратор не найден' });
+        if (userToDemote.role === 'super_admin' && userToDemote._id.equals(req.user._id)) {
+            return res.status(403).json({ message: 'Нельзя снять права с самого себя.' });
+        }
+        
+        userToDemote.role = 'user';
+        await userToDemote.save();
+        res.json({ message: `Права администратора для ${userToDemote.username} сняты.` });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка снятия прав администратора' });
+    }
+});
+
 
 // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.get('/all-pinned-chats', async (req, res) => {
@@ -144,7 +207,6 @@ router.post('/submissions/:id/approve', async (req, res) => {
     }
 });
 
-// Отклонить заявку
 router.post('/submissions/:id/reject', async (req, res) => {
     try {
         const { reason } = req.body;
@@ -169,9 +231,6 @@ router.post('/submissions/:id/reject', async (req, res) => {
         res.status(500).json({ message: 'Ошибка при отклонении заявки' });
     }
 });
-
-
-// --- РОУТЫ ДЛЯ ПРЯМОГО УПРАВЛЕНИЯ КОНТЕНТОМ (только для админов) ---
 
 // Создать артиста напрямую
 router.post('/artists', upload.single('avatar'), async (req, res) => {
@@ -526,7 +585,6 @@ router.delete('/content/tracks/:id', async (req, res) => {
 router.get('/users', async (req, res) => {
     try {
         const { page = 1, limit = 15, search = '' } = req.query;
-
         const query = {};
         if (search) {
             query.$or = [
@@ -537,7 +595,7 @@ router.get('/users', async (req, res) => {
         }
 
         const users = await User.find(query)
-            .select('username fullName email createdAt banInfo')
+            .select('username fullName email createdAt banInfo role') // Добавили role
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
@@ -554,22 +612,85 @@ router.get('/users', async (req, res) => {
     }
 });
 
-// Забанить/разбанить пользователя
 router.post('/users/:id/ban', async (req, res) => {
     try {
-        const { isBanned, banReason, banExpires } = req.body;
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, { $set: { 'banInfo.isBanned': isBanned, 'banInfo.banReason': banReason, 'banInfo.banExpires': banExpires } }, { new: true });
+        const userToBan = await User.findById(req.params.id);
+        if (!userToBan) return res.status(404).json({ message: 'Пользователь не найден.' });
         
-        if (updatedUser) {
-            req.broadcastToUsers([updatedUser._id.toString()], {
+        if (['junior_admin', 'super_admin'].includes(userToBan.role)) {
+            return res.status(403).json({ message: 'Нельзя забанить другого администратора.' });
+        }
+
+        const { isBanned, banReason, banExpires } = req.body;
+        userToBan.banInfo = { isBanned, banReason, banExpires };
+        await userToBan.save();
+        
+        if (userToBan) {
+            req.broadcastToUsers([userToBan._id.toString()], {
                 type: 'ACCOUNT_STATUS_CHANGED',
-                payload: { banInfo: updatedUser.banInfo }
+                payload: { banInfo: userToBan.banInfo }
             });
         }
 
-        res.json(updatedUser);
+        res.json({ message: isBanned ? 'Пользователь заблокирован' : 'Блокировка снята', user: userToBan });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при обновлении статуса пользователя' });
+    }
+});
+
+router.delete('/users/:id', superAdminMiddleware, async (req, res) => {
+    try {
+        const userToDelete = await User.findById(req.params.id);
+        if (!userToDelete) return res.status(404).json({ message: "Пользователь не найден." });
+        
+        // Здесь должна быть ваша полная логика по очистке связанных данных
+        await Post.deleteMany({ user: userToDelete._id });
+        await Comment.deleteMany({ author: userToDelete._id });
+        
+        await userToDelete.deleteOne();
+
+        res.json({ message: `Аккаунт пользователя ${userToDelete.username} был удален.` });
+    } catch (error) {
+        console.error("Ошибка удаления аккаунта:", error);
+        res.status(500).json({ message: "Ошибка сервера при удалении аккаунта." });
+    }
+});
+
+router.post('/users/:id/grant-premium', superAdminMiddleware, async (req, res) => {
+    try {
+        const { durationMonths } = req.body;
+        if (![1, 3, 6, 12].includes(durationMonths)) {
+            return res.status(400).json({ message: 'Неверный срок подписки.' });
+        }
+        
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: 'Пользователь не найден.' });
+
+        const now = new Date();
+        const currentExpiresAt = user.premium?.expiresAt;
+        const startDate = (currentExpiresAt && currentExpiresAt > now) ? currentExpiresAt : now;
+        
+        const newExpiresAt = new Date(startDate);
+        newExpiresAt.setMonth(newExpiresAt.getMonth() + durationMonths);
+
+        user.premium = {
+            isActive: true,
+            expiresAt: newExpiresAt,
+            plan: `${durationMonths}_month_admin_grant`
+        };
+
+        await user.save();
+        
+        req.broadcastToUsers([user._id.toString()], {
+            type: 'PREMIUM_STATUS_UPDATED',
+            payload: user.premium
+        });
+
+        res.json({ message: `Premium выдан пользователю ${user.username} до ${newExpiresAt.toLocaleDateString('ru-RU')}.` });
+
+    } catch (error) {
+        console.error("Ошибка выдачи Premium:", error);
+        res.status(500).json({ message: "Ошибка сервера при выдаче Premium." });
     }
 });
 
