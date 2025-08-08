@@ -1,4 +1,4 @@
-// frontend/src/App.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/App.jsx
 
 import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -63,11 +63,8 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  // --- ИЗМЕНЕНИЕ 1: Обновляем логику для isFullBleedLayout ---
-  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)/.test(location.pathname);
-  // --- ИЗМЕНЕНИЕ 2: Новая переменная для определения страниц с кнопкой "Назад" ---
-  const isDetailPageWithBackButton = /^\/(artist|album|single|communities(?!.*manage)|music\/playlist|messages)\/[^/]+/.test(location.pathname);
-  
+  // --- НАЧАЛО ИСПРАВЛЕНИЯ: Условие для полноэкранного режима теперь включает и /messages ---
+  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist)\/[^/]+/.test(location.pathname) || location.pathname.startsWith('/messages');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
@@ -112,6 +109,7 @@ const MainLayout = ({ children }) => {
     } 
     setTheme(newTheme);
  };
+
   return (
     <div className={`w-full font-sans transition-colors duration-300 relative h-[100dvh] ${
       theme === 'dark' ? 'bg-liquid-background text-white' : 'bg-slate-100 text-slate-900'
@@ -123,16 +121,21 @@ const MainLayout = ({ children }) => {
           <LiquidGlassBackground />
         </Suspense>
       )}
+
+      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка скрывается на всех полноэкранных страницах --- */}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        // --- ИЗМЕНЕНИЕ 3: Обновляем условия видимости и позиционирования кнопки ---
-        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || /^\/messages\/.+/.test(location.pathname) ? 'hidden' : 'block'} ${isDetailPageWithBackButton ? 'right-4' : 'left-4'}`}
+        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || isFullBleedLayout ? 'hidden' : 'block'} left-4`}
       >
         <Menu />
       </button>
+      {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
       <AnimatePresence>
           {isFullScreenPlayerOpen && <FullScreenPlayer />}
       </AnimatePresence>
+
+
       {currentTrack && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80"> 
           <MusicPlayerBar
@@ -158,14 +161,15 @@ const MainLayout = ({ children }) => {
             openFullScreenPlayer={openFullScreenPlayer}
           />
         </div>
-      )}   
+      )}
+      
+      
       <div className={`flex relative h-full overflow-hidden`}>
         <Sidebar 
           themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} 
           isMobileNavOpen={isMobileNavOpen}
           onMobileNavClose={() => setIsMobileNavOpen(false)}
         />
-        {/* --- ИЗМЕНЕНИЕ 1 (продолжение): Логика отступов теперь работает корректно благодаря обновленному isFullBleedLayout --- */}
         <div className={`flex-1 relative overflow-y-auto transform-gpu transition-all duration-300 ${isFullBleedLayout ? '' : 'pt-16 md:pt-0'}`}>
           {children}
         </div>
@@ -173,8 +177,6 @@ const MainLayout = ({ children }) => {
     </div>
   );
 };
-
-// ... (остальной код файла App.jsx остается без изменений) ...
 
 const BannedOverlay = ({ banInfo }) => {
     const { logout } = useWebSocket();

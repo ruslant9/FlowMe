@@ -33,34 +33,41 @@ router.put('/privacy-settings', authMiddleware, async (req, res) => {
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
         
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // 1. Убеждаемся, что sub-документ существует
+        if (!user.privacySettings) {
+            user.privacySettings = {};
+        }
+
         const validSettings = ['everyone', 'friends', 'private'];
         const validFriendRequestSettings = ['everyone', 'private'];
         
+        // 2. Итерируем и применяем настройки без некорректной проверки
         Object.keys(settings).forEach(key => {
-    const value = settings[key];
-    if (user.privacySettings[key] !== undefined) {
-        // Четко разделяем логику для каждого типа настроек
-        if (key === 'sendFriendRequest') {
-            if (validFriendRequestSettings.includes(value)) {
-                user.privacySettings[key] = value;
+            const value = settings[key];
+            // Проверяем, что ключ существует в схеме, чтобы избежать записи лишних полей
+            if (User.schema.path(`privacySettings.${key}`)) {
+                if (key === 'sendFriendRequest') {
+                    if (validFriendRequestSettings.includes(value)) user.privacySettings[key] = value;
+                } else if (key === 'hideDOBYear' || key === 'disableToasts') {
+                    if (typeof value === 'boolean') user.privacySettings[key] = value;
+                } else {
+                    if (validSettings.includes(value)) user.privacySettings[key] = value;
+                }
             }
-        } else if (key === 'hideDOBYear' || key === 'disableToasts') {
-            if (typeof value === 'boolean') {
-                user.privacySettings[key] = value;
-            }
-        } else if (validSettings.includes(value)) {
-            // Эта ветка теперь не будет выполняться для sendFriendRequest
-            // с некорректным значением.
-            user.privacySettings[key] = value;
-        }
-    }
-});
+        });
+        
+        // 3. Явно помечаем, что sub-документ был изменен
+        user.markModified('privacySettings');
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         
         await user.save();
         res.json({ message: 'Настройки приватности успешно обновлены.' });
         req.broadcastMessage({ type: 'USER_DATA_UPDATED', userId: req.user.userId });
         req.broadcastFullUserStatus(req.user.userId);
     } catch (e) {
+        // Добавляем логирование для лучшей отладки
+        console.error("Ошибка при обновлении настроек приватности:", e);
         res.status(500).json({ message: 'Ошибка сервера при обновлении настроек приватности' });
     }
 });
