@@ -10,6 +10,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { useModal } from '../../hooks/useModal';
+import Picker from 'emoji-picker-react';
+import Tippy from '@tippyjs/react/headless';
 import LikesPopover from '../LikesPopover';
 import ImageEditorModal from './ImageEditorModal';
 import { Link } from 'react-router-dom';
@@ -22,9 +24,27 @@ import PollDisplay from '../PollDisplay';
 import EmojiPickerPopover from '../EmojiPickerPopover';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import useMediaQuery from '../../hooks/useMediaQuery';
-import Tippy from '@tippyjs/react/headless';
 
 const API_URL = import.meta.env.VITE_API_URL;
+const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
+const EMOJI_PICKER_WIDTH_DESKTOP = 350;
+const EMOJI_PICKER_HEIGHT_MOBILE = 350;
+
+const COMMENT_PAGE_LIMIT = 5;
+
+const CachedMotionImage = ({ src, ...props }) => {
+    const { finalSrc, loading } = useCachedImage(src);
+
+    if (loading) {
+        return (
+            <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
+                <Loader2 className="w-10 h-10 animate-spin text-white" />
+            </motion.div>
+        );
+    }
+
+    return <motion.img src={finalSrc} {...props} />;
+};
 
 const CachedImage = ({ src, alt, className }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -413,13 +433,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
                         ) : activePost ? (
                             <>
-                                <div className={`w-full ${hasImages ? 'md:w-3/5' : 'hidden md:flex md:w-1/2'} flex-shrink-0 bg-black flex items-center justify-center relative order-2 md:order-1`}>
-                                    {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
-                                    {hasImages && (
-                                        <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
-                                    )}
-                                </div>
-                                <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0 order-1 md:order-2">
+                                <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0 order-1">
                                     <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                                         <Link to={activePost.community ? `/communities/${activePost.community._id}` : `/profile/${activePost.user._id}`} onClick={onClose} className="flex items-center space-x-3 group flex-1 min-w-0">
                                             {(() => {
@@ -474,17 +488,24 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>
                                     </div>
                                     
-                                    <div className="flex-1 overflow-y-auto min-h-0">
-                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем pt-0 для мобильных --- */}
-                                        <div className="p-4 pt-0 md:pt-4">
-                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                                    <div className="md:hidden">
+                                        <div className="p-4 pt-0">
                                             {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
                                             {activePost.attachedTrack && 
                                                 <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>
                                             }
                                             {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
                                         </div>
-                                        
+                                    </div>
+                                    
+                                    <div className={`w-full ${hasImages ? '' : 'hidden'} flex-shrink-0 bg-black flex items-center justify-center relative md:hidden`}>
+                                        {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
+                                        {hasImages && (
+                                            <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
+                                        )}
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto min-h-0">
                                         <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-4 border-b border-t border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-4">
