@@ -220,16 +220,16 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
 
-    const updateProgressLoop = useCallback(() => {
-        if (audioRef.current) {
-            setProgress(audioRef.current.currentTime);
-        }
-        animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
-    }, []);
+    
 
     useEffect(() => {
         const audio = audioRef.current;
         
+         const updateProgressLoop = () => {
+            if (audioRef.current) setProgress(audioRef.current.currentTime);
+            animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
+        };
+
         const startLoop = () => {
             cancelAnimationFrame(animationFrameIdRef.current);
             animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
@@ -270,7 +270,7 @@ export const MusicPlayerProvider = ({ children }) => {
             audio.removeEventListener('ended', handleEnded);
             audio.removeEventListener('progress', handleProgress);
         };
-    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction, updateProgressLoop]);
+    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
 
 
     useEffect(() => {
