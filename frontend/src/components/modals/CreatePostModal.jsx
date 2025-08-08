@@ -17,6 +17,7 @@ import Avatar from '../Avatar';
 import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import { useEmojiPicker } from '../../hooks/useEmojiPicker';
+import useMediaQuery from '../../hooks/useMediaQuery'; // --- ИМПОРТ ХУКА ---
 
 registerLocale('ru', ru);
 
@@ -49,9 +50,8 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const fileInputRef = useRef(null);
     const smileButtonRef = useRef(null);
     const textareaRef = useRef(null);
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Получаем состояние и функцию закрытия из хука ---
     const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    const isMobile = useMediaQuery('(max-width: 767px)'); // --- ИСПОЛЬЗОВАНИЕ ХУКА ---
     const [selectedCommunity, setSelectedCommunity] = useState(null);
     const [myCommunities, setMyCommunities] = useState([]);
     const [fetchingCommunities, setFetchingCommunities] = useState(false);
@@ -194,10 +194,9 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         e.target.style.height = `${e.target.scrollHeight}px`;
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновленная логика для кнопки эмодзи ---
     const handleEmojiButtonClick = (e) => {
         e.preventDefault();
-        textareaRef.current?.blur(); // Убираем фокус с textarea, чтобы не открывалась клавиатура
+        textareaRef.current?.blur();
         if (isPickerVisible) {
             hidePicker();
         } else {
@@ -205,7 +204,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                 const { selectionStart, selectionEnd } = textareaRef.current;
                 const newText = text.slice(0, selectionStart) + emojiObject.emoji + text.slice(selectionEnd);
                 setText(newText);
-                // Ставим курсор после вставленного эмодзи
                 setTimeout(() => {
                     const newPosition = selectionStart + emojiObject.emoji.length;
                     textareaRef.current.selectionStart = newPosition;
@@ -214,7 +212,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
             });
         }
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     return ReactDOM.createPortal(
@@ -230,14 +227,16 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                         onClick={onClose}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-4 pt-20"
                     >
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                         <motion.div
                             initial={{ y: "100%", opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
+                            animate={{ y: isMobile && isPickerVisible ? -340 : 0, opacity: 1 }}
                             exit={{ y: "100%", opacity: 0 }}
                             transition={{ type: "spring", stiffness: 400, damping: 40 }}
                             onClick={(e) => e.stopPropagation()}
                             className="ios-glass-final w-full max-w-2xl bg-slate-100 dark:bg-slate-800 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                         >
+                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
                                 <div className="p-6 pb-4 flex-shrink-0">
                                     <div className="flex justify-between items-center mb-6">
@@ -312,7 +311,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                 { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                                 { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                                 { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                // --- ИЗМЕНЕНИЕ: Используем новый обработчик для кнопки эмодзи ---
                                                 { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: handleEmojiButtonClick },
                                             ].map((item, idx) => ( 
                                                  item.isDatePicker ?
