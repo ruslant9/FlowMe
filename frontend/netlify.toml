@@ -1,0 +1,12 @@
+# Netlify Build Settings
+[build]
+  # Команда для сборки вашего Vite-проекта
+  command = "npm run build"
+  # Папка, куда Vite складывает готовую сборку
+  publish = "dist"
+
+# Redirect rule for Single Page Applications (SPA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
