@@ -17,19 +17,24 @@ const EmojiPreviewModal = ({ isOpen, onClose, emojiUrl }) => {
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-    initial={{ scale: 0.8, opacity: 0 }}
-    animate={{ scale: 1, opacity: 1 }}
-    exit={{ scale: 0.8, opacity: 0 }}
-    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-    className="w-64 h-64 flex items-center justify-center bg-white/10 rounded-lg"
-    onClick={(e) => e.stopPropagation()}
->
-    <img
-        src={emojiUrl}
-        alt="Emoji Preview"
-        className="max-w-full max-h-full object-contain"
-    />
-</motion.div>
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={handleOverlayClick} 
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[110]"
+                >
+                    <motion.img
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        src={emojiUrl}
+                        alt="Emoji Preview"
+                        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                        className="w-128 h-128 object-cover rounded-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </motion.div>
             )}
         </AnimatePresence>,
         document.getElementById('modal-root')
