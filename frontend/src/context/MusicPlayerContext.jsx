@@ -461,6 +461,24 @@ export const MusicPlayerProvider = ({ children }) => {
     return (
         <MusicPlayerContext.Provider value={contextValue}>
             {children}
+            {/* --- ИЗМЕНЕНИЕ: Встраиваем наш YouTubePlayer здесь --- */}
+            <div style={{ position: 'fixed', top: '-9999px', left: '-9999px' }}>
+                <YouTubePlayer
+                    ref={playerRef}
+                    videoId={currentTrack?.youtubeId}
+                    autoPlay={isPlaying}
+                    onPlayPauseChange={setIsPlaying}
+                    onProgressChange={setProgress}
+                    onDurationChange={setDuration}
+                    onVolumeChange={setVolume}
+                    onVideoEnd={handleNextTrack}
+                    onBufferChange={setBuffered}
+                    onPlaybackError={() => {
+                        toast.error("Видео недоступно. Пропускаем трек.");
+                        handleNextTrack();
+                    }}
+                />
+            </div>
         </MusicPlayerContext.Provider>
     );
 };

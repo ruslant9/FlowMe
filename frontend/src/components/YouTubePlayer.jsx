@@ -1,4 +1,4 @@
-// frontend/src/components/YouTubePlayer.jsx
+// frontend/src/components/YouTubePlayer.jsx --- ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 
@@ -19,6 +19,7 @@ const YouTubePlayer = forwardRef(({
   const currentVideoIdInPlayer = useRef(null);
   const progressIntervalRef = useRef(null);
   
+  // Используем ref для колбэков, чтобы избежать проблем со stale closures в интервале
   const autoPlayRef = useRef(autoPlay);
   useEffect(() => {
     autoPlayRef.current = autoPlay;
@@ -43,6 +44,7 @@ const YouTubePlayer = forwardRef(({
 
   const startProgressInterval = useCallback(() => {
     stopProgressInterval();
+    // Обновляем прогресс чаще для плавности
     progressIntervalRef.current = setInterval(() => {
       if (youtubePlayerInstance.current && typeof youtubePlayerInstance.current.getPlayerState === 'function') {
         const playerState = youtubePlayerInstance.current.getPlayerState();
@@ -55,7 +57,7 @@ const YouTubePlayer = forwardRef(({
       } else {
         stopProgressInterval();
       }
-    }, 1000);
+    }, 250); // Обновление 4 раза в секунду
   }, [onProgressChange, onDurationChange, onVolumeChange, stopProgressInterval, onBufferChange]);
   
   const startProgressIntervalRef = useRef(startProgressInterval);
@@ -63,6 +65,7 @@ const YouTubePlayer = forwardRef(({
     startProgressIntervalRef.current = startProgressInterval;
   }, [startProgressInterval]);
 
+  // Этот хук позволяет родительскому компоненту (контексту) вызывать методы плеера
   useImperativeHandle(ref, () => ({
     playVideo: () => youtubePlayerInstance.current?.playVideo(),
     pauseVideo: () => youtubePlayerInstance.current?.pauseVideo(),
@@ -81,7 +84,7 @@ const YouTubePlayer = forwardRef(({
     const createPlayer = () => {
       if (window.YT && window.YT.Player && playerRef.current) {
         youtubePlayerInstance.current = new window.YT.Player(playerRef.current, {
-          height: '0',
+          height: '0', // Плеер будет невидимым
           width: '0',
           playerVars: { 
             autoplay: 0,
@@ -117,6 +120,7 @@ const YouTubePlayer = forwardRef(({
             onError: (event) => {
               const errorCode = event.data;
               console.error(`[Music Debug] YouTube Player Error Code: ${errorCode}`);
+              // 101 и 150 - самые частые ошибки, связанные с блокировкой встраивания
               if ((errorCode === 101 || errorCode === 150) && onPlaybackErrorRef.current) {
                   onPlaybackErrorRef.current(currentVideoIdInPlayer.current);
               }
@@ -144,18 +148,22 @@ const YouTubePlayer = forwardRef(({
     };
   }, [stopProgressInterval]); 
 
+  // Этот useEffect управляет загрузкой и воспроизведением видео
   useEffect(() => {
     if (!isPlayerReady.current || !youtubePlayerInstance.current) {
         return;
     }
     
     if (videoId && videoId !== currentVideoIdInPlayer.current) {
+        // Загружаем видео, но не воспроизводим сразу. onStateChange обработает автовоспроизведение
         youtubePlayerInstance.current.cueVideoById(videoId);
         currentVideoIdInPlayer.current = videoId;
     } else if (!videoId && currentVideoIdInPlayer.current) {
+        // Если videoId стал null, останавливаем плеер
         youtubePlayerInstance.current.stopVideo();
         currentVideoIdInPlayer.current = null;
     } else if (videoId) {
+        // Если videoId тот же, но изменился флаг autoPlay
         const playerState = youtubePlayerInstance.current.getPlayerState();
         const isCurrentlyPlaying = playerState === window.YT.PlayerState.PLAYING;
         
@@ -170,5 +178,4 @@ const YouTubePlayer = forwardRef(({
   return <div ref={playerRef} id="youtube-player"></div>;
 });
 
-YouTubePlayer.displayName = 'YouTubePlayer';
 export default YouTubePlayer;
