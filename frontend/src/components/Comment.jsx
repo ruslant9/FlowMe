@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { useModal } from '../hooks/useModal';
 import LikesPopover from './LikesPopover';
 import { Link } from 'react-router-dom';
+import Tippy from '@tippyjs/react/headless';
 
 import Twemoji from './Twemoji'; // --- ИМПОРТ КОМПОНЕНТА ---
 const Picker = React.lazy(() => import('emoji-picker-react'));

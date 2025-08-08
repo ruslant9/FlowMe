@@ -1,4 +1,4 @@
-// frontend/src/pages/CommunitiesPage.jsx
+// frontend/src/pages/CommunitiesPage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -183,6 +183,7 @@ const CommunitiesPage = () => {
         );
     };
     
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const navItems = [
         { key: 'my', label: 'Мои сообщества', icon: Users, onClick: () => handleTabSwitch('my'), count: myCommunities.length },
         { key: 'created', label: 'Созданные', icon: Building, onClick: () => handleTabSwitch('created'), count: createdCommunities.length },
@@ -190,6 +191,7 @@ const CommunitiesPage = () => {
         { key: 'pendingSent', label: 'Отправленные', icon: Clock, onClick: () => handleTabSwitch('pendingSent'), count: pendingSentRequests.length },
         { key: 'create', label: 'Создать', icon: PlusCircle, onClick: () => setIsCreateModalOpen(true) }
     ];
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return (
         <PageWrapper>
@@ -205,14 +207,7 @@ const CommunitiesPage = () => {
                 <div className="w-full max-w-4xl mx-auto">
                     <div className="flex items-center justify-between mb-6">
                        <h1 className="text-2xl sm:text-3xl font-bold">Сообщества</h1>
-                        <div className="hidden md:block">
-                            <button 
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center space-x-2 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-2 sm:px-4 rounded-lg transition-colors"
-                            >
-                                <PlusCircle size={18} /> <span>Создать сообщество</span>
-                            </button>
-                        </div>
+                        {/* --- УДАЛЕННЫЙ БЛОК --- */}
                     </div>
 
                     <div className="relative mb-6">

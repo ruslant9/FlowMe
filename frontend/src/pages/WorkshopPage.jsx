@@ -1,4 +1,4 @@
-// frontend/src/pages/WorkshopPage.jsx
+// frontend/src/pages/WorkshopPage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -318,13 +318,9 @@ const WorkshopPage = () => {
                 <div className="w-full max-w-7xl mx-auto space-y-8">
                     <div className="flex items-center justify-between gap-4">
                         <h1 className="text-4xl font-bold">Мастерская</h1>
-                         <button onClick={handleCreatePack} className="hidden md:flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold p-2 md:px-4 md:py-2 rounded-lg transition-colors">
-                            <PlusCircle size={18} />
-                            <span className="hidden md:inline">Создать пак</span>
-                        </button>
+                         {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Кнопка "Создать пак" теперь в панели навигации --- */}
                     </div>
                     
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Заменяем старые табы на ResponsiveNav для мобильных --- */}
                     <div className="md:hidden">
                         <ResponsiveNav 
                             items={navItems}
@@ -333,11 +329,15 @@ const WorkshopPage = () => {
                         />
                     </div>
                     {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                    
                     <div className="hidden md:flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-2 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
                         <div className="flex items-center gap-x-2 p-1 bg-slate-200/70 dark:bg-black/30 rounded-lg w-full md:w-auto">
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем кнопку "Создать" в десктопную навигацию --- */}
                             <TabButton active={activeTab === 'my'} onClick={() => setActiveTab('my')} icon={Brush}>Мои паки</TabButton>
                             <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')} icon={Library}>Добавленные</TabButton>
                             <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')} icon={Search}>Поиск</TabButton>
+                            <TabButton active={false} onClick={handleCreatePack} icon={PlusCircle}>Создать</TabButton>
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-x-4 gap-y-2 w-full md:w-auto">

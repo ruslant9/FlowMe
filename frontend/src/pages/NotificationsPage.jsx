@@ -1,4 +1,4 @@
-// frontend/src/pages/NotificationsPage.jsx
+// frontend/src/pages/NotificationsPage.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -234,25 +234,14 @@ const NotificationsPage = () => {
         return tabs;
     }, [activeTab]);
     
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Убираем кнопку очистки из `navItems` ---
     const navItems = useMemo(() => {
-        const baseItems = [
+        return [
             { key: 'personal', label: 'Личные', icon: User, onClick: () => setActiveTab('personal'), count: notificationsData.personal.unreadCount },
             { key: 'community', label: 'Сообщества', icon: Users, onClick: () => setActiveTab('community'), count: notificationsData.community.unreadCount }
         ];
-        
-        if (notificationsData[activeTab].list.length > 0) {
-            baseItems.push({
-                key: 'clear',
-                label: 'Очистить все',
-                icon: Trash2,
-                onClick: handleDeleteAll,
-                className: 'text-red-500 dark:text-red-400 hover:bg-red-500/10',
-                activeClassName: 'text-red-500 dark:text-red-400 bg-red-500/10'
-            });
-        }
-
-        return baseItems;
-    }, [activeTab, notificationsData, handleDeleteAll]);
+    }, [notificationsData]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return (
         <PageWrapper>
@@ -265,22 +254,28 @@ const NotificationsPage = () => {
                     />
                 )}
                 <div className="w-full max-w-4xl mx-auto">
+                     {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем кнопку "Очистить все" сюда --- */}
                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <div className="flex items-center space-x-3">
                             <h1 className="text-3xl font-bold">Уведомления</h1>
                         </div>
+                        {notificationsData[activeTab].list.length > 0 && (
+                            <button 
+                                onClick={handleDeleteAll} 
+                                className="flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold transition-colors text-red-500 hover:bg-red-500/10 rounded-lg"
+                            >
+                                <Trash2 size={16} />
+                                <span>Очистить все</span>
+                            </button>
+                        )}
                     </div>
+                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 -mx-4 px-4 overflow-x-auto">
-                        {navItems.filter(item => item.key !== 'clear').map(item => (
+                        {navItems.map(item => (
                             <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon} count={item.count}>
                                 {item.label}
                             </TabButton>
                         ))}
-                        {notificationsData[activeTab].list.length > 0 && (
-                            <button onClick={handleDeleteAll} className="ml-auto flex-shrink-0 flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors text-red-500 hover:bg-red-500/10 rounded-lg">
-                                <Trash2 size={16} /><span>Очистить все</span>
-                            </button>
-                        )}
                     </div>
                     <div className="md:hidden mb-6">
                         <ResponsiveNav
@@ -290,7 +285,6 @@ const NotificationsPage = () => {
                         />
                     </div>
                     
-                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                     <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700 mb-4 -mx-4 px-4">
                          {subTabs.map(item => (
                             <TabButton key={item.key} active={activeFilter === item.key} onClick={item.onClick} icon={item.icon}>
@@ -306,7 +300,6 @@ const NotificationsPage = () => {
                             activeKey={activeFilter}
                         />
                     </div>
-                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     
                     {loading ? (
                         <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-slate-400" /></div>

@@ -1,4 +1,4 @@
-// frontend/src/pages/MusicPage.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/pages/MusicPage.jsx --- FULLY CORRECTED FILE ---
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -181,7 +181,6 @@ const PlaylistsView = ({ playlists, loading, onCreate, onPlaylistUpdated, onPlay
         </div>
     );
 };
-
 
 const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, onPlayTrack, loadingMore, onToggleSave, myMusicTrackIds, onAddToPlaylist }) => {
     const navigate = useNavigate();
@@ -426,6 +425,9 @@ const MusicPage = () => {
         { key: 'playlists', label: 'Плейлисты', icon: ListMusic, onClick: () => handleTabClick('playlists') },
         { key: 'history', label: 'История', icon: Clock, onClick: () => handleTabClick('history') },
         { key: 'search', label: 'Поиск', icon: Search, onClick: () => handleTabClick('search') },
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем кнопку "Загрузить" в массив навигации ---
+        { key: 'upload', label: 'Загрузить', icon: PlusCircle, onClick: () => setIsUploadModalOpen(true) },
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     ];
     
     return (
@@ -433,7 +435,7 @@ const MusicPage = () => {
             <CreatePlaylistModal 
                 isOpen={isCreatePlaylistModalOpen}
                 onClose={() => setIsCreatePlaylistModalOpen(false)}
-                onPlaylistCreated={() => { // --- ИЗМЕНЕНИЕ: Используем новый способ для обновления ---
+                onPlaylistCreated={() => { 
                     const event = new CustomEvent('refetchMusicData', { detail: 'playlists' });
                     window.dispatchEvent(event);
                 }}
@@ -450,13 +452,11 @@ const MusicPage = () => {
 
             <main className="flex-1 p-4 md:p-8">
                 <div className="max-w-7xl mx-auto">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем отдельную кнопку "Загрузить трек" из шапки --- */}
                     <div className="flex justify-between items-center mb-8">
                         <h1 className="text-4xl font-bold">Музыка</h1>
-                        <button onClick={() => setIsUploadModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-                            <PlusCircle size={18} />
-                            <span>Загрузить трек</span>
-                        </button>
                     </div>
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
                     <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 mb-8 overflow-x-auto no-scrollbar">
                         {navItems.map(item => (
@@ -468,7 +468,7 @@ const MusicPage = () => {
 
                     <div className="md:hidden mb-6">
                         <ResponsiveNav 
-                            items={[...navItems, { key: 'upload', label: 'Загрузить', icon: PlusCircle, onClick: () => setIsUploadModalOpen(true) }]}
+                            items={navItems}
                             visibleCount={4} 
                             activeKey={activeTab}
                         />
@@ -485,9 +485,7 @@ const MusicPage = () => {
                             {activeTab === 'recommendations' && <RecommendationsView recommendations={recommendations} loading={loading.recommendations} onPlayWave={handlePlayWave} onSeeAll={(q) => { setActiveTab('search'); setSearchQuery(q); }} />}
                             {activeTab === 'my-music' && <MusicListView tracks={myMusic} loading={loading.myMusic} title="Моя музыка" emptyMessage="Вы еще не добавили ни одного трека." onPlayTrack={(track) => playTrack(track, myMusic)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} onAddToPlaylist={handleAddToPlaylist} />}
                             {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} onAddToPlaylist={handleAddToPlaylist} />}
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем рендер компонента плейлистов --- */}
                             {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             {activeTab === 'search' && 
                                 <SearchView 
                                     query={searchQuery} 
