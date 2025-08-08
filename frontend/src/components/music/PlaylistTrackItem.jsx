@@ -1,6 +1,7 @@
-// frontend/src/components/music/PlaylistTrackItem.jsx
+// frontend/src/components/music/PlaylistTrackItem.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+
 import React from 'react';
-import { Play, Pause, Heart, Trash2, Loader2 } from 'lucide-react';
+import { Play, Pause, Heart, Trash2, Loader2, PlusCircle } from 'lucide-react'; // <-- Импортируем PlusCircle
 import { Link } from 'react-router-dom';
 import Tippy from '@tippyjs/react/headless';
 import { useCachedImage } from '../../hooks/useCachedImage';
@@ -14,7 +15,8 @@ const CachedImage = ({ src, alt, className }) => {
     return <img src={finalSrc} alt={alt} className={className} />;
 };
 
-const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15' }) => {
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем новый пропс onAddToPlaylist ---
+const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved, onToggleSave, onRemoveFromPlaylist, accentColor = '#facc15', onAddToPlaylist }) => {
     const { togglePlayPause, loadingTrackId } = useMusicPlayer();
     
     const cleanTitle = (title) => {
@@ -22,13 +24,11 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const truncateTitle = (title, maxLength = 20) => {
         if (!title) return '';
         if (title.length <= maxLength) return title;
         return `${title.substring(0, maxLength)}...`;
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const renderArtistLinks = (artistData) => {
         if (!artistData) return 'Неизвестный исполнитель';
@@ -70,7 +70,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
     
-    // Определяем ссылку на страницу трека (сингл) или альбома
     const trackLink = track.album ? `/album/${track.album._id}` : `/single/${track._id}`;
 
     const handlePlayClick = (e) => {
@@ -83,12 +82,10 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
     };
 
     return (
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Убрана первая колонка `auto` из grid-cols, теперь `grid-cols-[1fr_auto]` ---
         <div 
             onDoubleClick={onPlay} 
             className={`grid grid-cols-[1fr_auto] items-center gap-x-4 px-2 py-2 rounded-lg group hover:bg-slate-200/50 dark:hover:bg-white/10 ${isCurrent ? 'bg-slate-200/50 dark:bg-white/10' : ''}`}
         >
-            {/* --- Блок с номером был полностью удален --- */}
             <div className="flex items-center space-x-4 min-w-0">
                 <div className="relative w-10 h-10 rounded object-cover flex-shrink-0 group/cover">
                     <CachedImage 
@@ -130,14 +127,21 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                             </p>
                         </Link>
                     </div>
-                    {/* --- ИЗМЕНЕНИЕ: Уменьшен размер шрифта для артистов на мобильных устройствах --- */}
                     <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate">
                         {renderArtistLinks(track.artist)}
                     </p>
                 </div>
             </div>
-            {/* --- ИЗМЕНЕНИЕ: Уменьшен `space-x` для иконок --- */}
+            
             <div className="flex items-center space-x-2 md:space-x-4 text-slate-600 dark:text-slate-400">
+                {/* --- НАЧАЛО БЛОКА ИЗМЕНЕНИЙ --- */}
+                {onAddToPlaylist && (
+                    <button onClick={() => onAddToPlaylist(track)} className="transition-colors text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-blue-500" title="Добавить в плейлист">
+                        <PlusCircle size={18} />
+                    </button>
+                )}
+                {/* --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ --- */}
+                
                 {onRemoveFromPlaylist ? (
                      <button onClick={() => onRemoveFromPlaylist(track._id)} className="transition-colors text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-red-500">
                         <Trash2 size={18} />

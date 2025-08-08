@@ -1,4 +1,4 @@
-// frontend/src/pages/MusicPage.jsx
+// frontend/src/pages/MusicPage.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useTitle from '../hooks/useTitle';
@@ -111,8 +111,8 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
                  <section>
                     <SectionHeader title="Популярные исполнители" icon={MicVocal} />
                     <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-y-4 gap-x-2">
-                        {recommendations.popularArtists.slice(0, 10).map(artist => (
-                            <ArtistAvatar key={artist._id} artist={artist} size="xl" />
+                         {recommendations.popularArtists.slice(0, 10).map(artist => (
+                             <ArtistAvatar key={artist._id} artist={artist} size="xl" />
                         ))}
                     </div>
                 </section>
@@ -122,6 +122,7 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
 };
 
 const MusicListView = ({ tracks, loading, onPlayTrack, onToggleSave, myMusicTrackIds, title, emptyMessage }) => {
+    const { currentTrack, isPlaying } = useMusicPlayer();
     if (loading) return <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 animate-spin" /></div>;
     if (!tracks || tracks.length === 0) return <div className="text-center p-20 text-slate-500">{emptyMessage}</div>;
     
@@ -135,6 +136,8 @@ const MusicListView = ({ tracks, loading, onPlayTrack, onToggleSave, myMusicTrac
                         track={track}
                         index={index + 1}
                         onPlay={() => onPlayTrack(track)}
+                        isCurrent={track._id === currentTrack?._id}
+                        isPlaying={isPlaying}
                         onToggleSave={onToggleSave}
                         isSaved={myMusicTrackIds.has(track.sourceId || track._id)}
                     />
@@ -177,9 +180,11 @@ const PlaylistsView = ({ playlists, loading, onCreate, onPlaylistUpdated, onPlay
     );
 };
 
-
-const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, onPlayTrack, loadingMore }) => {
+// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, onPlayTrack, loadingMore, onToggleSave, myMusicTrackIds }) => {
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const navigate = useNavigate();
+    const { currentTrack, isPlaying } = useMusicPlayer();
     const { tracks, artists, albums, playlists } = results;
     const hasResults = tracks?.length > 0 || artists?.length > 0 || albums?.length > 0 || playlists?.length > 0;
     
@@ -237,7 +242,20 @@ const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, 
                         <section>
                             <SectionHeader title="Треки" icon={Music} />
                             <div className="space-y-1">
-                                {tracks.map((track, index) => <PlaylistTrackItem key={track._id} track={track} index={index + 1} onPlay={() => onPlayTrack(track, tracks)} />)}
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                                {tracks.map((track, index) => (
+                                    <PlaylistTrackItem 
+                                        key={track._id} 
+                                        track={track} 
+                                        index={index + 1} 
+                                        onPlay={() => onPlayTrack(track, tracks)}
+                                        isCurrent={track._id === currentTrack?._id}
+                                        isPlaying={isPlaying}
+                                        onToggleSave={onToggleSave}
+                                        isSaved={myMusicTrackIds.has(track.sourceId || track._id)}
+                                    />
+                                ))}
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </div>
                             {hasMore && (
                                 <div className="mt-6 text-center">
@@ -415,6 +433,10 @@ const MusicPage = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex justify-between items-center mb-8">
                         <h1 className="text-4xl font-bold">Музыка</h1>
+                        <button onClick={() => setIsUploadModalOpen(true)} className="hidden md:flex items-center space-x-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                            <PlusCircle size={18} />
+                            <span>Загрузить трек</span>
+                        </button>
                     </div>
 
                     <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 mb-8 overflow-x-auto no-scrollbar">
@@ -445,7 +467,22 @@ const MusicPage = () => {
                             {activeTab === 'my-music' && <MusicListView tracks={myMusic} loading={loading.myMusic} title="Моя музыка" emptyMessage="Вы еще не добавили ни одного трека." onPlayTrack={(track) => playTrack(track, myMusic)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
                             {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
                             {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
-                            {activeTab === 'search' && <SearchView query={searchQuery} setQuery={setSearchQuery} results={searchResults} loading={loading.search} onSearchMore={handleSearchMore} hasMore={hasMore} onPlayTrack={(track, tracklist) => playTrack(track, tracklist)} loadingMore={loadingMore} />}
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                            {activeTab === 'search' && 
+                                <SearchView 
+                                    query={searchQuery} 
+                                    setQuery={setSearchQuery} 
+                                    results={searchResults} 
+                                    loading={loading.search} 
+                                    onSearchMore={handleSearchMore} 
+                                    hasMore={hasMore} 
+                                    onPlayTrack={(track, tracklist) => playTrack(track, tracklist)} 
+                                    loadingMore={loadingMore}
+                                    onToggleSave={onToggleLike}
+                                    myMusicTrackIds={myMusicTrackIds}
+                                />
+                            }
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </motion.div>
                     </AnimatePresence>
                 </div>
