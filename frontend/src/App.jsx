@@ -63,7 +63,10 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  const isFullBleedLayout = /^\/(artist|album|single|communities\/.+|music\/playlist|messages\/.+|profile\/.+)/.test(location.pathname);
+  // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+  // Теперь `/messages` не соответствует, а `/messages/что-угодно` соответствует.
+  const isFullBleedLayout = /^\/(artist|album|single|communities\/.+|music\/playlist|messages\/.+)/.test(location.pathname);
+  // --- КОНЕЦ ИЗМЕНЕНИЯ ---
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
@@ -122,7 +125,7 @@ const MainLayout = ({ children }) => {
       )}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || /^\/messages\/.+/.test(location.pathname) ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
+        className={`hamburger-menu md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || /^\/messages\/.+/.test(location.pathname) ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
       >
         <Menu />
       </button>

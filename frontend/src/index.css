@@ -235,6 +235,10 @@ html.dark .tippy-arrow {
     display: inline-block; /* Это ключевое изменение, которое ставит эмодзи в ряд */
 }
 
+body.modal-open .hamburger-menu {
+  display: none !important;
+}
+
 .rc-slider {
   position: relative;
   height: 14px;
