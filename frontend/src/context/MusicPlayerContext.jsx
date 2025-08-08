@@ -1,4 +1,4 @@
-// frontend/src/context/MusicPlayerContext.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/context/MusicPlayerContext.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ (ФИНАЛЬНАЯ ВЕРСИЯ) ---
 
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
@@ -35,14 +35,15 @@ export const MusicPlayerProvider = ({ children }) => {
     const [likeActionStatus, setLikeActionStatus] = useState(null);
     const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false);
     
-    // --- ИЗМЕНЕНИЕ: Возвращаем audioRef для HTML5 Audio ---
     const audioRef = useRef(new Audio());
     const abortControllerRef = useRef(null); 
     const playlistRef = useRef([]);
     const currentTrackIndexRef = useRef(-1);
     const notificationTimeoutRef = useRef(null);
     const likeStatusTimeoutRef = useRef(null);
-    const animationFrameIdRef = useRef(null);
+    
+    // --- ИЗМЕНЕНИЕ: Используем ref для ID интервала ---
+    const progressIntervalRef = useRef(null);
     
     const cleanTitle = (title) => {
         if (!title) return '';
@@ -100,7 +101,6 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [currentTrack, myMusicTrackIds]);
     
-    // --- ИЗМЕНЕНИЕ: Полностью переписанная функция playTrack для работы с <audio> ---
     const playTrack = useCallback(async (trackData, playlistData, options = {}) => {
         if (!trackData?._id) return;
         
@@ -113,7 +113,7 @@ export const MusicPlayerProvider = ({ children }) => {
         setCurrentTrack(trackData);
         setIsPlaying(false);
         
-        audioRef.current.src = ''; // Сбрасываем предыдущий источник
+        audioRef.current.src = '';
 
         try {
             const { startShuffled = false, startRepeat = false } = options;
@@ -216,30 +216,30 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
 
-    // --- ИЗМЕНЕНИЕ: Правильная реализация плавного обновления прогресса для <audio> ---
+    // --- ИЗМЕНЕНИЕ: Используем setInterval для надежного обновления прогресса ---
     useEffect(() => {
         const audio = audioRef.current;
-        
-        const updateProgressLoop = () => {
-            if (audioRef.current) {
-                setProgress(audioRef.current.currentTime);
+
+        const startProgressInterval = () => {
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = setInterval(() => {
+                setProgress(audio.currentTime);
+                if (audio.buffered.length > 0) {
+                    setBuffered(audio.buffered.end(audio.buffered.length - 1) / audio.duration);
+                }
+            }, 250); // Обновляем 4 раза в секунду
+        };
+
+        const stopProgressInterval = () => {
+            if (progressIntervalRef.current) {
+                clearInterval(progressIntervalRef.current);
+                progressIntervalRef.current = null;
             }
-            animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
-        };
-
-        const startLoop = () => {
-            cancelAnimationFrame(animationFrameIdRef.current);
-            animationFrameIdRef.current = requestAnimationFrame(updateProgressLoop);
-        };
-
-        const stopLoop = () => {
-            cancelAnimationFrame(animationFrameIdRef.current);
         };
 
         const handleDurationChange = () => setDuration(audio.duration);
-        
         const handleEnded = () => {
-            stopLoop();
+            stopProgressInterval();
             if (isRepeat) {
                 audio.currentTime = 0;
                 audio.play();
@@ -249,25 +249,19 @@ export const MusicPlayerProvider = ({ children }) => {
             }
         };
         
-        const handleProgress = () => {
-            if (audio.buffered.length > 0 && audio.duration > 0) {
-                setBuffered(audio.buffered.end(audio.buffered.length - 1) / audio.duration);
-            }
-        };
-        
-        audio.addEventListener('play', startLoop);
-        audio.addEventListener('pause', stopLoop);
+        audio.addEventListener('play', startProgressInterval);
+        audio.addEventListener('playing', startProgressInterval);
+        audio.addEventListener('pause', stopProgressInterval);
         audio.addEventListener('durationchange', handleDurationChange);
         audio.addEventListener('ended', handleEnded);
-        audio.addEventListener('progress', handleProgress);
 
         return () => {
-            stopLoop();
-            audio.removeEventListener('play', startLoop);
-            audio.removeEventListener('pause', stopLoop);
+            stopProgressInterval();
+            audio.removeEventListener('play', startProgressInterval);
+            audio.removeEventListener('playing', startProgressInterval);
+            audio.removeEventListener('pause', stopProgressInterval);
             audio.removeEventListener('durationchange', handleDurationChange);
             audio.removeEventListener('ended', handleEnded);
-            audio.removeEventListener('progress', handleProgress);
         };
     }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
 

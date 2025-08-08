@@ -17,11 +17,12 @@ import Avatar from '../Avatar';
 import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import { useEmojiPicker } from '../../hooks/useEmojiPicker';
-import useMediaQuery from '../../hooks/useMediaQuery'; // --- ИМПОРТ ХУКА ---
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 registerLocale('ru', ru);
 
 const API_URL = import.meta.env.VITE_API_URL;
+const EMOJI_PICKER_HEIGHT_MOBILE = 350; // --- КОНСТАНТА ДЛЯ ВЫСОТЫ ---
 
 const CachedImage = ({ src }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -51,7 +52,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const smileButtonRef = useRef(null);
     const textareaRef = useRef(null);
     const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
-    const isMobile = useMediaQuery('(max-width: 767px)'); // --- ИСПОЛЬЗОВАНИЕ ХУКА ---
+    const isMobile = useMediaQuery('(max-width: 767px)');
     const [selectedCommunity, setSelectedCommunity] = useState(null);
     const [myCommunities, setMyCommunities] = useState([]);
     const [fetchingCommunities, setFetchingCommunities] = useState(false);
@@ -213,7 +214,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         }
     };
 
-
     return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
@@ -227,10 +227,10 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                         onClick={onClose}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-4 pt-20"
                     >
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Используем константу для сдвига --- */}
                         <motion.div
                             initial={{ y: "100%", opacity: 0 }}
-                            animate={{ y: isMobile && isPickerVisible ? -340 : 0, opacity: 1 }}
+                            animate={{ y: isMobile && isPickerVisible ? -EMOJI_PICKER_HEIGHT_MOBILE : 0, opacity: 1 }}
                             exit={{ y: "100%", opacity: 0 }}
                             transition={{ type: "spring", stiffness: 400, damping: 40 }}
                             onClick={(e) => e.stopPropagation()}

@@ -4,8 +4,10 @@ import React, { createContext, useState, useCallback, useRef, useEffect, Suspens
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import useMediaQuery from '../hooks/useMediaQuery'; // --- ИМПОРТ ХУКА ---
 
 const Picker = React.lazy(() => import('emoji-picker-react'));
+const EMOJI_PICKER_HEIGHT_MOBILE = 350; // --- КОНСТАНТА ДЛЯ ВЫСОТЫ ПАНЕЛИ ---
 
 export const EmojiPickerContext = createContext(null);
 
@@ -16,14 +18,14 @@ export const EmojiPickerProvider = ({ children }) => {
         onEmojiClickCallback: null,
     });
     const pickerRef = useRef(null);
+    const isMobile = useMediaQuery('(max-width: 767px)'); // --- ИСПОЛЬЗОВАНИЕ ХУКА ---
 
     const showPicker = useCallback((targetRef, onEmojiClickCallback) => {
         if (!targetRef.current) return;
 
         const rect = targetRef.current.getBoundingClientRect();
-        const isMobile = window.innerWidth < 768;
-        const pickerHeight = isMobile ? 350 : 450;
-        const pickerWidth = isMobile ? window.innerWidth * 0.95 : 350;
+        const pickerHeight = isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : 450;
+        const pickerWidth = isMobile ? window.innerWidth : 350;
 
         const top = (window.innerHeight - rect.bottom < pickerHeight) 
             ? rect.top - pickerHeight - 10 
@@ -38,7 +40,7 @@ export const EmojiPickerProvider = ({ children }) => {
             position: { top, left },
             onEmojiClickCallback,
         });
-    }, []);
+    }, [isMobile]);
 
     const hidePicker = useCallback(() => {
         setPickerState(prev => ({ ...prev, isOpen: false }));
@@ -54,16 +56,33 @@ export const EmojiPickerProvider = ({ children }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [hidePicker]);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const value = {
         showPicker,
         hidePicker,
         isOpen: pickerState.isOpen,
     };
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Условные стили и анимации ---
+    const pickerStyle = isMobile ? {
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 130,
+    } : {
+        position: 'fixed',
+        top: `${pickerState.position.top}px`,
+        left: `${pickerState.position.left}px`,
+        zIndex: 120,
+    };
+
+    const initialAnimation = isMobile ? { y: "100%" } : { opacity: 0, scale: 0.9 };
+    const animateAnimation = isMobile ? { y: 0 } : { opacity: 1, scale: 1 };
+    const exitAnimation = isMobile ? { y: "100%" } : { opacity: 0, scale: 0.9 };
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
+
     return (
-        // --- ИЗМЕНЕНИЕ: Используем новую переменную `value` ---
         <EmojiPickerContext.Provider value={value}>
             {children}
             {ReactDOM.createPortal(
@@ -71,25 +90,24 @@ export const EmojiPickerProvider = ({ children }) => {
                     {pickerState.isOpen && (
                         <motion.div
                             ref={pickerRef}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.15, ease: 'easeOut' }}
-                            style={{
-                                position: 'fixed',
-                                top: `${pickerState.position.top}px`,
-                                left: `${pickerState.position.left}px`,
-                                zIndex: 120, // Очень высокий z-index
-                            }}
+                            initial={initialAnimation}
+                            animate={animateAnimation}
+                            exit={exitAnimation}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                            style={pickerStyle}
                         >
-                            <Suspense fallback={<div className="w-[350px] h-[450px] bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center"><Loader2 className="animate-spin"/></div>}>
-                                <Picker 
-                                    onEmojiClick={pickerState.onEmojiClickCallback}
-                                    theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
-                                    width={window.innerWidth < 768 ? '95vw' : 350}
-                                    height={window.innerWidth < 768 ? 350 : 450}
-                                    autoFocusSearch={false} // Важно для предотвращения авто-фокуса
-                                />
+                            <Suspense fallback={<div className="w-full h-[350px] bg-slate-200 dark:bg-slate-700 rounded-t-2xl md:rounded-lg flex items-center justify-center"><Loader2 className="animate-spin"/></div>}>
+                                {/* --- ИЗМЕНЕНИЕ: Добавляем обертку для мобильных стилей --- */}
+                                <div className={isMobile ? "bg-slate-100 dark:bg-slate-800 rounded-t-2xl overflow-hidden" : ""}>
+                                    <Picker 
+                                        onEmojiClick={pickerState.onEmojiClickCallback}
+                                        theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
+                                        width={isMobile ? '100%' : 350}
+                                        height={isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : 450}
+                                        autoFocusSearch={false}
+                                        previewConfig={{ showPreview: !isMobile }}
+                                    />
+                                </div>
                             </Suspense>
                         </motion.div>
                     )}
