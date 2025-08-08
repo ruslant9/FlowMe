@@ -1,4 +1,4 @@
-// frontend/src/components/music/MusicPlayerBar.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/components/music/MusicPlayerBar.jsx
 
 import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Heart, Shuffle, Repeat, Volume2, VolumeX, X, Eye, CheckCircle } from 'lucide-react';
@@ -21,7 +21,6 @@ const formatTime = (seconds) => {
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
 };
-
 const NotificationToast = ({ message }) => (
     <AnimatePresence>
         {message && (
@@ -39,28 +38,32 @@ const NotificationToast = ({ message }) => (
 
 const cleanTitle = (title) => {
     if (!title) return '';
-    return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
+    return title.replace(
+        /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
+        ''
+    ).trim();
 };
-
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Надежная функция форматирования имени артиста ---
 const formatArtistName = (artistData) => {
     if (!artistData) return '';
-    const artists = Array.isArray(artistData) ? artistData : [artistData];
-
-    return artists.map((artist, index) => {
-        if (!artist || !artist.name) return null;
-        return (
+    if (Array.isArray(artistData)) {
+        return artistData.map((artist, index) => (
             <React.Fragment key={artist._id || index}>
                 <Link to={`/artist/${artist._id}`} className="hover:underline">
                     {(artist.name || '').replace(' - Topic', '').trim()}
                 </Link>
-                {index < artists.length - 1 && ', '}
+                {index < artistData.length - 1 && ', '}
             </React.Fragment>
-        )
-    }).filter(Boolean);
+        ));
+    }
+    if (typeof artistData === 'object' && artistData.name) {
+        return (
+            <Link to={`/artist/${artistData._id}`} className="hover:underline">
+                {artistData.name.replace(' - Topic', '').trim()}
+            </Link>
+        );
+    }
+    return <span>{artistData.toString()}</span>;
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
 const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffle, isRepeat, onPlayPauseToggle, onSeek, onSetVolume, onPrev, onNext, onToggleShuffle, onToggleRepeat, onToggleLike, isLiked, buffered, stopAndClearPlayer, playerNotification, openFullScreenPlayer, likeActionStatus }) => {
     if (!track) {
@@ -97,6 +100,7 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
 
             <div className="hidden md:flex flex-1 flex-col items-center justify-center min-w-0">
                 <div className="flex items-center justify-center space-x-4 mb-2">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем кнопку в div и добавляем кастомный toast --- */}
                     <div className="relative">
                          <AnimatePresence>
                             {likeActionStatus && (
@@ -116,6 +120,7 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
                             <Heart size={20} fill={isLiked ? 'currentColor' : 'none'}/>
                         </motion.button>
                     </div>
+                     {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                     
                     <div className="relative">
                         <NotificationToast message={playerNotification?.target === 'shuffle' ? playerNotification.message : null} />
@@ -158,6 +163,7 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
             </div>
 
             <div className="flex md:hidden items-center space-x-1">
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Оборачиваем мобильную кнопку тоже --- */}
                 <div className="relative">
                     <AnimatePresence>
                         {likeActionStatus && (
@@ -177,6 +183,7 @@ const MusicPlayerBar = ({ track, isPlaying, progress, duration, volume, isShuffl
                         <Heart size={22} fill={isLiked ? 'currentColor' : 'none'}/>
                     </motion.button>
                 </div>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 <button onClick={onPlayPauseToggle} className="p-2 text-slate-800 dark:text-white">
                     {isPlaying ? <Pause size={28}/> : <Play size={28}/>}
                 </button>
