@@ -369,13 +369,9 @@ function App() {
             <Route path="/profile/:userId" element={<UserProfilePage />} />
             <Route path="/friends" element={<FriendsPage />} />
             <Route path="/messages" element={<MessagesPage />} />
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1.1: Удаляем лишний маршрут для Избранного --- */}
-            {/* <Route path="/messages/favorites" element={<MessagesPage />} /> */}
             <Route path="/messages/:userId" element={<MessagesPage />} />
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1.1 --- */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/communities" element={<CommunitiesPage />} />
             <Route path="/communities/:communityId/manage" element={<CommunityManagementPage />} />
             <Route path="/communities/:communityId" element={<CommunityDetailPage />} />
             <Route path="/premium" element={<PremiumPage />} />
