@@ -26,15 +26,11 @@ import { useCachedImage } from '../../hooks/useCachedImage';
 import useMediaQuery from '../../hooks/useMediaQuery';
 
 const API_URL = import.meta.env.VITE_API_URL;
-const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
-const EMOJI_PICKER_WIDTH_DESKTOP = 350;
-const EMOJI_PICKER_HEIGHT_MOBILE = 350;
 
 const COMMENT_PAGE_LIMIT = 5;
 
 const CachedMotionImage = ({ src, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
-
     if (loading) {
         return (
             <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
@@ -42,27 +38,12 @@ const CachedMotionImage = ({ src, ...props }) => {
             </motion.div>
         );
     }
-
     return <motion.img src={finalSrc} {...props} />;
-};
-
-const CachedImage = ({ src, alt, className }) => {
-    const { finalSrc, loading } = useCachedImage(src);
-    if (loading) {
-        return (
-            <div className={`${className} bg-black flex items-center justify-center`}>
-                <Loader2 className="w-10 h-10 animate-spin text-white" />
-            </div>
-        );
-    }
-    return <img src={finalSrc} alt={alt} className={className} />;
 };
 
 const getImageUrl = (url) => {
     if (!url) return '';
-    if (url.startsWith('http')) {
-        return url;
-    }
+    if (url.startsWith('http')) return url;
     return `${API_URL}/${url}`;
 };
 
@@ -75,6 +56,23 @@ const customRuLocale = {
         return ru.formatDistance(token, count, options);
     },
 };
+
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Создаем отдельный компонент для контента поста ---
+const PostContent = ({ post, onVote, isScheduled = false }) => (
+    <div className="space-y-4">
+        {post.text && <p className="text-sm break-words whitespace-pre-wrap">{post.text}</p>}
+        {post.attachedTrack && 
+            <AttachedTrack 
+                track={{
+                    ...post.attachedTrack, 
+                    albumArtUrl: post.attachedTrack.albumArtUrl || post.attachedTrack.album?.coverArtUrl
+                }} 
+            />
+        }
+        {post.poll && <PollDisplay poll={post.poll} onVote={onVote} isScheduled={isScheduled} />}
+    </div>
+);
+// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
 const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost, highlightCommentId }) => {
     const navigate = useNavigate();
@@ -122,106 +120,58 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     useEffect(() => {
         const fetchCommentingOptions = async () => {
             if (!currentUser || !activePost) return;
-            
-            const personalProfile = { 
-                _id: currentUser._id, 
-                name: currentUser.fullName || currentUser.username, 
-                username: currentUser.username,
-                avatar: currentUser.avatar, 
-                type: 'user',
-                premium: currentUser.premium,
-                premiumCustomization: currentUser.premiumCustomization,
-            };
+            const personalProfile = { _id: currentUser._id, name: currentUser.fullName || currentUser.username, username: currentUser.username, avatar: currentUser.avatar, type: 'user', premium: currentUser.premium, premiumCustomization: currentUser.premiumCustomization };
             let options = [personalProfile];
-
             try {
                 const token = localStorage.getItem('token');
                 const res = await axios.get(`${API_URL}/api/communities/created`, { headers: { Authorization: `Bearer ${token}` } });
                 const ownedCommunities = res.data.map(c => ({ ...c, type: 'community' }));
                 options = [...options, ...ownedCommunities];
-            } catch (error) {
-                console.error("Не удалось загрузить список сообществ для комментирования", error);
-            }
-
+            } catch (error) { console.error("Не удалось загрузить список сообществ для комментирования", error); }
             setCommentingOptions(options);
-
             const currentPostId = activePost._id;
-
             if (previousPostIdRef.current !== currentPostId) {
                 const currentCommunityId = activePost.community?._id;
                 const isOwnerOfCurrentCommunity = options.some(opt => opt.type === 'community' && opt._id === currentCommunityId);
-
-                if (currentCommunityId && isOwnerOfCurrentCommunity) {
-                    setCommentAs(options.find(opt => opt._id === currentCommunityId));
-                } else {
-                    setCommentAs(personalProfile);
-                }
+                if (currentCommunityId && isOwnerOfCurrentCommunity) { setCommentAs(options.find(opt => opt._id === currentCommunityId)); } else { setCommentAs(personalProfile); }
                 previousPostIdRef.current = currentPostId;
             }
         };
-
         fetchCommentingOptions();
     }, [currentUser, activePost]);
 
-    const sortLabels = {
-        newest: 'Сначала новые',
-        oldest: 'Сначала старые',
-        popular: 'Популярные'
-    };
-
-    const handleSortChange = useCallback((newSortOrder) => {
-        setSortOrder(newSortOrder);
-        setShowSortMenu(false);
-        setEditingCommentId(null);
-    }, []);
-
+    const sortLabels = { newest: 'Сначала новые', oldest: 'Сначала старые', popular: 'Популярные' };
+    const handleSortChange = useCallback((newSortOrder) => { setSortOrder(newSortOrder); setShowSortMenu(false); setEditingCommentId(null); }, []);
     const sortedComments = useMemo(() => {
         if (!activePost?.comments) return [];
         const commentsToSort = [...activePost.comments];
-        
         commentsToSort.sort((a, b) => {
             switch (sortOrder) {
-                case 'popular':
-                    return (b.likes?.length || 0) - (a.likes?.length || 0);
-                case 'oldest':
-                    return new Date(a.createdAt) - new Date(b.createdAt);
-                case 'newest':
-                default:
-                    return new Date(b.createdAt) - new Date(a.createdAt);
+                case 'popular': return (b.likes?.length || 0) - (a.likes?.length || 0);
+                case 'oldest': return new Date(a.createdAt) - new Date(b.createdAt);
+                case 'newest': default: return new Date(b.createdAt) - new Date(a.createdAt);
             }
         });
         return commentsToSort;
     }, [activePost, sortOrder]);
 
-    useEffect(() => {
-        setCurrentIndex(startIndex);
-        setEditingCommentId(null);
-        setCommentSelectionMode(false);
-        setSelectedComments([]);
-    }, [startIndex]);
+    useEffect(() => { setCurrentIndex(startIndex); setEditingCommentId(null); setCommentSelectionMode(false); setSelectedComments([]); }, [startIndex]);
 
     useEffect(() => {
         function handleClickOutside(event) {
-            if (sortMenuRef.current && !sortMenuRef.current.contains(event.target)) {
-                setShowSortMenu(false);
-            }
-            if (postMenuRef.current && !postMenuRef.current.contains(event.target)) {
-                setShowPostMenu(false);
-            }
+            if (sortMenuRef.current && !sortMenuRef.current.contains(event.target)) setShowSortMenu(false);
+            if (postMenuRef.current && !postMenuRef.current.contains(event.target)) setShowPostMenu(false);
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
-
 
     const fetchPostData = useCallback(async (showLoader = true) => {
         if (currentIndex === null || !posts[currentIndex]) return;
         if(showLoader) setIsLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/api/posts/${posts[currentIndex]._id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await axios.get(`${API_URL}/api/posts/${posts[currentIndex]._id}`, { headers: { Authorization: `Bearer ${token}` } });
             setActivePost(res.data);
             return res.data;
         } catch (error) {
@@ -234,163 +184,59 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
 
     useEffect(() => {
         const handlePostUpdateEvent = (event) => {
-            if (activePost && event.detail && event.detail.postId && event.detail.postId === activePost._id) {
-                fetchPostData(false);
-            }
+            if (activePost && event.detail && event.detail.postId && event.detail.postId === activePost._id) fetchPostData(false);
         };
-
         window.addEventListener('postUpdated', handlePostUpdateEvent);
-
-        return () => {
-            window.removeEventListener('postUpdated', handlePostUpdateEvent);
-        };
+        return () => window.removeEventListener('postUpdated', handlePostUpdateEvent);
     }, [activePost, fetchPostData]);
 
     useEffect(() => { fetchPostData(); }, [fetchPostData]);
-
+    
     const handleVote = useCallback(async (optionId) => {
         const originalPoll = JSON.parse(JSON.stringify(activePost.poll));
         const newPoll = { ...originalPoll };
-        
         let alreadyVotedOption = null;
         newPoll.options.forEach(opt => {
             const voteIndex = opt.votes.findIndex(v => (typeof v === 'string' ? v : v._id) === currentUser._id);
-            if (voteIndex > -1) {
-                alreadyVotedOption = opt._id;
-                opt.votes.splice(voteIndex, 1);
-            }
+            if (voteIndex > -1) { alreadyVotedOption = opt._id; opt.votes.splice(voteIndex, 1); }
         });
-        
         const targetOption = newPoll.options.find(opt => opt._id === optionId);
-        if (targetOption && alreadyVotedOption !== optionId) {
-            targetOption.votes.push(currentUser._id);
-        }
-    
+        if (targetOption && alreadyVotedOption !== optionId) targetOption.votes.push(currentUser._id);
         setActivePost(prev => ({ ...prev, poll: newPoll }));
-        
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/api/posts/${activePost._id}/poll/vote`, { optionId }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при голосовании.");
-            setActivePost(prev => ({ ...prev, poll: originalPoll }));
-        }
+            await axios.post(`${API_URL}/api/posts/${activePost._id}/poll/vote`, { optionId }, { headers: { Authorization: `Bearer ${token}` } });
+        } catch (error) { toast.error(error.response?.data?.message || "Ошибка при голосовании."); setActivePost(prev => ({ ...prev, poll: originalPoll })); }
     }, [activePost, currentUser]);
 
     const handleLike = async () => {
         const token = localStorage.getItem('token');
         try {
             const isLiked = activePost.likes.some(l => l._id === currentUserId);
-            const optimisticLikes = isLiked
-                ? activePost.likes.filter(l => l._id !== currentUserId)
-                : [...activePost.likes, { _id: currentUserId, username: '...' }];
-            
+            const optimisticLikes = isLiked ? activePost.likes.filter(l => l._id !== currentUserId) : [...activePost.likes, { _id: currentUserId, username: '...' }];
             setActivePost(prev => ({ ...prev, likes: optimisticLikes }));
-
             await axios.post(`${API_URL}/api/posts/${activePost._id}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
-        } catch (error) {
-            toast.error('Ошибка');
-            fetchPostData(false);
-        }
+        } catch (error) { toast.error('Ошибка'); fetchPostData(false); }
     };
     
     const handleCommentSubmit = async (e) => {
         e.preventDefault();
         if (!commentText.trim() || isSendingComment) return;
-        
         setIsSendingComment(true);
         const token = localStorage.getItem('token');
         try {
-            await axios.post(
-                `${API_URL}/api/posts/${activePost._id}/comments`,
-                {
-                    text: commentText,
-                    parentId: replyingTo ? replyingTo.id : null,
-                    commentAs: commentAs?.type === 'community' ? commentAs._id : null
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            
-            setCommentText('');
-            setReplyingTo(null);
-            setIsPickerVisible(false);
-        } catch (error) {
-            toast.error('Не удалось добавить комментарий');
-        } finally {
-            setIsSendingComment(false);
-        }
+            await axios.post(`${API_URL}/api/posts/${activePost._id}/comments`, { text: commentText, parentId: replyingTo ? replyingTo.id : null, commentAs: commentAs?.type === 'community' ? commentAs._id : null }, { headers: { Authorization: `Bearer ${token}` } });
+            setCommentText(''); setReplyingTo(null); setIsPickerVisible(false);
+        } catch (error) { toast.error('Не удалось добавить комментарий'); } finally { setIsSendingComment(false); }
     };
     
-    const handleDeleteSelectedComments = () => {
-        showConfirmation({
-            title: `Удалить ${selectedComments.length} комментариев?`,
-            message: 'Это действие нельзя отменить. Все дочерние комментарии также будут удалены.',
-            onConfirm: async () => {
-                const toastId = toast.loading('Удаление...');
-                try {
-                    const token = localStorage.getItem('token');
-                    await axios.delete(`${API_URL}/api/posts/${activePost._id}/comments`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                        data: { commentIds: selectedComments }
-                    });
-                    toast.success('Комментарии удалены', { id: toastId });
-                    setCommentSelectionMode(false);
-                    setSelectedComments([]);
-                } catch (error) {
-                    toast.error('Ошибка при удалении.', { id: toastId });
-                }
-            }
-        });
-    };
+    const handleDeleteSelectedComments = () => showConfirmation({ title: `Удалить ${selectedComments.length} комментариев?`, message: 'Это действие нельзя отменить. Все дочерние комментарии также будут удалены.', onConfirm: async () => { const toastId = toast.loading('Удаление...'); try { const token = localStorage.getItem('token'); await axios.delete(`${API_URL}/api/posts/${activePost._id}/comments`, { headers: { Authorization: `Bearer ${token}` }, data: { commentIds: selectedComments } }); toast.success('Комментарии удалены', { id: toastId }); setCommentSelectionMode(false); setSelectedComments([]); } catch (error) { toast.error('Ошибка при удалении.', { id: toastId }); } } });
     
-    const handleDeleteAllComments = () => {
-        const allRootCommentIds = activePost.comments.map(c => c._id);
-        showConfirmation({
-            title: `Удалить все ${allRootCommentIds.length} веток комментариев?`,
-            message: 'Это действие нельзя отменить.',
-            onConfirm: async () => {
-                const toastId = toast.loading('Удаление...');
-                try {
-                    const token = localStorage.getItem('token');
-                    await axios.delete(`${API_URL}/api/posts/${activePost._id}/comments`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                        data: { commentIds: allRootCommentIds }
-                    });
-                    toast.success('Все комментарии удалены', { id: toastId });
-                } catch (error) {
-                    toast.error('Ошибка при удалении.', { id: toastId });
-                }
-            }
-        });
-    };
+    const handleDeleteAllComments = () => showConfirmation({ title: `Удалить все комментарии?`, message: 'Это действие нельзя отменить. Все ответы также будут удалены.', onConfirm: async () => { const toastId = toast.loading('Удаление всех комментариев...'); try { const token = localStorage.getItem('token'); await axios.delete(`${API_URL}/api/posts/${activePost._id}/comments`, { headers: { Authorization: `Bearer ${token}` }, data: { commentIds: activePost.comments.map(c => c._id) } }); toast.success('Все комментарии удалены', { id: toastId }); } catch (error) { toast.error('Ошибка удаления всех комментариев', { id: toastId }); } finally { setCommentSelectionMode(false); setSelectedComments([]); } } });
 
-    const handleDeletePost = () => {
-        setShowPostMenu(false);
-        showConfirmation({
-            title: 'Удалить пост?',
-            message: 'Это действие нельзя отменить. Пост будет удален навсегда.',
-            onConfirm: async () => {
-                const toastId = toast.loading('Удаление поста...');
-                try {
-                    const token = localStorage.getItem('token');
-                    await axios.delete(`${API_URL}/api/posts/${activePost._id}`, { headers: { Authorization: `Bearer ${token}` } });
-                    toast.success('Пост удален', { id: toastId });
-                    if (onDeletePost) onDeletePost(activePost._id);
-                    onClose();
-                } catch (error) {
-                    toast.error('Ошибка при удалении поста.', { id: toastId });
-                }
-            }
-        });
-    };
+    const handleDeletePost = () => { setShowPostMenu(false); showConfirmation({ title: 'Удалить пост?', message: 'Это действие нельзя отменить. Пост будет удален навсегда.', onConfirm: async () => { const toastId = toast.loading('Удаление поста...'); try { const token = localStorage.getItem('token'); await axios.delete(`${API_URL}/api/posts/${activePost._id}`, { headers: { Authorization: `Bearer ${token}` } }); toast.success('Пост удален', { id: toastId }); if (onDeletePost) onDeletePost(activePost._id); onClose(); } catch (error) { toast.error('Ошибка при удалении поста.', { id: toastId }); } } }); };
 
-    const handleImageUpdate = (newImageUrl) => {
-        if (onUpdatePost) onUpdatePost(activePost._id, { imageUrls: [newImageUrl] });
-        setIsEditingPostImage(false);
-        fetchPostData(false);
-    };
+    const handleImageUpdate = (newImageUrl) => { if (onUpdatePost) onUpdatePost(activePost._id, { imageUrls: [newImageUrl] }); setIsEditingPostImage(false); fetchPostData(false); };
     
     const hasImages = activePost && activePost.imageUrls && activePost.imageUrls.length > 0;
 
@@ -434,7 +280,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
                         ) : activePost ? (
                             <>
-                                <div className="w-full md:w-3/5 bg-black flex items-center justify-center relative md:h-full order-first md:order-none">
+                                <div className="w-full md:w-3/5 bg-black flex items-center justify-center relative md:h-full">
                                     {posts.length > 1 && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
                                     {hasImages ? (
                                         <AnimatePresence initial={false}>
@@ -445,15 +291,12 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             />
                                         </AnimatePresence>
                                     ) : (
-                                        <div className="hidden md:flex flex-col items-center p-8 space-y-4 max-h-full overflow-y-auto">
-                                            {activePost.text && <p className="text-lg text-white break-words whitespace-pre-wrap">{activePost.text}</p>}
-                                            {activePost.attachedTrack && <div className="mt-4 w-full max-w-sm"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>}
-                                            {activePost.poll && <div className="mt-4 w-full max-w-sm"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
+                                        <div className="hidden md:flex flex-col items-center p-8 space-y-4 max-h-full overflow-y-auto w-full">
+                                            <PostContent post={activePost} onVote={handleVote} />
                                         </div>
                                     )}
                                 </div>
-                                
-                                <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0 order-last md:order-none">
+                                <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
                                     <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                                         <Link to={activePost.community ? `/communities/${activePost.community._id}` : `/profile/${activePost.user._id}`} onClick={onClose} className="flex items-center space-x-3 group flex-1 min-w-0">
                                             {(() => {
@@ -478,26 +321,15 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         <div className="flex items-center space-x-2">
                                             {activePost.user._id === currentUserId && (
                                                 <div ref={postMenuRef} className="relative">
-                                                    <button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-                                                        <MoreHorizontal size={20}/>
-                                                    </button>
+                                                    <button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><MoreHorizontal size={20}/></button>
                                                     {showPostMenu && (
                                                         <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10 overflow-hidden p-1 space-y-1">
-                                                            <button onClick={handleDeletePost} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors">
-                                                                <Trash2 size={16} />
-                                                                <span>Удалить пост</span>
-                                                            </button>
+                                                            <button onClick={handleDeletePost} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors"><Trash2 size={16} /><span>Удалить пост</span></button>
                                                             {activePost.comments.length > 0 && (
                                                                 <>
                                                                     <div className="my-1 h-px bg-slate-200 dark:bg-slate-700"></div>
-                                                                    <button onClick={() => { handleDeleteAllComments(); setShowPostMenu(false); }} disabled={!!editingCommentId} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors">
-                                                                        <Trash2 size={16} />
-                                                                        <span>Удалить все комм.</span>
-                                                                    </button>
-                                                                    <button onClick={() => { setCommentSelectionMode(true); setSelectedComments([]); setShowPostMenu(false); }} disabled={!!editingCommentId} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors">
-                                                                        <Check size={16} />
-                                                                        <span>Выбрать комм.</span>
-                                                                    </button>
+                                                                    <button onClick={() => { handleDeleteAllComments(); setShowPostMenu(false); }} disabled={!!editingCommentId} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors"><Trash2 size={16} /><span>Удалить все комм.</span></button>
+                                                                    <button onClick={() => { setCommentSelectionMode(true); setSelectedComments([]); setShowPostMenu(false); }} disabled={!!editingCommentId} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"><Check size={16} /><span>Выбрать комм.</span></button>
                                                                 </>
                                                             )}
                                                         </div>
@@ -507,200 +339,40 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10"><X size={20}/></button>
                                         </div>
                                     </div>
-
-                                    <div className="md:hidden p-4">
-                                        {!hasImages && (
-                                            <>
-                                                {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
-                                                {activePost.attachedTrack && <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>}
-                                                {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
-                                            </>
-                                        )}
+                                    
+                                    <div className="md:hidden p-4 border-b border-slate-200 dark:border-slate-700">
+                                        <PostContent post={activePost} onVote={handleVote} />
                                     </div>
 
                                     <div className="flex-1 overflow-y-auto min-h-0">
-                                        <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-4 border-b border-t border-slate-200 dark:border-slate-700">
+                                        <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-4">
-                                                    <LikesPopover likers={activePost.likes}>
-                                                        <span>
-                                                            <button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500">
-                                                                <Heart fill={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'none'} stroke={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'currentColor'}/>
-                                                                <span>{activePost.likes.length}</span>
-                                                            </button>
-                                                        </span>
-                                                    </LikesPopover>
+                                                    <LikesPopover likers={activePost.likes}><span><button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500"><Heart fill={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'none'} stroke={activePost.likes.some(l=>l._id===currentUserId)?'#ef4444':'currentColor'}/><span>{activePost.likes.length}</span></button></span></LikesPopover>
                                                     <div className="flex items-center space-x-1"><MessageCircle/><span>{activePost.comments.length}</span></div>
                                                 </div>
-
                                                 {commentSelectionMode ? (
-                                                    <div className="flex items-center space-x-2">
-                                                        <button onClick={() => {setCommentSelectionMode(false); setSelectedComments([])}} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20">Отмена</button>
-                                                        <button onClick={handleDeleteSelectedComments} disabled={selectedComments.length === 0} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Удалить ({selectedComments.length})</button>
-                                                    </div>
+                                                    <div className="flex items-center space-x-2"><button onClick={() => {setCommentSelectionMode(false); setSelectedComments([])}} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20">Отмена</button><button onClick={handleDeleteSelectedComments} disabled={selectedComments.length === 0} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Удалить ({selectedComments.length})</button></div>
                                                 ) : null}
-
                                                 {activePost.comments.length > 1 && (
-                                                    <div className="relative" ref={sortMenuRef}>
-                                                        <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
-                                                            <span>{sortLabels[sortOrder]}</span>
-                                                            <ChevronDown size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
-                                                        </button>
-                                                        {showSortMenu && (
-                                                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black dark:ring-white/10 ring-opacity-5 py-1 z-30">
-                                                                {Object.entries(sortLabels).map(([key, label]) => (
-                                                                    <button key={key} onClick={() => handleSortChange(key)} className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${sortOrder === key ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'} hover:bg-slate-100 dark:hover:bg-slate-700`}>
-                                                                        {label}
-                                                                        {sortOrder === key && <Check size={16} />}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                    <div className="relative" ref={sortMenuRef}><button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}><span>{sortLabels[sortOrder]}</span><ChevronDown size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} /></button>{showSortMenu && (<div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black dark:ring-white/10 ring-opacity-5 py-1 z-30">{Object.entries(sortLabels).map(([key, label]) => (<button key={key} onClick={() => handleSortChange(key)} className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${sortOrder === key ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'} hover:bg-slate-100 dark:hover:bg-slate-700`}>{label}{sortOrder === key && <Check size={16} />}</button>))}</div>)}</div>
                                                 )}
                                             </div>
                                         </div>
-                                        
                                         <div className="p-4 space-y-4">
-                                            {sortedComments.length > 0 ? sortedComments.map(comment => (
-                                                <Comment 
-                                                    key={comment._id} 
-                                                    comment={comment} 
-                                                    currentUserId={currentUserId} 
-                                                    currentUser={currentUser}
-                                                    postOwnerId={activePost.user._id} 
-                                                    postCommunityId={activePost.community?._id}
-                                                    onCommentUpdate={fetchPostData}
-                                                    onReply={(c) => {
-                                                        const authorName = c.name || c.username; 
-                                                        setReplyingTo({ username: authorName, id: c.id }); 
-                                                        setCommentText(`@${authorName}, `); 
-                                                        commentInputRef.current?.focus();
-                                                    }} 
-                                                    editingCommentId={editingCommentId} 
-                                                    setEditingCommentId={setEditingCommentId} 
-                                                    selectionMode={commentSelectionMode} 
-                                                    onToggleSelect={(id) => setSelectedComments(p=>p.includes(id)?p.filter(i=>i!==id):[...p,id])} 
-                                                    isSelected={(id) => selectedComments.includes(id)} 
-                                                />
-                                            )) : <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-10">Комментариев пока нет.</div>}
+                                            {sortedComments.length > 0 ? sortedComments.map(comment => (<Comment key={comment._id} comment={comment} currentUserId={currentUserId} currentUser={currentUser} postOwnerId={activePost.user._id} postCommunityId={activePost.community?._id} onCommentUpdate={fetchPostData} onReply={(c) => { const authorName = c.name || c.username; setReplyingTo({ username: authorName, id: c.id }); setCommentText(`@${authorName}, `); commentInputRef.current?.focus(); }} editingCommentId={editingCommentId} setEditingCommentId={setEditingCommentId} selectionMode={commentSelectionMode} onToggleSelect={(id) => setSelectedComments(p=>p.includes(id)?p.filter(i=>i!==id):[...p,id])} isSelected={(id) => selectedComments.includes(id)} />)) : <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-10">Комментариев пока нет.</div>}
                                         </div>
                                     </div>
-                                    
                                     {!activePost.commentsDisabled ? (
                                       <div className="p-4 border-t border-slate-200 dark:border-slate-700 relative flex-shrink-0">
-                                          {replyingTo && (
-                                              <div className="flex justify-between items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 mb-2 rounded-lg text-sm">
-                                                  <span className="text-slate-500 dark:text-slate-400">Ответ пользователю <span className="font-bold text-slate-800 dark:text-white">{replyingTo.username}</span></span>
-                                                  <button onClick={()=>{setReplyingTo(null); setCommentText('')}} className="p-1 hover:text-slate-900"><X size={16} /></button>
-                                              </div>
-                                          )}
-
+                                          {replyingTo && (<div className="flex justify-between items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 mb-2 rounded-lg text-sm"><span className="text-slate-500 dark:text-slate-400">Ответ пользователю <span className="font-bold text-slate-800 dark:text-white">{replyingTo.username}</span></span><button onClick={()=>{setReplyingTo(null); setCommentText('')}} className="p-1 hover:text-slate-900"><X size={16} /></button></div>)}
                                           <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3">
-                                              {commentAs && (
-                                                  <Tippy
-                                                      interactive
-                                                      placement="top-start"
-                                                      disabled={commentingOptions.length <= 1}
-                                                      render={attrs => (
-                                                          <AnimatePresence>
-                                                              <motion.div
-                                                                  initial={{ opacity: 0, y: 10 }}
-                                                                  animate={{ opacity: 1, y: 0 }}
-                                                                  exit={{ opacity: 0, y: 10 }}
-                                                                  className="ios-glass-popover p-2 rounded-xl shadow-lg w-72" {...attrs}
-                                                              >
-                                                                  <div className="grid grid-cols-2 gap-2">
-                                                                      {commentingOptions.map(option => {
-                                                                          const isSelected = commentAs?._id === option._id;
-                                                                          return (
-                                                                              <button
-                                                                                  type="button"
-                                                                                  key={option._id || 'personal'}    
-                                                                                  onClick={() => setCommentAs(option)}
-                                                                                  className={`p-2 rounded-lg flex flex-col items-center justify-center text-center transition-colors ${isSelected ? 'bg-blue-600/20 ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-700'}`}
-                                                                              >
-                                                                                  <Avatar
-                                                                                      username={option.type === 'user' ? option.username : option.name}
-                                                                                      fullName={option.name}
-                                                                                      avatarUrl={getImageUrl(option.avatar)}
-                                                                                      size="md"
-                                                                                      isPremium={option.premium?.isActive}
-                                                                                      customBorder={option.premiumCustomization?.avatarBorder}
-                                                                                  />
-                                                                                  <div className="flex items-center">
-                                                                                      <span className="text-xs font-semibold mt-2 truncate">{option.name}</span>
-                                                                                      {option.type === 'user' && option.premium?.isActive && (
-                                                                                          <span className="ml-1 mt-2 premium-shimmer-text text-[10px] font-bold">Premium</span>
-                                                                                      )}
-                                                                                  </div>
-                                                                                  <span className="text-xs text-slate-500 dark:text-slate-400">{option.type === 'user' ? 'Личный профиль' : 'Сообщество'}</span>
-                                                                              </button>
-                                                                          )
-                                                                      })}
-                                                                      <button
-                                                                          type="button"
-                                                                          onClick={() => navigate('/communities')}
-                                                                          className="p-2 rounded-lg flex flex-col items-center justify-center text-center transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500"
-                                                                      >
-                                                                          <PlusCircle size={24} className="text-slate-400" />
-                                                                          <span className="text-xs font-semibold mt-2 text-slate-500 dark:text-slate-400">Создать</span>
-                                                                      </button>
-                                                                  </div>
-                                                              </motion.div>
-                                                          </AnimatePresence>
-                                                      )}
-                                                  >
-                                                      <button type="button" className="focus:outline-none">
-                                                          <Avatar 
-                                                                    username={commentAs.type === 'user' ? commentAs.username : commentAs.name}
-                                                                    fullName={commentAs.name}
-                                                                    avatarUrl={getImageUrl(commentAs.avatar)}
-                                                                    isPremium={commentAs.premium?.isActive}
-                                                                    customBorder={commentAs.premiumCustomization?.avatarBorder}
-                                                                    size="sm"
-                                                                />
-                                                      </button>
-                                                  </Tippy>
-                                              )}
-                                              <div className="relative flex-1">
-                                                  <input 
-                                                      ref={commentInputRef} 
-                                                      type="text" 
-                                                      value={commentText} 
-                                                      onChange={e => setCommentText(e.target.value)} 
-                                                      placeholder={
-                                                          editingCommentId ? "Завершите редактирование..." : 
-                                                          commentSelectionMode ? "Завершите выбор..." : 
-                                                          "Добавить комментарий..."
-                                                      }
-                                                      disabled={!!editingCommentId || commentSelectionMode || isSendingComment}
-                                                      className="w-full bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"/>
-                                                  
-                                                  <button 
-                                                      ref={smileButtonRef}
-                                                      type="button" 
-                                                      onClick={(e) => { e.preventDefault(); setIsPickerVisible(v => !v); }}
-                                                      disabled={!!editingCommentId}
-                                                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                                  >
-                                                      <Smile size={20}/>
-                                                  </button>
-                                              </div>
-                                              <button 
-                                                  type="submit" 
-                                                  disabled={!!editingCommentId || commentSelectionMode || !commentText.trim() || isSendingComment} 
-                                                  className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-600 flex items-center justify-center w-9 h-9 flex-shrink-0"
-                                              >
-                                                  {isSendingComment ? <Loader2 size={18} className="animate-spin"/> : <Send size={16}/>}
-                                              </button>
+                                              {commentAs && (<Tippy interactive placement="top-start" disabled={commentingOptions.length <= 1} render={attrs => (<AnimatePresence><motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="ios-glass-popover p-2 rounded-xl shadow-lg w-72" {...attrs}><div className="grid grid-cols-2 gap-2">{commentingOptions.map(option => { const isSelected = commentAs?._id === option._id; return (<button type="button" key={option._id || 'personal'} onClick={() => setCommentAs(option)} className={`p-2 rounded-lg flex flex-col items-center justify-center text-center transition-colors ${isSelected ? 'bg-blue-600/20 ring-2 ring-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-700'}`}><Avatar username={option.type === 'user' ? option.username : option.name} fullName={option.name} avatarUrl={getImageUrl(option.avatar)} size="md" isPremium={option.premium?.isActive} customBorder={option.premiumCustomization?.avatarBorder} /><div className="flex items-center"><span className="text-xs font-semibold mt-2 truncate">{option.name}</span>{option.type === 'user' && option.premium?.isActive && (<span className="ml-1 mt-2 premium-shimmer-text text-[10px] font-bold">Premium</span>)}</div><span className="text-xs text-slate-500 dark:text-slate-400">{option.type === 'user' ? 'Личный профиль' : 'Сообщество'}</span></button>)})} <button type="button" onClick={() => navigate('/communities')} className="p-2 rounded-lg flex flex-col items-center justify-center text-center transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500"><PlusCircle size={24} className="text-slate-400" /><span className="text-xs font-semibold mt-2 text-slate-500 dark:text-slate-400">Создать</span></button></div></motion.div></AnimatePresence>)}><button type="button" className="focus:outline-none"><Avatar username={commentAs.type === 'user' ? commentAs.username : commentAs.name} fullName={commentAs.name} avatarUrl={getImageUrl(commentAs.avatar)} isPremium={commentAs.premium?.isActive} customBorder={commentAs.premiumCustomization?.avatarBorder} size="sm"/></button></Tippy>)}
+                                              <div className="relative flex-1"><input ref={commentInputRef} type="text" value={commentText} onChange={e => setCommentText(e.target.value)} placeholder={ editingCommentId ? "Завершите редактирование..." : commentSelectionMode ? "Завершите выбор..." : "Добавить комментарий..." } disabled={!!editingCommentId || commentSelectionMode || isSendingComment} className="w-full bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"/><button ref={smileButtonRef} type="button" onClick={(e) => { e.preventDefault(); setIsPickerVisible(v => !v); }} disabled={!!editingCommentId} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"><Smile size={20}/></button></div>
+                                              <button type="submit" disabled={!!editingCommentId || commentSelectionMode || !commentText.trim() || isSendingComment} className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-600 flex items-center justify-center w-9 h-9 flex-shrink-0">{isSendingComment ? <Loader2 size={18} className="animate-spin"/> : <Send size={16}/>}</button>
                                           </form>
                                       </div>
-                                    ) : (
-                                        <div className="p-4 border-t border-slate-200 dark:border-slate-700 text-center text-sm text-slate-500 dark:text-slate-400 flex-shrink-0">
-                                            Комментарии к этому посту отключены.
-                                        </div>
-                                    )}
+                                    ) : (<div className="p-4 border-t border-slate-200 dark:border-slate-700 text-center text-sm text-slate-500 dark:text-slate-400 flex-shrink-0">Комментарии к этому посту отключены.</div>)}
                                 </div>
                             </>
                         ) : (
