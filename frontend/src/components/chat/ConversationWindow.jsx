@@ -30,6 +30,7 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
+const isMobile = useMediaQuery('(max-width: 768px)');
 
 const getImageUrl = (url) => {
     if (!url) return '';
@@ -44,7 +45,7 @@ const formatLastSeen = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffSeconds = (now.getTime() - date.getTime()) / 1000;
-    const isMobile = useMediaQuery('(max-width: 768px)');
+    
 
     if (diffSeconds < 60) return "Был(а) только что";
     if (diffSeconds < 3600) return `Был(а) ${Math.round(diffSeconds / 60)}м назад`;

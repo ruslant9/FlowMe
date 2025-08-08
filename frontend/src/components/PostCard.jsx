@@ -1,9 +1,11 @@
 // frontend/src/components/PostCard.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useRef, Suspense, useCallback, Fragment, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Импортируем useNavigate ---
+import { Link, useNavigate } from 'react-router-dom';
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 import Avatar from './Avatar';
-import { Heart, MessageCircle, MoreHorizontal, Trash2, Send, Loader2, Smile, X, Check, ChevronDown, ChevronLeft, ChevronRight, Pin, MessageSquareOff, Edit, Users, XCircle as CancelVoteIcon, Clock } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Trash2, Send, Loader2, Smile, X, Check, ChevronDown, ChevronLeft, ChevronRight, Pin, MessageSquareOff, Edit, Users, XCircle as CancelVoteIcon, Clock, PlusCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import axios from 'axios';
@@ -19,8 +21,8 @@ import PollDisplay from './PollDisplay';
 import Tippy from '@tippyjs/react/headless';
 import { format } from 'date-fns';
 import AnimatedAccent from './AnimatedAccent';
-import { useCachedImage } from '../hooks/useCachedImage';
-import { useEmojiPicker } from '../hooks/useEmojiPicker'; 
+import { useCachedImage } from '../../hooks/useCachedImage';
+import { useEmojiPicker } from '../../hooks/useEmojiPicker'; 
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
@@ -48,6 +50,9 @@ const customRuLocale = {
 };
 
 const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightCommentId: initialHighlightCommentId, isCommunityOwner, onPinPost, onEditRequest, context, myMusicTrackIds, isScheduled }) => {
+    // --- НАЧАЛО ИЗМЕНЕНИЯ: Инициализируем useNavigate ---
+    const navigate = useNavigate();
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     const { showConfirmation } = useModal();
     const currentUserId = currentUser?._id;
     const isOwner = post.user._id === currentUserId;
@@ -868,6 +873,16 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                                             </button>
                                                                         )
                                                                     })}
+                                                                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем кнопку "Создать сообщество" --- */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => navigate('/communities')}
+                                                                        className="p-2 rounded-lg flex flex-col items-center justify-center text-center transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500"
+                                                                    >
+                                                                        <PlusCircle size={24} className="text-slate-400" />
+                                                                        <span className="text-xs font-semibold mt-2 text-slate-500 dark:text-slate-400">Создать</span>
+                                                                    </button>
+                                                                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                                                                 </div>
                                                             </motion.div>
                                                         </AnimatePresence>
@@ -886,7 +901,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                 </Tippy>
                                             )}
                                             <div className="relative flex-1">
-                                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                                 <input
                                                     ref={commentInputRef}
                                                     type="text"
@@ -902,7 +916,6 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                     disabled={!!editingCommentId || commentSelectionMode || isSendingComment}
                                                     autoComplete="off" 
                                                 />
-                                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
                                                     <button 
                                                         ref={smileButtonRef} 

@@ -1,4 +1,4 @@
-// frontend/src/components/modals/CreatePostModal.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/components/modals/CreatePostModal.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useRef, useEffect, Suspense, Fragment, useCallback } from 'react';
 import ReactDOM from 'react-dom';
@@ -16,7 +16,7 @@ import AttachedTrack from '../music/AttachedTrack';
 import Avatar from '../Avatar';
 import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage';
-import { useEmojiPicker } from '../../hooks/useEmojiPicker';
+import EmojiPickerPopover from '../EmojiPickerPopover'; // --- ИЗМЕНЕНИЕ 1: Импортируем новый компонент ---
 
 registerLocale('ru', ru);
 
@@ -40,10 +40,7 @@ const ToggleSwitch = ({ checked, onChange, label }) => (
 );
 
 const CreatePostModal = ({ isOpen, onClose, communityId }) => {
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Получаем loadingUser ---
     const { currentUser, loadingUser } = useUser();
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
-
     const [text, setText] = useState('');
     const [images, setImages] = useState([]);
     const [commentsDisabled, setCommentsDisabled] = useState(false);
@@ -52,7 +49,10 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const fileInputRef = useRef(null);
     const smileButtonRef = useRef(null);
     const textareaRef = useRef(null);
-    const { showPicker } = useEmojiPicker();
+
+    // --- ИЗМЕНЕНИЕ 2: Используем локальное состояние вместо хука ---
+    const [isPickerVisible, setIsPickerVisible] = useState(false);
+    
     const [selectedCommunity, setSelectedCommunity] = useState(null);
     const [myCommunities, setMyCommunities] = useState([]);
     const [fetchingCommunities, setFetchingCommunities] = useState(false);
@@ -201,6 +201,13 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                 <>
                     <ImageAttachmentModal isOpen={!!editingImage} onClose={() => setEditingImage(null)} file={editingImage?.file} onSave={handleEditComplete} showCaptionInput={false} />
                     <AttachTrackModal isOpen={isAttachTrackModalOpen} onClose={() => setIsAttachTrackModalOpen(false)} onSelectTrack={setAttachedTrack} />
+                    {/* --- ИЗМЕНЕНИЕ 3: Рендерим EmojiPickerPopover здесь --- */}
+                    <EmojiPickerPopover
+                        isOpen={isPickerVisible}
+                        targetRef={smileButtonRef}
+                        onEmojiClick={(emojiObject) => setText(prev => prev + emojiObject.emoji)}
+                        onClose={() => setIsPickerVisible(false)}
+                    />
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={(e) => e.stopPropagation()} className="ios-glass-final w-full max-w-2xl p-6 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]">
                             <div className="flex justify-between items-center mb-6">
@@ -209,7 +216,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                             </div>
                             
                             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 2: Добавляем условный рендеринг --- */}
                                 {loadingUser ? (
                                     <div className="flex-1 flex items-center justify-center">
                                         <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
@@ -276,7 +282,8 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                     { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                                     { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                                     { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                    { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: () => showPicker(smileButtonRef, (emojiObject) => setText(prev => prev + emojiObject.emoji)) },
+                                                    // --- ИЗМЕНЕНИЕ 4: Обновляем onClick ---
+                                                    { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: () => setIsPickerVisible(v => !v) },
                                                 ].map((item, idx) => (
                                                     item.isDatePicker ?
                                                         <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={20} /></button>} /> :
@@ -288,7 +295,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                         </div>
                                     </>
                                 )}
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 2 --- */}
                             </form>
                         </motion.div>
                     </motion.div>
