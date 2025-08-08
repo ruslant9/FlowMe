@@ -17,16 +17,17 @@ import Avatar from '../Avatar';
 import { useUser } from '../../hooks/useUser';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import { useEmojiPicker } from '../../hooks/useEmojiPicker';
-import EmojiPickerPopover from '../EmojiPickerPopover'; 
 
 registerLocale('ru', ru);
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 const CachedImage = ({ src }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) return <div className="w-full h-full object-cover rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
     return <img src={finalSrc} alt="preview" className="w-full h-full object-cover rounded-md" />;
 };
+
 const ToggleSwitch = ({ checked, onChange, label }) => (
     <label className="flex items-center space-x-2 cursor-pointer text-sm">
         <div className="relative">
@@ -38,7 +39,6 @@ const ToggleSwitch = ({ checked, onChange, label }) => (
     </label>
 );
 
-
 const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const { currentUser, loadingUser } = useUser();
     const [text, setText] = useState('');
@@ -49,10 +49,9 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const fileInputRef = useRef(null);
     const smileButtonRef = useRef(null);
     const textareaRef = useRef(null);
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Заменяем хук на локальное состояние ---
-    // const { showPicker } = useEmojiPicker(); // <-- УДАЛЯЕМ ЭТО
-    const [isPickerVisible, setIsPickerVisible] = useState(false); // <-- ДОБАВЛЯЕМ ЭТО
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Получаем состояние и функцию закрытия из хука ---
+    const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const [selectedCommunity, setSelectedCommunity] = useState(null);
     const [myCommunities, setMyCommunities] = useState([]);
     const [fetchingCommunities, setFetchingCommunities] = useState(false);
@@ -63,8 +62,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const [isAnonymousPoll, setIsAnonymousPoll] = useState(false);
     const [pollExpiresAt, setPollExpiresAt] = useState(null);
     const [scheduledFor, setScheduledFor] = useState(null);
-    
-    // ... (весь остальной код хуков и функций остается без изменений)
+
     const getMinTime = (date) => {
         if (!date || !isToday(date)) return setHours(setMinutes(new Date(), 0), 0);
         return new Date();
@@ -196,22 +194,35 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         e.target.style.height = `${e.target.scrollHeight}px`;
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновленная логика для кнопки эмодзи ---
+    const handleEmojiButtonClick = (e) => {
+        e.preventDefault();
+        textareaRef.current?.blur(); // Убираем фокус с textarea, чтобы не открывалась клавиатура
+        if (isPickerVisible) {
+            hidePicker();
+        } else {
+            showPicker(smileButtonRef, (emojiObject) => {
+                const { selectionStart, selectionEnd } = textareaRef.current;
+                const newText = text.slice(0, selectionStart) + emojiObject.emoji + text.slice(selectionEnd);
+                setText(newText);
+                // Ставим курсор после вставленного эмодзи
+                setTimeout(() => {
+                    const newPosition = selectionStart + emojiObject.emoji.length;
+                    textareaRef.current.selectionStart = newPosition;
+                    textareaRef.current.selectionEnd = newPosition;
+                }, 0);
+            });
+        }
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+
     return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
                     <ImageAttachmentModal isOpen={!!editingImage} onClose={() => setEditingImage(null)} file={editingImage?.file} onSave={handleEditComplete} showCaptionInput={false} />
                     <AttachTrackModal isOpen={isAttachTrackModalOpen} onClose={() => setIsAttachTrackModalOpen(false)} onSelectTrack={setAttachedTrack} />
-                    {/* --- НАЧАЛО ИЗМЕНЕНИЯ 3: Рендерим EmojiPickerPopover --- */}
-                    <EmojiPickerPopover
-                        isOpen={isPickerVisible}
-                        targetRef={smileButtonRef}
-                        onEmojiClick={(emojiObject) => {
-                            setText(prev => prev + emojiObject.emoji);
-                        }}
-                        onClose={() => setIsPickerVisible(false)}
-                    />
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ 3 --- */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -228,7 +239,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                             className="ios-glass-final w-full max-w-2xl bg-slate-100 dark:bg-slate-800 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                         >
                             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
-                                {/* ... (содержимое формы остается без изменений, за исключением одной кнопки) ... */}
                                 <div className="p-6 pb-4 flex-shrink-0">
                                     <div className="flex justify-between items-center mb-6">
                                         <h2 className="text-xl font-bold">Новый пост</h2>
@@ -302,13 +312,12 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                 { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                                 { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                                 { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                // --- НАЧАЛО ИЗМЕНЕНИЯ 4: Обновляем onClick для кнопки смайликов ---
-                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: () => setIsPickerVisible(p => !p) },
-                                                // --- КОНЕЦ ИЗМЕНЕНИЯ 4 ---
+                                                // --- ИЗМЕНЕНИЕ: Используем новый обработчик для кнопки эмодзи ---
+                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: handleEmojiButtonClick },
                                             ].map((item, idx) => ( 
                                                  item.isDatePicker ?
                                                     <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} /> :
-                                                    <button key={idx} type="button" ref={item.ref} onClick={(e) => { e.preventDefault(); item.onClick(); }} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>
+                                                    <button key={idx} type="button" ref={item.ref} onClick={item.onClick} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>
                                             ))}
                                             <input type="file" ref={fileInputRef} hidden multiple accept="image/*" onChange={handleFileChange} />
                                         </div>

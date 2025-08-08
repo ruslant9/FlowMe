@@ -1,4 +1,4 @@
-// frontend/src/context/EmojiPickerProvider.jsx --- НОВЫЙ ФАЙЛ ---
+// frontend/src/context/EmojiPickerProvider.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { createContext, useState, useCallback, useRef, useEffect, Suspense } from 'react';
 import ReactDOM from 'react-dom';
@@ -53,9 +53,18 @@ export const EmojiPickerProvider = ({ children }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [hidePicker]);
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const value = {
+        showPicker,
+        hidePicker,
+        isOpen: pickerState.isOpen,
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return (
-        <EmojiPickerContext.Provider value={{ showPicker, hidePicker }}>
+        // --- ИЗМЕНЕНИЕ: Используем новую переменную `value` ---
+        <EmojiPickerContext.Provider value={value}>
             {children}
             {ReactDOM.createPortal(
                 <AnimatePresence>
@@ -79,6 +88,7 @@ export const EmojiPickerProvider = ({ children }) => {
                                     theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
                                     width={window.innerWidth < 768 ? '95vw' : 350}
                                     height={window.innerWidth < 768 ? 350 : 450}
+                                    autoFocusSearch={false} // Важно для предотвращения авто-фокуса
                                 />
                             </Suspense>
                         </motion.div>
