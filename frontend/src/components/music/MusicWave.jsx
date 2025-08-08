@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
 
 const MusicWave = ({ onPlay }) => {
-    const bars = Array.from({ length: 30 });
+    const bars = Array.from({ length: 40 }); // Больше, но тоньше
 
     return (
         <motion.div
@@ -16,16 +16,10 @@ const MusicWave = ({ onPlay }) => {
             }}
             whileHover={{ scale: 1.02 }}
         >
-            {/* Свечение в фоне */}
+            {/* Свечение */}
             <div className="absolute inset-0">
-                <div
-                    className="absolute w-72 h-72 bg-green-400/30 blur-3xl rounded-full -top-20 -left-20"
-                    style={{ filter: 'blur(80px)' }}
-                />
-                <div
-                    className="absolute w-72 h-72 bg-emerald-500/20 blur-3xl rounded-full -bottom-20 -right-20"
-                    style={{ filter: 'blur(80px)' }}
-                />
+                <div className="absolute w-72 h-72 bg-green-400/20 rounded-full -top-20 -left-20 blur-3xl" />
+                <div className="absolute w-72 h-72 bg-emerald-500/20 rounded-full -bottom-20 -right-20 blur-3xl" />
             </div>
 
             {/* Волны */}
@@ -33,8 +27,12 @@ const MusicWave = ({ onPlay }) => {
                 {bars.map((_, i) => (
                     <motion.div
                         key={i}
-                        className="bg-white/40 rounded-full"
-                        style={{ width: '2%', height: `${Math.random() * 50 + 20}%` }}
+                        className="bg-white/30 rounded-full"
+                        style={{
+                            width: '1%',
+                            height: `${Math.random() * 50 + 20}%`,
+                            margin: '0 0.5px'
+                        }}
                         animate={{
                             scaleY: [1, 0.3, 1],
                         }}
@@ -43,13 +41,13 @@ const MusicWave = ({ onPlay }) => {
                             repeat: Infinity,
                             repeatType: 'mirror',
                             ease: 'easeInOut',
-                            delay: i * 0.05
+                            delay: i * 0.04
                         }}
                     />
                 ))}
             </div>
 
-            {/* Текст + кнопка */}
+            {/* Текст и кнопка */}
             <div className="relative z-10 flex items-start justify-between">
                 <div>
                     <p className="text-white/80 font-medium text-sm tracking-wide">Моя волна</p>

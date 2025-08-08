@@ -23,7 +23,19 @@ const privacySettingsSchema = new Schema({
 const premiumInfoSchema = new Schema({
     isActive: { type: Boolean, default: false },
     expiresAt: { type: Date, default: null },
-    plan: { type: String, enum: ['1_month', '3_months', '6_months'], default: null },
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    plan: { 
+        type: String, 
+        enum: [
+            '1_month', '3_months', '6_months', // Планы, купленные пользователем
+            '1_month_admin_grant',             // Планы, выданные админом
+            '3_month_admin_grant', 
+            '6_month_admin_grant', 
+            '12_month_admin_grant'
+        ], 
+        default: null 
+    },
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 }, { _id: false });
 
 const customAccentSchema = new Schema({
@@ -37,8 +49,8 @@ const premiumCustomizationSchema = new Schema({
     avatarBorder: {
         id: { type: String, default: 'none' },
         type: { type: String, enum: ['none', 'animated-1', 'animated-2', 'animated-pulse'], default: 'none' },
-        value: { type: String, default: null }, // for static color hex value
-        pseudo: { type: Boolean, default: false } // Флаг для рамок с псевдо-элементами
+        value: { type: String, default: null },
+        pseudo: { type: Boolean, default: false }
     },
     usernameEmoji: {
         id: { type: String, default: null },
