@@ -63,8 +63,8 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  // --- НАЧАЛО ИСПРАВЛЕНИЯ: Условие для полноэкранного режима теперь более точное ---
-  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)\/[^/]+/.test(location.pathname);
+  // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Условие для полноэкранного режима теперь включает /messages ---
+  const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)/.test(location.pathname);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {
@@ -121,21 +121,15 @@ const MainLayout = ({ children }) => {
           <LiquidGlassBackground />
         </Suspense>
       )}
-
-      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Разделена логика видимости и позиции кнопки --- */}
       <button 
         onClick={() => setIsMobileNavOpen(true)}
-        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
+        className={`md:hidden fixed top-4 z-30 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm ${isMobileNavOpen || /^\/messages\/.+/.test(location.pathname) ? 'hidden' : 'block'} ${isFullBleedLayout ? 'right-4' : 'left-4'}`}
       >
         <Menu />
       </button>
-      {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
-
       <AnimatePresence>
           {isFullScreenPlayerOpen && <FullScreenPlayer />}
       </AnimatePresence>
-
-
       {currentTrack && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80"> 
           <MusicPlayerBar
@@ -161,9 +155,7 @@ const MainLayout = ({ children }) => {
             openFullScreenPlayer={openFullScreenPlayer}
           />
         </div>
-      )}
-      
-      
+      )}   
       <div className={`flex relative h-full overflow-hidden`}>
         <Sidebar 
           themeSwitcher={<ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />} 
@@ -312,9 +304,11 @@ const AdminProtectedLayout = () => {
     return null;
   }
 
- if (currentUser && !['junior_admin', 'super_admin'].includes(currentUser.role)) {
+  // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Проверяем новые роли ---
+  if (currentUser && !['junior_admin', 'super_admin'].includes(currentUser.role)) {
     return <Navigate to="/page-not-found" replace />;
   }
+  // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
   return <Outlet />;
 };
@@ -333,17 +327,14 @@ const AppContent = () => {
 
   return (
     <div className="font-sans min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
-      {/* Контент страницы */}
       <main className="flex-1 p-4 text-center text-slate-800 dark:text-white">
         <h1 className="text-3xl font-bold">Текущая страница</h1>
         <p className="mt-2 bg-slate-200 dark:bg-slate-700 inline-block px-4 py-1 rounded-full">{location.pathname}</p>
       </main>
-
-      {/* Наша навигационная панель в футере */}
       <footer className="sticky bottom-0 p-4">
         <ResponsiveNav 
           items={navItems} 
-          visibleCount={3} // Показываем 2 кнопки + кнопка "Еще"
+          visibleCount={3}
           activePath={location.pathname}
         />
       </footer>
@@ -379,8 +370,10 @@ function App() {
             <Route path="/profile/:userId" element={<UserProfilePage />} />
             <Route path="/friends" element={<FriendsPage />} />
             <Route path="/messages" element={<MessagesPage />} />
-            <Route path="/messages/favorites" element={<MessagesPage />} />
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1.1: Удаляем лишний маршрут для Избранного --- */}
+            {/* <Route path="/messages/favorites" element={<MessagesPage />} /> */}
             <Route path="/messages/:userId" element={<MessagesPage />} />
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1.1 --- */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/communities" element={<CommunitiesPage />} />

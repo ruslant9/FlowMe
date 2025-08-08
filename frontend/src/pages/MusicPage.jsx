@@ -112,7 +112,7 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
                     <SectionHeader title="Популярные исполнители" icon={MicVocal} />
                     <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-y-4 gap-x-2">
                          {recommendations.popularArtists.slice(0, 12).map(artist => (
-                             <ArtistAvatar key={artist._id} artist={artist} size="sm" />
+                             <ArtistAvatar key={artist._id} artist={artist} size="md" />
                         ))}
                     </div>
                 </section>

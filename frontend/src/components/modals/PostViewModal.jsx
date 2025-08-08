@@ -474,7 +474,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                 
                                 <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0">
                                     {/* --- ШАПКА ПОСТА (ФИКСИРОВАННАЯ) --- */}
-                                    <div className="p-4 pr-12 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between space-x-3 flex-shrink-0">
+                                    <div className="p-4 pr-12 border-b border-slate-200 dark:border-slate-700 flex items-center space-x-3 flex-shrink-0">
                                         {(() => {
                                             const author = activePost.community || activePost.user;
                                             const linkTo = activePost.community ? `/communities/${author._id}` : `/profile/${author._id}`;
@@ -501,7 +501,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                 </Link>
                                             );
                                         })()}
-                                        {activePost.user._id === currentUserId && <div ref={postMenuRef} className="relative"><button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><MoreHorizontal size={20}/></button>
+                                        {activePost.user._id === currentUserId && <div ref={postMenuRef} className="relative ml-auto flex-shrink-0"><button onClick={() => setShowPostMenu(v => !v)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><MoreHorizontal size={20}/></button>
                                             {showPostMenu && (
                                                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10 overflow-hidden p-1 space-y-1">
                                                     <button onClick={handleDeletePost} className="w-full text-left flex items-center space-x-3 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors">
