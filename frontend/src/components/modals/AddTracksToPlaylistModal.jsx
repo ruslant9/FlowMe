@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Music, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import { useCachedImage } from '../../hooks/useCachedImage';
+import ReactDOM from 'react-dom';
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 // Компонент для кешированного изображения
@@ -77,7 +79,7 @@ const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackI
         onClose();
     };
 
-    return (
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
@@ -128,7 +130,8 @@ const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackI
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 

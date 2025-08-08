@@ -180,9 +180,7 @@ const PlaylistsView = ({ playlists, loading, onCreate, onPlaylistUpdated, onPlay
     );
 };
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, onPlayTrack, loadingMore, onToggleSave, myMusicTrackIds }) => {
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     const navigate = useNavigate();
     const { currentTrack, isPlaying } = useMusicPlayer();
     const { tracks, artists, albums, playlists } = results;
@@ -242,7 +240,6 @@ const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, 
                         <section>
                             <SectionHeader title="Треки" icon={Music} />
                             <div className="space-y-1">
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                 {tracks.map((track, index) => (
                                     <PlaylistTrackItem 
                                         key={track._id} 
@@ -255,7 +252,6 @@ const SearchView = ({ query, setQuery, results, loading, onSearchMore, hasMore, 
                                         isSaved={myMusicTrackIds.has(track.sourceId || track._id)}
                                     />
                                 ))}
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </div>
                             {hasMore && (
                                 <div className="mt-6 text-center">
@@ -305,37 +301,49 @@ const MusicPage = () => {
         recommendations: true, myMusic: true, history: true, playlists: true, search: false, wave: false
     });
 
-    const fetchData = useCallback(async (tab) => {
-        setLoading(prev => ({ ...prev, [tab]: true }));
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { headers: { Authorization: `Bearer ${token}` } };
-            let res;
-            switch(tab) {
-                case 'recommendations':
-                    res = await axios.get(`${API_URL}/api/music/recommendations`, headers);
-                    setRecommendations(res.data);
-                    break;
-                case 'my-music':
-                    res = await axios.get(`${API_URL}/api/music/saved`, headers);
-                    setMyMusic(res.data);
-                    break;
-                case 'history':
-                    res = await axios.get(`${API_URL}/api/music/history`, headers);
-                    setHistory(res.data);
-                    break;
-                case 'playlists':
-                    res = await axios.get(`${API_URL}/api/playlists`, headers);
-                    setPlaylists(res.data);
-                    break;
-                default: break;
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем useCallback и определяем fetchData внутри useEffect ---
+    useEffect(() => {
+        const fetchData = async (tab) => {
+            if (tab === 'search') return; // Поиск обрабатывается отдельно
+            
+            setLoading(prev => ({ ...prev, [tab]: true }));
+            try {
+                const token = localStorage.getItem('token');
+                const headers = { headers: { Authorization: `Bearer ${token}` } };
+                let endpoint = '';
+                let setStateFunc = () => {};
+
+                switch(tab) {
+                    case 'recommendations':
+                        endpoint = `${API_URL}/api/music/recommendations`;
+                        setStateFunc = setRecommendations;
+                        break;
+                    case 'my-music':
+                        endpoint = `${API_URL}/api/music/saved`;
+                        setStateFunc = setMyMusic;
+                        break;
+                    case 'history':
+                        endpoint = `${API_URL}/api/music/history`;
+                        setStateFunc = setHistory;
+                        break;
+                    case 'playlists':
+                        endpoint = `${API_URL}/api/playlists`;
+                        setStateFunc = setPlaylists;
+                        break;
+                    default: return;
+                }
+                const res = await axios.get(endpoint, headers);
+                setStateFunc(res.data);
+            } catch (error) {
+                toast.error(`Не удалось загрузить раздел "${tab}"`);
+            } finally {
+                setLoading(prev => ({ ...prev, [tab]: false }));
             }
-        } catch (error) {
-            toast.error(`Не удалось загрузить раздел "${tab}"`);
-        } finally {
-            setLoading(prev => ({ ...prev, [tab]: false }));
-        }
-    }, []);
+        };
+        
+        fetchData(activeTab);
+    }, [activeTab]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const fetchSearch = useCallback(async (query, page) => {
         if (!query.trim()) {
@@ -386,12 +394,6 @@ const MusicPage = () => {
             setLoading(prev => ({ ...prev, wave: false }));
         }
     }, [playTrack]);
-    
-    useEffect(() => {
-        if (activeTab !== 'search') {
-            fetchData(activeTab);
-        }
-    }, [activeTab, fetchData]);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
@@ -423,7 +425,10 @@ const MusicPage = () => {
             <CreatePlaylistModal 
                 isOpen={isCreatePlaylistModalOpen}
                 onClose={() => setIsCreatePlaylistModalOpen(false)}
-                onPlaylistCreated={() => fetchData('playlists')}
+                onPlaylistCreated={() => { // --- ИЗМЕНЕНИЕ: Используем новый способ для обновления ---
+                    const event = new CustomEvent('refetchMusicData', { detail: 'playlists' });
+                    window.dispatchEvent(event);
+                }}
             />
             <UploadContentModal
                 isOpen={isUploadModalOpen}
@@ -440,7 +445,8 @@ const MusicPage = () => {
                     </div>
 
                     <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 mb-8 overflow-x-auto no-scrollbar">
-                        {navItems.map(item => (
+                        {/* --- ИЗМЕНЕНИЕ: Убираем дублирующую кнопку "Загрузить" из табов --- */}
+                        {navItems.filter(item => item.key !== 'upload').map(item => (
                             <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon}>
                                 {item.label}
                             </TabButton>
@@ -466,8 +472,7 @@ const MusicPage = () => {
                             {activeTab === 'recommendations' && <RecommendationsView recommendations={recommendations} loading={loading.recommendations} onPlayWave={handlePlayWave} onSeeAll={(q) => { setActiveTab('search'); setSearchQuery(q); }} />}
                             {activeTab === 'my-music' && <MusicListView tracks={myMusic} loading={loading.myMusic} title="Моя музыка" emptyMessage="Вы еще не добавили ни одного трека." onPlayTrack={(track) => playTrack(track, myMusic)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
                             {activeTab === 'history' && <MusicListView tracks={history} loading={loading.history} title="Недавно прослушанные" emptyMessage="Ваша история прослушиваний пуста." onPlayTrack={(track) => playTrack(track, history)} onToggleSave={onToggleLike} myMusicTrackIds={myMusicTrackIds} />}
-                            {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(true)} />}
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                            {activeTab === 'playlists' && <PlaylistsView playlists={playlists} loading={loading.playlists} onCreate={() => setIsCreatePlaylistModalOpen(false)} />}
                             {activeTab === 'search' && 
                                 <SearchView 
                                     query={searchQuery} 
@@ -482,7 +487,6 @@ const MusicPage = () => {
                                     myMusicTrackIds={myMusicTrackIds}
                                 />
                             }
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </motion.div>
                     </AnimatePresence>
                 </div>

@@ -6,6 +6,7 @@ import { X, Loader2, Music, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import ReactDOM from 'react-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -77,7 +78,7 @@ const AddToPlaylistModal = ({ isOpen, onClose, trackToAdd }) => {
         );
     };
 
-    return (
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
@@ -115,7 +116,8 @@ const AddToPlaylistModal = ({ isOpen, onClose, trackToAdd }) => {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 
