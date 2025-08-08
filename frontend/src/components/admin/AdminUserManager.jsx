@@ -41,14 +41,16 @@ const AdminUserManager = () => {
 
     useEffect(() => {
         const debounce = setTimeout(() => {
-            setPage(1);
-        }, 300);
+            setPage(1); // Сбрасываем на первую страницу при новом поиске
+            fetchData();
+        }, search ? 300 : 0);
         return () => clearTimeout(debounce);
-    }, [search]);
-
+    }, [search, fetchData]);
+    
     useEffect(() => {
-        fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (!search) { // Загружаем данные только если нет активного поиска (он сам вызовет fetchData)
+            fetchData();
+        }
     }, [page]);
 
 
@@ -86,7 +88,9 @@ const AdminUserManager = () => {
         return (
             <>
                 {/* Desktop Table View */}
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
                 <div className="overflow-auto hidden md:block h-full">
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     <table className="w-full text-left min-w-[700px]">
                         <thead>
                             <tr className="border-b dark:border-slate-700">
@@ -94,7 +98,6 @@ const AdminUserManager = () => {
                                 <th className="p-2 font-semibold">Email</th>
                                 <th className="p-2 font-semibold">Дата регистрации</th>
                                 <th className="p-2 font-semibold">Статус бана</th>
-                                {/* --- ИСПРАВЛЕНИЕ: ВЫРАВНИВАНИЕ ЗАГОЛОВКА ПО ЦЕНТРУ --- */}
                                 <th className="p-2 text-center">Действия</th>
                             </tr>
                         </thead>
@@ -121,7 +124,6 @@ const AdminUserManager = () => {
                                     </td>
                                     <td className="p-2">{renderBanStatus(user)}</td>
                                     <td className="p-2">
-                                        {/* --- ИСПРАВЛЕНИЕ: ВЫРАВНИВАНИЕ КОНТЕНТА В ЯЧЕЙКЕ ПО ЦЕНТРУ --- */}
                                         <div className="flex items-center justify-center">
                                             {currentUser?._id !== user._id ? (
                                                 <button 
@@ -143,7 +145,9 @@ const AdminUserManager = () => {
                 </div>
 
                 {/* Mobile Card View */}
-                <div className="md:hidden space-y-3">
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                <div className="md:hidden space-y-3 overflow-y-auto h-full">
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     {users.map(user => (
                         <div key={user._id} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg">
                             <div className="flex justify-between items-start">

@@ -144,7 +144,9 @@ export const AdminContentManager = () => {
         return (
             <>
                 {/* --- DESKTOP TABLE --- */}
-                <div className="overflow-x-auto hidden md:block">
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                <div className="overflow-auto hidden md:block h-full">
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     <table className="w-full text-left">
                     <thead>
                         <tr className="border-b dark:border-slate-700">
@@ -195,7 +197,9 @@ export const AdminContentManager = () => {
                 </div>
 
                 {/* --- MOBILE CARDS --- */}
-                <div className="md:hidden space-y-3">
+                {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+                <div className="md:hidden space-y-3 overflow-y-auto h-full">
+                {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     {items.map(item => {
                         const linkTo = activeType === 'artists' ? `/artist/${item._id}` :
                                        activeType === 'albums' ? `/album/${item._id}` :
@@ -259,8 +263,10 @@ export const AdminContentManager = () => {
                     />
                 </div>
             </div>
-
-            <div className="flex-1">
+            
+            {/* --- НАЧАЛО ИЗМЕНЕНИЯ --- */}
+            <div className="flex-1 min-h-0">
+            {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                 {renderContent()}
             </div>
             
