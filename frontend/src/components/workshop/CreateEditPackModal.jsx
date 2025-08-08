@@ -141,7 +141,8 @@ const CreateEditPackModal = ({ isOpen, onClose, isEditMode, initialData, onSave 
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[110] p-4 pt-20 md:pt-4">
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[110] p-4 pt-20 pb-10 md:p-4"
+                >
                     <motion.div 
                         initial={{ y: "100%" }} 
                         animate={{ y: 0 }} 
