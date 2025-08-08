@@ -7,7 +7,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Listbox, Transition } from '@headlessui/react';
 import ImageAttachmentModal from '../chat/ImageAttachmentModal'; // Re-use existing image editor
-
+import ReactDOM from 'react-dom';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const topics = [
@@ -157,7 +157,7 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
 
     const selectedTopic = topics.find(t => t.id === communityData.topic);
 
-    return (
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -338,7 +338,8 @@ const CreateCommunityModal = ({ isOpen, onClose }) => {
                     </motion.div>
                 </>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 

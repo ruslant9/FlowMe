@@ -63,10 +63,7 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  // --- НАЧАЛО ИЗМЕНЕНИЯ ---
-  // Теперь `/messages` не соответствует, а `/messages/что-угодно` соответствует.
-  const isFullBleedLayout = /^\/(artist|album|single|communities\/.+|music\/playlist|messages\/.+)/.test(location.pathname);
-  // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+  const isFullBleedLayout = /^\/(artist|album|single|communities\/.+|music\/playlist|messages\/.+|profile\/.+)/.test(location.pathname);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const {

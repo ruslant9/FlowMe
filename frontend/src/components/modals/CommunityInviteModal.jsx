@@ -6,6 +6,7 @@ import { X, Search, Send, Loader2, Users } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Avatar from '../Avatar';
+import ReactDOM from 'react-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -63,7 +64,7 @@ const CommunityInviteModal = ({ isOpen, onClose, targetUser }) => {
         community.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    return (
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <motion.div
@@ -131,7 +132,8 @@ const CommunityInviteModal = ({ isOpen, onClose, targetUser }) => {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 

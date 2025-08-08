@@ -525,8 +525,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>
                                     </div>
                                     
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Контейнер картинки для мобильных устройств --- */}
-                                    <div className={`w-full ${hasImages ? '' : 'hidden'} flex-shrink-0 bg-black flex items-center justify-center relative md:hidden aspect-square`}>
+                                    <div className={`w-full ${hasImages ? '' : 'hidden'} flex-shrink-0 bg-black flex items-center justify-center relative md:hidden max-h-[50vh]`}>
                                         {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
                                         {hasImages && (
                                             <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="w-full h-full object-contain" />

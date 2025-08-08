@@ -10,7 +10,6 @@ import { WebSocketProvider } from './context/WebSocketContext.jsx';
 import { UserProvider } from './context/UserContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import { MusicPlayerProvider } from './context/MusicPlayerContext.jsx';
-// --- ИМПОРТИРУЕМ НОВЫЙ ПРОВАЙДЕР ---
 import { EmojiPickerProvider } from './context/EmojiPickerProvider.jsx';
 import axios from 'axios';
 

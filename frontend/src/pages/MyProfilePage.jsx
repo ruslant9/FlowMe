@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import useTitle from '../hooks/useTitle';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Avatar from '../components/Avatar';
 import { Loader2, Upload, Trash2, Edit2, Crown, Sparkles, Music, Newspaper, PlusCircle, Clock, Users, BarChart2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -63,6 +63,8 @@ const MyProfilePage = () => {
     useTitle('Мой профиль');
     
     const { currentUser: user, refetchUser, loadingUser } = useUser();
+    const navigate = useNavigate();
+    const location = useLocation();
     
     const [posts, setPosts] = useState([]);
     const [scheduledPosts, setScheduledPosts] = useState([]);
@@ -78,7 +80,7 @@ const MyProfilePage = () => {
 
     const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
     const [editingPost, setEditingPost] = useState(null);
-    const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+    const isEditProfileModalOpen = location.pathname === '/profile/edit';
     const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isPremiumCustomizationModalOpen, setIsPremiumCustomizationModalOpen] = useState(false);
@@ -243,7 +245,7 @@ const MyProfilePage = () => {
         <PageWrapper>
             <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => {setIsCreatePostModalOpen(false); fetchPostsAndStats(false);}} />
             <EditPostModal isOpen={!!editingPost} post={editingPost} onClose={() => { setEditingPost(null); fetchPostsAndStats(false); }} />
-            <EditProfileModal isOpen={isEditProfileModalOpen} onClose={() => {setIsEditProfileModalOpen(false); refetchUser();}} user={user} />
+            <EditProfileModal isOpen={isEditProfileModalOpen} onClose={() => { navigate('/profile'); refetchUser(); }} user={user} />
             <InterestSelectionModal isOpen={isInterestModalOpen} onClose={() => setIsInterestModalOpen(false)} onSave={handleSaveInterests} initialSelectedInterests={user.interests} />
             <UserListModal isOpen={isUserListModalOpen} onClose={() => setIsUserListModalOpen(false)} user={userForModal} listType={listTypeInModal} initialTitle={userListModalTitle} />
             <StatusModal isOpen={isStatusModalOpen} onClose={() => setIsStatusModalOpen(false)} currentStatus={user.status} onSave={() => refetchUser()} />
@@ -289,7 +291,7 @@ const MyProfilePage = () => {
                             </div>
                             
                             <div className="mt-6 flex flex-wrap justify-center md:justify-start gap-3">
-                                <button onClick={() => setIsEditProfileModalOpen(true)} className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/20 dark:hover:bg-white/30 text-slate-800 dark:text-white backdrop-blur-sm transition-colors flex items-center space-x-2">
+                                <button onClick={() => navigate('/profile/edit')} className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/20 dark:hover:bg-white/30 text-slate-800 dark:text-white backdrop-blur-sm transition-colors flex items-center space-x-2">
                                     <Edit2 size={16} /><span>Редактировать</span>
                                 </button>
                                 <button onClick={handleCustomizationClick} className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-2 ${user.premium?.isActive ? 'premium-gradient-bg' : 'bg-black/5 hover:bg-black/10 dark:bg-white/20 dark:hover:bg-white/30 backdrop-blur-sm'}`}>
