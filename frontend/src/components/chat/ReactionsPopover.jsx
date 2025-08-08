@@ -73,7 +73,9 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
         }
     }, []);
 
-    const handlePremiumTabClick = () => {
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2 ---
+    const handlePremiumTabClick = (e) => {
+        e.stopPropagation(); // Предотвращаем закрытие поп-апа
         if (currentUser?.premium?.isActive) {
             setActiveTab('premium');
             setSearchQuery('');
@@ -81,6 +83,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
             setIsPremiumModalOpen(true);
         }
     };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     const handleReactionSelect = (reactionUrl, closeFunc) => {
         onSelect(reactionUrl);
@@ -133,14 +136,16 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
     const PanelContent = ({ closePanel }) => (
         <div className="flex flex-col h-full">
              <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg">
-                <button onClick={() => { setActiveTab('regular'); setSearchQuery(''); }} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'regular' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Обычные</button>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2 (продолжение) --- */}
+                <button onClick={(e) => { e.stopPropagation(); setActiveTab('regular'); setSearchQuery(''); }} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'regular' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Обычные</button>
                 {userFreeEmojiPacks.length > 0 && (
-                    <button onClick={() => { setActiveTab('user_emojis'); setSearchQuery(''); }} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'user_emojis' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Эмодзи</button>
+                    <button onClick={(e) => { e.stopPropagation(); setActiveTab('user_emojis'); setSearchQuery(''); }} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'user_emojis' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Эмодзи</button>
                 )}
                 <button onClick={handlePremiumTabClick} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors flex items-center justify-center space-x-1 ${activeTab === 'premium' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>
                     <Sparkles size={14} className="text-yellow-400" />
                     <span>Premium</span>
                 </button>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
             </div>
             {(activeTab === 'user_emojis' || activeTab === 'premium') && (
                 <div className="relative mb-2">
@@ -166,7 +171,8 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                     >
                         {activeTab === 'regular' && (
                             <div className="flex-1 overflow-y-auto pt-2 -mx-1 px-1">
-                                <div className="flex flex-wrap gap-x-1 gap-y-2 justify-center">
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1 --- */}
+                                <div className="grid grid-cols-5 gap-1 justify-center">
                                     {regularReactions.map(emoji => (
                                         <button
                                             key={emoji}
@@ -177,6 +183,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                         </button>
                                     ))}
                                 </div>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
                             </div>
                         )}
                         {activeTab === 'user_emojis' && (
@@ -192,7 +199,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                         </button>
                                     ))}
                                 </div>
-                                <div className="grid grid-cols-6 gap-2 overflow-y-auto p-1 flex-1 content-start">
+                                <div className="grid grid-cols-5 gap-2 overflow-y-auto p-1 flex-1 content-start">
                                     {activeUserEmojis.length > 0 ? activeUserEmojis.map(emoji => (
                                         <button
                                             key={emoji._id}
@@ -206,7 +213,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                         >
                                             <CachedEmoji src={emoji.imageUrl} alt={emoji.name} />
                                         </button>
-                                    )) : <p className="col-span-6 text-center text-xs text-slate-400 pt-8">Ничего не найдено</p>}
+                                    )) : <p className="col-span-5 text-center text-xs text-slate-400 pt-8">Ничего не найдено</p>}
                                 </div>
                                     <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2 flex-shrink-0">
                                     Удерживайте для предпросмотра
@@ -226,7 +233,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                         </button>
                                     ))}
                                 </div>
-                                <div className="grid grid-cols-6 gap-2 overflow-y-auto p-1 flex-1 content-start">
+                                <div className="grid grid-cols-5 gap-2 overflow-y-auto p-1 flex-1 content-start">
                                     {activePremiumEmojis.length > 0 ? activePremiumEmojis.map(emoji => (
                                         <button
                                             key={emoji.id || emoji._id}
@@ -240,7 +247,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                         >
                                             <CachedEmoji src={emoji.imageUrl || emoji.url} alt={emoji.name} />
                                         </button>
-                                    )) : <p className="col-span-6 text-center text-xs text-slate-400 pt-8">Ничего не найдено</p>}
+                                    )) : <p className="col-span-5 text-center text-xs text-slate-400 pt-8">Ничего не найдено</p>}
                                 </div>
                                 <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2 flex-shrink-0">
                                     Удерживайте для предпросмотра
