@@ -1120,14 +1120,12 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                         );
                                     })()}
                                     <div className="min-w-0">
-                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлен класс truncate --- */}
                                         <h2 className="font-bold group-hover:underline flex items-center text-base md:text-lg truncate" style={{ color: 'var(--chat-header-text-color, inherit)' }}>
                                             {liveInterlocutor.fullName || liveInterlocutor.username}
                                             {usernameEmoji?.url && (
                                                 <img src={usernameEmoji.url} alt="emoji" className="w-5 h-5 ml-1.5" />
                                             )}
                                         </h2>
-                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                         <p className="text-xs h-4" style={{ color: 'var(--chat-header-text-color, inherit)', opacity: 0.7 }}>{getStatusText()}</p>
                                     </div>
                                 </Link>

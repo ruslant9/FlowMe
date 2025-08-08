@@ -63,7 +63,6 @@ const ThemeSwitcher = ({ theme, toggleTheme }) => (
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Условие для полноэкранного режима теперь включает /messages ---
   const isFullBleedLayout = /^\/(artist|album|single|communities|music\/playlist|messages)/.test(location.pathname);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
