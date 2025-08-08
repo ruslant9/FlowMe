@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, Suspense, useCallback, Fragment, us
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, MessageCircle, ChevronLeft, ChevronRight, MoreHorizontal, Check, ChevronDown, Users, Loader2, Send, Smile, Trash2, Pin, MessageSquareOff, Edit, XCircle as CancelVoteIcon, Clock } from 'lucide-react';
+import { X, Heart, MessageCircle, ChevronLeft, ChevronRight, MoreHorizontal, Check, ChevronDown, Users, Loader2, Send, Smile, Trash2, Pin, MessageSquareOff, Edit, XCircle as CancelVoteIcon, Clock, PlusCircle } from 'lucide-react';
 import Avatar from '../Avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -433,6 +433,31 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
                         ) : activePost ? (
                             <>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Раздел с картинкой --- */}
+                                <div className={`w-full md:w-3/5 order-first md:order-2 flex-shrink-0 bg-black flex items-center justify-center relative md:h-full`}>
+                                    {posts.length > 1 && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
+                                    {hasImages ? (
+                                        <AnimatePresence initial={false}>
+                                            <CachedMotionImage
+                                                key={currentIndex}
+                                                src={getImageUrl(activePost.imageUrls[0])}
+                                                className="absolute w-full h-full object-contain"
+                                            />
+                                        </AnimatePresence>
+                                    ) : (
+                                        <div className="hidden md:flex flex-col items-center p-8 space-y-4">
+                                            <div className="flex-1 overflow-y-auto w-full">
+                                                {activePost.text && <p className="text-lg text-white break-words whitespace-pre-wrap">{activePost.text}</p>}
+                                                {activePost.attachedTrack && 
+                                                    <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>
+                                                }
+                                                {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+
                                 <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0 order-1">
                                     <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                                         <Link to={activePost.community ? `/communities/${activePost.community._id}` : `/profile/${activePost.user._id}`} onClick={onClose} className="flex items-center space-x-3 group flex-1 min-w-0">
@@ -489,7 +514,9 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                     </div>
                                     
                                     <div className="md:hidden">
+                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
                                         <div className="p-4">
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                             {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
                                             {activePost.attachedTrack && 
                                                 <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>
@@ -498,13 +525,15 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>
                                     </div>
                                     
-                                    <div className={`w-full ${hasImages ? '' : 'hidden'} flex-shrink-0 bg-black flex items-center justify-center relative md:hidden`}>
+                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Контейнер картинки для мобильных устройств --- */}
+                                    <div className={`w-full ${hasImages ? '' : 'hidden'} flex-shrink-0 bg-black flex items-center justify-center relative md:hidden aspect-square`}>
                                         {hasImages && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
                                         {hasImages && (
-                                            <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="max-w-full max-h-full object-contain" />
+                                            <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="w-full h-full object-contain" />
                                         )}
                                     </div>
-
+                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
+                                    
                                     <div className="flex-1 overflow-y-auto min-h-0">
                                         <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-4 border-b border-t border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between">
@@ -625,6 +654,16 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                                               </button>
                                                                           )
                                                                       })}
+                                                                      {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем кнопку "Создать сообщество" --- */}
+                                                                      <button
+                                                                          type="button"
+                                                                          onClick={() => navigate('/communities')}
+                                                                          className="p-2 rounded-lg flex flex-col items-center justify-center text-center transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500"
+                                                                      >
+                                                                          <PlusCircle size={24} className="text-slate-400" />
+                                                                          <span className="text-xs font-semibold mt-2 text-slate-500 dark:text-slate-400">Создать</span>
+                                                                      </button>
+                                                                      {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                                                   </div>
                                                               </motion.div>
                                                           </AnimatePresence>
@@ -681,6 +720,29 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>
                                     )}
                                 </div>
+                                
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Раздел с картинкой для десктопа --- */}
+                                <div className={`hidden md:flex w-3/5 order-2 flex-shrink-0 bg-black items-center justify-center relative md:h-full`}>
+                                    {posts.length > 1 && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
+                                    {hasImages ? (
+                                        <AnimatePresence initial={false}>
+                                            <CachedMotionImage
+                                                key={currentIndex}
+                                                src={getImageUrl(activePost.imageUrls[0])}
+                                                className="absolute w-full h-full object-contain"
+                                            />
+                                        </AnimatePresence>
+                                    ) : (
+                                        <div className="flex flex-col items-center p-8 space-y-4 max-h-full overflow-y-auto">
+                                            {activePost.text && <p className="text-lg text-white break-words whitespace-pre-wrap">{activePost.text}</p>}
+                                            {activePost.attachedTrack && 
+                                                <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>
+                                            }
+                                            {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
+                                        </div>
+                                    )}
+                                </div>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </>
                         ) : (
                             <div className="w-full flex items-center justify-center">Не удалось загрузить пост.</div>

@@ -1,4 +1,5 @@
 // frontend/src/components/EditBasicInfoCard.jsx
+
 import React, { useState, Fragment, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -7,10 +8,12 @@ import { getYear, getMonth, format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Listbox, Combobox, Transition } from '@headlessui/react';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Loader2, Save } from 'lucide-react';
+import useMediaQuery from '../hooks/useMediaQuery'; // <-- 1. ИМПОРТ ХУКА
 
 registerLocale('ru', ru);
 const API_URL = import.meta.env.VITE_API_URL;
 
+// ... (компонент CustomHeader остается без изменений)
 const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => {
     const years = Array.from({ length: getYear(new Date()) - 1900 + 1 }, (_, i) => 1900 + i).reverse();
     const months = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
@@ -29,7 +32,7 @@ const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMo
         </div>
     );
 };
-
+// ... (компоненты EditField и ProfileFieldDisplay остаются без изменений)
 const EditField = ({ label, name, value, onChange }) => (
     <div>
         <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">{label}</label>
@@ -44,16 +47,14 @@ const ProfileFieldDisplay = ({ label, value }) => (
     </div>
 );
 
+
 const EditBasicInfoCard = ({ user, isEditing, onSave, onCancel }) => {
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Разбиваем состояние на отдельные части ---
     const [fullName, setFullName] = useState('');
     const [username, setUsername] = useState('');
     const [dob, setDob] = useState(null);
     const [gender, setGender] = useState('Не указан');
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [selectedCity, setSelectedCity] = useState(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
     const [loading, setLoading] = useState(false);
     const genderOptions = ['Не указан', 'Мужской', 'Женский'];
     const [countries, setCountries] = useState([]);
@@ -64,7 +65,9 @@ const EditBasicInfoCard = ({ user, isEditing, onSave, onCancel }) => {
     const [citySearch, setCitySearch] = useState('');
     const debounceTimeout = useRef(null);
     const cityLoaderRef = useRef(null);
-    
+    const isMobile = useMediaQuery('(max-width: 768px)'); // <-- 2. ИСПОЛЬЗУЕМ ХУК
+
+    // ... (весь остальной код хуков useEffect и функций-обработчиков остается без изменений)
     useEffect(() => {
         if (user && isEditing) {
             setFullName(user.fullName || '');
@@ -156,6 +159,7 @@ const EditBasicInfoCard = ({ user, isEditing, onSave, onCancel }) => {
         }
     };
 
+
     if (!isEditing) {
         return (
             <div className="space-y-4">
@@ -173,7 +177,21 @@ const EditBasicInfoCard = ({ user, isEditing, onSave, onCancel }) => {
             <EditField label="Имя пользователя" name="username" value={username} onChange={(e) => setUsername(e.target.value)} />
             <div>
                 <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">Дата рождения</label>
-                <DatePicker selected={dob} onChange={date => setDob(date)} maxDate={new Date()} locale="ru" dateFormat="dd.MM.yyyy" placeholderText="ДД.ММ.ГГГГ" className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" renderCustomHeader={CustomHeader} showMonthDropdown showYearDropdown dropdownMode="select" />
+                {/* 3. ДОБАВЛЯЕМ УСЛОВНЫЙ `withPortal` */}
+                <DatePicker 
+                    selected={dob} 
+                    onChange={date => setDob(date)} 
+                    maxDate={new Date()} 
+                    locale="ru" 
+                    dateFormat="dd.MM.yyyy" 
+                    placeholderText="ДД.ММ.ГГГГ" 
+                    className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    renderCustomHeader={CustomHeader} 
+                    showMonthDropdown 
+                    showYearDropdown 
+                    dropdownMode="select"
+                    withPortal={isMobile}
+                />
             </div>
             <div>
                 <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">Пол</label>
@@ -185,7 +203,8 @@ const EditBasicInfoCard = ({ user, isEditing, onSave, onCancel }) => {
             </div>
             <div>
                 <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">Город</label>
-                <Combobox value={selectedCity} onChange={setSelectedCity} disabled={!selectedCountry}><div className="relative"><Combobox.Input onChange={(e) => setCitySearch(e.target.value)} displayValue={(c) => c || ''} className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск города..."}/><Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400"/></Combobox.Button><Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-30">{cities.length > 0 && cities.map((city, i) => <Combobox.Option key={`${city}-${i}`} value={city} className={({ active }) => `relative cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}>{city}</Combobox.Option>)}{hasMoreCities && <div ref={cityLoaderRef} className="py-2 text-center"><Loader2 className="animate-spin inline-block"/></div>}{!loadingCities && cities.length === 0 && citySearch.trim() !== '' && (<div className="relative cursor-default select-none py-2 px-4 text-slate-500 dark:text-slate-400">Город не найден.</div>)}</Combobox.Options></div></Combobox>
+                {/* 4. ДОБАВЛЯЕМ УСЛОВНЫЕ КЛАССЫ ДЛЯ `Combobox.Options` */}
+                <Combobox value={selectedCity} onChange={setSelectedCity} disabled={!selectedCountry}><div className="relative"><Combobox.Input onChange={(e) => setCitySearch(e.target.value)} displayValue={(c) => c || ''} className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск города..."}/><Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400"/></Combobox.Button><Combobox.Options className={`absolute w-full z-30 ${isMobile ? 'bottom-full mb-1' : 'mt-1'} max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none`}>{cities.length > 0 && cities.map((city, i) => <Combobox.Option key={`${city}-${i}`} value={city} className={({ active }) => `relative cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}>{city}</Combobox.Option>)}{hasMoreCities && <div ref={cityLoaderRef} className="py-2 text-center"><Loader2 className="animate-spin inline-block"/></div>}{!loadingCities && cities.length === 0 && citySearch.trim() !== '' && (<div className="relative cursor-default select-none py-2 px-4 text-slate-500 dark:text-slate-400">Город не найден.</div>)}</Combobox.Options></div></Combobox>
             </div>
             <div className="flex justify-end pt-4">
                 <button onClick={handleSave} disabled={loading} className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center">

@@ -217,7 +217,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                 <div className="p-6 pb-4 flex-shrink-0">
                                     <div className="flex justify-between items-center mb-6">
                                         <h2 className="text-xl font-bold">Новый пост</h2>
-                                        <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"><X /></button>
                                     </div>
                                     {loadingUser ? (
                                         <div className="flex items-center space-x-3">
