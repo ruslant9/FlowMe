@@ -489,7 +489,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                     </div>
                                     
                                     <div className="md:hidden">
-                                        <div className="p-4 pt-0">
+                                        <div className="p-4">
                                             {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
                                             {activePost.attachedTrack && 
                                                 <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>

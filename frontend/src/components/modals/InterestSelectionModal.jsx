@@ -1,6 +1,7 @@
 // frontend/src/components/modals/InterestSelectionModal.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
+import ReactDOM from 'react-dom'; // --- ИМПОРТ ReactDOM ---
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, ArrowLeft, Search, CheckCircle, Brush, Code,
@@ -109,97 +110,96 @@ const InterestSelectionModal = ({ isOpen, onClose, onSave, initialSelectedIntere
         );
     }, [searchQuery]);
 
-    return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={handleClose}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[60] p-0 md:p-4"
-                >
-                    <motion.div
-                        initial={{ y: "100%" }}
-                        animate={{ y: 0 }}
-                        exit={{ y: "100%" }}
-                        transition={{ type: "spring", stiffness: 400, damping: 40 }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="ios-glass-final w-full max-w-3xl rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-[90vh]"
-                    >
-                        <div className="flex-shrink-0 p-4">
-                            <div className="w-10 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-2 md:hidden"></div>
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-bold">Выберите интересы</h2>
-                                <p className={`font-semibold ${selectedInterests.length === MAX_INTERESTS ? 'text-red-500' : 'text-slate-500 dark:text-white/60'}`}>
-                                    {selectedInterests.length} / {MAX_INTERESTS}
-                                </p>
-                            </div>
-                            <div className="relative mt-4">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                <input
-                                    type="text"
-                                    placeholder="Поиск по интересам..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
+    if (!isOpen) return null;
 
-                        <div className="flex-1 overflow-y-auto px-4 pb-4 no-scrollbar overscroll-contain">
-                            {filteredInterests ? (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                                    {filteredInterests.length > 0 ? (
-                                        filteredInterests.map(interest => (
-                                            <InterestButton 
-                                                key={interest}
-                                                interest={interest}
-                                                isSelected={selectedInterests.includes(interest)}
-                                                onToggle={handleToggleInterest}
-                                            />
-                                        ))
-                                    ) : (
-                                        <p className="col-span-full text-center py-10 text-slate-500">Ничего не найдено</p>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="space-y-6">
-                                    {interestCategories.map(category => (
-                                        <div key={category.name}>
-                                            <div className="flex items-center space-x-2 mb-3">
-                                                <category.icon className="text-blue-500" size={18} />
-                                                <h3 className="font-semibold text-slate-600 dark:text-white/80">{category.name}</h3>
-                                            </div>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                                                {category.interests.map(interest => (
-                                                     <InterestButton 
-                                                        key={interest}
-                                                        interest={interest}
-                                                        isSelected={selectedInterests.includes(interest)}
-                                                        onToggle={handleToggleInterest}
-                                                    />
-                                                ))}
-                                            </div>
+    return ReactDOM.createPortal(
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={handleClose}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[60] p-4 pt-20"
+            >
+                <motion.div
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="ios-glass-final w-full max-w-3xl p-6 rounded-t-3xl md:rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
+                >
+                    <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                        <h2 className="text-xl font-bold">Выберите интересы</h2>
+                        <p className={`font-semibold ${selectedInterests.length === MAX_INTERESTS ? 'text-red-500' : 'text-slate-500 dark:text-white/60'}`}>
+                            {selectedInterests.length} / {MAX_INTERESTS}
+                        </p>
+                    </div>
+                    
+                    <div className="relative mb-4 flex-shrink-0">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Поиск по интересам..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto -mx-2 px-2 py-2 min-h-0">
+                        {filteredInterests ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                {filteredInterests.length > 0 ? (
+                                    filteredInterests.map(interest => (
+                                        <InterestButton 
+                                            key={interest}
+                                            interest={interest}
+                                            isSelected={selectedInterests.includes(interest)}
+                                            onToggle={handleToggleInterest}
+                                        />
+                                    ))
+                                ) : (
+                                    <p className="col-span-full text-center py-10 text-slate-500">Ничего не найдено</p>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {interestCategories.map(category => (
+                                    <div key={category.name}>
+                                        <div className="flex items-center space-x-2 mb-3">
+                                            <category.icon className="text-blue-500" size={18} />
+                                            <h3 className="font-semibold text-slate-600 dark:text-white/80">{category.name}</h3>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        
-                        <div className="flex-shrink-0 flex justify-between items-center mt-auto p-4 border-t border-slate-200 dark:border-white/10">
-                            <button onClick={handleClose} className="px-6 py-2.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors flex items-center space-x-2">
-                                <ArrowLeft size={18} />
-                                <span>Назад</span>
-                            </button>
-                            <button onClick={handleSaveClick} className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                                Сохранить
-                            </button>
-                        </div>
-                    </motion.div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                            {category.interests.map(interest => (
+                                                 <InterestButton 
+                                                    key={interest}
+                                                    interest={interest}
+                                                    isSelected={selectedInterests.includes(interest)}
+                                                    onToggle={handleToggleInterest}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 dark:border-white/10 flex-shrink-0">
+                        <button onClick={handleClose} className="px-6 py-2.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors flex items-center space-x-2">
+                            <ArrowLeft size={18} />
+                            <span>Назад</span>
+                        </button>
+                        <button onClick={handleSaveClick} className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                            Сохранить
+                        </button>
+                    </div>
                 </motion.div>
-            )}
-        </AnimatePresence>
+            </motion.div>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 
