@@ -1,4 +1,4 @@
-// frontend/src/context/MusicPlayerContext.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ (ФИНАЛЬНАЯ ВЕРСИЯ) ---
+// frontend/src/context/MusicPlayerContext.jsx --- ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
@@ -41,9 +41,6 @@ export const MusicPlayerProvider = ({ children }) => {
     const currentTrackIndexRef = useRef(-1);
     const notificationTimeoutRef = useRef(null);
     const likeStatusTimeoutRef = useRef(null);
-    
-    // --- ИЗМЕНЕНИЕ: Используем ref для ID интервала ---
-    const progressIntervalRef = useRef(null);
     
     const cleanTitle = (title) => {
         if (!title) return '';
@@ -216,30 +213,36 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
 
-    // --- ИЗМЕНЕНИЕ: Используем setInterval для надежного обновления прогресса ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
+    // Этот useEffect отвечает за основной цикл обновления прогресса
+    useEffect(() => {
+        let progressInterval;
+        
+        if (isPlaying) {
+            // Если трек играет, запускаем интервал
+            progressInterval = setInterval(() => {
+                setProgress(audioRef.current.currentTime);
+                const audio = audioRef.current;
+                if (audio.buffered.length > 0 && audio.duration > 0) {
+                    setBuffered(audio.buffered.end(audio.buffered.length - 1) / audio.duration);
+                }
+            }, 250); // Обновляем 4 раза в секунду для плавности
+        }
+        
+        // Функция очистки: вызывается, когда isPlaying меняется на false или компонент размонтируется
+        return () => {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+        };
+    }, [isPlaying]); // Зависимость только от isPlaying
+
+    // Этот useEffect отвечает за события самого аудио-элемента
     useEffect(() => {
         const audio = audioRef.current;
 
-        const startProgressInterval = () => {
-            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-            progressIntervalRef.current = setInterval(() => {
-                setProgress(audio.currentTime);
-                if (audio.buffered.length > 0) {
-                    setBuffered(audio.buffered.end(audio.buffered.length - 1) / audio.duration);
-                }
-            }, 250); // Обновляем 4 раза в секунду
-        };
-
-        const stopProgressInterval = () => {
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current);
-                progressIntervalRef.current = null;
-            }
-        };
-
-        const handleDurationChange = () => setDuration(audio.duration);
+        const handleDurationChange = () => setDuration(audio.duration || 0);
         const handleEnded = () => {
-            stopProgressInterval();
             if (isRepeat) {
                 audio.currentTime = 0;
                 audio.play();
@@ -249,21 +252,15 @@ export const MusicPlayerProvider = ({ children }) => {
             }
         };
         
-        audio.addEventListener('play', startProgressInterval);
-        audio.addEventListener('playing', startProgressInterval);
-        audio.addEventListener('pause', stopProgressInterval);
         audio.addEventListener('durationchange', handleDurationChange);
         audio.addEventListener('ended', handleEnded);
 
         return () => {
-            stopProgressInterval();
-            audio.removeEventListener('play', startProgressInterval);
-            audio.removeEventListener('playing', startProgressInterval);
-            audio.removeEventListener('pause', stopProgressInterval);
             audio.removeEventListener('durationchange', handleDurationChange);
             audio.removeEventListener('ended', handleEnded);
         };
-    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
+    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]); // Зависимости для колбэка handleEnded
+    // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 
     useEffect(() => {
         const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
