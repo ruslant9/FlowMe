@@ -81,39 +81,44 @@ export default function AttachedTrack({ track }) {
                 </div>
             </div>
 
-            {/* Прогресс-бар */}
             <div className="flex items-center space-x-2">
-                <span className="text-xs w-10 text-center text-slate-500 dark:text-slate-300">
-                    {formatTime(isCurrent ? progress : 0)}
-                </span>
-                <div className="flex-grow relative">
-                    {isCurrent && buffered > 0 && (
-                        <div
-                            className="absolute top-1/2 -translate-y-1/2 h-[4px] rounded-full bg-slate-300 dark:bg-slate-600"
-                            style={{ width: `${buffered * 100}%` }}
-                        />
-                    )}
-                    <Slider
-                        min={0}
-                        max={trackDuration}
-                        value={isCurrent ? progress : 0}
-                        onChange={isCurrent ? seekTo : undefined}
-                        step={0.1}
-                        trackStyle={{ backgroundColor: '#3b82f6', height: 4 }}
-                        handleStyle={{
-                            borderColor: '#3b82f6',
-                            height: 14,
-                            width: 14,
-                            marginTop: -5,
-                            backgroundColor: '#fff'
-                        }}
-                        railStyle={{ backgroundColor: 'transparent', height: 4 }}
-                    />
-                </div>
-                <span className="text-xs w-10 text-center text-slate-500 dark:text-slate-300">
-                    {formatTime(trackDuration)}
-                </span>
-            </div>
+    <span className="text-xs w-10 text-center text-slate-500 dark:text-slate-300">
+        {formatTime(isCurrent ? progress : 0)}
+    </span>
+    <div className="flex-grow relative">
+        {/* Постоянный фон длины трека */}
+        <div
+            className="absolute top-1/2 -translate-y-1/2 h-[4px] w-full rounded-full bg-slate-300 dark:bg-slate-600"
+        />
+        {/* Буфер */}
+        {buffered > 0 && (
+            <div
+                className="absolute top-1/2 -translate-y-1/2 h-[4px] rounded-full bg-slate-400 dark:bg-slate-500"
+                style={{ width: `${buffered * 100}%` }}
+            />
+        )}
+        {/* Прогресс */}
+        <Slider
+            min={0}
+            max={trackDuration}
+            value={isCurrent ? progress : 0}
+            onChange={isCurrent ? seekTo : undefined}
+            step={0.1}
+            trackStyle={{ backgroundColor: '#3b82f6', height: 4 }}
+            handleStyle={{
+                borderColor: '#3b82f6',
+                height: 14,
+                width: 14,
+                marginTop: -5,
+                backgroundColor: '#fff'
+            }}
+            railStyle={{ backgroundColor: 'transparent', height: 4 }}
+        />
+    </div>
+    <span className="text-xs w-10 text-center text-slate-500 dark:text-slate-300">
+        {formatTime(trackDuration)}
+    </span>
+</div>
         </div>
     );
 }
