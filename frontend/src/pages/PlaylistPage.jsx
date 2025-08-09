@@ -276,17 +276,17 @@ const PlaylistPage = () => {
                                             leaveFrom="transform opacity-100 scale-100"
                                             leaveTo="transform opacity-0 scale-95"
                                         >
-                                            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right rounded-xl ios-glass-popover p-1 z-20">
+                                            <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl ios-glass-popover p-1 z-20"> {/* <-- ИЗМЕНЕНИЕ 1: w-48 заменен на w-56 */}
     <Menu.Item>
         {({ active }) => (
-            <button onClick={() => setEditModalOpen(true)} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs ${active ? 'bg-slate-200 dark:bg-slate-700' : ''}`}>
+            <button onClick={() => setEditModalOpen(true)} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs whitespace-nowrap ${active ? 'bg-slate-200 dark:bg-slate-700' : ''}`}> {/* <-- ИЗМЕНЕНИЕ 2: добавлен whitespace-nowrap */}
                 <Edit className="mr-2 h-4 w-4" /> Редактировать плейлист
             </button>
         )}
     </Menu.Item>
     <Menu.Item>
         {({ active }) => (
-            <button onClick={handleDeletePlaylist} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs text-red-500 ${active ? 'bg-red-500/10' : ''}`}>
+            <button onClick={handleDeletePlaylist} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs whitespace-nowrap text-red-500 ${active ? 'bg-red-500/10' : ''}`}> {/* <-- ИЗМЕНЕНИЕ 3: добавлен whitespace-nowrap для консистентности */}
                 <Trash2 className="mr-2 h-4 w-4" /> Удалить плейлист
             </button>
         )}
