@@ -1,4 +1,4 @@
-// frontend/src/components/music/AttachedTrack.jsx --- НОВЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/components/music/AttachedTrack.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React from 'react';
 import { Play, Pause, Music, Loader2 } from 'lucide-react';
@@ -27,13 +27,11 @@ const AttachedTrack = ({ track }) => {
         progress, duration, seekTo, buffered
     } = useMusicPlayer();
     
-    // Функция для очистки заголовка от лишних слов (official video, audio, и т.д.)
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
 
-    // Функция для корректного отображения имен исполнителей
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) return artistData.map(a => (a.name || '').replace(' - Topic', '').trim()).join(', ');
@@ -52,14 +50,15 @@ const AttachedTrack = ({ track }) => {
         if (isCurrent) {
             togglePlayPause();
         } else {
-            playTrack(track, [track]); // Воспроизводим трек как плейлист из одного элемента
+            playTrack(track, [track]);
         }
     };
 
     const trackDurationInSeconds = track.durationMs ? track.durationMs / 1000 : 0;
 
     return (
-        <div className="flex flex-col space-y-2 w-full">
+        // --- ИСПРАВЛЕНИЕ: Задаем компоненту фиксированную ширину ---
+        <div className="flex flex-col space-y-2 w-72">
             <div className="flex items-center space-x-3">
                 <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0 group">
                     {track.albumArtUrl ? 
