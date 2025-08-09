@@ -276,22 +276,22 @@ const PlaylistPage = () => {
                                             leaveFrom="transform opacity-100 scale-100"
                                             leaveTo="transform opacity-0 scale-95"
                                         >
-                                            <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl ios-glass-popover p-2 z-20">
-                                                <Menu.Item>
-                                                    {({ active }) => (
-                                                        <button onClick={() => setEditModalOpen(true)} className={`group flex w-full items-center rounded-md px-3 py-2 text-sm ${active ? 'bg-slate-200 dark:bg-slate-700' : ''}`}>
-                                                            <Edit className="mr-2 h-5 w-5" /> Редактировать плейлист
-                                                        </button>
-                                                    )}
-                                                </Menu.Item>
-                                                <Menu.Item>
-                                                    {({ active }) => (
-                                                        <button onClick={handleDeletePlaylist} className={`group flex w-full items-center rounded-md px-3 py-2 text-sm text-red-500 ${active ? 'bg-red-500/10' : ''}`}>
-                                                            <Trash2 className="mr-2 h-5 w-5" /> Удалить плейлист
-                                                        </button>
-                                                    )}
-                                                </Menu.Item>
-                                            </Menu.Items>
+                                            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right rounded-xl ios-glass-popover p-1 z-20">
+    <Menu.Item>
+        {({ active }) => (
+            <button onClick={() => setEditModalOpen(true)} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs ${active ? 'bg-slate-200 dark:bg-slate-700' : ''}`}>
+                <Edit className="mr-2 h-4 w-4" /> Редактировать плейлист
+            </button>
+        )}
+    </Menu.Item>
+    <Menu.Item>
+        {({ active }) => (
+            <button onClick={handleDeletePlaylist} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs text-red-500 ${active ? 'bg-red-500/10' : ''}`}>
+                <Trash2 className="mr-2 h-4 w-4" /> Удалить плейлист
+            </button>
+        )}
+    </Menu.Item>
+</Menu.Items>
                                         </Transition>
                                     </Menu>
                                 </div>

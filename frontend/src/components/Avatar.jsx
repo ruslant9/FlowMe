@@ -29,9 +29,7 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
     sm: 'w-8 h-8 text-sm',
     md: 'w-10 h-10 text-lg',
     lg: 'w-12 h-12 text-xl',
-    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
     xl: 'w-12 h-12 md:w-24 md:h-24 text-xl md:text-4xl', 
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
     '2xl': 'w-32 h-32 text-5xl',
 };
 
@@ -40,19 +38,13 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
     const hash = getHash(username || '');
     const colorIndex = Math.abs(hash) % avatarColors.length;
     const bgColor = avatarColors[colorIndex];
-    
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const hasCustomBorder = customBorder && customBorder.type !== 'none';
     const borderClass = hasCustomBorder && customBorder.type.startsWith('animated') ? `premium-border-${customBorder.type}` : '';
-    
-    // Динамический padding в зависимости от размера аватара
-    const paddingClass = hasCustomBorder || isPremium ? (size === 'sm' ? 'p-0.5' : 'p-1') : ''; // 2px для sm, 4px для остальных
-    
+    const paddingClass = hasCustomBorder || isPremium ? 'p-0.5' : '';
     const staticBorderStyle = hasCustomBorder && customBorder.type === 'static' ? { backgroundColor: customBorder.value } : {};
     const defaultPremiumClass = isPremium && !hasCustomBorder ? 'premium-gradient-bg' : '';
-    
     const finalWrapperClass = `relative group rounded-full inline-block flex-shrink-0 ${sizeClasses[size]} ${borderClass} ${paddingClass} ${defaultPremiumClass}`;
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    const underlayInsetClass = 'inset-0.5';
 
     return (
         <div 
@@ -81,7 +73,7 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
                 )}
             </div>
             
-            {(hasCustomBorder || defaultPremiumClass) && <div className={`absolute rounded-full bg-slate-50 dark:bg-slate-900 -z-10 ${size === 'sm' ? 'inset-0.5' : 'inset-1'}`}></div>}    
+            {(hasCustomBorder || defaultPremiumClass) && <div className={`absolute rounded-full bg-slate-50 dark:bg-slate-900 -z-10 ${underlayInsetClass}`}></div>}    
             
             {onClick && children && (
                 <>

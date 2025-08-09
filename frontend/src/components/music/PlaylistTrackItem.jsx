@@ -119,7 +119,7 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                         )}
                         <Link to={trackLink} onClick={(e) => e.stopPropagation()}>
                             <p 
-                                className="font-semibold text-sm md:text-base hover:underline"
+                                className="font-semibold text-xs sm:text-sm md:text-base hover:underline"
                                 style={isCurrent ? { color: accentColor } : {}}
                             >
                                 {truncateTitle(cleanedTitle)}
