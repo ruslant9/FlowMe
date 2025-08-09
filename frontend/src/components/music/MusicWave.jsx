@@ -2,9 +2,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
+import { useMusicPlayer } from '../../context/MusicPlayerContext'; // ИМПОРТ
 
 const MusicWave = ({ onPlay }) => {
-    const bars = Array.from({ length: 40 }); // Больше, но тоньше
+    const { isPlaying } = useMusicPlayer(); // ПОЛУЧАЕМ СТАТУС ПЛЕЕРА
+    const bars = Array.from({ length: 70 }); // --- 1. Увеличиваем количество полосок
 
     return (
         <motion.div
@@ -29,16 +31,17 @@ const MusicWave = ({ onPlay }) => {
                         key={i}
                         className="bg-white/30 rounded-full"
                         style={{
-                            width: '1%',
+                            width: '0.6%', // --- 1. Уменьшаем ширину
                             height: `${Math.random() * 50 + 20}%`,
                             margin: '0 0.5px'
                         }}
+                        // --- 2. Делаем анимацию зависимой от isPlaying ---
                         animate={{
-                            scaleY: [1, 0.3, 1],
+                            scaleY: isPlaying ? [1, 0.3, 1] : 1, // Анимация, если играет; статичное состояние, если нет
                         }}
                         transition={{
                             duration: Math.random() * 0.5 + 0.7,
-                            repeat: Infinity,
+                            repeat: isPlaying ? Infinity : 0, // Повторяем только если играет
                             repeatType: 'mirror',
                             ease: 'easeInOut',
                             delay: i * 0.04

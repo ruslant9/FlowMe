@@ -34,6 +34,7 @@ const COMMENT_PAGE_LIMIT = 5;
 
 const CachedMotionImage = ({ src, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
+
     if (loading) {
         return (
             <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
@@ -41,6 +42,7 @@ const CachedMotionImage = ({ src, ...props }) => {
             </motion.div>
         );
     }
+
     return <motion.img src={finalSrc} {...props} />;
 };
 
@@ -426,17 +428,19 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
                         style={isMobile ? { maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' } : {}}
-                        // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Динамические классы для макета ---
                         className={`overflow-hidden w-full flex flex-col md:rounded-3xl relative bg-white dark:bg-slate-900 text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]
                             ${hasImages ? 'md:flex-row max-w-7xl' : 'max-w-2xl'}
                         `}
-                        // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
                     >
-                        {isLoading && !activePost ? (
-                            <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем полоску загрузки --- */}
+                        {isLoading ? (
+                            <div className="w-full h-full flex items-center justify-center absolute inset-0 md:bg-black z-50">
+                                <Loader2 className="animate-spin text-slate-400" size={48} />
+                            </div>
                         ) : activePost ? (
+                        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                             <>
-                                {/* --- Контейнер с информацией и комментариями --- */}
+                                {/* --- Контейнер с информацией и комментариями (левая часть на десктопе) --- */}
                                 <div className={`flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full flex-1 min-h-0 order-last md:order-first
                                     ${hasImages ? 'md:w-2/5' : 'w-full'}
                                 `}>
@@ -511,7 +515,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                     
                                     <div className="flex-1 overflow-y-auto min-h-0">
                                         <div className="p-4 hidden md:block">
-                                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Отображение контента поста для десктопа без картинки --- */}
                                             {!hasImages && (
                                                 <>
                                                     {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
@@ -521,7 +524,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                     {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
                                                 </>
                                             )}
-                                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                                         </div>
 
                                         <div className="md:hidden flex-shrink-0">
@@ -722,8 +724,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                     )}
                                 </div>
                                 
-                                {/* --- Контейнер с картинкой (правая часть на десктопе) --- */}
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Делаем контейнер квадратным и показываем только при наличии картинок --- */}
                                 {hasImages && (
                                     <div className="hidden md:flex w-3/5 flex-shrink-0 bg-black items-center justify-center relative aspect-square">
                                         {posts.length > 1 && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
@@ -736,10 +736,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </AnimatePresence>
                                     </div>
                                 )}
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                             </>
                         ) : (
-                            <div className="w-full flex items-center justify-center">Не удалось загрузить пост.</div>
+                            <div className="w-full flex items-center justify-center p-8 text-slate-500 dark:text-slate-400">
+                                Не удалось загрузить пост.
+                            </div>
                         )}
                     </motion.div>
                 </motion.div>

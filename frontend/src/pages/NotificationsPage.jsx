@@ -293,14 +293,12 @@ const NotificationsPage = () => {
                         ))}
                     </div>
 
-                    <div className="md:hidden mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto no-scrollbar">
-                        <div className="flex items-center space-x-2">
-                            {subTabs.map(item => (
-                                <TabButton key={item.key} active={activeFilter === item.key} onClick={item.onClick} icon={item.icon}>
-                                    {item.label}
-                                </TabButton>
-                            ))}
-                        </div>
+                    <div className="md:hidden mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                        <ResponsiveNav 
+                            items={subTabs}
+                            visibleCount={4}
+                            activeKey={activeFilter}
+                        />
                     </div>
                     
                     {loading ? (
