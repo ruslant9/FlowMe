@@ -1,5 +1,4 @@
 // frontend/src/components/chat/PinnedMessagesCarousel.jsx
-
 import React, { useState } from 'react';
 import { Pin, X, Image as ImageIcon, Music, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,14 +22,16 @@ const PinnedMessagesCarousel = ({ messages, onJumpToMessage, onUnpin }) => {
     
     const activeMessage = messages[page];
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Улучшенная функция для превью ---
+    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+    const cleanTitle = (title) => {
+        if (!title) return '';
+        return title.replace(
+            /\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i,
+            ''
+        ).trim();
+    };
+
     const getMessagePreview = (message) => {
-        if (message.type === 'system') {
-            const parts = message.text.split(/: (.+)/);
-            const actionText = parts[0];
-            const quotedText = parts.length > 1 ? `: ${parts[1]}` : '';
-            return <p className="truncate">{actionText}<span className="italic opacity-80">{quotedText}</span></p>;
-        }
         if (message.imageUrl) {
             return (
                 <div className="flex items-center space-x-1.5 truncate">
@@ -40,10 +41,10 @@ const PinnedMessagesCarousel = ({ messages, onJumpToMessage, onUnpin }) => {
             );
         }
         if (message.text) return <p className="truncate">{message.text}</p>;
-        if (message.attachedTrack) return <div className="flex items-center truncate"><Music size={14} className="mr-1.5 flex-shrink-0"/>Трек: {message.attachedTrack.title}</div>;
+        if (message.attachedTrack) return <div className="flex items-center"><Music size={14} className="mr-1.5"/>Трек: {cleanTitle(message.attachedTrack.title)}</div>;
         return <p>Вложение</p>;
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
     const variants = {
