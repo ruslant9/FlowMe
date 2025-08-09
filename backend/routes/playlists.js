@@ -188,8 +188,6 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
         await updatePlaylistCover(playlist);
         await playlist.save();
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        // После сохранения, получаем полностью населенный плейлист и обрабатываем его
         const updatedPlaylist = await Playlist.findById(playlist._id)
             .populate({
                 path: 'tracks',
@@ -199,9 +197,8 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
                 ]
             })
             .populate('user', 'username fullName avatar')
-            .lean(); // Используем .lean() для получения простого объекта
+            .lean();
 
-        // Применяем ту же логику, что и в GET-запросе, чтобы данные были консистентными
         updatedPlaylist.tracks = updatedPlaylist.tracks.map(track => {
             if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
                 return { ...track, albumArtUrl: track.album.coverArtUrl };
@@ -210,8 +207,6 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
         });
 
         res.json(updatedPlaylist);
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
     } catch (error) {
         console.error("Ошибка при добавлении треков в плейлист:", error);
         res.status(500).json({ message: 'Ошибка при добавлении треков в плейлист.' });
@@ -237,8 +232,27 @@ router.delete('/:playlistId/tracks/:trackId', authMiddleware, async (req, res) =
         await updatePlaylistCover(playlist);
         await playlist.save();
         
-        const updatedPlaylist = await Playlist.findById(playlist._id).populate({ path: 'tracks', populate: { path: 'artist album' } }).populate('user', 'username fullName avatar');
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        const updatedPlaylist = await Playlist.findById(playlist._id)
+            .populate({
+                path: 'tracks',
+                populate: [
+                    { path: 'artist', select: 'name _id' },
+                    { path: 'album', select: 'coverArtUrl' }
+                ]
+            })
+            .populate('user', 'username fullName avatar')
+            .lean();
+
+        updatedPlaylist.tracks = updatedPlaylist.tracks.map(track => {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                return { ...track, albumArtUrl: track.album.coverArtUrl };
+            }
+            return track;
+        });
+        
         res.json(updatedPlaylist);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при удалении трека из плейлиста.' });
