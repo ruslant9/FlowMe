@@ -1,6 +1,6 @@
 // frontend/src/components/chat/SystemMessage.jsx
 
-import React, { forwardRef, useState, useRef } from 'react'; // 1. ИМПОРТИРУЕМ useState и useRef
+import React, { forwardRef, useState, useRef } from 'react';
 import { Pin, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useModal } from '../../hooks/useModal';
 import Tippy from '@tippyjs/react/headless';
@@ -18,7 +18,6 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
     const { showConfirmation } = useModal();
     const isMenuOpen = openMenuId === message._id;
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const menuButtonRef = useRef(null);
     const [menuPosition, setMenuPosition] = useState('bottom');
 
@@ -26,7 +25,6 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
         e.stopPropagation();
         if (menuButtonRef.current) {
             const rect = menuButtonRef.current.getBoundingClientRect();
-            // Если до низа экрана меньше 150px, открываем вверх
             if (window.innerHeight - rect.bottom < 150) {
                 setMenuPosition('top');
             } else {
@@ -35,7 +33,6 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
         }
         onToggleMenu(isMenuOpen ? null : message._id);
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     const getIcon = () => {
@@ -72,7 +69,9 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
     };
 
     return (
-        <div className="flex justify-center my-4">
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлен id к корневому элементу ---
+        <div id={`message-${message.uuid || message._id}`} className="flex justify-center my-4">
+        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             <div className="relative group inline-flex items-center">
                 <div className="flex items-center text-xs font-semibold text-slate-800 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full px-3 py-1.5 max-w-sm text-center">
                     {getIcon()}
@@ -81,7 +80,6 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
                 {!selectionMode && (
                     <Tippy
                         interactive
-                        // --- ИСПРАВЛЕНИЕ: Используем динамическую позицию ---
                         placement={menuPosition === 'bottom' ? 'bottom-end' : 'top-end'}
                         visible={isMenuOpen}
                         onClickOutside={() => onToggleMenu(null)}
@@ -99,7 +97,6 @@ const SystemMessage = ({ message, onPerformDelete, onToggleMenu, openMenuId, sel
                         )}
                     >
                         <TippyWrapper 
-                            // --- ИСПРАВЛЕНИЕ: Привязываем ref и новый обработчик ---
                             ref={menuButtonRef}
                             onClick={handleMenuClick}
                             className="p-1 ml-1 rounded-full text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-200 dark:hover:bg-slate-700"
