@@ -28,9 +28,7 @@ import { motion } from 'framer-motion';
 import ProfileField from '../components/ProfileField';
 import PageWrapper from '../components/PageWrapper';
 import ProfileStats from '../components/ProfileStats';
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Импортируем модальное окно ---
 import AddToPlaylistModal from '../components/modals/AddToPlaylistModal';
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -72,9 +70,22 @@ const MyProfilePage = () => {
     const [activePostTab, setActivePostTab] = useState('published');
     const [stats, setStats] = useState(null);
     const [loadingPostsAndStats, setLoadingPostsAndStats] = useState(true);
-    const [myMusicTrackIds, setMyMusicTrackIds] = useState(new Set());
     const [musicTracks, setMusicTracks] = useState([]);
-    const { playTrack, currentTrack, isPlaying, onToggleLike } = useMusicPlayer();
+    
+    const { 
+        playTrack, 
+        currentTrack, 
+        isPlaying, 
+        onToggleLike, 
+        myMusicTrackIds,
+        progress,
+        duration,
+        seekTo,
+        loadingTrackId,
+        buffered,
+        togglePlayPause
+    } = useMusicPlayer();
+    
     const { userStatuses } = useWebSocket();
     const { showConfirmation } = useModal();
     const avatarInputRef = useRef(null);
@@ -90,10 +101,8 @@ const MyProfilePage = () => {
     const [userForModal, setUserForModal] = useState(null);
     const [userListModalTitle, setUserListModalTitle] = useState('');
     const [listTypeInModal, setListTypeInModal] = useState('user');
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем состояние для модального окна добавления в плейлист ---
     const [isAddToPlaylistModalOpen, setAddToPlaylistModalOpen] = useState(false);
     const [trackToAdd, setTrackToAdd] = useState(null);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const userAccent = user?.premiumCustomization?.activeCardAccent;
 
@@ -111,7 +120,6 @@ const MyProfilePage = () => {
             setPosts(postsRes.data);
             setStats(statsRes.data);
             setMusicTracks(musicRes.data);
-            setMyMusicTrackIds(new Set(musicRes.data.map(track => track.sourceId)));
             setScheduledPosts(scheduledRes.data);
         } catch (error) {
             toast.error('Не удалось загрузить посты и статистику.');
@@ -212,13 +220,11 @@ const MyProfilePage = () => {
         setStats(prev => prev ? ({...prev, posts: prev.posts - 1}) : null);
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем функцию-обработчик для кнопки "+" ---
     const handleAddToPlaylist = (track) => {
         setTrackToAdd(track);
         setAddToPlaylistModalOpen(true);
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
+    
     const handleSaveInterests = async (newInterests) => {
         const toastId = toast.loading('Сохранение интересов...');
         try {
@@ -274,13 +280,11 @@ const MyProfilePage = () => {
             <StatusModal isOpen={isStatusModalOpen} onClose={() => setIsStatusModalOpen(false)} currentStatus={user.status} onSave={() => refetchUser()} />
             <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
             <PremiumCustomizationModal isOpen={isPremiumCustomizationModalOpen} onClose={() => { setIsPremiumCustomizationModalOpen(false); refetchUser(); }} user={user} />
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Рендерим модальное окно --- */}
             <AddToPlaylistModal
                 isOpen={isAddToPlaylistModalOpen}
                 onClose={() => setAddToPlaylistModalOpen(false)}
                 trackToAdd={trackToAdd}
             />
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
 
             <main className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto p-4 md:p-8">
@@ -357,9 +361,25 @@ const MyProfilePage = () => {
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Моя музыка</h3>
                                     <Link to="/music" state={{ defaultTab: 'my-music' }} className="text-sm font-semibold text-blue-500 hover:underline">Все ({musicTracks.length})</Link>
                                 </div>
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем onAddToPlaylist в TrackList --- */}
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем все необходимые пропсы в TrackList --- */}
                                 {loadingPostsAndStats ? <div className="flex justify-center py-4"><Loader2 className="animate-spin text-slate-400"/></div> : 
-                                 musicTracks.length > 0 ? <TrackList tracks={musicTracks.slice(0, 3)} onSelectTrack={(track) => playTrack(track, musicTracks)} onToggleSave={onToggleLike} {...{currentTrack, isPlaying, myMusicTrackIds}} onAddToPlaylist={handleAddToPlaylist} /> : <p className="text-slate-500 dark:text-slate-400 text-sm">Добавьте любимые треки в свою коллекцию.</p>}
+                                 musicTracks.length > 0 ? 
+                                    <TrackList 
+                                        tracks={musicTracks.slice(0, 3)} 
+                                        onSelectTrack={(track) => playTrack(track, musicTracks)} 
+                                        onToggleSave={onToggleLike} 
+                                        onAddToPlaylist={handleAddToPlaylist}
+                                        currentTrack={currentTrack}
+                                        isPlaying={isPlaying}
+                                        myMusicTrackIds={myMusicTrackIds}
+                                        progress={progress}
+                                        duration={duration}
+                                        onSeek={seekTo}
+                                        loadingTrackId={loadingTrackId}
+                                        buffered={buffered}
+                                        onPlayPauseToggle={togglePlayPause}
+                                    /> 
+                                    : <p className="text-slate-500 dark:text-slate-400 text-sm">Добавьте любимые треки в свою коллекцию.</p>}
                                 {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </div>
                         </div>

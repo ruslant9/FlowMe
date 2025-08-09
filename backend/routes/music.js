@@ -57,7 +57,13 @@ const analyzeTrackForGenres = (track) => {
     return Array.from(foundGenres);
 };
 
-const logMusicAction = async (req, track, action) => {
+const logMusicAction = async (req, track, action, retries = 0) => {
+    // Предохранитель от бесконечного цикла, если что-то пойдет не так
+    if (retries >= 3) {
+        console.error(`[CRITICAL] Не удалось залогировать действие ${action} для трека ${track._id} после 3 попыток.`);
+        return;
+    }
+
     try {
         const userId = req.user.userId;
         if (!track || !action) return;
@@ -74,6 +80,8 @@ const logMusicAction = async (req, track, action) => {
 
         if (artists.length === 0 && genres.length === 0) return;
         
+        // Используем findOneAndUpdate с upsert: true.
+        // Это атомарно найдет или создаст профиль, что безопаснее.
         const profile = await UserMusicProfile.findOneAndUpdate(
             { user: userId },
             { $setOnInsert: { user: userId } },
@@ -84,14 +92,23 @@ const logMusicAction = async (req, track, action) => {
         genres.forEach(genreName => profile.updateGenreScore(genreName, points));
         
         await profile.save();
+
     } catch (error) {
-       console.warn(`Не удалось залогировать действие ${action}`, error);
+        // Если это ошибка версии, пробуем выполнить операцию заново
+        if (error.name === 'VersionError') {
+            console.warn(`[Concurrency] Обнаружена VersionError при логировании '${action}'. Попытка #${retries + 1}...`);
+            // Небольшая случайная задержка перед повторной попыткой, чтобы избежать "пробок"
+            await new Promise(res => setTimeout(res, Math.random() * 50));
+            // Рекурсивно вызываем эту же функцию, увеличив счетчик попыток
+            return logMusicAction(req, track, action, retries + 1);
+        }
+        
+        // Если это любая другая ошибка, просто логируем ее
+        console.warn(`Не удалось залогировать действие ${action}`, error);
     }
 };
 
 // --- МАРШРУТЫ ДЛЯ "МОЕЙ МУЗЫКИ" И ИСТОРИИ ---
-
-// --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 router.post('/toggle-save', authMiddleware, async (req, res) => {
     try {
         const trackDataFromClient = req.body;
@@ -152,58 +169,70 @@ router.get('/saved', authMiddleware, async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
 
-        // Используем агрегацию для производительности
+        // Используем агрегацию для максимальной производительности
         const savedTracks = await Track.aggregate([
             // 1. Находим все треки пользователя с типом 'saved'
             { $match: { user: userId, type: 'saved' } },
-            // 2. Сортируем по дате добавления
+            // 2. Сортируем по дате добавления (сначала новые)
             { $sort: { savedAt: -1 } },
             // 3. "Присоединяем" (lookup) данные из коллекции artists
+            // Это безопасный аналог populate для массивов
             {
                 $lookup: {
                     from: 'artists',
-                    localField: 'artist',
-                    foreignField: '_id',
-                    as: 'artistDetails'
+                    localField: 'artist', // поле-массив в коллекции Track
+                    foreignField: '_id',    // поле в коллекции Artist
+                    as: 'artistInfo'      // временное поле с результатами
                 }
             },
-            // 4. "Присоединяем" (lookup) данные из коллекции albums
+            // 4. "Присоединяем" данные из коллекции albums
             {
                 $lookup: {
                     from: 'albums',
                     localField: 'album',
                     foreignField: '_id',
-                    as: 'albumDetails'
+                    as: 'albumInfo'
                 }
             },
-            // 5. Разворачиваем массив albumDetails (так как альбом один)
+            // 5. Разворачиваем массив albumInfo, так как альбом у трека один.
+            // preserveNullAndEmptyArrays: true - важно, чтобы не потерять синглы (треки без альбома)
             {
                 $unwind: {
-                    path: '$albumDetails',
-                    preserveNullAndEmptyArrays: true // Оставляем треки, у которых нет альбома (синглы)
+                    path: '$albumInfo',
+                    preserveNullAndEmptyArrays: true
                 }
             },
-            // 6. Проектируем финальный вид документа
+            // 6. Формируем финальный документ, который отправится на фронтенд
             {
                 $project: {
+                    // Исключаем ненужные системные поля
+                    __v: 0,
+                    'artistInfo.__v': 0,
+                    'albumInfo.__v': 0,
+                    
+                    // Включаем нужные поля из основной коллекции Track
                     _id: 1,
                     title: 1,
-                    artist: '$artistDetails', // Используем присоединенные данные
-                    album: '$albumDetails',
-                    albumArtUrl: {
-                        // Логика для обложки: если есть своя, используем ее, иначе берем из альбома
-                        $ifNull: ['$albumArtUrl', '$albumDetails.coverArtUrl']
-                    },
                     durationMs: 1,
                     isExplicit: 1,
-                    sourceId: 1, // Важно для определения статуса "лайка" на фронте
+                    sourceId: 1, // Очень важно для определения "лайка"
                     savedAt: 1,
-                    type: 1
+                    type: 1,
+
+                    // Переименовываем и формируем поля artist и album
+                    artist: '$artistInfo',
+                    album: '$albumInfo',
+                    
+                    // Главная логика для обложки:
+                    // если есть своя (albumArtUrl), используем ее. Если нет, берем из альбома.
+                    albumArtUrl: {
+                        $ifNull: ['$albumArtUrl', '$albumInfo.coverArtUrl']
+                    }
                 }
             }
         ]);
-
-        // Теперь populate не нужен, так как мы уже получили все данные
+        
+        // Отправляем результат, который уже полностью готов
         res.status(200).json(savedTracks);
 
     } catch (error) {

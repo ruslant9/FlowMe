@@ -401,7 +401,8 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     return ReactDOM.createPortal(
         <AnimatePresence>
             {currentIndex !== null && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} 
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+                    onClick={isPickerVisible ? undefined : onClose}
                     className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-[100] p-0 md:p-4"
                 >
                     {posts.length > 1 && <>
@@ -423,7 +424,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                     />
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        animate={{ 
+                            opacity: 1, 
+                            scale: 1,
+                            y: isMobile && isPickerVisible ? -EMOJI_PICKER_HEIGHT_MOBILE : 0
+                        }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
@@ -432,13 +437,11 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             ${hasImages ? 'md:flex-row max-w-7xl' : 'max-w-2xl'}
                         `}
                     >
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем полоску загрузки --- */}
                         {isLoading ? (
-                            <div className="w-full h-full flex items-center justify-center absolute inset-0 md:bg-black z-50">
+                            <div className="w-full h-full flex items-center justify-center absolute inset-0 bg-white dark:bg-slate-900 z-50">
                                 <Loader2 className="animate-spin text-slate-400" size={48} />
                             </div>
                         ) : activePost ? (
-                        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                             <>
                                 {/* --- Контейнер с информацией и комментариями (левая часть на десктопе) --- */}
                                 <div className={`flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full flex-1 min-h-0 order-last md:order-first
