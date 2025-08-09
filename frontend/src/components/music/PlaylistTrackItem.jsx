@@ -125,7 +125,7 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                                 className="font-semibold text-sm md:text-base hover:underline truncate"
                                 style={isCurrent ? { color: accentColor } : {}}
                             >
-                                {cleanedTitle}
+                                {truncateTitle(cleanedTitle)}
                             </p>
                             {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </Link>
