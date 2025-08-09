@@ -252,7 +252,9 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                             <button onClick={handleUpdate} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md">Сохранить</button>
                                             <button onClick={() => setEditingCommentId(null)} className="text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-md">Отмена</button>
                                         </div>
-                                        <button ref={smileButtonRef} onClick={handleEmojiButtonClick} className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"><Smile size={18} /></button>
+                                        <div className="hidden md:block">
+                                            <button ref={smileButtonRef} onClick={handleEmojiButtonClick} className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"><Smile size={18} /></button>
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
