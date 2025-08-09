@@ -1,4 +1,4 @@
-// frontend/src/components/chat/ConversationWindow.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/components/chat/ConversationWindow.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
@@ -31,7 +31,6 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
 
-// ... (все вспомогательные функции getImageUrl, formatLastSeen, truncateName, getContrastingTextColor остаются без изменений)
 const getImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) {
@@ -82,9 +81,7 @@ const getContrastingTextColor = (hexColor) => {
     return luminance > 128 ? '#111827' : '#FFFFFF';
 };
 
-
 const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequest }) => {
-    // ... (все состояния useState и useRef остаются без изменений)
     const [internalConversation, setInternalConversation] = useState(conversation);
     const isMobile = useMediaQuery('(max-width: 768px)');
     const [messages, setMessages] = useState([]);
@@ -135,6 +132,8 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [messageDates, setMessageDates] = useState([]);
     const [loadingDates, setLoadingDates] = useState(false);
+    
+    const highlightTimerRef = useRef(null);
 
     const [conversationStats, setConversationStats] = useState(null);
     const [attachments, setAttachments] = useState([]);
@@ -150,16 +149,11 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем ref для таймера ---
-    const highlightTimerRef = useRef(null);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
-    
     const activeConversationRef = useRef(conversation);
     useEffect(() => {
         activeConversationRef.current = conversation;
     }, [conversation]);
-    
-    // ... (все функции и хуки useEffect до handleScrollToMessage остаются без изменений)
+
     const refetchConversationDetails = useCallback(async () => {
         if (!internalConversation?._id) return;
         try {
@@ -298,14 +292,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             setIsImageViewerOpen(true);
         }
     };
-
-    const visiblePinnedMessages = useMemo(() => {
-        if (!internalConversation?.pinnedMessages || messages.length === 0) {
-            return [];
-        }
-        const visibleMessageIds = new Set(messages.map(msg => msg._id));
-        return internalConversation.pinnedMessages.filter(pinnedMsg => visibleMessageIds.has(pinnedMsg._id));
-    }, [internalConversation?.pinnedMessages, messages]);
 
     const liveInterlocutor = useMemo(() => ({
         ...interlocutor,
@@ -534,14 +520,13 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         }
     }, [messages, internalConversation]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Упрощаем функцию, убираем setTimeout ---
     const handleScrollToMessage = useCallback(async (messageId) => {
         const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
-        
+
         if (isAlreadyLoaded) {
             setHighlightedMessageId(messageId);
         } else {
-            const toastId = toast.loading('Сообщение не в текущей истории, загружаем...');
+            const toastId = toast.loading('Загрузка старых сообщений...');
             try {
                 const token = localStorage.getItem('token');
                 const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
@@ -559,15 +544,12 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             }
         }
     }, [messages]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем messages в зависимости и используем useRef для таймера ---
     useLayoutEffect(() => {
-        // Всегда очищаем предыдущий таймер, когда эффект запускается
         if (highlightTimerRef.current) {
             clearTimeout(highlightTimerRef.current);
         }
@@ -577,22 +559,18 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
-                // Устанавливаем новый таймер и сохраняем его ID в ref
                 highlightTimerRef.current = setTimeout(() => {
                     setHighlightedMessageId(null);
                 }, 2000);
             }
         }
-        // Функция очистки для самого последнего запуска эффекта (при размонтировании)
         return () => {
             if (highlightTimerRef.current) {
                 clearTimeout(highlightTimerRef.current);
             }
         };
-    }, [highlightedMessageId, messages]); // Добавляем messages обратно в зависимости
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
+    }, [highlightedMessageId, messages]);
 
-    // ... (остальные useEffect и функции остаются без изменений)
     useEffect(() => {
         const loadInitialMessages = async () => {
             if (!internalConversation?._id) return;
@@ -1190,15 +1168,17 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                         </>
                     )}
                 </header>
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем полный список, а не отфильтрованный --- */}
                 <AnimatePresence>
-                    {visiblePinnedMessages && visiblePinnedMessages.length > 0 && (
+                    {internalConversation?.pinnedMessages && internalConversation.pinnedMessages.length > 0 && (
                         <PinnedMessagesCarousel
-                            messages={visiblePinnedMessages}
+                            messages={internalConversation.pinnedMessages}
                             onJumpToMessage={handleScrollToMessage}
                             onUnpin={handleTogglePinMessage}
                         />
                     )}
                 </AnimatePresence>
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 {selectionMode && (<div className="p-3 border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800 flex items-center justify-between"><div className="flex items-center space-x-4"><button onClick={() => setSelectionMode(false)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X /></button><span className="font-semibold">{selectedMessages.length} выбрано</span></div><div className="flex items-center space-x-2"><button onClick={() => handleDeleteMessages(selectedMessages)} disabled={selectedMessages.length === 0} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-red-500 disabled:opacity-50" title="Удалить"><Trash2 /></button><button onClick={() => setIsForwarding(true)} disabled={selectedMessages.length === 0} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-blue-500 disabled:opacity-50" title="Переслать"><ChevronsRight /></button></div></div>)}
                 {isSearching && (<div className="p-2 border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800 flex items-center justify-between gap-2"><input type="text" placeholder="Поиск по сообщениям..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="flex-grow bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" autoFocus/>{searchResults.length > 0 && (<div className="flex items-center text-sm text-slate-500"><span>{currentResultIndex + 1} из {searchResults.length}</span><button onClick={() => navigateSearchResults(-1)} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ChevronUp size={18}/></button><button onClick={() => navigateSearchResults(1)} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ChevronDown size={18}/></button></div>)}<button onClick={() => setIsSearching(false)} className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><XCircle size={20}/></button></div>)}
             </div>
@@ -1222,7 +1202,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                                         msgsInGroup[indexInGroup - 1].sender?._id === msg.sender?._id &&
                                                         msgsInGroup[indexInGroup - 1].type !== 'system' &&
                                                         msg.type !== 'system';
-                                    const isPinned = visiblePinnedMessages.some(pm => pm._id === msg._id);
+                                    const isPinned = internalConversation?.pinnedMessages?.some(pm => pm._id === msg._id);
                                     return (
                                         <motion.div
                                             key={msg.uuid || msg._id}
