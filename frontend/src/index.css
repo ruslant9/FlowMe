@@ -232,9 +232,14 @@ html.dark .tippy-arrow {
     padding: 0.25rem;
 }
 
-.emoji-only .emoji {
-    width: 2.5rem;  /* Увеличенный размер */
-    height: 2.5rem;
+.emoji-only {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    /* Увеличиваем размер шрифта, чтобы сделать нативные эмодзи большими */
+    font-size: 2.5rem; 
+    line-height: 1;
 }
 /* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */
 

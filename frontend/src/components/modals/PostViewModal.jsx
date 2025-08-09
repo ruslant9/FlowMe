@@ -34,7 +34,6 @@ const COMMENT_PAGE_LIMIT = 5;
 
 const CachedMotionImage = ({ src, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
-
     if (loading) {
         return (
             <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
@@ -42,7 +41,6 @@ const CachedMotionImage = ({ src, ...props }) => {
             </motion.div>
         );
     }
-
     return <motion.img src={finalSrc} {...props} />;
 };
 
@@ -104,6 +102,10 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const isMobile = useMediaQuery('(max-width: 767px)');
     const navigate = useNavigate();
     const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Ref для отслеживания первой загрузки ---
+    const initialLoadComplete = useRef(false);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const userVote = useMemo(() => {
         if (!currentUser || !activePost?.poll?.options) return null;
@@ -213,10 +215,14 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Переработанная логика загрузки ---
     const fetchPostData = useCallback(async (showLoader = true) => {
         if (currentIndex === null || !posts[currentIndex]) return;
-        if(showLoader) setIsLoading(true);
+        
+        if (showLoader) {
+            setIsLoading(true);
+        }
+
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/posts/${posts[currentIndex]._id}`, {
@@ -228,16 +234,19 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             toast.error("Не удалось загрузить данные поста.");
             onClose();
         } finally {
-            if(showLoader) setIsLoading(false);
+            if (showLoader) {
+                setIsLoading(false);
+                initialLoadComplete.current = true;
+            }
         }
     }, [currentIndex, posts, onClose]);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика загрузки данных ---
     const currentPostId = useMemo(() => posts?.[currentIndex]?._id, [posts, currentIndex]);
 
     useEffect(() => {
         if (currentPostId) {
-            fetchPostData(true);
+            // Показываем спиннер только если это первая загрузка, иначе грузим в фоне.
+            fetchPostData(!initialLoadComplete.current);
         }
     }, [currentPostId, fetchPostData]);
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---

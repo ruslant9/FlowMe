@@ -195,18 +195,29 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         e.target.style.height = `${e.target.scrollHeight}px`;
     };
 
-    const handleEmojiButtonClick = (e) => {
+     const handleEmojiButtonClick = (e) => {
         e.preventDefault();
-        textareaRef.current?.blur();
+
+        // 1. Запоминаем позицию курсора ПЕРЕД тем, как открывать панель
+        const { selectionStart, selectionEnd } = textareaRef.current; 
+
         if (isPickerVisible) {
             hidePicker();
         } else {
             showPicker(smileButtonRef, (emojiObject) => {
-                const { selectionStart, selectionEnd } = textareaRef.current;
-                const newText = text.slice(0, selectionStart) + emojiObject.emoji + text.slice(selectionEnd);
+                // 2. Используем сохраненную позицию для вставки эмодзи
+                const newText = 
+                    text.slice(0, selectionStart) + 
+                    emojiObject.emoji + 
+                    text.slice(selectionEnd);
+                
                 setText(newText);
+                
+                // 3. Возвращаем фокус и устанавливаем курсор после вставленного эмодзи
+                // Используем setTimeout, чтобы React успел обновить DOM
                 setTimeout(() => {
                     const newPosition = selectionStart + emojiObject.emoji.length;
+                    textareaRef.current.focus(); // <-- Важно: возвращаем фокус
                     textareaRef.current.selectionStart = newPosition;
                     textareaRef.current.selectionEnd = newPosition;
                 }, 0);

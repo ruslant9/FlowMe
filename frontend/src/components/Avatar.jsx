@@ -41,7 +41,9 @@ const Avatar = ({ username, avatarUrl, size = 'md', fullName, onClick, isPremium
     const hasCustomBorder = customBorder && customBorder.type !== 'none';
     const borderClass = hasCustomBorder && customBorder.type.startsWith('animated') ? `premium-border-${customBorder.type}` : '';
     const paddingClass = hasCustomBorder || isPremium ? 'p-0.5' : '';
-    const staticBorderStyle = hasCustomBorder && customBorder.type === 'static' ? { backgroundColor: customBorder.value } : {};
+    const staticBorderStyle = hasCustomBorder && customBorder.type === 'static' 
+    ? { backgroundColor: customBorder.value, padding: '2px' } // Добавляем padding
+    : {};
     const defaultPremiumClass = isPremium && !hasCustomBorder ? 'premium-gradient-bg' : '';
     const finalWrapperClass = `relative group rounded-full inline-block flex-shrink-0 ${sizeClasses[size]} ${borderClass} ${paddingClass} ${defaultPremiumClass}`;
     const underlayInsetClass = 'inset-0.5';

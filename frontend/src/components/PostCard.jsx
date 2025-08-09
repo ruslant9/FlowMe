@@ -1,7 +1,6 @@
-
 // frontend/src/components/PostCard.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
-import React, { useState, useEffect, useRef, Suspense, useCallback, Fragment, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Fragment, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Avatar from './Avatar';
 import { Heart, MessageCircle, MoreHorizontal, Trash2, Send, Loader2, Smile, X, Check, ChevronDown, ChevronLeft, ChevronRight, Pin, MessageSquareOff, Edit, Users, XCircle as CancelVoteIcon, Clock, PlusCircle } from 'lucide-react';
@@ -91,7 +90,9 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
     
     const [loadingMore, setLoadingMore] = useState(false);
     
-    const { showPicker } = useEmojiPicker();
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Получаем все нужные функции из хука ---
+    const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
     const userAccent = currentPost.user?.premiumCustomization?.activeCardAccent;
 
@@ -461,6 +462,27 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
         });
         setIsPostViewModalOpen(true);
     };
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Создаем правильный обработчик для смайликов ---
+    const handleEmojiButtonClick = (e) => {
+        e.preventDefault();
+        commentInputRef.current?.blur();
+        if (isPickerVisible) {
+            hidePicker();
+        } else {
+            showPicker(smileButtonRef, (emojiObject) => {
+                const { selectionStart, selectionEnd } = commentInputRef.current;
+                const newText = newCommentText.slice(0, selectionStart) + emojiObject.emoji + newCommentText.slice(selectionEnd);
+                setNewCommentText(newText);
+                setTimeout(() => {
+                    const newPosition = selectionStart + emojiObject.emoji.length;
+                    commentInputRef.current.selectionStart = newPosition;
+                    commentInputRef.current.selectionEnd = newPosition;
+                }, 0);
+            });
+        }
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     const hasAnimatedBorder = !post.community && authorData.premium?.isActive && authorData.premiumCustomization?.avatarBorder?.type?.startsWith('animated');
 
@@ -752,9 +774,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                         </div>
                                     ) : (
                                         <>
-                                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Скрытие кнопки сортировки --- */}
                                             {(!commentSelectionMode && !currentPost.commentsDisabled && totalComments > 1) && (
-                                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                                 <div className="relative" ref={sortMenuRef}>
                                                     <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
                                                         <span>{sortLabels[sortOrder]}</span>
@@ -914,13 +934,15 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                     autoComplete="off" 
                                                 />
                                                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Обновляем onClick --- */}
                                                     <button 
                                                         ref={smileButtonRef} 
                                                         type="button" 
-                                                        onClick={(e) => { e.preventDefault(); setIsPickerVisible(p => !p); }}
+                                                        onClick={handleEmojiButtonClick}
                                                         className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white" disabled={!!editingCommentId || commentSelectionMode}>
                                                         <Smile size={18} />
                                                     </button>
+                                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                                                 </div>
                                             </div>
                                             <button 

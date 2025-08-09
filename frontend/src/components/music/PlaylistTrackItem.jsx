@@ -104,24 +104,22 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                                     </div>
                                 )}
                             >
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Уменьшаем значок "E" --- */}
                                 <span 
                                     className="w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center bg-slate-400 dark:bg-slate-500 text-white text-[9px] md:text-[10px] font-bold rounded-sm flex-shrink-0 cursor-help" 
                                 >
                                     E
                                 </span>
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
                             </Tippy>
                         )}
                         <Link to={trackLink} onClick={(e) => e.stopPropagation()}>
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем CSS для обрезания текста --- */}
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Используем CSS для обрезания и меняем размер текста --- */}
                             <p 
-                                className="font-semibold text-xs sm:text-sm md:text-base hover:underline truncate"
+                                className="font-semibold text-sm hover:underline truncate"
                                 style={isCurrent ? { color: accentColor } : {}}
                             >
                                 {cleanedTitle}
                             </p>
-                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </Link>
                     </div>
                     <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate">
