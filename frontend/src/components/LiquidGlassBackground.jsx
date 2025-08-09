@@ -1,7 +1,8 @@
 // frontend/src/components/LiquidGlassBackground.jsx
 import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame, createPortal } from '@react-three/fiber';
+import { Canvas, useFrame, createPortal, useThree } from '@react-three/fiber';
 import { OrthographicCamera, useFBO } from '@react-three/drei';
+
 import * as THREE from 'three';
 
 import vertexShader from '../vertexShader.glsl?raw';
