@@ -43,14 +43,12 @@ const getEmojiOnlyCount = (text) => {
     if (!text) return 0;
     const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    // Убираем все эмодзи, URL и пробелы, чтобы проверить, остался ли какой-то текст
     const nonContentText = text.replace(emojiRegex, '').replace(urlRegex, '').replace(/\s/g, '');
     if (nonContentText.length > 0) {
-        return 0; // Сообщение содержит не только эмодзи/стикеры
+        return 0;
     }
     const emojiMatches = text.match(emojiRegex);
     const urlMatches = text.match(urlRegex);
-    // Считаем общее количество эмодзи и URL-стикеров
     return (emojiMatches?.length || 0) + (urlMatches?.length || 0);
 };
 // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
@@ -136,11 +134,8 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         });
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Улучшенная логика рендеринга текста и стикеров ---
     const renderCommentText = () => {
         const { text, parent } = localComment;
-        if (!text) return null;
-        
         const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const parentAuthorObject = parent ? (parent.author || parent.user) : null;
         
@@ -148,15 +143,12 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         const parts = text.split(urlRegex);
 
         const renderableContent = parts.map((part, index) => {
-            // Если часть - это URL
             if (urlRegex.test(part)) {
-                // И если это URL картинки, рендерим как <img> (стикер)
                 if (/\.(gif|png|jpe?g|webp)$/i.test(part)) {
                     return <img key={`img-${index}`} src={part} alt="sticker" className="emoji" />;
                 }
             }
-            
-            // Если это текстовая часть, ищем упоминания и обычные эмодзи
+
             if (parentAuthorObject && index === 0) {
                  const parentAuthorName = parentAuthorObject.name || parentAuthorObject.username;
                  if (parentAuthorName) {
@@ -179,14 +171,11 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                 }
             }
 
-            // Рендерим оставшийся текст через Twemoji
             return <Twemoji key={`text-${index}`} text={part} />;
         });
         
         return <>{renderableContent}</>;
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
     const handleLike = async () => {
         const originalLikes = localComment.likes;
@@ -206,7 +195,7 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         ? authorObject.name 
         : (authorObject.fullName || authorObject.username);
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-    
+
     const authorAvatar = authorObject.avatar || '';
     const authorLink = authorModel === 'Community' ? `/communities/${authorObject._id}` : `/profile/${authorObject._id}`;
     const authorIsPremium = authorModel === 'User' && authorObject.premium?.isActive;
@@ -285,7 +274,7 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                             </div>
                                         )}
                                     </div>
-                                    <div className={`text-sm break-words mt-1 ${isJumboEmoji ? 'emoji-only' : ''}`}>{renderCommentText()}</div>
+                                    <p className={`text-sm break-words mt-1 ${isJumboEmoji ? 'emoji-only' : ''}`}>{renderCommentText()}</p>
                                     <div className="flex items-center justify-between mt-2">
                                         <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
                                            <button onClick={() => onReply({ id: localComment._id, username: authorName })} disabled={isEditingAny || selectionMode} className="font-semibold hover:text-slate-800 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Ответить</button>

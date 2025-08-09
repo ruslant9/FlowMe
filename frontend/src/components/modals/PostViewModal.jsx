@@ -15,15 +15,15 @@ import Tippy from '@tippyjs/react/headless';
 import LikesPopover from '../LikesPopover';
 import ImageEditorModal from './ImageEditorModal';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../hooks/useUser';
 import Comment from '../Comment';
 import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
+import { useEmojiPicker } from '../../hooks/useEmojiPicker';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import useMediaQuery from '../../hooks/useMediaQuery';
-import { useEmojiPicker } from '../../hooks/useEmojiPicker'; // --- ИСПРАВЛЕНИЕ: ИМПОРТИРУЕМ ГЛОБАЛЬНЫЙ ХУК ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
@@ -103,10 +103,8 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const previousPostIdRef = useRef(null);
     const isMobile = useMediaQuery('(max-width: 767px)');
     const navigate = useNavigate();
-    
-    // --- ИСПРАВЛЕНИЕ: Используем хук вместо локального состояния ---
     const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
-
+    
     const userVote = useMemo(() => {
         if (!currentUser || !activePost?.poll?.options) return null;
         for (const option of activePost.poll.options) {
@@ -233,6 +231,17 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             if(showLoader) setIsLoading(false);
         }
     }, [currentIndex, posts, onClose]);
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика загрузки данных ---
+    const currentPostId = useMemo(() => posts?.[currentIndex]?._id, [posts, currentIndex]);
+
+    useEffect(() => {
+        if (currentPostId) {
+            fetchPostData(true);
+        }
+    }, [currentPostId, fetchPostData]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
     useEffect(() => {
         const handlePostUpdateEvent = (event) => {
@@ -247,8 +256,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             window.removeEventListener('postUpdated', handlePostUpdateEvent);
         };
     }, [activePost, fetchPostData]);
-
-    useEffect(() => { fetchPostData(); }, [fetchPostData]);
 
     const handleVote = useCallback(async (optionId) => {
         const originalPoll = JSON.parse(JSON.stringify(activePost.poll));
@@ -317,7 +324,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             
             setCommentText('');
             setReplyingTo(null);
-            setIsPickerVisible(false);
+            hidePicker();
         } catch (error) {
             toast.error('Не удалось добавить комментарий');
         } finally {
@@ -393,7 +400,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         setIsEditingPostImage(false);
         fetchPostData(false);
     };
-    
+
     const handleEmojiButtonClick = (e) => {
         e.preventDefault();
         if (isPickerVisible) {
@@ -405,7 +412,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             });
         }
     };
-
+    
     const hasImages = activePost && activePost.imageUrls && activePost.imageUrls.length > 0;
 
     if (!posts || posts.length === 0 || currentIndex === null) {
@@ -712,7 +719,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                   <button 
                                                       ref={smileButtonRef} 
                                                       type="button" 
-                                                      onClick={handleEmojiButtonClick} // --- ИСПРАВЛЕНИЕ: Используем новый обработчик ---
+                                                      onClick={handleEmojiButtonClick}
                                                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                                       disabled={!!editingCommentId}
                                                   >
