@@ -38,7 +38,6 @@ const formatShortDistanceToNow = (dateStr) => {
     return format(date, 'dd.MM');
 };
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлена хелпер-функция для "джамбо" эмодзи ---
 const getEmojiOnlyCount = (text) => {
     if (!text) return 0;
     const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
@@ -51,7 +50,6 @@ const getEmojiOnlyCount = (text) => {
     const urlMatches = text.match(urlRegex);
     return (emojiMatches?.length || 0) + (urlMatches?.length || 0);
 };
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommunityId, onCommentUpdate, onReply, editingCommentId, setEditingCommentId, selectionMode, onToggleSelect, isSelected }) => {
     const [localComment, setLocalComment] = useState(comment);
@@ -61,14 +59,6 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const [childrenVisible, setChildrenVisible] = useState(true);
     const smileButtonRef = useRef(null);
     const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
-
-    const editInputRef = useRef(null);
-
-    useEffect(() => {
-        if (isEditingThis && editInputRef.current) {
-        editInputRef.current.focus();
-    }
-    }, [isEditingThis]);
 
     useEffect(() => {
         setLocalComment(comment);
@@ -83,12 +73,6 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const isThisCommentSelected = selectionMode && isSelected(localComment._id);
     const isEditingThis = editingCommentId === localComment._id;
     const isEditingAny = !!editingCommentId;
-
-    useEffect(() => {
-    if (isEditingThis && editInputRef.current) {
-        editInputRef.current.focus();
-    }
-    }, [isEditingThis]);
 
     const authorModel = localComment.authorModel || 'User'; 
     const isCommentOwner = authorModel === 'User' && currentUserId === authorObject._id;
@@ -204,11 +188,9 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         }
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Корректное определение имени автора ---
     const authorName = authorModel === 'Community' 
         ? authorObject.name 
         : (authorObject.fullName || authorObject.username);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const authorAvatar = authorObject.avatar || '';
     const authorLink = authorModel === 'Community' ? `/communities/${authorObject._id}` : `/profile/${authorObject._id}`;
@@ -222,10 +204,8 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         </>
     );
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика для "джамбо" эмодзи ---
     const emojiOnlyCount = getEmojiOnlyCount(localComment.text);
     const isJumboEmoji = emojiOnlyCount > 0 && emojiOnlyCount <= 5;
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return (
         <div>
@@ -259,7 +239,14 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                         <div className="flex-1 min-w-0">
                             {isEditingThis ? (
                                 <div className="relative">
-                                    <textarea ref={editInputRef} value={editedText} onChange={(e) => setEditedText(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-md border border-blue-500 focus:outline-none text-sm resize-none"/>
+                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */}
+                                    <textarea 
+                                        ref={(el) => el && el.focus()} 
+                                        value={editedText} 
+                                        onChange={(e) => setEditedText(e.target.value)} 
+                                        className="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-md border border-blue-500 focus:outline-none text-sm resize-none"
+                                    />
+                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                                     <div className="flex items-center justify-between mt-2">
                                         <div className="flex items-center space-x-2">
                                             <button onClick={handleUpdate} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md">Сохранить</button>
