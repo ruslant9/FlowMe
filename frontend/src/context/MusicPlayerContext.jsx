@@ -293,7 +293,7 @@ export const MusicPlayerProvider = ({ children }) => {
     }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack, seekTo]);
 
     useEffect(() => {
-        if ('mediaSession' in navigator) {
+        if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
             navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
         }
     }, [isPlaying]);

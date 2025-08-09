@@ -66,12 +66,11 @@ const EmojiPickerPopover = ({ isOpen, targetRef, onEmojiClick, onClose }) => {
                         <Suspense fallback={<div className="w-full h-[350px] bg-slate-200 dark:bg-slate-700 rounded-t-2xl md:rounded-lg flex items-center justify-center">...</div>}>
                             <div className={isMobile ? "bg-slate-100 dark:bg-slate-800 rounded-t-2xl overflow-hidden" : ""}>
                                 <Picker 
+                                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                                     onEmojiClick={(emojiObject, event) => {
                                         onEmojiClick(emojiObject, event);
-                                        if (!isMobile) {
-                                            onClose();
-                                        }
                                     }}
+                                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                     theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
                                     width={isMobile ? '100%' : 350}
                                     height={isMobile ? 450 : 450}

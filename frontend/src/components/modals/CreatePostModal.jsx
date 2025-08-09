@@ -334,7 +334,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
       {
         name: 'offset',
         options: {
-          offset: [60, 10], // сдвигает popup вправо на 60px, вниз на 10px
+          offset: [0, 10], // сдвигает popup вправо на 60px, вниз на 10px
         },
       },
     ]}
