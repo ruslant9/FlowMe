@@ -12,9 +12,11 @@ import LikesPopover from './LikesPopover';
 import { Link } from 'react-router-dom';
 import Tippy from '@tippyjs/react/headless';
 
-import Twemoji from './Twemoji'; // --- ИМПОРТ КОМПОНЕНТА ---
-const Picker = React.lazy(() => import('emoji-picker-react'));
-const EMOJI_PICKER_HEIGHT = 450;
+import Twemoji from './Twemoji';
+// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Импортируем хук и удаляем Picker ---
+import { useEmojiPicker } from '../hooks/useEmojiPicker';
+// const Picker = React.lazy(() => import('emoji-picker-react')); // Больше не нужно
+// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 const API_URL = import.meta.env.VITE_API_URL;
 
 const customRuLocale = {
@@ -47,10 +49,10 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const [editedText, setEditedText] = useState(comment.text);
     const { showConfirmation } = useModal();
     const [childrenVisible, setChildrenVisible] = useState(true);
-    const [pickerPosition, setPickerPosition] = useState('top');
-    const [isEditPickerVisible, setIsEditPickerVisible] = useState(false);
-    const editPickerContainerRef = useRef(null);
     const smileButtonRef = useRef(null);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем глобальный хук ---
+    const { showPicker, hidePicker, isOpen: isPickerOpen } = useEmojiPicker();
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
 
     useEffect(() => {
         setLocalComment(comment);
@@ -86,27 +88,19 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         }
         return null;
     };
-    
-    const toggleEditPicker = () => {
-        if (smileButtonRef.current) {
-            const rect = smileButtonRef.current.getBoundingClientRect();
-            if (window.innerHeight - rect.bottom < EMOJI_PICKER_HEIGHT) {
-                setPickerPosition('top');
-            } else {
-                setPickerPosition('bottom');
-            }
-        }
-        setIsEditPickerVisible(p => !p);
-    };
 
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (smileButtonRef.current && smileButtonRef.current.contains(event.target)) return;
-            if (editPickerContainerRef.current && !editPickerContainerRef.current.contains(event.target)) setIsEditPickerVisible(false);
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Обновляем логику открытия пикера ---
+    const handleEmojiButtonClick = (e) => {
+        e.preventDefault();
+        if (isPickerOpen) {
+            hidePicker();
+        } else {
+            showPicker(smileButtonRef, (emojiObject) => {
+                setEditedText(prev => prev + emojiObject.emoji);
+            });
         }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
     
     const handleUpdate = async () => {
         if (editedText.trim() === localComment.text || !editedText.trim()) {
@@ -229,15 +223,13 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                             <button onClick={handleUpdate} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md">Сохранить</button>
                                             <button onClick={() => setEditingCommentId(null)} className="text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-md">Отмена</button>
                                         </div>
-                                        <button ref={smileButtonRef} type="button" onClick={toggleEditPicker} className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"><Smile size={18} /></button>
+                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Обновляем кнопку эмодзи --- */}
+                                        <button ref={smileButtonRef} type="button" onClick={handleEmojiButtonClick} className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"><Smile size={18} /></button>
+                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
                                     </div>
-                                    {isEditPickerVisible && (
-                                        <div ref={editPickerContainerRef} className={`absolute z-20 right-0 ${pickerPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
-                                            <Suspense fallback={<div className="w-80 h-96 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">...</div>}>
-                                                <Picker onEmojiClick={(emojiObject) => setEditedText(prev => prev + emojiObject.emoji)} theme={localStorage.getItem('theme') === 'dark' ? "dark" : "light"} />
-                                            </Suspense>
-                                        </div>
-                                    )}
+                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 5: Удаляем прямое отображение пикера --- */}
+                                    {/* Picker теперь рендерится через провайдер */}
+                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 5 --- */}
                                 </div>
                             ) : (
                                 <>

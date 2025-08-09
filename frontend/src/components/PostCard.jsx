@@ -1,3 +1,4 @@
+
 // frontend/src/components/PostCard.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useRef, Suspense, useCallback, Fragment, useMemo } from 'react';
@@ -24,15 +25,6 @@ import { useEmojiPicker } from '../hooks/useEmojiPicker';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const COMMENT_PAGE_LIMIT = 5;
-
-// --- КЛЮЧЕВЫЕ ИЗМЕНЕНИЯ ДЛЯ АДАПТАЦИИ ---
-
-// 1. Уменьшены отступы (p-4 для мобильных, p-6 для десктопа).
-// 2. Уменьшены размеры иконок действий (size={20} для мобильных, size={22} для десктопа).
-// 3. Уменьшены отступы между иконками действий (space-x-4).
-// 4. Уменьшены отступы в поле ввода комментария (space-x-2) и размер аватара.
-// 5. В дочернем компоненте Comment (код не показан, но подразумевается) также уменьшены отступы,
-//    размеры шрифтов и используется сокращенный формат даты на мобильных устройствах.
 
 const CachedMotionImage = ({ src, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -500,20 +492,20 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                 <div className="relative rounded-t-3xl overflow-hidden">                  
                     <div className="relative z-10 p-4 md:p-6 pb-0">
                         <div className="flex items-center justify-between">
-                            <div onClick={handleOpenPostInModal} className="flex items-center space-x-2 md:space-x-3 cursor-pointer">
+                            <div onClick={handleOpenPostInModal} className="flex items-center space-x-3 cursor-pointer">
                                 {currentPost.community ? (
-                                    <Link to={`/communities/${currentPost.community._id}`} onClick={e => e.stopPropagation()} className="flex items-center space-x-2 md:space-x-3 group">
+                                    <Link to={`/communities/${currentPost.community._id}`} onClick={e => e.stopPropagation()} className="flex items-center space-x-3 group">
                                         <Avatar username={currentPost.community.name} avatarUrl={currentPost.community.avatar} size="md" />
                                         <div>
-                                            <p className="text-xs text-slate-400 flex items-center mb-0.5"><Users size={12} className="mr-1"/> Сообщество</p>
-                                            <p className="font-bold text-sm md:text-base group-hover:underline">{currentPost.community.name}</p> 
-                                            {currentPost.isPinned && <p className="text-xs text-slate-400 flex items-center mt-0.5"><Pin size={12} className="mr-1"/> Закреплено в сообществе</p>}
+                                            <p className="text-xs text-slate-400 flex items-center mb-1"><Users size={12} className="mr-1"/> Сообщество</p>
+                                            <p className="font-bold group-hover:underline">{currentPost.community.name}</p> 
+                                            {currentPost.isPinned && <p className="text-xs text-slate-400 flex items-center mt-1"><Pin size={12} className="mr-1"/> Закреплено в сообществе</p>}
                                             <p className="text-xs md:text-sm text-slate-500 dark:text-white/60">{timeAgo}</p>
                                         </div>
                                     </Link>
                                 ) : (
-                                    <div className={`p-0.5 ${hasAnimatedBorder ? '' : ''}`}>
-                                        <Link to={`/profile/${authorData._id}`} onClick={e => e.stopPropagation()} className={`flex items-center space-x-2 md:space-x-3 group ${hasAnimatedBorder ? '-m-0.5' : ''}`}>
+                                    <div className={`p-1 ${hasAnimatedBorder ? '' : ''}`}>
+                                        <Link to={`/profile/${authorData._id}`} onClick={e => e.stopPropagation()} className={`flex items-center space-x-3 group ${hasAnimatedBorder ? '-m-1' : ''}`}>
                                             {(() => {
                                                 const border = authorData.premiumCustomization?.avatarBorder;
                                                 return (
@@ -528,8 +520,8 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                 );
                                             })()}
                                             <div>
-                                                {currentPost.isPinned && <p className="text-xs text-slate-400 flex items-center mb-0.5"><Pin size={12} className="mr-1"/> Закреплено в профиле</p>}
-                                                <p className="font-bold text-sm md:text-base group-hover:underline">{authorData.fullName || authorData.username}</p>
+                                                {currentPost.isPinned && <p className="text-xs text-slate-400 flex items-center mb-1"><Pin size={12} className="mr-1"/> Закреплено в профиле</p>}
+                                                <p className="font-bold group-hover:underline">{authorData.fullName || authorData.username}</p>
                                                 <p className="text-xs md:text-sm text-slate-500 dark:text-white/60">{timeAgo}</p>
                                             </div>
                                         </Link>
@@ -674,7 +666,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                 </div>
 
                 <div className="p-4 md:p-6 pt-2">
-                    <div onClick={isScheduled ? undefined : handleOpenPostInModal} className={isScheduled ? '' : 'cursor-pointer'}>
+                    <div onClick={isScheduled ? undefined : handleOpenPostInModal} className={`${isScheduled ? '' : 'cursor-pointer'} mt-4`}>
                         {currentPost.text && <p className="mb-4 whitespace-pre-wrap break-words text-sm md:text-base">{currentPost.text}</p>}
                     
                         {currentPost.poll && <PollDisplay poll={currentPost.poll} onVote={handleVote} isScheduled={isScheduled} />}
@@ -708,6 +700,18 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                         <div className="absolute top-2 right-2 bg-black/50 text-white text-xs rounded-full px-2 py-1 z-10">
                                             {imagePage + 1} / {currentPost.imageUrls.length}
                                         </div>
+                                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+                                            {currentPost.imageUrls.map((_, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setImagePage([index, index > imagePage ? 1 : -1]);
+                                                    }}
+                                                    className={`w-2 h-2 rounded-full transition-all duration-200 ease-in-out hover:scale-150 ${index === imagePage ? 'bg-white scale-125' : 'bg-white/50'}`}
+                                                />
+                                            ))}
+                                        </div>
                                     </>
                                 )}
                             </div>
@@ -726,7 +730,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                     {!isScheduled && (
                         <>
                             <div className="flex items-center justify-between text-slate-500 dark:text-white/60 border-b border-slate-200/50 dark:border-white/10 pb-3">
-                                <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-4 md:space-x-5">
                                     <LikesPopover likers={currentPost.likes || []}>
                                         <span>
                                             <button onClick={handleLike} className="flex items-center space-x-2 hover:text-red-500 transition-colors">
@@ -748,11 +752,13 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                         </div>
                                     ) : (
                                         <>
-                                            {(!currentPost.commentsDisabled && totalComments > 1) ? ( 
+                                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Скрытие кнопки сортировки --- */}
+                                            {!commentSelectionMode && (!currentPost.commentsDisabled && totalComments > 1) ? ( 
+                                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                                 <div className="relative" ref={sortMenuRef}>
                                                     <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
                                                         <span>{sortLabels[sortOrder]}</span>
-                                                        <ChevronDown size={14} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+                                                        <ChevronDown size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
                                                     </button>
                                                     {showSortMenu && (
                                                         <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black dark:ring-white/10 ring-opacity-5 py-1 z-30">
@@ -824,7 +830,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                             </div>
                                         )}
 
-                                        <form onSubmit={handleCommentSubmit} className="flex items-start space-x-2 md:space-x-3 pt-4 border-t border-slate-200/50 dark:border-white/10">
+                                        <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3 pt-4 border-t border-slate-200/50 dark:border-white/10">
                                             {commentAs && (
                                                 <Tippy
                                                     interactive
@@ -903,7 +909,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                         setNewCommentText(e.target.value);
                                                     }}
                                                     placeholder="Написать комментарий..."
-                                                    className="w-full bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="w-full bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     disabled={!!editingCommentId || commentSelectionMode || isSendingComment}
                                                     autoComplete="off" 
                                                 />
@@ -911,7 +917,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                     <button 
                                                         ref={smileButtonRef} 
                                                         type="button" 
-                                                        onClick={() => showPicker(smileButtonRef, (emojiObject) => setNewCommentText(prev => prev + emojiObject.emoji))}
+                                                        onClick={(e) => { e.preventDefault(); setIsPickerVisible(p => !p); }}
                                                         className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white" disabled={!!editingCommentId || commentSelectionMode}>
                                                         <Smile size={18} />
                                                     </button>
@@ -920,7 +926,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                             <button 
                                                 type="submit" 
                                                 disabled={!newCommentText.trim() || !!editingCommentId || commentSelectionMode || isSendingComment} 
-                                                className="p-2.5 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-600"
+                                                className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-600"
                                             >
                                                 {isSendingComment ? <Loader2 size={16} className="animate-spin" /> : <Send size={16}/>}
                                             </button>

@@ -306,47 +306,47 @@ const MusicPage = () => {
         recommendations: true, myMusic: true, history: true, playlists: true, search: false, wave: false
     });
 
-    useEffect(() => {
-        const fetchData = async (tab) => {
-            if (tab === 'search') return; 
-            
-            setLoading(prev => ({ ...prev, [tab]: true }));
-            try {
-                const token = localStorage.getItem('token');
-                const headers = { headers: { Authorization: `Bearer ${token}` } };
-                let endpoint = '';
-                let setStateFunc = () => {};
+    const fetchData = useCallback(async (tab) => {
+    if (tab === 'search') return; 
 
-                switch(tab) {
-                    case 'recommendations':
-                        endpoint = `${API_URL}/api/music/recommendations`;
-                        setStateFunc = setRecommendations;
-                        break;
-                    case 'my-music':
-                        endpoint = `${API_URL}/api/music/saved`;
-                        setStateFunc = setMyMusic;
-                        break;
-                    case 'history':
-                        endpoint = `${API_URL}/api/music/history`;
-                        setStateFunc = setHistory;
-                        break;
-                    case 'playlists':
-                        endpoint = `${API_URL}/api/playlists`;
-                        setStateFunc = setPlaylists;
-                        break;
-                    default: return;
-                }
-                const res = await axios.get(endpoint, headers);
-                setStateFunc(res.data);
-            } catch (error) {
-                toast.error(`Не удалось загрузить раздел "${tab}"`);
-            } finally {
-                setLoading(prev => ({ ...prev, [tab]: false }));
-            }
-        };
-        
-        fetchData(activeTab);
-    }, [activeTab]);
+    setLoading(prev => ({ ...prev, [tab]: true }));
+    try {
+        const token = localStorage.getItem('token');
+        const headers = { headers: { Authorization: `Bearer ${token}` } };
+        let endpoint = '';
+        let setStateFunc = () => {};
+
+        switch(tab) {
+            case 'recommendations':
+                endpoint = `${API_URL}/api/music/recommendations`;
+                setStateFunc = setRecommendations;
+                break;
+            case 'my-music':
+                endpoint = `${API_URL}/api/music/saved`;
+                setStateFunc = setMyMusic;
+                break;
+            case 'history':
+                endpoint = `${API_URL}/api/music/history`;
+                setStateFunc = setHistory;
+                break;
+            case 'playlists':
+                endpoint = `${API_URL}/api/playlists`;
+                setStateFunc = setPlaylists;
+                break;
+            default: return;
+        }
+        const res = await axios.get(endpoint, headers);
+        setStateFunc(res.data);
+    } catch (error) {
+        toast.error(`Не удалось загрузить раздел "${tab}"`);
+    } finally {
+        setLoading(prev => ({ ...prev, [tab]: false }));
+    }
+}, []); // Пустой массив зависимостей, т.к. функции-сеттеры состояния стабильны
+
+useEffect(() => {
+    fetchData(activeTab);
+}, [activeTab, fetchData]);
     
     const fetchSearch = useCallback(async (query, page) => {
         if (!query.trim()) {
