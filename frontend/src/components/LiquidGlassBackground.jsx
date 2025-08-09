@@ -9,10 +9,10 @@ import fragmentShader from '../fragmentShader.glsl?raw';
 import ShaderBlobs from './ShaderBlobs'; // Импортируем наши новые 3D-капли
 
 function GlassScene() {
-    // Создаем отдельную сцену для наших "капель"
     const blobScene = useMemo(() => new THREE.Scene(), []);
     const camera = useRef();
-    const target = useFBO(); // Frame Buffer Object для рендера в текстуру
+    const { size, viewport, gl } = useThree();
+    const target = useFBO(size.width * viewport.dpr, size.height * viewport.dpr);
 
     const uniforms = useMemo(() => ({
         u_background: { value: null },
@@ -20,29 +20,29 @@ function GlassScene() {
         u_blur: { value: 15.0 },
         u_resolution: { value: new THREE.Vector2() }
     }), []);
-    
-    useFrame((state) => {
-        uniforms.u_time.value = state.clock.getElapsedTime();
-        uniforms.u_resolution.value.set(state.size.width * state.viewport.dpr, state.size.height * state.viewport.dpr);
 
-        // 1. Рендерим сцену с "каплями" в нашу текстуру (target)
-        state.gl.setRenderTarget(target);
-        state.gl.render(blobScene, camera.current);
-        
-        // 2. Передаем эту текстуру в наш шейдер
+    useFrame((state) => {
+        if (!camera.current) return;
+
+        uniforms.u_time.value = state.clock.getElapsedTime();
+        uniforms.u_resolution.value.set(size.width * viewport.dpr, size.height * viewport.dpr);
+
+        // Обновляем размер render target, если нужно (например при ресайзе)
+        if (target.width !== size.width * viewport.dpr || target.height !== size.height * viewport.dpr) {
+            target.setSize(size.width * viewport.dpr, size.height * viewport.dpr);
+        }
+
+        gl.setRenderTarget(target);
+        gl.render(blobScene, camera.current);
+        gl.setRenderTarget(null);
+
         uniforms.u_background.value = target.texture;
-        
-        // 3. Сбрасываем рендер-таргет, чтобы теперь рендерить на экран
-        state.gl.setRenderTarget(null);
     });
 
     return (
         <>
             <OrthographicCamera ref={camera} makeDefault position={[0, 0, 10]} zoom={1} />
-            {/* Рендерим наши 3D-капли в их отдельную сцену */}
             {createPortal(<ShaderBlobs />, blobScene)}
-            
-            {/* Это наша плоскость со "стеклом", которая будет видна на экране */}
             <mesh>
                 <planeGeometry args={[2, 2]} />
                 <shaderMaterial

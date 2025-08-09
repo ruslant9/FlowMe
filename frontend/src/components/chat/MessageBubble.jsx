@@ -207,9 +207,9 @@ const MessageBubble = ({
                     trigger="click"
                     onClickOutside={() => onToggleMenu(null)}
                     popperOptions={{ strategy: 'fixed' }}
-                    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2 ---
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Заменяем класс на непрозрачный ---
                     render={attrs => (
-                        <div className="opaque-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-48 rounded-lg shadow-xl p-1" {...attrs}>
                              <button onClick={() => { onRetrySend(message); onToggleMenu(null); }} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700">
                                 <span>Повторить отправку</span>
                             </button>
