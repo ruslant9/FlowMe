@@ -169,70 +169,58 @@ router.get('/saved', authMiddleware, async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.userId);
 
-        // Используем агрегацию для максимальной производительности
+        // Используем агрегацию для производительности
         const savedTracks = await Track.aggregate([
             // 1. Находим все треки пользователя с типом 'saved'
             { $match: { user: userId, type: 'saved' } },
-            // 2. Сортируем по дате добавления (сначала новые)
+            // 2. Сортируем по дате добавления
             { $sort: { savedAt: -1 } },
             // 3. "Присоединяем" (lookup) данные из коллекции artists
-            // Это безопасный аналог populate для массивов
             {
                 $lookup: {
                     from: 'artists',
-                    localField: 'artist', // поле-массив в коллекции Track
-                    foreignField: '_id',    // поле в коллекции Artist
-                    as: 'artistInfo'      // временное поле с результатами
+                    localField: 'artist',
+                    foreignField: '_id',
+                    as: 'artistDetails'
                 }
             },
-            // 4. "Присоединяем" данные из коллекции albums
+            // 4. "Присоединяем" (lookup) данные из коллекции albums
             {
                 $lookup: {
                     from: 'albums',
                     localField: 'album',
                     foreignField: '_id',
-                    as: 'albumInfo'
+                    as: 'albumDetails'
                 }
             },
-            // 5. Разворачиваем массив albumInfo, так как альбом у трека один.
-            // preserveNullAndEmptyArrays: true - важно, чтобы не потерять синглы (треки без альбома)
+            // 5. Разворачиваем массив albumDetails (так как альбом один)
             {
                 $unwind: {
-                    path: '$albumInfo',
-                    preserveNullAndEmptyArrays: true
+                    path: '$albumDetails',
+                    preserveNullAndEmptyArrays: true // Оставляем треки, у которых нет альбома (синглы)
                 }
             },
-            // 6. Формируем финальный документ, который отправится на фронтенд
+            // 6. Проектируем финальный вид документа
             {
                 $project: {
-                    // Исключаем ненужные системные поля
-                    __v: 0,
-                    'artistInfo.__v': 0,
-                    'albumInfo.__v': 0,
-                    
-                    // Включаем нужные поля из основной коллекции Track
                     _id: 1,
                     title: 1,
+                    artist: '$artistDetails', // Используем присоединенные данные
+                    album: '$albumDetails',
+                    albumArtUrl: {
+                        // Логика для обложки: если есть своя, используем ее, иначе берем из альбома
+                        $ifNull: ['$albumArtUrl', '$albumDetails.coverArtUrl']
+                    },
                     durationMs: 1,
                     isExplicit: 1,
-                    sourceId: 1, // Очень важно для определения "лайка"
+                    sourceId: 1, // Важно для определения статуса "лайка" на фронте
                     savedAt: 1,
-                    type: 1,
-
-                    // Переименовываем и формируем поля artist и album
-                    artist: '$artistInfo',
-                    album: '$albumInfo',
-                    
-                    // Главная логика для обложки:
-                    // если есть своя (albumArtUrl), используем ее. Если нет, берем из альбома.
-                    albumArtUrl: {
-                        $ifNull: ['$albumArtUrl', '$albumInfo.coverArtUrl']
-                    }
+                    type: 1
                 }
             }
         ]);
-        
-        // Отправляем результат, который уже полностью готов
+
+        // Теперь populate не нужен, так как мы уже получили все данные
         res.status(200).json(savedTracks);
 
     } catch (error) {
