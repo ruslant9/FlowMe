@@ -1,4 +1,5 @@
 // frontend/src/pages/ArtistPage.jsx
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -12,6 +13,7 @@ import { useDynamicAccent } from '../hooks/useDynamicAccent';
 import toast from 'react-hot-toast';
 import ArtistInfoPanel from '../components/music/ArtistInfoPanel';
 import PageWrapper from '../components/PageWrapper';
+import AddToPlaylistModal from '../components/modals/AddToPlaylistModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const INITIAL_DISPLAY_LIMIT = 8;
@@ -26,6 +28,9 @@ const ArtistPage = () => {
     const [showAllAlbums, setShowAllAlbums] = useState(false);
     const [showAllSingles, setShowAllSingles] = useState(false);
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+    
+    const [isAddToPlaylistModalOpen, setIsAddToPlaylistModalOpen] = useState(false);
+    const [trackToAdd, setTrackToAdd] = useState(null);
 
     const [isScrolled, setIsScrolled] = useState(false);
     const mainRef = useRef(null);
@@ -74,6 +79,11 @@ const ArtistPage = () => {
         }
     };
     
+    const handleAddToPlaylist = (track) => {
+        setTrackToAdd(track);
+        setIsAddToPlaylistModalOpen(true);
+    };
+    
     const handleSubscribeToggle = async () => {
         if (!artistData) return;
         const wasSubscribed = artistData.isSubscribed;
@@ -117,6 +127,11 @@ const ArtistPage = () => {
                 artist={artist}
                 isOpen={isInfoPanelOpen}
                 onClose={() => setIsInfoPanelOpen(false)}
+            />
+            <AddToPlaylistModal
+                isOpen={isAddToPlaylistModalOpen}
+                onClose={() => setIsAddToPlaylistModalOpen(false)}
+                trackToAdd={trackToAdd}
             />
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
                 <div 
@@ -200,6 +215,7 @@ const ArtistPage = () => {
                                         isSaved={myMusicTrackIds?.has(track._id)}
                                         onToggleSave={onToggleLike}
                                         accentColor={dominantColor}
+                                        onAddToPlaylist={handleAddToPlaylist}
                                     />
                                 ))}
                             </div>

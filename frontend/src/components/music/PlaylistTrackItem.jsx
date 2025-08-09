@@ -145,11 +145,9 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                         <button onClick={(e) => { e.stopPropagation(); onToggleSave(track); }} className={`transition-colors ${isSaved ? 'text-red-500' : 'text-slate-500 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}>
                             <Heart size={18} fill={isSaved ? 'currentColor' : 'none'}/>
                         </button>
-                        {onAddToPlaylist && (
-                            <button onClick={(e) => { e.stopPropagation(); onAddToPlaylist(track); }} className="transition-colors text-slate-500 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white" title="Добавить в плейлист">
-                                <Plus size={18} />
-                            </button>
-                        )}
+                        <button onClick={(e) => { e.stopPropagation(); onAddToPlaylist(track); }} className="transition-colors text-slate-500 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white" title="Добавить в плейлист">
+                            <Plus size={18} />
+                        </button>
                     </>
                 )}
                 <span className="text-sm w-10 text-right">{formatDuration(track.durationMs)}</span>

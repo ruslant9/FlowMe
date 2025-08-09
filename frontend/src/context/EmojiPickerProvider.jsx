@@ -16,8 +16,9 @@ export const EmojiPickerProvider = ({ children }) => {
     const [pickerState, setPickerState] = useState({
         isOpen: false,
         position: { top: 0, left: 0 },
-        onEmojiClickCallback: null,
     });
+    // --- ИЗМЕНЕНИЕ: Храним колбэк в ref, а не в state ---
+    const onEmojiClickCallbackRef = useRef(null);
     const pickerRef = useRef(null);
     const openerRef = useRef(null);
     const isMobile = useMediaQuery('(max-width: 767px)');
@@ -25,6 +26,8 @@ export const EmojiPickerProvider = ({ children }) => {
     const showPicker = useCallback((targetRef, onEmojiClickCallback) => {
         if (!targetRef.current) return;
         openerRef.current = targetRef.current;
+        // --- ИЗМЕНЕНИЕ: Обновляем ref, а не state ---
+        onEmojiClickCallbackRef.current = onEmojiClickCallback;
 
         const rect = targetRef.current.getBoundingClientRect();
         const pickerHeight = isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : 450;
@@ -38,28 +41,24 @@ export const EmojiPickerProvider = ({ children }) => {
             ? (window.innerWidth - pickerWidth) / 2
             : rect.left;
 
+        // --- ИЗМЕНЕНИЕ: В state теперь только позиция и видимость ---
         setPickerState({
             isOpen: true,
             position: { top, left },
-            onEmojiClickCallback,
         });
     }, [isMobile]);
 
     const hidePicker = useCallback(() => {
         setPickerState(prev => ({ ...prev, isOpen: false }));
         openerRef.current = null;
+        onEmojiClickCallbackRef.current = null;
     }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (!pickerState.isOpen) return;
-
-            if (openerRef.current && openerRef.current.contains(event.target)) {
-                return;
-            }
-            if (pickerRef.current && pickerRef.current.contains(event.target)) {
-                return;
-            }
+            if (openerRef.current && openerRef.current.contains(event.target)) return;
+            if (pickerRef.current && pickerRef.current.contains(event.target)) return;
             hidePicker();
         };
 
@@ -73,7 +72,6 @@ export const EmojiPickerProvider = ({ children }) => {
         isOpen: pickerState.isOpen,
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const variants = {
         hidden: {
             ...(isMobile 
@@ -92,7 +90,6 @@ export const EmojiPickerProvider = ({ children }) => {
             transition: { duration: 0.25, ease: 'easeOut' },
         },
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     return (
         <EmojiPickerContext.Provider value={value}>
@@ -116,7 +113,12 @@ export const EmojiPickerProvider = ({ children }) => {
                     <Suspense fallback={<div className="w-full h-[350px] bg-slate-200 dark:bg-slate-700 rounded-t-2xl md:rounded-lg flex items-center justify-center"><Loader2 className="animate-spin"/></div>}>
                         <div className={isMobile ? "bg-slate-100 dark:bg-slate-800 rounded-t-2xl overflow-hidden" : ""}>
                             <Picker 
-                                onEmojiClick={pickerState.onEmojiClickCallback}
+                                onEmojiClick={(emojiObject) => {
+                                    // --- ИЗМЕНЕНИЕ: Вызываем колбэк из ref ---
+                                    if (onEmojiClickCallbackRef.current) {
+                                        onEmojiClickCallbackRef.current(emojiObject);
+                                    }
+                                }}
                                 theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
                                 width={isMobile ? '100%' : 350}
                                 height={isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : 450}
