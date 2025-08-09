@@ -527,29 +527,35 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     }, [messages, internalConversation]);
 
     const handleScrollToMessage = useCallback(async (messageId) => {
-        const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
-        
-        if (isAlreadyLoaded) {
-            setHighlightedMessageId(messageId);
-        } else {
-            const toastId = toast.loading('Сообщение не в текущей истории, загружаем...');
-            try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                
-                setMessages(res.data.messages);
-                setPage(res.data.page);
-                setHasMore(res.data.hasMore);
-                
-                setHighlightedMessageId(res.data.highlightId); 
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Принудительно сбрасываем ID, чтобы эффект всегда срабатывал ---
+        setHighlightedMessageId(null);
+        // Небольшая задержка, чтобы React успел обработать сброс перед новой установкой
+        setTimeout(async () => {
+            const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
+            
+            if (isAlreadyLoaded) {
+                setHighlightedMessageId(messageId);
+            } else {
+                const toastId = toast.loading('Сообще-ние не в текущей истории, загружаем...');
+                try {
+                    const token = localStorage.getItem('token');
+                    const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    
+                    setMessages(res.data.messages);
+                    setPage(res.data.page);
+                    setHasMore(res.data.hasMore);
+                    
+                    setHighlightedMessageId(res.data.highlightId); 
 
-                toast.dismiss(toastId);
-            } catch (error) {
-                toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
+                    toast.dismiss(toastId);
+                } catch (error) {
+                    toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
+                }
             }
-        }
+        }, 10); // 10ms достаточно
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     }, [messages]);
 
     const scrollToBottom = useCallback(() => {

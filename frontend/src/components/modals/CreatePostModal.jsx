@@ -64,14 +64,45 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const [pollExpiresAt, setPollExpiresAt] = useState(null);
     const [scheduledFor, setScheduledFor] = useState(null);
 
+    const handleEmojiButtonClick = (e) => {
+        e.preventDefault();
+        
+        if (isPickerVisible) {
+            hidePicker();
+        } else {
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            // Коллбэк теперь будет сам получать актуальные данные из ref
+            showPicker(smileButtonRef, (emojiObject) => {
+                // 1. Получаем АКТУАЛЬНУЮ позицию курсора из ref в момент клика
+                const { selectionStart, selectionEnd } = textareaRef.current;
+
+                // 2. Используем функциональное обновление, чтобы избежать проблем с замыканием
+                setText(prevText => {
+                    const newText =
+                        prevText.slice(0, selectionStart) +
+                        emojiObject.emoji +
+                        prevText.slice(selectionEnd);
+                    return newText;
+                });
+                
+                // 3. Устанавливаем новую позицию курсора и возвращаем фокус
+                setTimeout(() => {
+                    const newPosition = selectionStart + emojiObject.emoji.length;
+                    textareaRef.current.focus();
+                    textareaRef.current.setSelectionRange(newPosition, newPosition);
+                }, 0);
+            });
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        }
+    };
+    
+    // ... (остальные функции остаются без изменений) ...
     const getMinTime = (date) => {
         if (!date || !isToday(date)) return setHours(setMinutes(new Date(), 0), 0);
         return new Date();
     };
-
     const imagesForCleanup = useRef(images);
     useEffect(() => { imagesForCleanup.current = images; }, [images]);
-
     const resetForm = useCallback(() => {
         setText('');
         imagesForCleanup.current.forEach(img => URL.revokeObjectURL(img.preview));
@@ -85,7 +116,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         setPollExpiresAt(null);
         setScheduledFor(null);
     }, []);
-
     const fetchMyCommunities = useCallback(async (preselectedCommunityId) => {
         if (!currentUser) return;
         setFetchingCommunities(true);
@@ -123,9 +153,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
             setFetchingCommunities(false);
         }
     }, [currentUser]);
-
     useEffect(() => { if (isOpen) { resetForm(); fetchMyCommunities(communityId); } }, [isOpen, communityId, fetchMyCommunities, resetForm]);
-
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
         if (images.length + files.length > 5) {
@@ -134,16 +162,13 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         }
         setImages(prev => [...prev, ...files.map(file => ({ file, preview: URL.createObjectURL(file) }))]);
     };
-    
     const removeImage = (indexToRemove) => {
         setImages(prev => {
             URL.revokeObjectURL(prev[indexToRemove].preview);
             return prev.filter((_, index) => index !== indexToRemove);
         });
     };
-
     const handleEditImage = (index) => setEditingImage({ index, file: images[index].file });
-
     const handleEditComplete = async (editedBlob) => {
         const index = editingImage.index;
         const newFile = new File([editedBlob], images[index].file.name, { type: editedBlob.type || 'image/jpeg' });
@@ -155,7 +180,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         });
         setEditingImage(null);
     };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         const isPollValid = showPollCreator && pollData.question.trim() && pollData.options.filter(opt => opt.trim()).length >= 2;
@@ -185,7 +209,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
             setLoading(false);
         }
     };
-    
     const handlePollChange = (index, value) => setPollData(prev => ({ ...prev, options: [...prev.options.slice(0, index), value, ...prev.options.slice(index + 1)] }));
     const addPollOption = () => { if (pollData.options.length < 10) setPollData(prev => ({ ...prev, options: [...prev.options, ''] })); };
     const removePollOption = (index) => { if (pollData.options.length > 2) setPollData(prev => ({ ...prev, options: prev.options.filter((_, i) => i !== index) })); };
@@ -193,31 +216,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         setText(e.target.value);
         e.target.style.height = 'auto';
         e.target.style.height = `${e.target.scrollHeight}px`;
-    };
-    
-    const handleEmojiButtonClick = (e) => {
-        e.preventDefault();
-        const { selectionStart, selectionEnd } = textareaRef.current;
-        if (isPickerVisible) {
-            hidePicker();
-        } else {
-            showPicker(smileButtonRef, (emojiObject) => {
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Используем функциональное обновление состояния ---
-                setText(prevText => {
-                    const newText =
-                        prevText.slice(0, selectionStart) +
-                        emojiObject.emoji +
-                        prevText.slice(selectionEnd);
-                    return newText;
-                });
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-                setTimeout(() => {
-                    const newPosition = selectionStart + emojiObject.emoji.length;
-                    textareaRef.current.focus();
-                    textareaRef.current.setSelectionRange(newPosition, newPosition);
-                }, 0);
-            });
-        }
     };
 
     return ReactDOM.createPortal(

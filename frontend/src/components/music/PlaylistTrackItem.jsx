@@ -122,10 +122,10 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                         <Link to={trackLink} onClick={(e) => e.stopPropagation()}>
                             {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Применяем JS-функцию и убираем CSS-класс --- */}
                             <p 
-                                className="font-semibold text-sm hover:underline"
+                                className="font-semibold text-sm md:text-base hover:underline truncate"
                                 style={isCurrent ? { color: accentColor } : {}}
                             >
-                                {truncateTitle(cleanedTitle)}
+                                {cleanedTitle}
                             </p>
                             {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </Link>
