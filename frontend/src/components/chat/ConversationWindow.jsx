@@ -27,7 +27,6 @@ import WallpaperModal from './WallpaperModal';
 import ChatCalendarPanel from './ChatCalendarPanel';
 import { MessageCache } from '../../utils/MessageCacheService';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
-import crypto from 'crypto';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
@@ -289,7 +288,9 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         // 1. Заменяем старое проваленное сообщение на новое "отправляющееся"
         const newOptimisticMessage = {
             ...failedMessage,
-            uuid: crypto.randomUUID(), // Генерируем новый UUID для новой попытки
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ 1 ---
+            uuid: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Замена crypto.randomUUID()
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
             isSending: true,
             isFailed: false,
             createdAt: new Date().toISOString(),

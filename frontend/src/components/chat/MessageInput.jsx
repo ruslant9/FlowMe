@@ -75,7 +75,9 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
         }
         
         const optimisticMessage = {
-            uuid: crypto.randomUUID(),
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ 1 ---
+            uuid: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Замена crypto.randomUUID()
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
             text: text.trim(),
             sender: {
                 _id: currentUser._id,

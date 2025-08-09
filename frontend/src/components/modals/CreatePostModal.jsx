@@ -306,24 +306,66 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                 </div>
                                 
                                 <div className="p-6 pt-4 border-t border-slate-200 dark:border-white/10 flex-shrink-0">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-1 flex-wrap gap-y-2">
-                                            {[
-                                                { icon: ImageIcon, title: "Фото/Видео", onClick: () => fileInputRef.current.click() },
-                                                { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
-                                                { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
-                                                { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick },
-                                            ].map((item, idx) => ( 
-                                                 item.isDatePicker ?
-                                                    <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} /> :
-                                                    <button key={idx} type="button" ref={item.ref} onMouseDown={item.onMouseDown} onClick={item.onClick} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>
-                                            ))}
-                                            <input type="file" ref={fileInputRef} hidden multiple accept="image/*" onChange={handleFileChange} />
-                                        </div>
-                                        <button type="submit" disabled={loading} className="px-5 py-2 text-sm md:px-6 md:py-2.5 md:text-base bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center">{loading && <Loader2 className="animate-spin mr-2"/>}{scheduledFor ? 'Запланировать' : 'Опубликовать'}</button>
-                                    </div>
-                                </div>
+    <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-1 flex-wrap gap-y-2">
+            {[
+                { icon: ImageIcon, title: "Фото/Видео", onClick: () => fileInputRef.current.click() },
+                { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
+                { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
+                { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
+                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick },
+            ].map((item, idx) => ( 
+                 item.isDatePicker ?
+                    <DatePicker
+                        key={idx}
+                        selected={scheduledFor}
+                        onChange={setScheduledFor}
+                        showTimeSelect
+                        minDate={new Date()}
+                        minTime={getMinTime(scheduledFor)}
+                        maxTime={setHours(setMinutes(new Date(), 59), 23)}
+                        timeFormat="HH:mm"
+                        timeIntervals={15}
+                        dateFormat="d MMMM, yyyy HH:mm"
+                        locale={ru}
+                        isClearable
+                        portalId="modal-root"
+                        popperClassName="translate-x-1 sm:translate-x-0" // сдвиг самого календаря
+                        customInput={
+                            <button
+                                type="button"
+                                className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors 
+                                    ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}
+                                    translate-x-1 sm:translate-x-0
+                                `}
+                            >
+                                <item.icon size={18} />
+                            </button>
+                        }
+                    /> :
+                    <button
+                        key={idx}
+                        type="button"
+                        ref={item.ref}
+                        onMouseDown={item.onMouseDown}
+                        onClick={item.onClick}
+                        className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}
+                    >
+                        <item.icon size={18} />
+                    </button>
+            ))}
+            <input type="file" ref={fileInputRef} hidden multiple accept="image/*" onChange={handleFileChange} />
+        </div>
+        <button
+            type="submit"
+            disabled={loading}
+            className="px-5 py-2 text-sm md:px-6 md:py-2.5 md:text-base bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+        >
+            {loading && <Loader2 className="animate-spin mr-2"/>}
+            {scheduledFor ? 'Запланировать' : 'Опубликовать'}
+        </button>
+    </div>
+</div>
                             </form>
                         </motion.div>
                     </motion.div>

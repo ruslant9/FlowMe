@@ -207,8 +207,9 @@ const MessageBubble = ({
                     trigger="click"
                     onClickOutside={() => onToggleMenu(null)}
                     popperOptions={{ strategy: 'fixed' }}
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2 ---
                     render={attrs => (
-                        <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
+                        <div className="opaque-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
                              <button onClick={() => { onRetrySend(message); onToggleMenu(null); }} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700">
                                 <span>Повторить отправку</span>
                             </button>
@@ -219,6 +220,7 @@ const MessageBubble = ({
                             <div className="tippy-arrow" data-popper-arrow></div>
                         </div>
                     )}
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
                 >
                     <TippyWrapper>
                         <AlertCircle size={16} className="text-red-500 cursor-pointer" />

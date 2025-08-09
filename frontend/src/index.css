@@ -106,6 +106,15 @@ html.dark .ios-glass-popover {
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
+.opaque-popover {
+  background-color: white;
+  border: 1px solid #e5e7eb; /* slate-200 */
+}
+
+html.dark .opaque-popover {
+  background-color: #1f293b; /* slate-800 */
+  border: 1px solid #334155; /* slate-700 */
+}
 
 .scene {
   width: 500px;
