@@ -351,6 +351,7 @@ const UserProfilePage = () => {
             try {
                 const token = localStorage.getItem('token');
                 await axios[currentAction.method](`${API_URL}${currentAction.url}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                window.dispatchEvent(new CustomEvent('userDataUpdated', { detail: { userId: user._id } }));
                 toast.success(currentAction.success);
                 fetchUserProfile(false);
             } catch (error) {

@@ -215,17 +215,24 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
     
     const filteredCountries = countrySearch === '' ? countries : countries.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
 
-    // ИЗМЕНЕНИЕ: Новая функция для обработки клика по карандашу
     const handlePencilClick = (fieldName, ref) => {
-        if (editingField === fieldName) {
-            // Повторный клик: убираем фокус и клавиатуру, выходя из режима редактирования.
-            ref.current?.blur();
-            setEditingField(null);
-        } else {
-            // Первый клик: входим в режим редактирования. `useEffect` сфокусирует поле.
-            setEditingField(fieldName);
+    if (editingField === fieldName) {
+        // Сначала убираем фокус
+        if (ref?.current) {
+            ref.current.blur();
         }
-    };
+        // Немного отложим сброс состояния, чтобы blur успел отработать
+        setTimeout(() => {
+            setEditingField(null);
+        }, 50);
+    } else {
+        setEditingField(fieldName);
+        // На десктопе сразу даём фокус
+        if (!isMobile && ref?.current) {
+            setTimeout(() => ref.current.focus(), 0);
+        }
+    }
+};
 
     return ReactDOM.createPortal(
         <AnimatePresence>

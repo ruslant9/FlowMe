@@ -192,6 +192,9 @@ wss.on('connection', (ws) => {
 app.use((req, res, next) => {
     req.clients = clients;
     req.broadcastMessage = broadcastMessage;
+    req.broadcastMessage = (message) => {
+        broadcastMessage(message);
+    };
     req.broadcastToUsers = (userIds, message) => broadcastToUsers(clients, userIds, message);
     req.broadcastFullUserStatus = (userId) => broadcastFullUserStatus(userId, req.clients.has(userId.toString()), req.clients);
     next();
