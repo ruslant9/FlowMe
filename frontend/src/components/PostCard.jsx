@@ -90,9 +90,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
     
     const [loadingMore, setLoadingMore] = useState(false);
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Получаем все нужные функции из хука ---
     const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
 
     const userAccent = currentPost.user?.premiumCustomization?.activeCardAccent;
 
@@ -463,26 +461,36 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
         setIsPostViewModalOpen(true);
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Создаем правильный обработчик для смайликов ---
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const handleEmojiButtonClick = (e) => {
         e.preventDefault();
-        commentInputRef.current?.blur();
+        
         if (isPickerVisible) {
             hidePicker();
         } else {
             showPicker(smileButtonRef, (emojiObject) => {
+                // Получаем АКТУАЛЬНУЮ позицию курсора из ref
                 const { selectionStart, selectionEnd } = commentInputRef.current;
-                const newText = newCommentText.slice(0, selectionStart) + emojiObject.emoji + newCommentText.slice(selectionEnd);
-                setNewCommentText(newText);
+
+                // Используем функциональное обновление, чтобы избежать stale closure
+                setNewCommentText(prevText => {
+                    const newText =
+                        prevText.slice(0, selectionStart) +
+                        emojiObject.emoji +
+                        prevText.slice(selectionEnd);
+                    return newText;
+                });
+                
+                // Возвращаем фокус и устанавливаем новую позицию курсора
                 setTimeout(() => {
                     const newPosition = selectionStart + emojiObject.emoji.length;
-                    commentInputRef.current.selectionStart = newPosition;
-                    commentInputRef.current.selectionEnd = newPosition;
+                    commentInputRef.current.focus();
+                    commentInputRef.current.setSelectionRange(newPosition, newPosition);
                 }, 0);
             });
         }
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const hasAnimatedBorder = !post.community && authorData.premium?.isActive && authorData.premiumCustomization?.avatarBorder?.type?.startsWith('animated');
 
@@ -934,15 +942,13 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                     autoComplete="off" 
                                                 />
                                                 <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Обновляем onClick --- */}
                                                     <button 
                                                         ref={smileButtonRef} 
                                                         type="button" 
-                                                        onClick={handleEmojiButtonClick}
+                                                        onMouseDown={handleEmojiButtonClick}
                                                         className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white" disabled={!!editingCommentId || commentSelectionMode}>
                                                         <Smile size={18} />
                                                     </button>
-                                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                                                 </div>
                                             </div>
                                             <button 
