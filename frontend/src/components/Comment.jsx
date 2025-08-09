@@ -62,6 +62,14 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const smileButtonRef = useRef(null);
     const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
 
+    const editInputRef = useRef(null);
+
+    useEffect(() => {
+        if (isEditingThis && editInputRef.current) {
+        editInputRef.current.focus();
+    }
+    }, [isEditingThis]);
+
     useEffect(() => {
         setLocalComment(comment);
     }, [comment]);
@@ -245,7 +253,7 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                         <div className="flex-1 min-w-0">
                             {isEditingThis ? (
                                 <div className="relative">
-                                    <textarea value={editedText} onChange={(e) => setEditedText(e.target.value)} autoFocus className="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-md border border-blue-500 focus:outline-none text-sm resize-none"/>
+                                    <textarea ref={editInputRef} value={editedText} onChange={(e) => setEditedText(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-md border border-blue-500 focus:outline-none text-sm resize-none"/>
                                     <div className="flex items-center justify-between mt-2">
                                         <div className="flex items-center space-x-2">
                                             <button onClick={handleUpdate} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md">Сохранить</button>

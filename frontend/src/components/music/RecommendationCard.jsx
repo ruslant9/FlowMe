@@ -17,14 +17,9 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         ).trim();
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-    // Эта функция максимально безопасно преобразует данные об артисте в строку.
-    // Она проверяет, является ли artistData массивом, объектом с полем 'name', строкой,
-    // или чем-то еще, и в любом случае возвращает строку.
     const formatArtistName = (artistData) => {
         if (!artistData) return '';
         if (Array.isArray(artistData)) {
-            // Безопасно обрабатываем каждый элемент массива
             return artistData.map(a => (a?.name || '').replace(' - Topic', '').trim()).join(', ');
         }
         if (typeof artistData === 'object' && artistData !== null && artistData.name) {
@@ -33,10 +28,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
         if (typeof artistData === 'string') {
             return artistData.replace(' - Topic', '').trim();
         }
-        // Если формат неизвестен, возвращаем пустую строку, чтобы избежать ошибки
         return '';
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const getReleaseBadge = (releaseDate) => {
         if (!releaseDate) return null;
@@ -107,8 +100,8 @@ const RecommendationCard = ({ track, isCurrent, isPlaying, isLoading, onPlayPaus
             </div>
 
             <div className="relative z-10 text-white mt-auto">
-                <h3 className="text-sm md:text-base font-bold truncate">{cleanTitle(track.title)}</h3>
-                <p className="text-[11px] md:text-xs leading-tight opacity-80 truncate">{formatArtistName(track.artist)}</p>
+                <h3 className="text-xs md:text-base font-bold truncate">{cleanTitle(track.title)}</h3>
+                <p className="text-[10px] md:text-xs leading-tight opacity-80 truncate">{formatArtistName(track.artist)}</p>
             </div>
         </motion.div>
     );

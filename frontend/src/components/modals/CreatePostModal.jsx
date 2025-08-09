@@ -195,7 +195,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         e.target.style.height = `${e.target.scrollHeight}px`;
     };
 
-     const handleEmojiButtonClick = (e) => {
+    const handleEmojiButtonClick = (e) => {
     e.preventDefault();
 
     // 1. Запоминаем позицию курсора ПЕРЕД тем, как поле ввода потеряет фокус.
