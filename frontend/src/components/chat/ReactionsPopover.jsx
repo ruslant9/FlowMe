@@ -26,10 +26,8 @@ const preloadImages = (urls) => {
     });
 };
 
-const ReactionsPopover = ({ onSelect, children, onOpen }) => {
+const ReactionsPopover = ({ isOpen, onClose, onSelect, targetRef, onOpen }) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
-    const [isPanelOpen, setIsPanelOpen] = useState(false); 
-
     const [activeTab, setActiveTab] = useState('regular');
     const [searchQuery, setSearchQuery] = useState('');
     const { currentUser, addedPacks } = useUser();
@@ -67,11 +65,17 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
     }, [userFreeEmojiPacks, activeUserPackName]);
 
     useEffect(() => {
-        if (!hasPreloaded.current) {
+        if (isOpen && !hasPreloaded.current) {
             preloadImages(allPremiumReactionUrls);
             hasPreloaded.current = true;
         }
-    }, []);
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (isOpen && onOpen) {
+            onOpen();
+        }
+    }, [isOpen, onOpen]);
 
     const handlePremiumTabClick = (e) => {
         e.stopPropagation(); 
@@ -83,9 +87,8 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
         }
     };
 
-    const handleReactionSelect = (reactionUrl, closeFunc) => {
+    const handleReactionSelect = (reactionUrl) => {
         onSelect(reactionUrl);
-        if (closeFunc) closeFunc();
     };
 
     const handleMouseDown = (item) => {
@@ -99,10 +102,10 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
         }, 400);
     };
 
-    const handleMouseUp = (item, closeFunc) => {
+    const handleMouseUp = (item) => {
         clearTimeout(longPressTimerRef.current);
         if (!longPressTriggeredRef.current) {
-            handleReactionSelect(item.imageUrl || item.url, closeFunc);
+            handleReactionSelect(item.imageUrl || item.url);
         }
     };
     
@@ -126,12 +129,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
         return allEmojis.filter(emoji => emoji.name.toLowerCase().includes(searchQuery.toLowerCase()));
     }, [activeTab, activeUserPackName, userFreeEmojiPacks, searchQuery]);
 
-    const handlePanelOpen = () => {
-        if (onOpen) onOpen();
-        setIsPanelOpen(true);
-    };
-
-    const PanelContent = ({ closePanel }) => (
+    const PanelContent = () => (
         <div className="flex flex-col h-full" onClick={(e) => e.stopPropagation()}>
              <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg">
                 <button onClick={() => { setActiveTab('regular'); setSearchQuery(''); }} className={`flex-1 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${activeTab === 'regular' ? 'bg-white dark:bg-slate-600 shadow' : ''}`}>Обычные</button>
@@ -171,7 +169,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                     {regularReactions.map(emoji => (
                                         <button
                                             key={emoji}
-                                            onClick={() => handleReactionSelect(emoji, closePanel)}
+                                            onClick={() => handleReactionSelect(emoji)}
                                             className="p-1.5 rounded-full text-2xl flex items-center justify-center w-9 h-9 transition-transform duration-100 hover:scale-125"
                                         >
                                             {emoji}
@@ -181,7 +179,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                             </div>
                         )}
                         {activeTab === 'user_emojis' && (
-                                <div className="flex flex-col h-full">
+                            <div className="flex flex-col h-full">
                                 <div className="flex items-center space-x-1 p-1 mb-2 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto flex-shrink-0">
                                     {userFreeEmojiPacks.map(pack => (
                                         <button
@@ -198,10 +196,10 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                         <button
                                             key={emoji._id}
                                             onMouseDown={() => handleMouseDown(emoji)}
-                                            onMouseUp={() => handleMouseUp(emoji, closePanel)}
+                                            onMouseUp={() => handleMouseUp(emoji)}
                                             onMouseLeave={handleMouseLeave}
                                             onTouchStart={() => handleMouseDown(emoji)}
-                                            onTouchEnd={() => handleMouseUp(emoji, closePanel)}
+                                            onTouchEnd={() => handleMouseUp(emoji)}
                                             className="p-1 rounded-full transition-transform duration-100 hover:scale-125 flex items-center justify-center"
                                             title={emoji.name}
                                         >
@@ -232,10 +230,10 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                         <button
                                             key={emoji.id || emoji._id}
                                             onMouseDown={() => handleMouseDown(emoji)}
-                                            onMouseUp={() => handleMouseUp(emoji, closePanel)}
+                                            onMouseUp={() => handleMouseUp(emoji)}
                                             onMouseLeave={handleMouseLeave}
                                             onTouchStart={() => handleMouseDown(emoji)}
-                                            onTouchEnd={() => handleMouseUp(emoji, closePanel)}
+                                            onTouchEnd={() => handleMouseUp(emoji)}
                                             className="p-1 rounded-full transition-transform duration-100 hover:scale-125 flex items-center justify-center"
                                             title={emoji.name}
                                         >
@@ -259,15 +257,14 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
             <>
                 <PremiumRequiredModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
                 <EmojiPreviewModal isOpen={!!previewingEmoji} onClose={() => setPreviewingEmoji(null)} emojiUrl={previewingEmoji} />
-                {React.cloneElement(children, { onClick: handlePanelOpen })}
                 {ReactDOM.createPortal(
                     <AnimatePresence>
-                        {isPanelOpen && (
+                        {isOpen && (
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                onClick={() => setIsPanelOpen(false)}
+                                onClick={onClose}
                                 className="fixed inset-0 bg-black/30 z-[120]"
                             >
                                 <motion.div
@@ -279,7 +276,7 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                                     style={{ height: 'auto', maxHeight: '50vh' }}
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <PanelContent closePanel={() => setIsPanelOpen(false)} />
+                                    <PanelContent closePanel={onClose} />
                                 </motion.div>
                             </motion.div>
                         )}
@@ -301,12 +298,9 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                 delay={[100, 100]}
                 appendTo={() => document.body}
                 popperOptions={{ strategy: 'fixed' }}
-                onShow={() => { if (onOpen) onOpen(); }}
-                onClickOutside={(instance, event) => {
-                    const isClickOnPreviewOverlay = event.target.closest('.fixed.inset-0.bg-black\\/80');
-                    if (isClickOnPreviewOverlay) return false;
-                    instance.hide();
-                }}
+                visible={isOpen}
+                onClickOutside={onClose}
+                reference={targetRef}
                 render={(attrs, content, instance) => (
                     <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.9 }}
@@ -316,12 +310,13 @@ const ReactionsPopover = ({ onSelect, children, onOpen }) => {
                         className="ios-glass-popover p-2 rounded-xl shadow-lg w-full max-w-sm"
                         {...attrs}
                     >
-                        <PanelContent closePanel={() => instance.hide()} />
+                        <PanelContent closePanel={onClose} />
                         <div className="tippy-arrow" data-popper-arrow></div>
                     </motion.div>
                 )}
             >
-                {children}
+                {/* Пустышка, так как триггер теперь внешний */}
+                <div /> 
             </Tippy>
         </>
     );

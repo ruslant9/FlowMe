@@ -99,6 +99,8 @@ const MessageBubble = ({
     const time = format(new Date(message.createdAt), 'HH:mm');
     const menuButtonRef = useRef(null);
     const [menuPosition, setMenuPosition] = useState('bottom');
+    const [isReactionsPanelOpen, setIsReactionsPanelOpen] = useState(false);
+    const reactButtonRef = useRef(null);
 
     const isMenuOpen = openMenuId === message._id;
 
@@ -297,6 +299,16 @@ const MessageBubble = ({
             className={`flex items-end gap-2 group relative ${isOwnMessage ? 'justify-end' : 'justify-start'} ${isConsecutive ? 'mt-2' : 'mt-4'} ${isMenuOpen ? 'z-20' : 'z-auto'}`}
             onClick={() => selectionMode && onSelect(message._id)}
         >
+            <ReactionsPopover
+                isOpen={isReactionsPanelOpen}
+                onClose={() => setIsReactionsPanelOpen(false)}
+                onSelect={(emoji) => {
+                    onReact(emoji);
+                    setIsReactionsPanelOpen(false);
+                }}
+                targetRef={reactButtonRef}
+            />
+            
             {selectionMode && (
                 <div className={`flex items-center justify-center h-full ${isOwnMessage ? 'order-1' : 'order-first'}`}>
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all duration-150 ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-400 group-hover:border-blue-500'}`}>
@@ -321,14 +333,18 @@ const MessageBubble = ({
                         popperOptions={{ strategy: 'fixed' }}
                         render={attrs => (
                             <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
-                                <ReactionsPopover onSelect={(emoji) => { onReact(emoji); onToggleMenu(null); }}>
-                                     <button
-                                        disabled={!canInteract}
-                                        className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                     >
-                                       <span className="text-xl">❤️</span> <span>Реагировать</span>
-                                    </button>
-                                </ReactionsPopover>
+                                 <button
+                                    ref={reactButtonRef}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsReactionsPanelOpen(true);
+                                        onToggleMenu(null); // Закрываем основное меню
+                                    }}
+                                    disabled={!canInteract}
+                                    className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                   <span className="text-xl">❤️</span> <span>Реагировать</span>
+                                </button>
                                 <button onClick={() => { onReply(message); onToggleMenu(null); }} disabled={!canInteract} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
                                    <CornerDownRight size={16}/> <span>Ответить</span>
                                 </button>
