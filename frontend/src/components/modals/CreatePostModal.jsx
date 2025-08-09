@@ -195,28 +195,19 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         e.target.style.height = `${e.target.scrollHeight}px`;
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const handleEmojiButtonClick = (e) => {
-        // Предотвращаем потерю фокуса с поля ввода
         e.preventDefault();
-
-        // Запоминаем текущую позицию курсора
         const { selectionStart, selectionEnd } = textareaRef.current;
-
         if (isPickerVisible) {
             hidePicker();
         } else {
             showPicker(smileButtonRef, (emojiObject) => {
-                // Вставляем эмодзи в сохраненную позицию
                 const newText =
                     text.slice(0, selectionStart) +
                     emojiObject.emoji +
                     text.slice(selectionEnd);
                 
                 setText(newText);
-
-                // После обновления состояния React, возвращаем фокус
-                // и устанавливаем курсор после вставленного эмодзи
                 setTimeout(() => {
                     const newPosition = selectionStart + emojiObject.emoji.length;
                     textareaRef.current.focus();
@@ -225,7 +216,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
             });
         }
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return ReactDOM.createPortal(
         <AnimatePresence>
@@ -322,7 +312,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                 { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                                 { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                                 { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick }, // <-- ИЗМЕНЕНИЕ: onClick -> onMouseDown
+                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick },
                                             ].map((item, idx) => ( 
                                                  item.isDatePicker ?
                                                     <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} /> :

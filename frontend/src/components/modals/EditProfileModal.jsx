@@ -2,7 +2,7 @@
 
 import React, { useState, Fragment, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Check, ChevronDown, ChevronLeft, ChevronRight, Loader2, Pencil } from 'lucide-react'; // <-- ДОБАВЛЕНА ИКОНКА PENCIL
+import { X, Save, Check, ChevronDown, ChevronLeft, ChevronRight, Loader2, Pencil } from 'lucide-react';
 import axios from 'axios';
 import ReactDOM from 'react-dom';
 import toast from 'react-hot-toast';
@@ -71,7 +71,6 @@ const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMo
     );
 };
 
-
 const EditField = ({ label, name, value, onChange }) => (
     <div>
         <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">{label}</label>
@@ -80,7 +79,6 @@ const EditField = ({ label, name, value, onChange }) => (
 );
 
 const EditProfileModal = ({ isOpen, onClose, user }) => {
-    // ... (стейты fullName, username, dob, gender)
     const [fullName, setFullName] = useState('');
     const [username, setUsername] = useState('');
     const [dob, setDob] = useState(null);
@@ -96,18 +94,27 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
     const [hasMoreCities, setHasMoreCities] = useState(true);
     const [loadingCities, setLoadingCities] = useState(false);
     
-    const [countrySearch, setCountrySearch] = useState(''); // <-- НОВЫЙ СТЕЙТ ДЛЯ ПОИСКА СТРАНЫ
+    const [countrySearch, setCountrySearch] = useState('');
     const [citySearch, setCitySearch] = useState('');
-    const [editingField, setEditingField] = useState(null); // <-- НОВЫЙ СТЕЙТ ДЛЯ РЕДАКТИРОВАНИЯ
+    const [editingField, setEditingField] = useState(null);
     
     const debounceTimeout = useRef(null);
     const cityLoaderRef = useRef(null);
-    const countryInputRef = useRef(null); // <-- REF ДЛЯ ПОЛЯ СТРАНЫ
-    const cityInputRef = useRef(null); // <-- REF ДЛЯ ПОЛЯ ГОРОДА
+    const countryInputRef = useRef(null);
+    const cityInputRef = useRef(null);
     
     const isMobile = useMediaQuery('(max-width: 768px)');
 
-    // ... (функции fetchCountries, useEffect для user, fetchCities)
+    // ИЗМЕНЕНИЕ: Добавлен useEffect для управления фокусом и вызова клавиатуры
+    useEffect(() => {
+        // Эта функция вызовется ПОСЛЕ обновления стейта и перерисовки компонента
+        if (editingField === 'country') {
+            countryInputRef.current?.focus();
+        } else if (editingField === 'city') {
+            cityInputRef.current?.focus();
+        }
+    }, [editingField]);
+
     const fetchCountries = useCallback(async (initialCountryName) => {
         try {
             const token = localStorage.getItem('token');
@@ -128,7 +135,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
             setGender(user.gender || 'Не указан');
             setSelectedCity(user.city || null);
             fetchCountries(user.country);
-            // Сброс состояний при открытии
             setEditingField(null);
             setCountrySearch('');
             setCitySearch('');
@@ -178,9 +184,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
     }, [cityLoaderRef, hasMoreCities, loadingCities, cityPage, selectedCountry, citySearch, fetchCities]);
 
-
     const handleSave = async () => {
-        // ... (логика сохранения без изменений)
         setLoading(true);
         const toastId = toast.loading('Сохранение изменений...');
         try {
@@ -207,7 +211,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         }
     };
     
-    // Фильтрация стран для поиска
     const filteredCountries = countrySearch === '' ? countries : countries.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
 
     return ReactDOM.createPortal(
@@ -222,7 +225,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                         
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* ... (поля fullName, username, dob, gender без изменений) */}
                                 <EditField label="Полное имя" name="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
                                 <EditField label="Имя пользователя" name="username" value={username} onChange={(e) => setUsername(e.target.value)} />
                                 <div>
@@ -252,20 +254,25 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                                     <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">Страна</label>
                                     <Combobox value={selectedCountry} onChange={(country) => { setSelectedCountry(country); setSelectedCity(null); setCitySearch(''); setCountrySearch(''); setEditingField(null); }}>
                                         <div className="relative">
-                                            {isMobile && (
-                                                <button type="button" className="absolute inset-y-0 left-0 flex items-center pl-3 z-10" onClick={() => { setEditingField('country'); countryInputRef.current?.focus(); }}>
-                                                    <Pencil className="h-4 w-4 text-gray-400" />
-                                                </button>
-                                            )}
                                             <Combobox.Input
                                                 ref={countryInputRef}
                                                 readOnly={isMobile && editingField !== 'country'}
                                                 onChange={(e) => setCountrySearch(e.target.value)}
-                                                onBlur={() => setEditingField(null)}
+                                                onBlur={() => { if (isMobile) setEditingField(null); }}
                                                 displayValue={(c) => c?.name || ''} 
-                                                className={`w-full ${isMobile ? 'pl-10' : 'pl-3'} pr-10 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500`} 
+                                                className="w-full pl-3 pr-16 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" 
                                             />
-                                            <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true"/></Combobox.Button>
+                                            {/* ИЗМЕНЕНИЕ: Блок с иконками перенесен вправо */}
+                                            <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                                {isMobile && (
+                                                    <button type="button" className="p-1 rounded-full text-gray-400 hover:text-white" onClick={() => setEditingField('country')}>
+                                                        <Pencil className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                                <Combobox.Button className="p-1">
+                                                    <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true"/>
+                                                </Combobox.Button>
+                                            </div>
                                             <Combobox.Options className={`absolute w-full z-30 ${isMobile ? 'bottom-full mb-1' : 'mt-1'} max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none`}>
                                                 {filteredCountries.map((country) => <Combobox.Option key={country.code} value={country} className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}>{({ selected }) => <><span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{country.name}</span>{selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-white"><Check className="h-5 w-5"/></span> : null}</>}</Combobox.Option>)}
                                             </Combobox.Options>
@@ -276,21 +283,26 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                                     <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">Город</label>
                                     <Combobox value={selectedCity} onChange={(city) => { setSelectedCity(city); setEditingField(null); }} disabled={!selectedCountry}>
                                         <div className="relative">
-                                            {isMobile && selectedCountry && (
-                                                <button type="button" className="absolute inset-y-0 left-0 flex items-center pl-3 z-10" onClick={() => { setEditingField('city'); cityInputRef.current?.focus(); }}>
-                                                    <Pencil className="h-4 w-4 text-gray-400" />
-                                                </button>
-                                            )}
                                             <Combobox.Input
                                                 ref={cityInputRef}
                                                 readOnly={isMobile && editingField !== 'city'}
                                                 onChange={(e) => setCitySearch(e.target.value)}
-                                                onBlur={() => setEditingField(null)}
+                                                onBlur={() => { if (isMobile) setEditingField(null); }}
                                                 displayValue={(c) => c || ''}
-                                                className={`w-full ${isMobile ? 'pl-10' : 'pl-3'} pr-10 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50`}
+                                                className="w-full pl-3 pr-16 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                                                 placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск или выбор города..."}
                                             />
-                                            <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2"><ChevronDown className="h-5 w-5 text-gray-400"/></Combobox.Button>
+                                            {/* ИЗМЕНЕНИЕ: Блок с иконками перенесен вправо */}
+                                            <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                                {isMobile && selectedCountry && (
+                                                    <button type="button" className="p-1 rounded-full text-gray-400 hover:text-white" onClick={() => setEditingField('city')}>
+                                                        <Pencil className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                                <Combobox.Button className="p-1">
+                                                    <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden="true"/>
+                                                </Combobox.Button>
+                                            </div>
                                             <Combobox.Options className={`absolute w-full z-30 ${isMobile ? 'bottom-full mb-1' : 'mt-1'} max-h-60 overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none`}>
                                                 {cities.length > 0 && cities.map((city, i) => <Combobox.Option key={`${city}-${i}`} value={city} className={({ active }) => `relative cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-blue-100 dark:bg-blue-600' : ''}`}>{city}</Combobox.Option>)}
                                                 {hasMoreCities && <div ref={cityLoaderRef} className="py-2 text-center"><Loader2 className="animate-spin inline-block"/></div>}
