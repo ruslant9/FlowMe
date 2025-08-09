@@ -67,13 +67,18 @@ export default function AttachedTrack({ track }) {
                         </div>
                     }
                     <button
-                        onClick={handlePlayClick}
-                        className={`absolute inset-0 flex items-center justify-center bg-black/50 text-white transition-opacity 
-                            ${isCurrent || isLoading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                    >
-                        {isLoading ? <Loader2 className="animate-spin" /> :
-                            (isCurrent && isPlaying ? <Pause size={26} /> : <Play size={26} />)}
-                    </button>
+    onClick={handlePlayClick}
+    className={`absolute inset-0 flex items-center justify-center bg-black/50 text-white transition-opacity
+        ${isLoading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+>
+    {isLoading ? (
+        <Loader2 className="animate-spin" />
+    ) : (
+        isCurrent && isPlaying
+            ? <Pause size={26} />
+            : <Play size={26} />
+    )}
+</button>
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{cleanTitle(track.title)}</p>

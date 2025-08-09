@@ -70,13 +70,8 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         if (isPickerVisible) {
             hidePicker();
         } else {
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-            // Коллбэк теперь будет сам получать актуальные данные из ref
             showPicker(smileButtonRef, (emojiObject) => {
-                // 1. Получаем АКТУАЛЬНУЮ позицию курсора из ref в момент клика
                 const { selectionStart, selectionEnd } = textareaRef.current;
-
-                // 2. Используем функциональное обновление, чтобы избежать проблем с замыканием
                 setText(prevText => {
                     const newText =
                         prevText.slice(0, selectionStart) +
@@ -84,19 +79,15 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                         prevText.slice(selectionEnd);
                     return newText;
                 });
-                
-                // 3. Устанавливаем новую позицию курсора и возвращаем фокус
                 setTimeout(() => {
                     const newPosition = selectionStart + emojiObject.emoji.length;
                     textareaRef.current.focus();
                     textareaRef.current.setSelectionRange(newPosition, newPosition);
                 }, 0);
             });
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         }
     };
     
-    // ... (остальные функции остаются без изменений) ...
     const getMinTime = (date) => {
         if (!date || !isToday(date)) return setHours(setMinutes(new Date(), 0), 0);
         return new Date();
@@ -313,8 +304,10 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                 { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                                 { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                                 { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick },
-                                            ].map((item, idx) => ( 
+                                                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Условный рендеринг ---
+                                                !isMobile && { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick },
+                                            ].filter(Boolean).map((item, idx) => ( 
+                                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                                  item.isDatePicker ?
                                                     <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} /> :
                                                     <button key={idx} type="button" ref={item.ref} onMouseDown={item.onMouseDown} onClick={item.onClick} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>

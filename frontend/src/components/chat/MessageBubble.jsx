@@ -12,6 +12,7 @@ import { useModal } from '../../hooks/useModal';
 import AttachedTrack from '../music/AttachedTrack';
 import Twemoji from '../Twemoji';
 import { useCachedImage } from '../../hooks/useCachedImage';
+import { useUser } from '../../hooks/useUser';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -69,7 +70,31 @@ const getEmojiOnlyCount = (text) => {
 };
 
 
-const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply, onEdit, onPerformDelete, onForward, onSelect, isSelected, selectionMode, openMenuId, onToggleMenu, onScrollToMessage, highlightedMessageId, isBlockingInterlocutor, isBlockedByInterlocutor, searchQuery, isCurrentSearchResult, canInteract, isPinned, onPin, onUnpin, onImageClick }) => {
+const MessageBubble = ({ 
+    message, 
+    isOwnMessage, 
+    isConsecutive, 
+    onReact, 
+    onReply, 
+    onEdit, 
+    onPerformDelete, 
+    onForward, 
+    onSelect, 
+    isSelected, 
+    selectionMode, 
+    openMenuId, 
+    onToggleMenu, 
+    onScrollToMessage, 
+    highlightedMessageId, 
+    searchQuery, 
+    isCurrentSearchResult, 
+    canInteract, 
+    isPinned, 
+    onPin, 
+    onUnpin, 
+    onImageClick,
+    onRetrySend // <-- НОВЫЙ ПРОПС
+}) => {
     const { showConfirmation } = useModal();
     const time = format(new Date(message.createdAt), 'HH:mm');
     const menuButtonRef = useRef(null);
@@ -174,8 +199,35 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
 
     const ReadReceipt = () => {
         if (message.isSending) return <Loader2 size={16} className="animate-spin" />;
-        if (message.isFailed) return <AlertCircle size={16} className="text-red-500" />;
+        if (message.isFailed) {
+            return (
+                <Tippy
+                    interactive
+                    placement="top-end"
+                    trigger="click"
+                    onClickOutside={() => onToggleMenu(null)}
+                    popperOptions={{ strategy: 'fixed' }}
+                    render={attrs => (
+                        <div className="ios-glass-popover w-48 rounded-lg shadow-xl p-1" {...attrs}>
+                             <button onClick={() => { onRetrySend(message); onToggleMenu(null); }} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                                <span>Повторить отправку</span>
+                            </button>
+                            <div className="my-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                            <button onClick={handleDeleteRequest} className="w-full text-left flex items-center space-x-3 px-3 py-1.5 text-sm rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">
+                                <Trash2 size={16}/> <span>Удалить</span>
+                            </button>
+                            <div className="tippy-arrow" data-popper-arrow></div>
+                        </div>
+                    )}
+                >
+                    <TippyWrapper>
+                        <AlertCircle size={16} className="text-red-500 cursor-pointer" />
+                    </TippyWrapper>
+                </Tippy>
+            );
+        }
         if (!isOwnMessage || !message.readBy) return null;
+
         const isSavedMessages = message.conversation?.isSavedMessages;
         const hasBeenReadByOthers = message.readBy.length > 1;
         
@@ -348,11 +400,9 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         </button>
                     </div>
                 )}
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем w-full, чтобы AttachedTrack растягивался --- */}
                 {message.attachedTrack && (
-                    <div className="px-3 pt-2 pb-2 w-full"><AttachedTrack track={message.attachedTrack} /></div>
+                    <div className="px-3 pt-2 pb-2"><AttachedTrack track={message.attachedTrack} /></div>
                 )}
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 {message.imageUrl && (
                     <div className="relative p-1">
                         <CachedImage 

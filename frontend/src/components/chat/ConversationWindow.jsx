@@ -27,6 +27,7 @@ import WallpaperModal from './WallpaperModal';
 import ChatCalendarPanel from './ChatCalendarPanel';
 import { MessageCache } from '../../utils/MessageCacheService';
 import PremiumRequiredModal from '../modals/PremiumRequiredModal';
+import crypto from 'crypto';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
@@ -283,6 +284,48 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             .filter(msg => msg.imageUrl)
             .map(msg => getImageUrl(msg.imageUrl));
     }, [messages]);
+
+    const handleRetrySend = useCallback(async (failedMessage) => {
+        // 1. Заменяем старое проваленное сообщение на новое "отправляющееся"
+        const newOptimisticMessage = {
+            ...failedMessage,
+            uuid: crypto.randomUUID(), // Генерируем новый UUID для новой попытки
+            isSending: true,
+            isFailed: false,
+            createdAt: new Date().toISOString(),
+        };
+
+        setMessages(prev => prev.map(msg => msg.uuid === failedMessage.uuid ? newOptimisticMessage : msg));
+
+        // 2. Формируем и отправляем данные на сервер
+        try {
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('recipientId', interlocutor._id);
+            formData.append('text', newOptimisticMessage.text);
+            formData.append('uuid', newOptimisticMessage.uuid); 
+            if (newOptimisticMessage.replyTo) formData.append('replyToMessageId', newOptimisticMessage.replyTo._id);
+            if (newOptimisticMessage.attachedTrack) formData.append('attachedTrackId', newOptimisticMessage.attachedTrack._id);
+
+            // Обратите внимание: повторная отправка картинки здесь не реализована,
+            // так как это требует хранения исходного файла. 
+             // Этот код обрабатывает только текст, треки и ответы.
+
+            await axios.post(`${API_URL}/api/messages`, formData, {
+                headers: { 
+                    Authorization: `Bearer ${token}`, 
+                    'Content-Type': 'multipart/form-data' 
+                }
+            });
+            
+            window.dispatchEvent(new CustomEvent('conversationUpdated', { detail: { conversationId: internalConversation._id } }));
+
+        } catch (error) {
+            toast.error("Не удалось отправить сообщение.");
+            // Если отправка снова провалилась, помечаем новое сообщение как проваленное
+            setMessages(prev => prev.map(msg => msg.uuid === newOptimisticMessage.uuid ? { ...msg, isSending: false, isFailed: true } : msg));
+        }
+    }, [interlocutor, internalConversation]);
 
     const handleImageClickInBubble = (clickedImageUrl) => {
         const fullClickedUrl = getImageUrl(clickedImageUrl);
@@ -1257,8 +1300,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                                         onToggleMenu={handleToggleMenu}
                                                         onScrollToMessage={handleScrollToMessage}
                                                         highlightedMessageId={highlightedMessageId}
-                                                        isBlockingInterlocutor={isBlockingThem}
-                                                        isBlockedByInterlocutor={isBlockedByThem}
                                                         attachedTrack={msg.attachedTrack}
                                                         searchQuery={isSearching ? searchQuery : null}
                                                         isCurrentSearchResult={isCurrentResult}
@@ -1266,6 +1307,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                                         isPinned={isPinned}
                                                         onPin={handleTogglePinMessage}
                                                         onUnpin={handleTogglePinMessage}
+                                                        onRetrySend={handleRetrySend}
                                                         onImageClick={handleImageClickInBubble}
                                                     />
                                                 )}

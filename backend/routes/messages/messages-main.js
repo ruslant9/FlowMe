@@ -6,6 +6,7 @@ const Message = require('../../models/Message');
 const crypto = require('crypto');
 const Conversation = require('../../models/Conversation');
 const User = require('../../models/User');
+const Track = require('../../models/Track'); // <--- FIX: Add this line to import the Track model
 const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
