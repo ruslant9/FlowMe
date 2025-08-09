@@ -55,7 +55,7 @@ const AttachedTrack = ({ track }) => {
     const trackDurationInSeconds = track.durationMs ? track.durationMs / 1000 : 0;
 
     return (
-        <div className="flex flex-col space-y-2 w-64 md:w-72">
+        <div className="flex flex-col space-y-2 w-64 md:w-72 p-2 rounded-lg bg-slate-100 dark:bg-slate-700/50">
             <div className="flex items-start space-x-3">
                 <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
                     {track.albumArtUrl ? <CachedImage src={track.albumArtUrl} alt={track.title} /> : <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><Music size={24} className="text-slate-400"/></div>}
