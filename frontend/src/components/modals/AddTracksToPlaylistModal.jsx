@@ -18,7 +18,6 @@ const CachedImage = ({ src, alt }) => {
     return <img src={finalSrc} alt={alt} className="w-full h-full rounded-md object-cover" />;
 };
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ 1: Принимаем новый проп `existingTrackIds` ---
 const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackIds }) => {
     const [myMusic, setMyMusic] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -53,19 +52,17 @@ const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackI
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
             
-            // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Фильтруем полученный список ---
-            // Убираем треки, ID которых уже есть в плейлисте
-            setMyMusic(res.data.filter(track => !existingTrackIds.has(track._id)));
-            // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
+            // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+            // Сравниваем sourceId (ID оригинального трека), а не _id (ID копии в медиатеке)
+            setMyMusic(res.data.filter(track => !existingTrackIds.has(track.sourceId)));
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         } catch (error) {
             toast.error("Не удалось загрузить вашу музыку.");
         } finally {
             setLoading(false);
         }
-    // --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем existingTrackIds в зависимости ---
     }, [isOpen, existingTrackIds]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
 
     useEffect(() => {
         fetchMyMusic();
