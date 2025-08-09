@@ -348,9 +348,11 @@ const MessageBubble = ({ message, isOwnMessage, isConsecutive, onReact, onReply,
                         </button>
                     </div>
                 )}
+                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем w-full, чтобы AttachedTrack растягивался --- */}
                 {message.attachedTrack && (
-                    <div className="px-3 pt-2 pb-2"><AttachedTrack track={message.attachedTrack} /></div>
+                    <div className="px-3 pt-2 pb-2 w-full"><AttachedTrack track={message.attachedTrack} /></div>
                 )}
+                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 {message.imageUrl && (
                     <div className="relative p-1">
                         <CachedImage 

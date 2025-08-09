@@ -213,31 +213,26 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [progress, seekTo, playTrack]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
-    // Этот useEffect отвечает за основной цикл обновления прогресса
     useEffect(() => {
         let progressInterval;
         
         if (isPlaying) {
-            // Если трек играет, запускаем интервал
             progressInterval = setInterval(() => {
                 setProgress(audioRef.current.currentTime);
                 const audio = audioRef.current;
                 if (audio.buffered.length > 0 && audio.duration > 0) {
                     setBuffered(audio.buffered.end(audio.buffered.length - 1) / audio.duration);
                 }
-            }, 250); // Обновляем 4 раза в секунду для плавности
+            }, 250);
         }
         
-        // Функция очистки: вызывается, когда isPlaying меняется на false или компонент размонтируется
         return () => {
             if (progressInterval) {
                 clearInterval(progressInterval);
             }
         };
-    }, [isPlaying]); // Зависимость только от isPlaying
+    }, [isPlaying]);
 
-    // Этот useEffect отвечает за события самого аудио-элемента
     useEffect(() => {
         const audio = audioRef.current;
 
@@ -259,8 +254,7 @@ export const MusicPlayerProvider = ({ children }) => {
             audio.removeEventListener('durationchange', handleDurationChange);
             audio.removeEventListener('ended', handleEnded);
         };
-    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]); // Зависимости для колбэка handleEnded
-    // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
+    }, [isRepeat, handleNextTrack, currentTrack, logMusicAction]);
 
     useEffect(() => {
         const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
@@ -278,12 +272,11 @@ export const MusicPlayerProvider = ({ children }) => {
 
     useEffect(() => {
         if (currentTrack && 'mediaSession' in navigator) {
-            const artworkSrc = currentTrack.albumArtUrl || currentTrack.album?.coverArtUrl;
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: cleanTitle(currentTrack.title),
                 artist: formatArtistNameString(currentTrack.artist),
                 album: currentTrack.album?.title || '',
-                artwork: artworkSrc ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }] : []
+                artwork: [{ src: currentTrack.albumArtUrl, sizes: '512x512', type: 'image/png' }]
             });
             navigator.mediaSession.setActionHandler('play', togglePlayPause);
             navigator.mediaSession.setActionHandler('pause', togglePlayPause);
@@ -299,15 +292,17 @@ export const MusicPlayerProvider = ({ children }) => {
         }
     }, [isPlaying]);
     
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем проверку, чтобы избежать ошибки ---
     useEffect(() => {
         if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
             navigator.mediaSession.setPositionState({
                 duration: duration || 0,
                 playbackRate: audioRef.current.playbackRate,
-                position: progress || 0,
+                position: Math.min(progress || 0, duration || 0), // Гарантируем, что position не больше duration
             });
         }
     }, [progress, duration]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const setVolumeAndSave = useCallback((vol) => {
         audioRef.current.volume = vol;
