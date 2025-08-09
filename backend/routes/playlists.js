@@ -6,7 +6,7 @@ const Playlist = require('../models/Playlist');
 const Track = require('../models/Track');
 const User = require('../models/User');
 const { sanitize } = require('../utils/sanitize');
-const mongoose = require('mongoose'); // <-- УБЕДИТЕСЬ, ЧТО MONGOOSE ИМПОРТИРОВАН
+const mongoose = require('mongoose');
 
 async function updatePlaylistCover(playlist) {
     if (playlist.tracks.length > 0) {
@@ -165,7 +165,6 @@ router.delete('/:playlistId', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИСПРАВЛЕНИЯ: Переработанная логика добавления треков ---
 router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
     try {
         const { trackIds } = req.body;
@@ -179,34 +178,45 @@ router.post('/:playlistId/tracks', authMiddleware, async (req, res) => {
         if (!playlist) {
             return res.status(404).json({ message: 'Плейлист не найден.' });
         }
-
-        // 1. Находим все треки по ID, которые прислал клиент
-        const tracksFromClient = await Track.find({ '_id': { $in: trackIds } }).select('sourceId type').lean();
         
-        // 2. Определяем ID оригинальных библиотечных треков
-        const libraryTrackIds = tracksFromClient.map(track => {
-            // Если у трека есть sourceId, значит это 'saved' или 'recent' копия. Используем sourceId.
-            // Иначе, это и есть оригинальный 'library_track'. Используем его _id.
-            return track.sourceId ? track.sourceId : track._id;
-        });
-
-        // 3. Отфильтровываем ID тех треков, которые уже есть в плейлисте, чтобы избежать дубликатов
+        const tracksFromClient = await Track.find({ '_id': { $in: trackIds } }).select('sourceId type').lean();
+        const libraryTrackIds = tracksFromClient.map(track => track.sourceId ? track.sourceId : track._id);
         const tracksToAdd = libraryTrackIds.filter(id => !playlist.tracks.some(trackId => trackId.equals(id)));
         
-        // 4. Добавляем только уникальные ID библиотечных треков
         playlist.tracks.push(...tracksToAdd);
 
         await updatePlaylistCover(playlist);
         await playlist.save();
 
-        const updatedPlaylist = await Playlist.findById(playlist._id).populate({ path: 'tracks', populate: { path: 'artist album' } }).populate('user', 'username fullName avatar');
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // После сохранения, получаем полностью населенный плейлист и обрабатываем его
+        const updatedPlaylist = await Playlist.findById(playlist._id)
+            .populate({
+                path: 'tracks',
+                populate: [
+                    { path: 'artist', select: 'name _id' },
+                    { path: 'album', select: 'coverArtUrl' }
+                ]
+            })
+            .populate('user', 'username fullName avatar')
+            .lean(); // Используем .lean() для получения простого объекта
+
+        // Применяем ту же логику, что и в GET-запросе, чтобы данные были консистентными
+        updatedPlaylist.tracks = updatedPlaylist.tracks.map(track => {
+            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
+                return { ...track, albumArtUrl: track.album.coverArtUrl };
+            }
+            return track;
+        });
+
         res.json(updatedPlaylist);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     } catch (error) {
-        console.error("Ошибка при добавлении треков в плейлист:", error); // Улучшенное логирование
+        console.error("Ошибка при добавлении треков в плейлист:", error);
         res.status(500).json({ message: 'Ошибка при добавлении треков в плейлист.' });
     }
 });
-// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
 router.delete('/:playlistId/tracks/:trackId', authMiddleware, async (req, res) => {

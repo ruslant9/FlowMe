@@ -513,7 +513,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
 
     const handleScrollToDate = useCallback(async (date) => {
         setIsCalendarOpen(false);
-        const dateString = date.toISOString().split('T')[0];
+        const dateString = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).toISOString().split('T')[0];
         
         const firstMessageOnDate = messages.find(m => m.createdAt.startsWith(dateString));
 

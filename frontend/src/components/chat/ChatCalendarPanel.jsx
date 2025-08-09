@@ -9,25 +9,18 @@ registerLocale('ru', ru);
 
 const ChatCalendarPanel = ({ datesWithMessages, loading, onClose, onDateSelect }) => {
     
-    const highlightedDates = datesWithMessages.map(dateStr => new Date(dateStr));
+    const highlightedDates = datesWithMessages.map(dateStr => {
+        // Правильно парсим UTC-строку 'YYYY-MM-DD' в локальную дату
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    });
 
     const isDayWithMessages = (date) => {
-        const dateStr = date.toISOString().split('T')[0];
-        // datepicker передает время в локальном часовом поясе, а наш массив в UTC,
-        // поэтому нужно проверять и соседние дни на всякий случай, чтобы избежать ошибок с часовыми поясами.
-        const dateToCheck = new Date(dateStr);
-        const prevDay = new Date(dateToCheck);
-        prevDay.setDate(dateToCheck.getDate() - 1);
-        const nextDay = new Date(dateToCheck);
-        nextDay.setDate(dateToCheck.getDate() + 1);
-
-        const dateStringsToCheck = [
-            prevDay.toISOString().split('T')[0],
-            dateStr,
-            nextDay.toISOString().split('T')[0]
-        ];
-        
-        return datesWithMessages.some(d => dateStringsToCheck.includes(d));
+        // Преобразуем локальную дату из DatePicker в UTC-строку 'YYYY-MM-DD' без смещения
+        const localDateAsUTCString = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+            .toISOString().split('T')[0];
+        // Теперь просто проверяем, есть ли такая дата в нашем массиве
+        return datesWithMessages.includes(localDateAsUTCString);
     };
 
     return (

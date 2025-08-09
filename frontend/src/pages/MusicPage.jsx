@@ -348,9 +348,9 @@ const MusicPage = () => {
     const navItems = [
         { key: 'recommendations', label: 'Рекомендации', icon: Waves, onClick: () => handleTabClick('recommendations') },
         { key: 'my-music', label: 'Моя музыка', icon: Music, onClick: () => handleTabClick('my-music') },
-        { key: 'playlists', label: 'Плейлисты', icon: ListMusic, onClick: () => handleTabClick('playlists') },
-        { key: 'history', label: 'История', icon: Clock, onClick: () => handleTabClick('history') },
         { key: 'search', label: 'Поиск', icon: Search, onClick: () => handleTabClick('search') },
+        { key: 'playlists', label: 'Плейлисты', icon: ListMusic, onClick: () => handleTabClick('playlists') },
+        { key: 'history', label: 'История', icon: Clock, onClick: () => handleTabClick('history') },    
         { key: 'upload', label: 'Загрузить', icon: PlusCircle, onClick: () => setIsUploadModalOpen(true) },
     ];
     
