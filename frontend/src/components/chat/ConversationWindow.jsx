@@ -1326,7 +1326,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                 <MessageInput
                     conversationId={internalConversation?._id} recipientId={liveInterlocutor._id} currentUser={currentUser} onMessageSent={handleMessageSent}
                     replyingTo={replyingTo} onClearReply={() => setReplyingTo(null)} onFileSelect={(file) => setAttachmentFile(file)}
-                    onOptimisticSend={handleOptimisticSend} onSendFail={handleSendFail}
+                    onOptimisticSend={handleOptimisticSend} onSendFail={handleSendFail} isBlocked={isAnyBlockActive}
                     editingMessage={editingMessage} onCancelEdit={() => setEditingMessage(null)} onSaveEdit={handleEditMessage}
                 />
             ) : (

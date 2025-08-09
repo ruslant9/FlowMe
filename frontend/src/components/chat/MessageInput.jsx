@@ -12,7 +12,7 @@ import useMediaQuery from '../../hooks/useMediaQuery'; // 1. Импортиру�
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, onClearReply, onFileSelect, editingMessage, onCancelEdit, onSaveEdit, onOptimisticSend, onSendFail, currentUser }) => {
+const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, onClearReply, onFileSelect, editingMessage, onCancelEdit, onSaveEdit, onOptimisticSend, onSendFail, currentUser, isBlocked }) => {
     const [text, setText] = useState('');
     const [isPickerVisible, setPickerVisible] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -51,6 +51,12 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (isBlocked) {
+            toast.error("Вы не можете отправлять сообщения заблокированному пользователю.");
+            return;
+        }
+
         if (isSending || (!text.trim() && !attachedTrack)) {
             if (!text.trim() && editingMessage && !attachedTrack) onCancelEdit();
             return;

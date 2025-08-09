@@ -276,7 +276,13 @@ export const MusicPlayerProvider = ({ children }) => {
                 title: cleanTitle(currentTrack.title),
                 artist: formatArtistNameString(currentTrack.artist),
                 album: currentTrack.album?.title || '',
-                artwork: [{ src: currentTrack.albumArtUrl, sizes: '512x512', type: 'image/png' }]
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                artwork: [{ 
+                    src: currentTrack.albumArtUrl || currentTrack.album?.coverArtUrl, 
+                    sizes: '512x512', 
+                    type: 'image/png' 
+                }]
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             });
             navigator.mediaSession.setActionHandler('play', togglePlayPause);
             navigator.mediaSession.setActionHandler('pause', togglePlayPause);

@@ -4,7 +4,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import useTitle from '../hooks/useTitle';
-import { Link } from 'react-router-dom';
+// --- НАЧАЛО ИЗМЕНЕНИЯ 1: Импортируем useLocation ---
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+// --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
 import Avatar from '../components/Avatar';
 import { Loader2, Upload, Trash2, Edit2, Crown, Sparkles, Music, Newspaper, PlusCircle, Clock, Users, BarChart2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -63,6 +65,11 @@ const TabButton = ({ active, onClick, children }) => (
 const MyProfilePage = () => {
     useTitle('Мой профиль');
     
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Получаем location и navigate ---
+    const location = useLocation();
+    const navigate = useNavigate();
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
+
     const { currentUser: user, refetchUser, loadingUser } = useUser();
     
     const [posts, setPosts] = useState([]);
@@ -106,6 +113,16 @@ const MyProfilePage = () => {
     
     const userAccent = user?.premiumCustomization?.activeCardAccent;
 
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем useEffect для показа уведомления ---
+    useEffect(() => {
+        if (location.state?.fromGoogleLogin) {
+            toast.success('Вы успешно вошли через Google!');
+            // Очищаем state, чтобы уведомление не появилось снова при обновлении
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
+
     const fetchPostsAndStats = useCallback(async (showLoader = true) => {
         if (!user?._id) return;
         if (showLoader) setLoadingPostsAndStats(true);
@@ -134,17 +151,15 @@ const MyProfilePage = () => {
         }
     }, [user?._id, fetchPostsAndStats]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Слушаем событие обновления музыки ---
     useEffect(() => {
         const handleMusicUpdate = () => {
-            fetchPostsAndStats(false); // Перезагружаем данные без индикатора загрузки
+            fetchPostsAndStats(false);
         };
         window.addEventListener('myMusicUpdated', handleMusicUpdate);
         return () => {
             window.removeEventListener('myMusicUpdated', handleMusicUpdate);
         };
     }, [fetchPostsAndStats]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     useEffect(() => {
         if (isEditProfileModalOpen) {
