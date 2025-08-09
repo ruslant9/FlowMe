@@ -65,7 +65,6 @@ const ForwardModal = ({ messageIds, onClose }) => {
             if (conv.isSavedMessages) {
                 return 'избранное'.includes(lowerCaseSearch);
             }
-            // --- ИЗМЕНЕНИЕ: Добавлено опциональное связывание (?.) для предотвращения ошибки ---
             return (
                 conv.interlocutor?.fullName?.toLowerCase().includes(lowerCaseSearch) ||
                 conv.interlocutor?.username.toLowerCase().includes(lowerCaseSearch)
@@ -109,24 +108,29 @@ const ForwardModal = ({ messageIds, onClose }) => {
                         {loading ? <div className="text-center p-8"><Loader2 className="animate-spin mx-auto"/></div> :
                          filteredConversations.map(conv => {
                             const isSaved = conv.isSavedMessages;
+                            const isSelected = selectedConvIds.includes(conv._id);
                             return (
-                            <div key={conv._id} onClick={() => handleToggleSelection(conv._id)} className="flex items-center space-x-3 p-2 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedConvIds.includes(conv._id)}
-                                    readOnly
-                                    className="form-checkbox h-5 w-5 text-blue-600 rounded-full bg-slate-200 dark:bg-slate-700 border-transparent focus:ring-blue-500"
-                                />
-                                {isSaved ? (
-                                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                                        <Bookmark size={20} className="text-white" fill="white" />
-                                    </div>
-                                ) : (
-                                    <Avatar size="md" username={conv.interlocutor.username} avatarUrl={conv.interlocutor.avatar} />
-                                )}
-                                <span className="font-semibold">{isSaved ? 'Избранное' : (conv.interlocutor.fullName || conv.interlocutor.username)}</span>
-                            </div>
-                        )})
+                                // --- ИЗМЕНЕНИЕ: Чекбокс удален, добавлено выделение всей строки ---
+                                <div 
+                                    key={conv._id} 
+                                    onClick={() => handleToggleSelection(conv._id)} 
+                                    className={`flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-colors ${
+                                        isSelected 
+                                            ? 'bg-blue-500/20 dark:bg-blue-600/30' 
+                                            : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                                    }`}
+                                >
+                                    {isSaved ? (
+                                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                                            <Bookmark size={20} className="text-white" fill="white" />
+                                        </div>
+                                    ) : (
+                                        <Avatar size="md" username={conv.interlocutor.username} avatarUrl={conv.interlocutor.avatar} />
+                                    )}
+                                    <span className="font-semibold">{isSaved ? 'Избранное' : (conv.interlocutor.fullName || conv.interlocutor.username)}</span>
+                                </div>
+                            )
+                        })
                         }
                     </div>
 

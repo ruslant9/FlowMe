@@ -1,4 +1,4 @@
-// frontend/src/context/WebSocketContext.jsx
+// frontend/src/context/WebSocketContext.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useUser } from '../hooks/useUser';
@@ -112,14 +112,13 @@ export const WebSocketProvider = ({ children }) => {
     socket.onopen = () => {
         console.log('WebSocket: Соединение установлено.');
         setIsConnected(true);
-        reconnectAttemptsRef.current = 0;
+        // Сбрасываем счетчик попыток при успешном соединении
         if (reconnectAttemptsRef.current > 0) {
-            toast.success('Соединение восстановлено. Обновляем страницу...');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500); 
+            toast.success('Соединение восстановлено!');
         }
+        reconnectAttemptsRef.current = 0;
         if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+        
         const wsToken = localStorage.getItem('token');
         if (wsToken) {
             socket.send(JSON.stringify({ type: 'auth', token: wsToken }));
@@ -233,12 +232,29 @@ export const WebSocketProvider = ({ children }) => {
             ws.current = null;
             
             if (event.code !== 1000) { 
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                 reconnectAttemptsRef.current++;
-                const delay = Math.min(3000 + reconnectAttemptsRef.current * 2000, 10000);
-                console.log(`WebSocket: Попытка переподключения через ${delay / 1000}с... (Попытка #${reconnectAttemptsRef.current})`);
 
-                if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-                reconnectTimeoutRef.current = setTimeout(connectWebSocket, delay); 
+                // Перезагружаем страницу только при первой попытке после разрыва
+                if (reconnectAttemptsRef.current === 1) {
+                    toast.error('Соединение потеряно. Перезагрузка через 5 секунд...', {
+                        id: 'connection-lost-toast',
+                        duration: 5000
+                    });
+                    
+                    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+                    reconnectTimeoutRef.current = setTimeout(() => {
+                        window.location.reload();
+                    }, 5000); // 5 секунд, как вы и просили
+                } else {
+                    // Если перезагрузка не помогла (например, сервер лежит), продолжаем попытки реконнекта
+                    const delay = Math.min(3000 + reconnectAttemptsRef.current * 2000, 10000);
+                    console.log(`WebSocket: Попытка переподключения через ${delay / 1000}с... (Попытка #${reconnectAttemptsRef.current})`);
+
+                    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+                    reconnectTimeoutRef.current = setTimeout(connectWebSocket, delay); 
+                }
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             }
         };
 
