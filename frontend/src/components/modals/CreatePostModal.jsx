@@ -1,4 +1,4 @@
-// frontend/src/components/modals/CreatePostModal.jsx
+// frontend/src/components/modals/CreatePostModal.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useRef, useEffect, Suspense, Fragment, useCallback } from 'react';
 import ReactDOM from 'react-dom';
@@ -70,8 +70,13 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         if (isPickerVisible) {
             hidePicker();
         } else {
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            // Коллбэк теперь будет сам получать актуальные данные из ref
             showPicker(smileButtonRef, (emojiObject) => {
+                // 1. Получаем АКТУАЛЬНУЮ позицию курсора из ref в момент клика
                 const { selectionStart, selectionEnd } = textareaRef.current;
+
+                // 2. Используем функциональное обновление, чтобы избежать проблем с замыканием
                 setText(prevText => {
                     const newText =
                         prevText.slice(0, selectionStart) +
@@ -79,15 +84,19 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                         prevText.slice(selectionEnd);
                     return newText;
                 });
+                
+                // 3. Устанавливаем новую позицию курсора и возвращаем фокус
                 setTimeout(() => {
                     const newPosition = selectionStart + emojiObject.emoji.length;
                     textareaRef.current.focus();
                     textareaRef.current.setSelectionRange(newPosition, newPosition);
                 }, 0);
             });
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         }
     };
     
+    // ... (остальные функции остаются без изменений) ...
     const getMinTime = (date) => {
         if (!date || !isToday(date)) return setHours(setMinutes(new Date(), 0), 0);
         return new Date();
@@ -293,7 +302,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                     <textarea ref={textareaRef} value={text} onChange={handleTextareaChange} placeholder="Что у вас нового?" className="w-full text-xl bg-transparent resize-none placeholder-slate-500 dark:placeholder-white/50 min-h-[80px] border-b border-slate-200 dark:border-slate-700/50 pb-2 focus:outline-none focus:ring-0 focus:border-blue-500" />
                                     {images.length > 0 && <div className="grid grid-cols-3 md:grid-cols-5 gap-2">{images.map((img, index) => <div key={index} className="relative aspect-square"><CachedImage src={img.preview} /><button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full"><X size={14}/></button></div>)}</div>}
                                     {attachedTrack && <div className="relative"><div className="p-2 bg-slate-100 dark:bg-slate-800/50 rounded-lg"><AttachedTrack track={attachedTrack} /></div><button type="button" onClick={() => setAttachedTrack(null)} className="absolute top-2 right-2 p-1"><XCircle size={18}/></button></div>}
-                                    <AnimatePresence>{showPollCreator && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="space-y-3"><input type="text" placeholder="Вопрос опроса" value={pollData.question} onChange={(e) => setPollData(p => ({ ...p, question: e.target.value }))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" /><div className="space-y-2">{pollData.options.map((option, index) => <div key={index} className="flex items-center space-x-2"><input type="text" placeholder={`Вариант ${index + 1}`} value={option} onChange={(e) => handlePollChange(index, e.target.value)} className="flex-grow p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" />{pollData.options.length > 2 && <button type="button" onClick={() => removePollOption(index)}><XCircle size={18}/></button>}</div>)}</div><button type="button" onClick={addPollOption} className="text-sm">+ Добавить вариант</button><div className="flex flex-wrap gap-4 pt-2 border-t"><ToggleSwitch checked={isAnonymousPoll} onChange={setIsAnonymousPoll} label="Анонимный опрос" /><div className="flex items-center space-x-2"><label>Завершить:</label><DatePicker selected={pollExpiresAt} onChange={setPollExpiresAt} showTimeSelect dateFormat="d MMM, yyyy HH:mm" locale={ru} isClearable placeholderText="Никогда" className="w-48 text-sm p-1.5 bg-slate-200 dark:bg-slate-700 rounded-md" portalId="modal-root" withPortal /></div></div></motion.div>}</AnimatePresence>
+                                    <AnimatePresence>{showPollCreator && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="space-y-3"><input type="text" placeholder="Вопрос опроса" value={pollData.question} onChange={(e) => setPollData(p => ({ ...p, question: e.target.value }))} className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" /><div className="space-y-2">{pollData.options.map((option, index) => <div key={index} className="flex items-center space-x-2"><input type="text" placeholder={`Вариант ${index + 1}`} value={option} onChange={(e) => handlePollChange(index, e.target.value)} className="flex-grow p-2 bg-slate-100 dark:bg-slate-800 rounded-lg" />{pollData.options.length > 2 && <button type="button" onClick={() => removePollOption(index)}><XCircle size={18}/></button>}</div>)}</div><button type="button" onClick={addPollOption} className="text-sm">+ Добавить вариант</button><div className="flex flex-wrap gap-4 pt-2 border-t"><ToggleSwitch checked={isAnonymousPoll} onChange={setIsAnonymousPoll} label="Анонимный опрос" /><div className="flex items-center space-x-2"><label>Завершить:</label><DatePicker selected={pollExpiresAt} onChange={setPollExpiresAt} showTimeSelect dateFormat="d MMM, yyyy HH:mm" locale={ru} isClearable placeholderText="Никогда" className="w-48 text-sm p-1.5 bg-slate-200 dark:bg-slate-700 rounded-md" portalId="modal-root" /></div></div></motion.div>}</AnimatePresence>
                                 </div>
                                 
                                 <div className="p-6 pt-4 border-t border-slate-200 dark:border-white/10 flex-shrink-0">
@@ -304,29 +313,10 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                 { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                                 { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                                 { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                !isMobile && { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick },
-                                            ].filter(Boolean).map((item, idx) => ( 
+                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick },
+                                            ].map((item, idx) => ( 
                                                  item.isDatePicker ?
-                                                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-                                                    <DatePicker 
-                                                        key={idx} 
-                                                        selected={scheduledFor} 
-                                                        onChange={setScheduledFor} 
-                                                        showTimeSelect 
-                                                        minDate={new Date()} 
-                                                        minTime={getMinTime(scheduledFor)} 
-                                                        maxTime={setHours(setMinutes(new Date(), 59), 23)} 
-                                                        timeFormat="HH:mm" 
-                                                        timeIntervals={15} 
-                                                        dateFormat="d MMMM, yyyy HH:mm" 
-                                                        locale={ru} 
-                                                        isClearable 
-                                                        portalId="modal-root" 
-                                                        withPortal={isMobile} // <-- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
-                                                        customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} 
-                                                    />
-                                                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-                                                    :
+                                                    <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} /> :
                                                     <button key={idx} type="button" ref={item.ref} onMouseDown={item.onMouseDown} onClick={item.onClick} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>
                                             ))}
                                             <input type="file" ref={fileInputRef} hidden multiple accept="image/*" onChange={handleFileChange} />
