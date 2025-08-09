@@ -21,9 +21,9 @@ import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
-import EmojiPickerPopover from '../EmojiPickerPopover';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import useMediaQuery from '../../hooks/useMediaQuery';
+import { useEmojiPicker } from '../../hooks/useEmojiPicker'; // --- ИСПРАВЛЕНИЕ: ИМПОРТИРУЕМ ГЛОБАЛЬНЫЙ ХУК ---
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
@@ -85,7 +85,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const [commentText, setCommentText] = useState('');
     const currentUserId = currentUser?._id;
     const [replyingTo, setReplyingTo] = useState(null);
-    const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [commentSelectionMode, setCommentSelectionMode] = useState(false);
     const [selectedComments, setSelectedComments] = useState([]);
@@ -105,6 +104,9 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const isMobile = useMediaQuery('(max-width: 767px)');
     const navigate = useNavigate();
     
+    // --- ИСПРАВЛЕНИЕ: Используем хук вместо локального состояния ---
+    const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
+
     const userVote = useMemo(() => {
         if (!currentUser || !activePost?.poll?.options) return null;
         for (const option of activePost.poll.options) {
@@ -392,6 +394,18 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         fetchPostData(false);
     };
     
+    const handleEmojiButtonClick = (e) => {
+        e.preventDefault();
+        if (isPickerVisible) {
+            hidePicker();
+        } else {
+            showPicker(smileButtonRef, (emojiObject) => {
+                setCommentText(prev => prev + emojiObject.emoji);
+                commentInputRef.current?.focus();
+            });
+        }
+    };
+
     const hasImages = activePost && activePost.imageUrls && activePost.imageUrls.length > 0;
 
     if (!posts || posts.length === 0 || currentIndex === null) {
@@ -416,12 +430,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             onClose={() => setIsEditingPostImage(false)}
                             onSave={handleImageUpdate} />
                     )}
-                    <EmojiPickerPopover
-                        isOpen={isPickerVisible}
-                        targetRef={smileButtonRef}
-                        onEmojiClick={(emojiObject) => setCommentText(prev => prev + emojiObject.emoji)}
-                        onClose={() => setIsPickerVisible(false)}
-                    />
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ 
@@ -704,7 +712,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                   <button 
                                                       ref={smileButtonRef} 
                                                       type="button" 
-                                                      onClick={(e) => { e.preventDefault(); setIsPickerVisible(p => !p); }}
+                                                      onClick={handleEmojiButtonClick} // --- ИСПРАВЛЕНИЕ: Используем новый обработчик ---
                                                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                                       disabled={!!editingCommentId}
                                                   >
