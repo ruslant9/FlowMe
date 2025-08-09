@@ -38,6 +38,19 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             attachedTrackId = null;
         }
 
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        let finalAttachedTrackId = null;
+        if (attachedTrackId) {
+            // Находим трек, который прислал клиент (это может быть 'saved' копия)
+            const trackFromClient = await Track.findById(attachedTrackId).select('sourceId type').lean();
+            if (trackFromClient) {
+                // Если у трека есть sourceId, значит это копия. Берем ID оригинала.
+                // Если sourceId нет, значит это уже и есть оригинальный трек.
+                finalAttachedTrackId = trackFromClient.sourceId || trackFromClient._id;
+            }
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
         let conversation;
         if (senderId.equals(recipientObjectId)) {
             conversation = await Conversation.findOne({ participants: { $eq: [senderId] } });
@@ -75,7 +88,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             text: sanitizedText || '',
             replyTo: replyToMessageId || null,
             imageUrl: req.file ? req.file.path : null,
-            attachedTrack: attachedTrackId || null,
+            attachedTrack: finalAttachedTrackId, // <-- Используем исправленный ID
         };
         
         let savedMessage;
@@ -94,15 +107,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             const populatedMessage = await Message.findById(savedMessage._id)
                 .populate('sender', 'username fullName avatar')
                 .populate({ path: 'replyTo', populate: { path: 'sender', select: 'username fullName premium premiumCustomization' } })
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-                .populate({
-                    path: 'attachedTrack',
-                    populate: {
-                        path: 'album',
-                        select: 'coverArtUrl'
-                    }
-                });
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                .populate('attachedTrack');
             
             broadcastToUsers(req, [senderId.toString()], {
                 type: 'NEW_MESSAGE',
@@ -122,26 +127,12 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             const populatedSenderMessage = await Message.findById(savedMessage._id)
                 .populate('sender', 'username fullName avatar')
                 .populate({ path: 'replyTo', populate: { path: 'sender', select: 'username fullName premium premiumCustomization' } })
-                 // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-                .populate({
-                    path: 'attachedTrack',
-                    populate: {
-                        path: 'album',
-                        select: 'coverArtUrl'
-                    }
-                });
+                .populate('attachedTrack');
                 
             const populatedRecipientMessage = await Message.findById(recipientMessage._id)
                 .populate('sender', 'username fullName avatar')
                 .populate({ path: 'replyTo', populate: { path: 'sender', select: 'username fullName premium premiumCustomization' } })
-                .populate({
-                    path: 'attachedTrack',
-                    populate: {
-                        path: 'album',
-                        select: 'coverArtUrl'
-                    }
-                });
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                .populate('attachedTrack');
             
             const payloadForSender = populatedSenderMessage.toObject();
             payloadForSender.conversationParticipants = conversation.participants;
