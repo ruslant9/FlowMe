@@ -8,10 +8,7 @@ import useMediaQuery from '../hooks/useMediaQuery';
 
 const Picker = React.lazy(() => import('emoji-picker-react'));
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Увеличиваем высоту панели на мобильных устройствах ---
-// Было 350, стало 450. Это обеспечит примерно 5-6 строк смайликов.
 const EMOJI_PICKER_HEIGHT_MOBILE = 450;
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 export const EmojiPickerContext = createContext(null);
 
@@ -22,10 +19,12 @@ export const EmojiPickerProvider = ({ children }) => {
         onEmojiClickCallback: null,
     });
     const pickerRef = useRef(null);
+    const openerRef = useRef(null); // Ref для хранения кнопки, открывшей панель
     const isMobile = useMediaQuery('(max-width: 767px)');
 
     const showPicker = useCallback((targetRef, onEmojiClickCallback) => {
         if (!targetRef.current) return;
+        openerRef.current = targetRef.current; // Запоминаем DOM-узел кнопки
 
         const rect = targetRef.current.getBoundingClientRect();
         const pickerHeight = isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : 450;
@@ -48,18 +47,29 @@ export const EmojiPickerProvider = ({ children }) => {
 
     const hidePicker = useCallback(() => {
         setPickerState(prev => ({ ...prev, isOpen: false }));
+        openerRef.current = null; // Очищаем ref при закрытии
     }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (pickerRef.current && !pickerRef.current.contains(event.target)) {
-                hidePicker();
+            if (!pickerState.isOpen) return;
+
+            // 1. Не закрывать, если клик был по самой кнопке-открывашке
+            if (openerRef.current && openerRef.current.contains(event.target)) {
+                return;
             }
+            // 2. Не закрывать, если клик был внутри самой панели
+            if (pickerRef.current && pickerRef.current.contains(event.target)) {
+                return;
+            }
+            // 3. Если клик был в другом месте - закрываем
+            hidePicker();
         };
+
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [hidePicker]);
-    
+    }, [hidePicker, pickerState.isOpen]); // Добавляем pickerState.isOpen в зависимости
+
     const value = {
         showPicker,
         hidePicker,
@@ -82,7 +92,6 @@ export const EmojiPickerProvider = ({ children }) => {
     const initialAnimation = isMobile ? { y: "100%" } : { opacity: 0, scale: 0.9 };
     const animateAnimation = isMobile ? { y: 0 } : { opacity: 1, scale: 1 };
     const exitAnimation = isMobile ? { y: "100%" } : { opacity: 0, scale: 0.9 };
-
 
     return (
         <EmojiPickerContext.Provider value={value}>

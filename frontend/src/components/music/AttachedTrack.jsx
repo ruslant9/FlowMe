@@ -52,13 +52,12 @@ const AttachedTrack = ({ track }) => {
         if (isCurrent) togglePlayPause(); else playTrack(track, [track]);
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const trackDurationInSeconds = track.durationMs ? track.durationMs / 1000 : 0;
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return (
-        // --- ИСПРАВЛЕНИЕ: Добавлен класс w-full для консистентной ширины ---
-        <div className="flex flex-col space-y-2 w-full">
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Устанавливаем фиксированную ширину вместо w-full ---
+        <div className="flex flex-col space-y-2 w-64 md:w-72">
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             <div className="flex items-start space-x-3">
                 <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
                     {track.albumArtUrl ? <CachedImage src={track.albumArtUrl} alt={track.title} /> : <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><Music size={24} className="text-slate-400"/></div>}
@@ -71,7 +70,6 @@ const AttachedTrack = ({ track }) => {
                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{formatArtistName(track.artist)}</p>
                 </div>
             </div>
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика плеера теперь отображается всегда --- */}
             <div className="flex items-center w-full space-x-2 mb-1">
                 <span className="text-xs text-slate-500 dark:text-white/60 w-10 text-center">
                     {formatTime(isCurrent ? progress : 0)}
@@ -94,7 +92,6 @@ const AttachedTrack = ({ track }) => {
                     {formatTime(trackDurationInSeconds)}
                 </span>
             </div>
-            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
         </div>
     );
 };

@@ -18,7 +18,7 @@ import '../../styles/datepicker-custom.css';
 registerLocale('ru', ru);
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ... (компонент CustomHeader остается без изменений)
+// ... (CustomHeader component remains unchanged)
 const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => {
     const years = Array.from({ length: getYear(new Date()) - 1900 + 1 }, (_, i) => 1900 + i).reverse();
     const months = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
@@ -71,6 +71,7 @@ const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMo
     );
 };
 
+
 const EditField = ({ label, name, value, onChange }) => (
     <div>
         <label className="text-sm font-medium text-slate-600 dark:text-white/70 mb-1 block">{label}</label>
@@ -79,6 +80,7 @@ const EditField = ({ label, name, value, onChange }) => (
 );
 
 const EditProfileModal = ({ isOpen, onClose, user }) => {
+    // ... (state declarations remain the same)
     const [fullName, setFullName] = useState('');
     const [username, setUsername] = useState('');
     const [dob, setDob] = useState(null);
@@ -104,10 +106,8 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
     const cityInputRef = useRef(null);
     
     const isMobile = useMediaQuery('(max-width: 768px)');
-
-    // ИЗМЕНЕНИЕ: Добавлен useEffect для управления фокусом и вызова клавиатуры
+    
     useEffect(() => {
-        // Эта функция вызовется ПОСЛЕ обновления стейта и перерисовки компонента
         if (editingField === 'country') {
             countryInputRef.current?.focus();
         } else if (editingField === 'city') {
@@ -115,6 +115,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         }
     }, [editingField]);
 
+    // ... (fetch and other useEffect hooks remain the same)
     const fetchCountries = useCallback(async (initialCountryName) => {
         try {
             const token = localStorage.getItem('token');
@@ -184,6 +185,7 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
     }, [cityLoaderRef, hasMoreCities, loadingCities, cityPage, selectedCountry, citySearch, fetchCities]);
 
+    // ... (handleSave remains the same)
     const handleSave = async () => {
         setLoading(true);
         const toastId = toast.loading('Сохранение изменений...');
@@ -212,6 +214,18 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
     };
     
     const filteredCountries = countrySearch === '' ? countries : countries.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
+
+    // ИЗМЕНЕНИЕ: Новая функция для обработки клика по карандашу
+    const handlePencilClick = (fieldName, ref) => {
+        if (editingField === fieldName) {
+            // Если уже в режиме редактирования, перефокусируемся для вызова клавиатуры
+            ref.current?.blur();
+            setTimeout(() => ref.current?.focus(), 0);
+        } else {
+            // Иначе, просто входим в режим редактирования
+            setEditingField(fieldName);
+        }
+    };
 
     return ReactDOM.createPortal(
         <AnimatePresence>
@@ -262,10 +276,9 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                                                 displayValue={(c) => c?.name || ''} 
                                                 className="w-full pl-3 pr-16 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" 
                                             />
-                                            {/* ИЗМЕНЕНИЕ: Блок с иконками перенесен вправо */}
                                             <div className="absolute inset-y-0 right-0 flex items-center pr-2">
                                                 {isMobile && (
-                                                    <button type="button" className="p-1 rounded-full text-gray-400 hover:text-white" onClick={() => setEditingField('country')}>
+                                                    <button type="button" className="p-1 rounded-full text-gray-400 hover:text-white" onClick={() => handlePencilClick('country', countryInputRef)}>
                                                         <Pencil className="h-4 w-4" />
                                                     </button>
                                                 )}
@@ -292,10 +305,9 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                                                 className="w-full pl-3 pr-16 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                                                 placeholder={!selectedCountry ? "Сначала выберите страну" : "Поиск или выбор города..."}
                                             />
-                                            {/* ИЗМЕНЕНИЕ: Блок с иконками перенесен вправо */}
                                             <div className="absolute inset-y-0 right-0 flex items-center pr-2">
                                                 {isMobile && selectedCountry && (
-                                                    <button type="button" className="p-1 rounded-full text-gray-400 hover:text-white" onClick={() => setEditingField('city')}>
+                                                    <button type="button" className="p-1 rounded-full text-gray-400 hover:text-white" onClick={() => handlePencilClick('city', cityInputRef)}>
                                                         <Pencil className="h-4 w-4" />
                                                     </button>
                                                 )}
