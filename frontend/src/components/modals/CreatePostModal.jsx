@@ -1,3 +1,5 @@
+// frontend/src/components/modals/CreatePostModal.jsx
+
 import React, { useState, useRef, useEffect, Suspense, Fragment, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
