@@ -271,26 +271,27 @@ export const MusicPlayerProvider = ({ children }) => {
     }, [currentTrack]);
 
     useEffect(() => {
-        if (currentTrack && 'mediaSession' in navigator) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: cleanTitle(currentTrack.title),
-                artist: formatArtistNameString(currentTrack.artist),
-                album: currentTrack.album?.title || '',
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-                artwork: [{ 
-                    src: currentTrack.albumArtUrl || currentTrack.album?.coverArtUrl, 
-                    sizes: '512x512', 
-                    type: 'image/png' 
-                }]
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-            });
-            navigator.mediaSession.setActionHandler('play', togglePlayPause);
-            navigator.mediaSession.setActionHandler('pause', togglePlayPause);
-            navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
-            navigator.mediaSession.setActionHandler('nexttrack', handleNextTrack);
-            navigator.mediaSession.setActionHandler('seekto', (details) => seekTo(details.seekTime));
-        }
-    }, [currentTrack, togglePlayPause, prevTrack, handleNextTrack, seekTo]);
+    if (currentTrack && 'mediaSession' in navigator) {
+        const artworkSrc = currentTrack.albumArtUrl || currentTrack.album?.coverArtUrl;
+
+        const artwork = artworkSrc && typeof artworkSrc === 'string' && artworkSrc.trim() !== ''
+            ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }]
+            : [];
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: cleanTitle(currentTrack.title),
+            artist: formatArtistNameString(currentTrack.artist),
+            album: currentTrack.album?.title || '',
+            artwork
+        });
+
+        navigator.mediaSession.setActionHandler('play', togglePlayPause);
+        navigator.mediaSession.setActionHandler('pause', togglePlayPause);
+        navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+        navigator.mediaSession.setActionHandler('nexttrack', handleNextTrack);
+        navigator.mediaSession.setActionHandler('seekto', (details) => seekTo(details.seekTime));
+    }
+}, [currentTrack, togglePlayPause, prevTrack, handleNextTrack, seekTo]);
 
     useEffect(() => {
         if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
