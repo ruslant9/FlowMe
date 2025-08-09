@@ -565,38 +565,28 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     }, [messages, internalConversation]);
     
     const handleScrollToMessage = useCallback(async (messageId) => {
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        // Принудительно сбрасываем подсветку, чтобы гарантировать изменение состояния
-        setHighlightedMessageId(null);
+        const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
 
-        // Небольшая задержка, чтобы React успел обработать сброс состояния
-        setTimeout(async () => {
-            const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
+        if (isAlreadyLoaded) {
+            setHighlightedMessageId(messageId);
+        } else {
+            const toastId = toast.loading('Загрузка старых сообщений...');
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                setMessages(res.data.messages);
+                setPage(res.data.page);
+                setHasMore(res.data.hasMore);
+                setHighlightedMessageId(res.data.highlightId); 
 
-            if (isAlreadyLoaded) {
-                // Устанавливаем подсветку снова. useEffect среагирует на это изменение.
-                setHighlightedMessageId(messageId);
-            } else {
-                // Если сообщение не загружено, выполняем логику подгрузки
-                const toastId = toast.loading('Загрузка старых сообщений...');
-                try {
-                    const token = localStorage.getItem('token');
-                    const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
-                    
-                    setMessages(res.data.messages);
-                    setPage(res.data.page);
-                    setHasMore(res.data.hasMore);
-                    setHighlightedMessageId(res.data.highlightId); 
-
-                    toast.dismiss(toastId);
-                } catch (error) {
-                    toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
-                }
+                toast.dismiss(toastId);
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
             }
-        }, 50); // 50ms достаточно для React, но незаметно для пользователя
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        }
     }, [messages]);
 
     const scrollToBottom = useCallback(() => {
@@ -1111,7 +1101,9 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     };
 
     return (
-        <div className="flex flex-col h-full relative overflow-hidden" style={wallpaperCssVars}>
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        <div onContextMenu={(e) => e.preventDefault()} className="flex flex-col h-full relative overflow-hidden" style={wallpaperCssVars}>
+        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
             <div className="absolute inset-0 bg-slate-50 dark:bg-slate-900 -z-20"></div>
             <ImageAttachmentModal isOpen={!!attachmentFile} onClose={() => setAttachmentFile(null)} file={attachmentFile} onSave={handleAttachmentSave} showCaptionInput={true} />
             {isForwarding && <ForwardModal messageIds={selectedMessages} onClose={() => { setIsForwarding(false); setSelectionMode(false); setSelectedMessages([]); }} />}
