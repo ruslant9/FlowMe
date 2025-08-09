@@ -23,12 +23,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
 
-    const truncateTitle = (title, maxLength = 20) => {
-        if (!title) return '';
-        if (title.length <= maxLength) return title;
-        return `${title.substring(0, maxLength)}...`;
-    };
-
     const renderArtistLinks = (artistData) => {
         if (!artistData) return 'Неизвестный исполнитель';
         const artists = Array.isArray(artistData) ? artistData : [artistData];
@@ -110,20 +104,24 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                                     </div>
                                 )}
                             >
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Уменьшаем значок "E" --- */}
                                 <span 
-                                    className="w-4 h-4 flex items-center justify-center bg-slate-400 dark:bg-slate-500 text-white text-[10px] font-bold rounded-sm flex-shrink-0 cursor-help" 
+                                    className="w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center bg-slate-400 dark:bg-slate-500 text-white text-[9px] md:text-[10px] font-bold rounded-sm flex-shrink-0 cursor-help" 
                                 >
                                     E
                                 </span>
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 1 --- */}
                             </Tippy>
                         )}
                         <Link to={trackLink} onClick={(e) => e.stopPropagation()}>
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем CSS для обрезания текста --- */}
                             <p 
-                                className="font-semibold text-xs sm:text-sm md:text-base hover:underline"
+                                className="font-semibold text-xs sm:text-sm md:text-base hover:underline truncate"
                                 style={isCurrent ? { color: accentColor } : {}}
                             >
-                                {truncateTitle(cleanedTitle)}
+                                {cleanedTitle}
                             </p>
+                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
                         </Link>
                     </div>
                     <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate">
@@ -131,7 +129,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                     </p>
                 </div>
             </div>
-            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Увеличиваем отступы, делаем кнопки видимыми --- */}
             <div className="flex items-center space-x-3 md:space-x-4 text-slate-600 dark:text-slate-400">
                 {onRemoveFromPlaylist ? (
                      <button onClick={() => onRemoveFromPlaylist(track._id)} className="transition-colors text-slate-500 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-red-500">
@@ -147,7 +144,6 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                         </button>
                     </>
                 )}
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 <span className="text-sm w-10 text-right">{formatDuration(track.durationMs)}</span>
             </div>
         </div>
