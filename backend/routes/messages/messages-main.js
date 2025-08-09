@@ -13,7 +13,6 @@ const fs = require('fs');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
 const { getPopulatedConversation } = require('../../utils/getPopulatedConversation');
 const { createStorage, cloudinary } = require('../../config/cloudinary');
-// --- ИЗМЕНЕНИЕ: Импортируем санитайзер ---
 const { sanitize } = require('../../utils/sanitize');
 
 const messageImageStorage = createStorage('messages');
@@ -32,7 +31,6 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
     try {
         const senderId = new mongoose.Types.ObjectId(req.user.userId);
         let { recipientId, text, replyToMessageId, conversationId, attachedTrackId, uuid } = req.body;
-        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
         const sanitizedText = sanitize(text);
         const recipientObjectId = new mongoose.Types.ObjectId(recipientId);
         
@@ -74,7 +72,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             conversation: conversation._id,
             sender: senderId,
             uuid: messageUuid,
-            text: sanitizedText || '', // --- ИЗМЕНЕНИЕ: Используем очищенный текст ---
+            text: sanitizedText || '',
             replyTo: replyToMessageId || null,
             imageUrl: req.file ? req.file.path : null,
             attachedTrack: attachedTrackId || null,
@@ -96,7 +94,15 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             const populatedMessage = await Message.findById(savedMessage._id)
                 .populate('sender', 'username fullName avatar')
                 .populate({ path: 'replyTo', populate: { path: 'sender', select: 'username fullName premium premiumCustomization' } })
-                .populate('attachedTrack');
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                .populate({
+                    path: 'attachedTrack',
+                    populate: {
+                        path: 'album',
+                        select: 'coverArtUrl'
+                    }
+                });
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             
             broadcastToUsers(req, [senderId.toString()], {
                 type: 'NEW_MESSAGE',
@@ -116,7 +122,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             const populatedSenderMessage = await Message.findById(savedMessage._id)
                 .populate('sender', 'username fullName avatar')
                 .populate({ path: 'replyTo', populate: { path: 'sender', select: 'username fullName premium premiumCustomization' } })
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                 // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                 .populate({
                     path: 'attachedTrack',
                     populate: {
@@ -135,6 +141,7 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
                         select: 'coverArtUrl'
                     }
                 });
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             
             const payloadForSender = populatedSenderMessage.toObject();
             payloadForSender.conversationParticipants = conversation.participants;
@@ -167,7 +174,6 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
 router.put('/:messageId', authMiddleware, async (req, res) => {
     try {
         const { text } = req.body;
-        // --- ИЗМЕНЕНИЕ: Очищаем текст ---
         const sanitizedText = sanitize(text);
         const { messageId } = req.params;
         const userId = req.user.userId;
@@ -186,7 +192,6 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: "Вы не можете редактировать это сообщение" });
         }
 
-        // --- ИЗМЕНЕНИЕ: Используем очищенный текст ---
         await Message.updateMany({ uuid: message.uuid }, { $set: { text: sanitizedText } });
 
         const conversation = await Conversation.findById(message.conversation);
@@ -200,7 +205,7 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
                     messageId: message._id,
                     uuid: message.uuid,
                     conversationId: message.conversation,
-                    updates: { text: sanitizedText } // --- ИЗМЕНЕНИЕ ---
+                    updates: { text: sanitizedText } 
                 }
             });
              broadcastToUsers(req, activeParticipants, { type: 'CONVERSATION_UPDATED', payload: { conversationId: conversation._id } });
@@ -213,7 +218,6 @@ router.put('/:messageId', authMiddleware, async (req, res) => {
     }
 });
 
-// ... (остальные роуты без изменений)
 router.get('/:messageId/context', authMiddleware, async (req, res) => {
     try {
         const { messageId } = req.params;
@@ -248,7 +252,15 @@ router.get('/:messageId/context', authMiddleware, async (req, res) => {
                 populate: { path: 'sender', select: 'username fullName premium premiumCustomization' }
             })
             .populate('forwardedFrom', 'username fullName')
-            .populate('attachedTrack')
+             // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            .populate({
+                path: 'attachedTrack',
+                 populate: [
+                    { path: 'artist', select: 'name' },
+                    { path: 'album', select: 'coverArtUrl' }
+                ]
+            })
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             .populate({ path: 'reactions.user', select: 'username fullName' })
             .sort({ createdAt: -1 })
             .skip(skip)
@@ -307,7 +319,15 @@ router.get('/conversations/:conversationId/messages-by-date', authMiddleware, as
             .populate('sender', 'username fullName avatar')
             .populate({ path: 'replyTo', populate: { path: 'sender', select: 'username fullName premium premiumCustomization' } })
             .populate('forwardedFrom', 'username fullName')
-            .populate('attachedTrack')
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            .populate({
+                path: 'attachedTrack',
+                 populate: [
+                    { path: 'artist', select: 'name' },
+                    { path: 'album', select: 'coverArtUrl' }
+                ]
+            })
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             .populate({ path: 'reactions.user', select: 'username fullName' })
             .sort({ createdAt: -1 })
             .skip(skip)
@@ -349,7 +369,15 @@ router.get('/:messageId', authMiddleware, async (req, res) => {
                 populate: { path: 'sender', select: 'username fullName premium premiumCustomization' }
             })
             .populate('forwardedFrom', 'username fullName')
-            .populate('attachedTrack');
+             // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            .populate({
+                path: 'attachedTrack',
+                 populate: [
+                    { path: 'artist', select: 'name' },
+                    { path: 'album', select: 'coverArtUrl' }
+                ]
+            });
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             
         if (!message) {
             return res.status(404).json({ message: 'Копия сообщения для данного пользователя не найдена.' });

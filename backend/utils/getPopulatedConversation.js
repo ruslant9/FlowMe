@@ -30,7 +30,6 @@ async function getPopulatedConversation(conversationId, forUserId) {
             }
         },
         { $unwind: '$interlocutor' },
-        // --- НАЧАЛО ИЗМЕНЕНИЯ: Переработанная, более безопасная логика для получения последнего сообщения ---
         {
             $lookup: {
                 from: 'messages',
@@ -46,24 +45,42 @@ async function getPopulatedConversation(conversationId, forUserId) {
                         }
                     },
                     { $unwind: { path: '$senderInfo', preserveNullAndEmptyArrays: true } },
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                     {
                         $lookup: {
                             from: 'tracks',
                             localField: 'attachedTrack',
                             foreignField: '_id',
+                            pipeline: [
+                                {
+                                    $lookup: {
+                                        from: 'artists',
+                                        localField: 'artist',
+                                        foreignField: '_id',
+                                        as: 'artistInfo'
+                                    }
+                                },
+                                {
+                                    $lookup: {
+                                        from: 'albums',
+                                        localField: 'album',
+                                        foreignField: '_id',
+                                        as: 'albumInfo'
+                                    }
+                                },
+                                { $unwind: { path: '$albumInfo', preserveNullAndEmptyArrays: true } }
+                            ],
                             as: 'trackInfo'
                         }
                     },
                     { $unwind: { path: '$trackInfo', preserveNullAndEmptyArrays: true } }
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 ],
                 as: 'lastMessageDetails'
             }
         },
         { $unwind: { path: "$lastMessageDetails", preserveNullAndEmptyArrays: true } },
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-        
         {
-            // 1. Получаем UUIDы закрепленных сообщений, неважно, чьи они
             $lookup: {
                 from: 'messages',
                 localField: 'pinnedMessages',
@@ -73,7 +90,6 @@ async function getPopulatedConversation(conversationId, forUserId) {
             }
         },
         {
-            // 2. Извлекаем эти UUIDы в простой массив
             $addFields: {
                 pinnedMessageUuids: {
                     $map: {
@@ -85,7 +101,6 @@ async function getPopulatedConversation(conversationId, forUserId) {
             }
         },
         {
-            // 3. Используем UUIDы, чтобы найти КОПИИ сообщений, принадлежащие ТЕКУЩЕМУ пользователю
             $lookup: {
                 from: 'messages',
                 let: { uuids: '$pinnedMessageUuids' },
@@ -100,7 +115,6 @@ async function getPopulatedConversation(conversationId, forUserId) {
                             } 
                         } 
                     },
-                    // 4. Популируем найденные (уже правильные) сообщения
                     { $lookup: { from: 'users', localField: 'sender', foreignField: '_id', as: 'senderInfo' } },
                     { $unwind: { path: '$senderInfo', preserveNullAndEmptyArrays: true } },
                     { $lookup: { from: 'tracks', localField: 'attachedTrack', foreignField: '_id', as: 'trackInfo' } },
@@ -117,14 +131,30 @@ async function getPopulatedConversation(conversationId, forUserId) {
                 _id: 1,
                 isSavedMessages: 1,
                 interlocutor: 1,
-                // --- НАЧАЛО ИЗМЕНЕНИЯ: Обновляем пути для доступа к данным последнего сообщения ---
                 lastMessage: {
                     _id: '$lastMessageDetails._id',
                     text: '$lastMessageDetails.text',
                     imageUrl: '$lastMessageDetails.imageUrl',
                     type: '$lastMessageDetails.type',
                     createdAt: '$lastMessageDetails.createdAt',
-                    attachedTrack: '$lastMessageDetails.trackInfo',
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                    attachedTrack: {
+                        $cond: {
+                            if: { $eq: [{ $ifNull: ["$lastMessageDetails.trackInfo", null] }, null] },
+                            then: null,
+                            else: {
+                                $mergeObjects: [
+                                    "$lastMessageDetails.trackInfo",
+                                    { 
+                                        albumArtUrl: { $ifNull: ["$lastMessageDetails.trackInfo.albumArtUrl", "$lastMessageDetails.trackInfo.albumInfo.coverArtUrl"] },
+                                        artist: "$lastMessageDetails.trackInfo.artistInfo", // Ensure artist data is passed correctly
+                                        album: "$lastMessageDetails.trackInfo.albumInfo"    // Ensure album data is passed correctly
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                     sender: {
                         _id: '$lastMessageDetails.senderInfo._id',
                         username: '$lastMessageDetails.senderInfo.username',
@@ -134,7 +164,6 @@ async function getPopulatedConversation(conversationId, forUserId) {
                     readBy: { $ifNull: ['$lastMessageDetails.readBy', []] },
                     reactions: '$lastMessageDetails.reactions'
                 },
-                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                 pinnedMessages: '$pinnedMessageDetailsForUser',
                 isMuted: { $in: [userId, { $ifNull: ['$mutedBy', []] }] },
                 isArchived: { $in: [userId, { $ifNull: ['$archivedBy', []] }] },

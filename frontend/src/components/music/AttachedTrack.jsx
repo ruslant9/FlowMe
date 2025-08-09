@@ -40,8 +40,9 @@ const AttachedTrack = ({ track }) => {
         if (typeof artistData === 'string') return artistData.replace(' - Topic', '').trim();
         return '';
     }; 
-    if (!track) return null;
 
+    if (!track) return null;
+    const coverUrl = track.albumArtUrl || track.album?.coverArtUrl;
     const isCurrent = currentTrack?._id === track._id;
     const isLoading = loadingTrackId === track._id;
 
@@ -53,9 +54,9 @@ const AttachedTrack = ({ track }) => {
     return (
         <div className="flex flex-col space-y-2">
             <div className="flex items-start space-x-3">
-                <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
-                    {track.albumArtUrl ? <CachedImage src={track.albumArtUrl} alt={track.title} /> : <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><Music size={24} className="text-slate-400"/></div>}
-                    <button onClick={handlePlayClick} className={`absolute inset-0 bg-black/50 flex items-center justify-center text-white ${isCurrent || isLoading ? 'opacity-100' : 'opacity-0 hover:opacity-100'} transition-opacity`}>
+            <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
+                {coverUrl ? <CachedImage src={coverUrl} alt={track.title} /> : <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><Music size={24} className="text-slate-400"/></div>}
+                <button onClick={handlePlayClick} className={`absolute inset-0 bg-black/50 flex items-center justify-center text-white ${isCurrent || isLoading ? 'opacity-100' : 'opacity-0 hover:opacity-100'} transition-opacity`}>
                         {isLoading ? <Loader2 className="animate-spin" /> : isCurrent && isPlaying ? <Pause size={28} /> : <Play size={28} />}
                     </button>
                 </div>

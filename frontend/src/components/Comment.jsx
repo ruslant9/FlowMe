@@ -12,7 +12,7 @@ import LikesPopover from './LikesPopover';
 import { Link } from 'react-router-dom';
 
 import Twemoji from './Twemoji';
-import { useEmojiPicker } from '../hooks/useEmojiPicker'; // ИМПОРТ
+import { useEmojiPicker } from '../hooks/useEmojiPicker'; 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const customRuLocale = {
@@ -38,6 +38,20 @@ const formatShortDistanceToNow = (dateStr) => {
     return format(date, 'dd.MM');
 };
 
+// --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавлена хелпер-функция для "джамбо" эмодзи ---
+const getEmojiOnlyCount = (text) => {
+    if (!text) return 0;
+    const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const nonContentText = text.replace(emojiRegex, '').replace(urlRegex, '').replace(/\s/g, '');
+    if (nonContentText.length > 0) {
+        return 0;
+    }
+    const emojiMatches = text.match(emojiRegex);
+    const urlMatches = text.match(urlRegex);
+    return (emojiMatches?.length || 0) + (urlMatches?.length || 0);
+};
+// --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommunityId, onCommentUpdate, onReply, editingCommentId, setEditingCommentId, selectionMode, onToggleSelect, isSelected }) => {
     const [localComment, setLocalComment] = useState(comment);
@@ -124,28 +138,43 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         const { text, parent } = localComment;
         const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const parentAuthorObject = parent ? (parent.author || parent.user) : null;
-        if (parentAuthorObject) {
-            const parentAuthorName = parentAuthorObject.name || parentAuthorObject.username;
-            if (parentAuthorName) {
-                const mentionRegex = new RegExp(`^@${escapeRegExp(parentAuthorName)}\\b`, 'i');
-                const match = text.match(mentionRegex);
-                if (match) {
-                    const matchedMention = match[0];
-                    const restOfText = text.substring(matchedMention.length);
-                    const parentAuthorModel = parent.authorModel || 'User';
-                    const linkTo = parentAuthorModel === 'Community' ? `/communities/${parentAuthorObject._id}` : `/profile/${parentAuthorObject._id}`;
-                    return (
-                        <>
-                            <Link to={linkTo} className="text-blue-400 hover:underline font-semibold" onClick={e => e.stopPropagation()}>
-                                {matchedMention}
-                            </Link>
-                            <Twemoji text={restOfText} />
-                        </>
-                    );
+        
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const parts = text.split(urlRegex);
+
+        const renderableContent = parts.map((part, index) => {
+            if (urlRegex.test(part)) {
+                if (/\.(gif|png|jpe?g|webp)$/i.test(part)) {
+                    return <img key={`img-${index}`} src={part} alt="sticker" className="emoji" />;
                 }
             }
-        }
-        return <Twemoji text={text} />;
+
+            if (parentAuthorObject && index === 0) {
+                 const parentAuthorName = parentAuthorObject.name || parentAuthorObject.username;
+                 if (parentAuthorName) {
+                    const mentionRegex = new RegExp(`^@${escapeRegExp(parentAuthorName)}\\b,?\\s*`);
+                    const match = part.match(mentionRegex);
+                    if (match) {
+                        const matchedMention = match[0];
+                        const restOfText = part.substring(matchedMention.length);
+                        const parentAuthorModel = parent.authorModel || 'User';
+                        const linkTo = parentAuthorModel === 'Community' ? `/communities/${parentAuthorObject._id}` : `/profile/${parentAuthorObject._id}`;
+                        return (
+                            <React.Fragment key={`mention-${index}`}>
+                                <Link to={linkTo} className="text-blue-400 hover:underline font-semibold" onClick={e => e.stopPropagation()}>
+                                    {matchedMention}
+                                </Link>
+                                <Twemoji text={restOfText} />
+                            </React.Fragment>
+                        );
+                    }
+                }
+            }
+
+            return <Twemoji key={`text-${index}`} text={part} />;
+        });
+        
+        return <>{renderableContent}</>;
     };
 
     const handleLike = async () => {
@@ -161,8 +190,12 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         }
     };
 
-    const authorName = authorObject.name || authorObject.username;
-    const authorFullName = authorObject.fullName;
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Корректное определение имени автора ---
+    const authorName = authorModel === 'Community' 
+        ? authorObject.name 
+        : (authorObject.fullName || authorObject.username);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     const authorAvatar = authorObject.avatar || '';
     const authorLink = authorModel === 'Community' ? `/communities/${authorObject._id}` : `/profile/${authorObject._id}`;
     const authorIsPremium = authorModel === 'User' && authorObject.premium?.isActive;
@@ -174,6 +207,11 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
             {canDelete && <button onClick={handleDelete} className="p-1 text-slate-500 dark:text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>}
         </>
     );
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика для "джамбо" эмодзи ---
+    const emojiOnlyCount = getEmojiOnlyCount(localComment.text);
+    const isJumboEmoji = emojiOnlyCount > 0 && emojiOnlyCount <= 5;
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return (
         <div>
@@ -200,7 +238,7 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                             const staticBorderStyle = border?.type === 'static' ? { padding: '4px', backgroundColor: border.value } : {};
                             return (
                                 <div className={`relative rounded-full ${borderClass}`} style={staticBorderStyle}>
-                                    <Avatar size="sm" username={authorName} fullName={authorObject.fullName || authorName} avatarUrl={authorAvatar} isPremium={authorIsPremium} customBorder={authorCustomBorder}/>
+                                    <Avatar size="sm" username={authorObject.username} fullName={authorObject.fullName} avatarUrl={authorAvatar} isPremium={authorIsPremium} customBorder={authorCustomBorder}/>
                                 </div>
                             );
                         })()}
@@ -220,7 +258,6 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                 <>
                                     <div className="flex justify-between items-center">
                                         <div className="text-sm flex items-center space-x-2 min-w-0">
-                                            {/* --- ИСПРАВЛЕНИЕ: Блокируем ссылку в режиме выбора --- */}
                                             <Link 
                                                 to={authorLink} 
                                                 className={`font-bold truncate ${selectionMode ? 'pointer-events-none' : 'hover:underline'}`}
@@ -237,14 +274,12 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                             </div>
                                         )}
                                     </div>
-                                    <p className="text-sm break-words mt-1">{renderCommentText()}</p>
+                                    <p className={`text-sm break-words mt-1 ${isJumboEmoji ? 'emoji-only' : ''}`}>{renderCommentText()}</p>
                                     <div className="flex items-center justify-between mt-2">
                                         <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
-                                           {/* --- ИСПРАВЛЕНИЕ: Блокируем кнопку "Ответить" в режиме выбора --- */}
                                            <button onClick={() => onReply({ id: localComment._id, username: authorName })} disabled={isEditingAny || selectionMode} className="font-semibold hover:text-slate-800 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Ответить</button>
                                            <LikesPopover likers={localComment.likes || []} postOwnerId={postOwnerId}>
                                                 <span>
-                                                    {/* --- ИСПРАВЛЕНИЕ: Блокируем лайк в режиме выбора --- */}
                                                     <button 
                                                         onClick={handleLike} 
                                                         disabled={selectionMode}

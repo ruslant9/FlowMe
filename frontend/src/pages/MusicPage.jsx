@@ -73,7 +73,7 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.newReleases?.length > 0 && (
                 <section>
                     <SectionHeader title="Новинки" icon={Disc} />
-                    <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 gap-3">
                         {recommendations.newReleases.slice(0, 10).map(track => (
                             <RecommendationCard key={track._id} track={track} onSelectTrack={() => playTrack(track, recommendations.newReleases)} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying && track._id === currentTrack?._id} isLoading={loadingTrackId === track._id} onPlayPause={togglePlayPause} />
                         ))}
@@ -83,7 +83,7 @@ const RecommendationsView = ({ recommendations, loading, onPlayWave }) => {
             {recommendations.popularHits?.length > 0 && (
                 <section>
                     <SectionHeader title="Популярные хиты" icon={Music} />
-                    <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 gap-3">
                         {recommendations.popularHits.slice(0, 10).map((track, index) => (
                             <RecommendationCard key={track._id} track={track} onSelectTrack={() => playTrack(track, recommendations.popularHits)} isCurrent={track._id === currentTrack?._id} isPlaying={isPlaying && track._id === currentTrack?._id} isLoading={loadingTrackId === track._id} onPlayPause={togglePlayPause} isHit={index === 0} />
                         ))}

@@ -490,7 +490,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                     </div>
                 )}
                 <div className="relative rounded-t-3xl overflow-hidden">                  
-                    <div className="relative z-10 p-4 md:p-6 pb-0">
+                    <div className="relative z-10 px-4 pt-4 pb-0 md:px-6">
                         <div className="flex items-center justify-between">
                             <div onClick={handleOpenPostInModal} className="flex items-center space-x-3 cursor-pointer">
                                 {currentPost.community ? (

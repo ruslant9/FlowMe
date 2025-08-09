@@ -173,20 +173,18 @@ router.get('/', authMiddleware, async (req, res) => {
                     },
                     isMuted: { $in: [userId, { $ifNull: ['$mutedBy', []] }] },
                     isArchived: { $in: [userId, { $ifNull: ['$archivedBy', []] }] },
-                    // --- НАЧАЛО ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ---
                     isPinned: {
                         $cond: {
-                            if: "$isSavedMessages", // "Избранное" никогда не может быть закреплено
+                            if: "$isSavedMessages", 
                             then: false,
-                            else: { // Для остальных чатов
+                            else: { 
                                 $and: [
-                                    { $in: [userId, { $ifNull: ['$pinnedBy', []] }] }, // ID пользователя есть в массиве закрепивших
-                                    { $not: { $in: [userId, { $ifNull: ['$archivedBy', []] }] } } // И ID пользователя НЕТ в массиве заархивировавших
+                                    { $in: [userId, { $ifNull: ['$pinnedBy', []] }] },
+                                    { $not: { $in: [userId, { $ifNull: ['$archivedBy', []] }] } }
                                 ]
                             }
                         }
                     },
-                    // --- КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ---
                     isMarkedAsUnread: { $in: [userId, { $ifNull: ['$markedAsUnreadBy', []] }] },
                     updatedAt: 1,
                     unreadCount: { $ifNull: [{ $arrayElemAt: ['$unreadInfo.unreadCount', 0] }, 0] },
@@ -273,7 +271,15 @@ router.get('/:conversationId/messages', authMiddleware, async (req, res) => {
                 }
             })
             .populate('forwardedFrom', 'username fullName')
-            .populate('attachedTrack')
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            .populate({
+                path: 'attachedTrack',
+                populate: [
+                    { path: 'artist', select: 'name' },
+                    { path: 'album', select: 'coverArtUrl' }
+                ]
+            })
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             .populate({
                 path: 'reactions.user',
                 select: 'username fullName'
@@ -361,7 +367,15 @@ router.get('/with/:interlocutorId', authMiddleware, async (req, res) => {
                 }
             })
             .populate('forwardedFrom', 'username fullName')
-            .populate('attachedTrack')
+             // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            .populate({
+                path: 'attachedTrack',
+                 populate: [
+                    { path: 'artist', select: 'name' },
+                    { path: 'album', select: 'coverArtUrl' }
+                ]
+            })
+             // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             .populate({
                 path: 'reactions.user',
                 select: 'username fullName'
@@ -385,7 +399,6 @@ router.get('/with/:interlocutorId', authMiddleware, async (req, res) => {
     }
 });
 
-// --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем обработку addToBlacklist ---
 router.delete('/:conversationId', authMiddleware, async (req, res) => {
     try {
         const { conversationId } = req.params;
@@ -402,7 +415,6 @@ router.delete('/:conversationId', authMiddleware, async (req, res) => {
             if (interlocutorId) {
                 await User.updateOne({ _id: userId }, { $addToSet: { blacklist: interlocutorId } });
                 
-                // Отправляем уведомления обоим пользователям об изменении их "статуса отношений"
                 const userIdsToNotify = [userId.toString(), interlocutorId.toString()];
                 userIdsToNotify.forEach(id => {
                     req.broadcastMessage({ type: 'USER_DATA_UPDATED', userId: id });
@@ -455,6 +467,5 @@ router.delete('/:conversationId', authMiddleware, async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера" });
     }
 });
-// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 module.exports = router;

@@ -220,20 +220,24 @@ html.dark .tippy-arrow {
   height: 1.25em;
   width: 1.25em;
   margin: 0 0.05em 0 0.1em;
-  vertical-align: -0.2em; 
+  vertical-align: -0.2em;
+  display: inline-block; /* Убеждаемся, что стандартные эмодзи тоже inline */
 }
 
+/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Обновленные стили для "джамбо" эмодзи --- */
 .emoji-only {
-    /* Свойства display: flex и flex-wrap удалены */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem; /* Добавляем отступ между эмодзи */
     padding: 0.25rem;
 }
 
 .emoji-only .emoji {
-    width: 1.4rem;  /* Увеличенный размер для больших эмодзи */
-    height: 1.4rem;
-    vertical-align: middle; /* Улучшенное выравнивание */
-    display: inline-block; /* Это ключевое изменение, которое ставит эмодзи в ряд */
+    width: 2.5rem;  /* Увеличенный размер */
+    height: 2.5rem;
 }
+/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */
+
 
 body.modal-open .hamburger-menu {
   display: none !important;
@@ -372,19 +376,20 @@ html.dark .rc-slider-rail {
   }
 }
 
+/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем padding из CSS, переносим в компонент --- */
 .premium-border-animated-1 {
-  padding: 4px;
   background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
   background-size: 400% 400%;
   animation: premium-border-flow 15s ease infinite;
 }
 
 .premium-border-animated-2 {
-  padding: 4px;
   background: linear-gradient(-45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #9a2b9f, #7232b5, #4a39cf, #405de6);
   background-size: 600% 600%;
   animation: premium-border-flow 10s ease infinite;
 }
+/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */
+
 
 @keyframes premium-border-flow {
   0% { background-position: 0% 50%; }
@@ -398,7 +403,6 @@ html.dark .rc-slider-rail {
   100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
 .premium-border-animated-pulse {
-  padding: 4px;
   animation: premium-border-pulse 2s infinite;
 }
 
