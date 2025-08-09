@@ -526,17 +526,16 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         }
     }, [messages, internalConversation]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ #1: Принудительный сброс состояния для повторного клика ---
     const handleScrollToMessage = useCallback(async (messageId) => {
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Принудительно сбрасываем ID, чтобы эффект всегда срабатывал ---
         setHighlightedMessageId(null);
-        // Небольшая задержка, чтобы React успел обработать сброс перед новой установкой
         setTimeout(async () => {
             const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
             
             if (isAlreadyLoaded) {
                 setHighlightedMessageId(messageId);
             } else {
-                const toastId = toast.loading('Сообще-ние не в текущей истории, загружаем...');
+                const toastId = toast.loading('Сообщение не в текущей истории, загружаем...');
                 try {
                     const token = localStorage.getItem('token');
                     const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
@@ -546,7 +545,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                     setMessages(res.data.messages);
                     setPage(res.data.page);
                     setHasMore(res.data.hasMore);
-                    
                     setHighlightedMessageId(res.data.highlightId); 
 
                     toast.dismiss(toastId);
@@ -554,14 +552,15 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                     toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
                 }
             }
-        }, 10); // 10ms достаточно
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        }, 10);
     }, [messages]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ #1 ---
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ #2: Удаление `messages` из зависимостей ---
     useLayoutEffect(() => {
         if (highlightedMessageId) {
             const element = document.getElementById(`message-${highlightedMessageId}`);
@@ -573,7 +572,8 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                 return () => clearTimeout(timer);
             }
         }
-    }, [messages, highlightedMessageId]);
+    }, [highlightedMessageId]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ #2 ---
 
     useEffect(() => {
         const loadInitialMessages = async () => {
