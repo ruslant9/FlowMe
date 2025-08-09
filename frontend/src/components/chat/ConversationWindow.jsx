@@ -565,37 +565,39 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     }, [messages, internalConversation]);
     
     const handleScrollToMessage = useCallback(async (messageId) => {
-    const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
-
-    if (isAlreadyLoaded) {
         // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        // Прямо здесь находим элемент и скроллим к нему
-        const element = document.getElementById(`message-${messageId}`);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        // Также оставляем подсветку, как и было
-        setHighlightedMessageId(messageId);
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-    } else {
-        const toastId = toast.loading('Загрузка старых сообщений...');
-        try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            
-            setMessages(res.data.messages);
-            setPage(res.data.page);
-            setHasMore(res.data.hasMore);
-            setHighlightedMessageId(res.data.highlightId); 
+        // Принудительно сбрасываем подсветку, чтобы гарантировать изменение состояния
+        setHighlightedMessageId(null);
 
-            toast.dismiss(toastId);
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
-        }
-    }
-}, [messages]);
+        // Небольшая задержка, чтобы React успел обработать сброс состояния
+        setTimeout(async () => {
+            const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
+
+            if (isAlreadyLoaded) {
+                // Устанавливаем подсветку снова. useEffect среагирует на это изменение.
+                setHighlightedMessageId(messageId);
+            } else {
+                // Если сообщение не загружено, выполняем логику подгрузки
+                const toastId = toast.loading('Загрузка старых сообщений...');
+                try {
+                    const token = localStorage.getItem('token');
+                    const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    
+                    setMessages(res.data.messages);
+                    setPage(res.data.page);
+                    setHasMore(res.data.hasMore);
+                    setHighlightedMessageId(res.data.highlightId); 
+
+                    toast.dismiss(toastId);
+                } catch (error) {
+                    toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
+                }
+            }
+        }, 50); // 50ms достаточно для React, но незаметно для пользователя
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    }, [messages]);
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
