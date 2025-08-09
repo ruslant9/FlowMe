@@ -12,11 +12,14 @@ const authMiddleware = require('../../middleware/auth.middleware');
 const mongoose = require('mongoose');
 const { isAllowedByPrivacy } = require('../../utils/privacy');
 
-const handleFriendshipChange = (req, userIds) => {
-    req.broadcastMessage({ type: 'USER_RELATIONSHIP_UPDATE', payload: { users: userIds } });
+const handleFriendshipChange = (req, userIds, isBlockAction = false) => {
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    // Для блокировки мы отправляем более общее событие, чтобы обновить все данные,
+    // а не только статус дружбы.
     userIds.forEach(id => {
         req.broadcastMessage({ type: 'USER_DATA_UPDATED', userId: id });
     });
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 };
 
 router.post('/send-request/:targetUserId', authMiddleware, async (req, res) => {
@@ -143,7 +146,7 @@ router.post('/blacklist/:targetUserId', authMiddleware, async (req, res) => {
     try {        
         await User.updateOne({ _id: userId }, { $addToSet: { blacklist: targetUserId }, $pull: { friends: { user: targetUserId }, friendRequestsSent: targetUserId, friendRequestsReceived: targetUserId } });
         await User.updateOne({ _id: targetUserId }, { $pull: { friends: { user: userId }, friendRequestsSent: userId, friendRequestsReceived: userId } });
-        handleFriendshipChange(req, [userId.toString(), targetUserId.toString()]);
+        handleFriendshipChange(req, [userId.toString(), targetUserId.toString()], true);
         res.status(200).json({ message: 'Пользователь добавлен в черный список' });
     } catch (e) {
         res.status(500).json({ message: 'Ошибка сервера' });
@@ -156,7 +159,7 @@ router.post('/unblacklist/:targetUserId', authMiddleware, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(targetUserId)) return res.status(400).json({ message: 'Неверный ID пользователя' });
     try {
         await User.updateOne({ _id: userId }, { $pull: { blacklist: targetUserId } });
-        handleFriendshipChange(req, [userId.toString(), targetUserId.toString()]);
+        handleFriendshipChange(req, [userId.toString(), targetUserId.toString()], true);
         res.status(200).json({ message: 'Пользователь разблокирован' });
     } catch (e) {
         res.status(500).json({ message: 'Ошибка сервера' });
