@@ -19,12 +19,12 @@ export const EmojiPickerProvider = ({ children }) => {
         onEmojiClickCallback: null,
     });
     const pickerRef = useRef(null);
-    const openerRef = useRef(null); // Ref для хранения кнопки, открывшей панель
+    const openerRef = useRef(null);
     const isMobile = useMediaQuery('(max-width: 767px)');
 
     const showPicker = useCallback((targetRef, onEmojiClickCallback) => {
         if (!targetRef.current) return;
-        openerRef.current = targetRef.current; // Запоминаем DOM-узел кнопки
+        openerRef.current = targetRef.current;
 
         const rect = targetRef.current.getBoundingClientRect();
         const pickerHeight = isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : 450;
@@ -47,28 +47,25 @@ export const EmojiPickerProvider = ({ children }) => {
 
     const hidePicker = useCallback(() => {
         setPickerState(prev => ({ ...prev, isOpen: false }));
-        openerRef.current = null; // Очищаем ref при закрытии
+        openerRef.current = null;
     }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (!pickerState.isOpen) return;
 
-            // 1. Не закрывать, если клик был по самой кнопке-открывашке
             if (openerRef.current && openerRef.current.contains(event.target)) {
                 return;
             }
-            // 2. Не закрывать, если клик был внутри самой панели
             if (pickerRef.current && pickerRef.current.contains(event.target)) {
                 return;
             }
-            // 3. Если клик был в другом месте - закрываем
             hidePicker();
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [hidePicker, pickerState.isOpen]); // Добавляем pickerState.isOpen в зависимости
+    }, [hidePicker, pickerState.isOpen]);
 
     const value = {
         showPicker,
@@ -76,52 +73,59 @@ export const EmojiPickerProvider = ({ children }) => {
         isOpen: pickerState.isOpen,
     };
     
-    const pickerStyle = isMobile ? {
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 130,
-    } : {
-        position: 'fixed',
-        top: `${pickerState.position.top}px`,
-        left: `${pickerState.position.left}px`,
-        zIndex: 120,
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const variants = {
+        hidden: {
+            ...(isMobile 
+                ? { y: "100%" } 
+                : { opacity: 0, scale: 0.9, y: 10 }),
+            transition: { duration: 0.2, ease: 'easeOut' },
+            transitionEnd: {
+                display: 'none',
+            },
+        },
+        visible: {
+            ...(isMobile 
+                ? { y: 0 } 
+                : { opacity: 1, scale: 1, y: 0 }),
+            display: 'block',
+            transition: { duration: 0.25, ease: 'easeOut' },
+        },
     };
-
-    const initialAnimation = isMobile ? { y: "100%" } : { opacity: 0, scale: 0.9 };
-    const animateAnimation = isMobile ? { y: 0 } : { opacity: 1, scale: 1 };
-    const exitAnimation = isMobile ? { y: "100%" } : { opacity: 0, scale: 0.9 };
-
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    
     return (
         <EmojiPickerContext.Provider value={value}>
             {children}
             {ReactDOM.createPortal(
-                <AnimatePresence>
-                    {pickerState.isOpen && (
-                        <motion.div
-                            ref={pickerRef}
-                            initial={initialAnimation}
-                            animate={animateAnimation}
-                            exit={exitAnimation}
-                            transition={{ duration: 0.25, ease: 'easeOut' }}
-                            style={pickerStyle}
-                        >
-                            <Suspense fallback={<div className="w-full h-[350px] bg-slate-200 dark:bg-slate-700 rounded-t-2xl md:rounded-lg flex items-center justify-center"><Loader2 className="animate-spin"/></div>}>
-                                <div className={isMobile ? "bg-slate-100 dark:bg-slate-800 rounded-t-2xl overflow-hidden" : ""}>
-                                    <Picker 
-                                        onEmojiClick={pickerState.onEmojiClickCallback}
-                                        theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
-                                        width={isMobile ? '100%' : 350}
-                                        height={isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : 450}
-                                        autoFocusSearch={false}
-                                        previewConfig={{ showPreview: !isMobile }}
-                                    />
-                                </div>
-                            </Suspense>
-                        </motion.div>
-                    )}
-                </AnimatePresence>,
+                <motion.div
+                    ref={pickerRef}
+                    initial="hidden"
+                    animate={pickerState.isOpen ? "visible" : "hidden"}
+                    variants={variants}
+                    style={{
+                        position: 'fixed',
+                        zIndex: 130,
+                        top: isMobile ? undefined : `${pickerState.position.top}px`,
+                        left: isMobile ? 0 : `${pickerState.position.left}px`,
+                        right: isMobile ? 0 : undefined,
+                        bottom: isMobile ? 0 : undefined,
+                        pointerEvents: pickerState.isOpen ? 'auto' : 'none'
+                    }}
+                >
+                    <Suspense fallback={<div className="w-full h-[350px] bg-slate-200 dark:bg-slate-700 rounded-t-2xl md:rounded-lg flex items-center justify-center"><Loader2 className="animate-spin"/></div>}>
+                        <div className={isMobile ? "bg-slate-100 dark:bg-slate-800 rounded-t-2xl overflow-hidden" : ""}>
+                            <Picker 
+                                onEmojiClick={pickerState.onEmojiClickCallback}
+                                theme={localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'}
+                                width={isMobile ? '100%' : 350}
+                                height={isMobile ? EMOJI_PICKER_HEIGHT_MOBILE : 450}
+                                autoFocusSearch={false}
+                                previewConfig={{ showPreview: !isMobile }}
+                            />
+                        </div>
+                    </Suspense>
+                </motion.div>,
                 document.getElementById('modal-root')
             )}
         </EmojiPickerContext.Provider>
