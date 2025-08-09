@@ -8,8 +8,8 @@ import toast from 'react-hot-toast';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { ru } from 'date-fns/locale';
 import { setHours, setMinutes, isToday } from 'date-fns';
-import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
-
+import { useCachedImage } from '../../hooks/useCachedImage'; 
+import ReactDOM from 'react-dom';
 
 registerLocale('ru', ru);
 const Picker = React.lazy(() => import('emoji-picker-react'));
@@ -143,7 +143,7 @@ const EditPostModal = ({ isOpen, onClose, post }) => {
         }
     };
     
-    return (
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <motion.div
@@ -242,7 +242,8 @@ const EditPostModal = ({ isOpen, onClose, post }) => {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 
