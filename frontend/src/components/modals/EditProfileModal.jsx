@@ -218,11 +218,11 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
     // ИЗМЕНЕНИЕ: Новая функция для обработки клика по карандашу
     const handlePencilClick = (fieldName, ref) => {
         if (editingField === fieldName) {
-            // Если уже в режиме редактирования, перефокусируемся для вызова клавиатуры
+            // Повторный клик: убираем фокус и клавиатуру, выходя из режима редактирования.
             ref.current?.blur();
-            setTimeout(() => ref.current?.focus(), 0);
+            setEditingField(null);
         } else {
-            // Иначе, просто входим в режим редактирования
+            // Первый клик: входим в режим редактирования. `useEffect` сфокусирует поле.
             setEditingField(fieldName);
         }
     };
