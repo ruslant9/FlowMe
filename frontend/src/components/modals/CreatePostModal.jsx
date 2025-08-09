@@ -22,7 +22,7 @@ import useMediaQuery from '../../hooks/useMediaQuery';
 registerLocale('ru', ru);
 
 const API_URL = import.meta.env.VITE_API_URL;
-const EMOJI_PICKER_HEIGHT_MOBILE = 350; // --- КОНСТАНТА ДЛЯ ВЫСОТЫ ---
+const EMOJI_PICKER_HEIGHT_MOBILE = 350;
 
 const CachedImage = ({ src }) => {
     const { finalSrc, loading } = useCachedImage(src);
@@ -194,35 +194,38 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         e.target.style.height = 'auto';
         e.target.style.height = `${e.target.scrollHeight}px`;
     };
-
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const handleEmojiButtonClick = (e) => {
-    e.preventDefault();
+        // Предотвращаем потерю фокуса с поля ввода
+        e.preventDefault();
 
-    // 1. Запоминаем позицию курсора ПЕРЕД тем, как поле ввода потеряет фокус.
-    const { selectionStart, selectionEnd } = textareaRef.current;
+        // Запоминаем текущую позицию курсора
+        const { selectionStart, selectionEnd } = textareaRef.current;
 
-    if (isPickerVisible) {
-        hidePicker();
-    } else {
-        // 2. Передаем в колбэк функцию, которая будет использовать ЗАПОМНЕННУЮ позицию.
-        showPicker(smileButtonRef, (emojiObject) => {
-            const newText =
-                text.slice(0, selectionStart) +
-                emojiObject.emoji +
-                text.slice(selectionEnd);
+        if (isPickerVisible) {
+            hidePicker();
+        } else {
+            showPicker(smileButtonRef, (emojiObject) => {
+                // Вставляем эмодзи в сохраненную позицию
+                const newText =
+                    text.slice(0, selectionStart) +
+                    emojiObject.emoji +
+                    text.slice(selectionEnd);
+                
+                setText(newText);
 
-            setText(newText);
-
-            // 3. После обновления состояния React, возвращаем фокус и устанавливаем курсор
-            // в правильное место после вставленного смайлика.
-            setTimeout(() => {
-                const newPosition = selectionStart + emojiObject.emoji.length;
-                textareaRef.current.focus();
-                textareaRef.current.setSelectionRange(newPosition, newPosition);
-            }, 0);
-        });
-    }
-};
+                // После обновления состояния React, возвращаем фокус
+                // и устанавливаем курсор после вставленного эмодзи
+                setTimeout(() => {
+                    const newPosition = selectionStart + emojiObject.emoji.length;
+                    textareaRef.current.focus();
+                    textareaRef.current.setSelectionRange(newPosition, newPosition);
+                }, 0);
+            });
+        }
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     return ReactDOM.createPortal(
         <AnimatePresence>
@@ -237,7 +240,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                         onClick={onClose}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-4 pt-20"
                     >
-                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Используем константу для сдвига --- */}
                         <motion.div
                             initial={{ y: "100%", opacity: 0 }}
                             animate={{ y: isMobile && isPickerVisible ? -EMOJI_PICKER_HEIGHT_MOBILE : 0, opacity: 1 }}
@@ -246,7 +248,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                             onClick={(e) => e.stopPropagation()}
                             className="ios-glass-final w-full max-w-2xl bg-slate-100 dark:bg-slate-800 rounded-3xl flex flex-col text-slate-900 dark:text-white max-h-full"
                         >
-                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
                                 <div className="p-6 pb-4 flex-shrink-0">
                                     <div className="flex justify-between items-center mb-6">
@@ -321,11 +322,11 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                 { icon: Music, title: "Трек", onClick: () => setIsAttachTrackModalOpen(true) },
                                                 { icon: PollIcon, title: "Опрос", onClick: () => setShowPollCreator(p => !p), active: showPollCreator },
                                                 { icon: CalendarIcon, title: "Запланировать", isDatePicker: true },
-                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onClick: handleEmojiButtonClick },
+                                                { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick }, // <-- ИЗМЕНЕНИЕ: onClick -> onMouseDown
                                             ].map((item, idx) => ( 
                                                  item.isDatePicker ?
                                                     <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} /> :
-                                                    <button key={idx} type="button" ref={item.ref} onClick={item.onClick} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>
+                                                    <button key={idx} type="button" ref={item.ref} onMouseDown={item.onMouseDown} onClick={item.onClick} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>
                                             ))}
                                             <input type="file" ref={fileInputRef} hidden multiple accept="image/*" onChange={handleFileChange} />
                                         </div>

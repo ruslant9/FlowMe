@@ -84,6 +84,12 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const isEditingThis = editingCommentId === localComment._id;
     const isEditingAny = !!editingCommentId;
 
+    useEffect(() => {
+    if (isEditingThis && editInputRef.current) {
+        editInputRef.current.focus();
+    }
+    }, [isEditingThis]);
+
     const authorModel = localComment.authorModel || 'User'; 
     const isCommentOwner = authorModel === 'User' && currentUserId === authorObject._id;
     const canDelete = isCommentOwner || currentUserId === postOwnerId;

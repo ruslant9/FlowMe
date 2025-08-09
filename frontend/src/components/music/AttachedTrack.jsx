@@ -28,6 +28,7 @@ const AttachedTrack = ({ track }) => {
         playTrack, currentTrack, isPlaying, loadingTrackId, togglePlayPause,
         progress, duration, seekTo, buffered
     } = useMusicPlayer();
+    
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
@@ -40,9 +41,9 @@ const AttachedTrack = ({ track }) => {
         if (typeof artistData === 'string') return artistData.replace(' - Topic', '').trim();
         return '';
     }; 
-
+    
     if (!track) return null;
-    const coverUrl = track.albumArtUrl || track.album?.coverArtUrl;
+
     const isCurrent = currentTrack?._id === track._id;
     const isLoading = loadingTrackId === track._id;
 
@@ -51,12 +52,17 @@ const AttachedTrack = ({ track }) => {
         if (isCurrent) togglePlayPause(); else playTrack(track, [track]);
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+    const trackDurationInSeconds = track.durationMs ? track.durationMs / 1000 : 0;
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     return (
-        <div className="flex flex-col space-y-2">
+        // --- ИСПРАВЛЕНИЕ: Добавлен класс w-full для консистентной ширины ---
+        <div className="flex flex-col space-y-2 w-full">
             <div className="flex items-start space-x-3">
-            <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
-                {coverUrl ? <CachedImage src={coverUrl} alt={track.title} /> : <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><Music size={24} className="text-slate-400"/></div>}
-                <button onClick={handlePlayClick} className={`absolute inset-0 bg-black/50 flex items-center justify-center text-white ${isCurrent || isLoading ? 'opacity-100' : 'opacity-0 hover:opacity-100'} transition-opacity`}>
+                <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
+                    {track.albumArtUrl ? <CachedImage src={track.albumArtUrl} alt={track.title} /> : <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><Music size={24} className="text-slate-400"/></div>}
+                    <button onClick={handlePlayClick} className={`absolute inset-0 bg-black/50 flex items-center justify-center text-white transition-opacity ${isCurrent || isLoading ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}>
                         {isLoading ? <Loader2 className="animate-spin" /> : isCurrent && isPlaying ? <Pause size={28} /> : <Play size={28} />}
                     </button>
                 </div>
@@ -65,17 +71,30 @@ const AttachedTrack = ({ track }) => {
                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{formatArtistName(track.artist)}</p>
                 </div>
             </div>
-            {isCurrent && (
-                <div className="flex items-center w-full space-x-2 mb-1">
-                    <span className="text-xs text-slate-500 dark:text-white/60 w-10 text-center">{formatTime(progress)}</span>
-                    <div className="relative flex-grow flex items-center">
-                        <div className="absolute h-[4px] w-full bg-slate-200 dark:bg-white/10 rounded-full"></div>
+            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Логика плеера теперь отображается всегда --- */}
+            <div className="flex items-center w-full space-x-2 mb-1">
+                <span className="text-xs text-slate-500 dark:text-white/60 w-10 text-center">
+                    {formatTime(isCurrent ? progress : 0)}
+                </span>
+                <div className="relative flex-grow flex items-center">
+                    <div className="absolute h-[4px] w-full bg-slate-200 dark:bg-white/10 rounded-full"></div>
+                    {isCurrent && (
                         <div className="absolute h-[4px] bg-slate-300 dark:bg-slate-600 rounded-full" style={{ width: `${buffered * 100}%`}}/>
-                        <Slider min={0} max={duration} value={progress} onChange={seekTo} step={0.1} />
-                    </div>
-                    <span className="text-xs text-slate-500 dark:text-white/60 w-10 text-center">{formatTime(duration)}</span>
+                    )}
+                    <Slider
+                        min={0}
+                        max={trackDurationInSeconds}
+                        value={isCurrent ? progress : 0}
+                        onChange={isCurrent ? seekTo : undefined}
+                        disabled={!isCurrent}
+                        step={0.1}
+                    />
                 </div>
-            )}
+                <span className="text-xs text-slate-500 dark:text-white/60 w-10 text-center">
+                    {formatTime(trackDurationInSeconds)}
+                </span>
+            </div>
+            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
         </div>
     );
 };
