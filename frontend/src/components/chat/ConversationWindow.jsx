@@ -1,4 +1,4 @@
-// frontend/src/components/chat/ConversationWindow.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
+// frontend/src/components/chat/ConversationWindow.jsx --- ПОЛНЫЙ ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
@@ -31,6 +31,7 @@ import PremiumRequiredModal from '../modals/PremiumRequiredModal';
 const API_URL = import.meta.env.VITE_API_URL;
 const MESSAGE_PAGE_LIMIT = 30;
 
+// ... (все вспомогательные функции getImageUrl, formatLastSeen, truncateName, getContrastingTextColor остаются без изменений)
 const getImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) {
@@ -81,7 +82,9 @@ const getContrastingTextColor = (hexColor) => {
     return luminance > 128 ? '#111827' : '#FFFFFF';
 };
 
+
 const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequest }) => {
+    // ... (все состояния useState и useRef остаются без изменений)
     const [internalConversation, setInternalConversation] = useState(conversation);
     const isMobile = useMediaQuery('(max-width: 768px)');
     const [messages, setMessages] = useState([]);
@@ -147,11 +150,16 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
     const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 1: Добавляем ref для таймера ---
+    const highlightTimerRef = useRef(null);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 1 ---
+    
     const activeConversationRef = useRef(conversation);
     useEffect(() => {
         activeConversationRef.current = conversation;
     }, [conversation]);
-
+    
+    // ... (все функции и хуки useEffect до handleScrollToMessage остаются без изменений)
     const refetchConversationDetails = useCallback(async () => {
         if (!internalConversation?._id) return;
         try {
@@ -525,56 +533,66 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             }
         }
     }, [messages, internalConversation]);
-
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ #1: Принудительный сброс состояния для повторного клика ---
+    
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Упрощаем функцию, убираем setTimeout ---
     const handleScrollToMessage = useCallback(async (messageId) => {
-        setHighlightedMessageId(null);
-        setTimeout(async () => {
-            const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
-            
-            if (isAlreadyLoaded) {
-                setHighlightedMessageId(messageId);
-            } else {
-                const toastId = toast.loading('Сообщение не в текущей истории, загружаем...');
-                try {
-                    const token = localStorage.getItem('token');
-                    const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
-                    
-                    setMessages(res.data.messages);
-                    setPage(res.data.page);
-                    setHasMore(res.data.hasMore);
-                    setHighlightedMessageId(res.data.highlightId); 
+        const isAlreadyLoaded = messages.some(msg => msg._id === messageId);
+        
+        if (isAlreadyLoaded) {
+            setHighlightedMessageId(messageId);
+        } else {
+            const toastId = toast.loading('Сообщение не в текущей истории, загружаем...');
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(`${API_URL}/api/messages/${messageId}/context`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                setMessages(res.data.messages);
+                setPage(res.data.page);
+                setHasMore(res.data.hasMore);
+                setHighlightedMessageId(res.data.highlightId); 
 
-                    toast.dismiss(toastId);
-                } catch (error) {
-                    toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
-                }
+                toast.dismiss(toastId);
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Не удалось найти сообщение.', { id: toastId });
             }
-        }, 10);
+        }
     }, [messages]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ #1 ---
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ #2: Удаление `messages` из зависимостей ---
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем messages в зависимости и используем useRef для таймера ---
     useLayoutEffect(() => {
+        // Всегда очищаем предыдущий таймер, когда эффект запускается
+        if (highlightTimerRef.current) {
+            clearTimeout(highlightTimerRef.current);
+        }
+
         if (highlightedMessageId) {
             const element = document.getElementById(`message-${highlightedMessageId}`);
             if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const timer = setTimeout(() => {
+                
+                // Устанавливаем новый таймер и сохраняем его ID в ref
+                highlightTimerRef.current = setTimeout(() => {
                     setHighlightedMessageId(null);
                 }, 2000);
-                return () => clearTimeout(timer);
             }
         }
-    }, [highlightedMessageId]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ #2 ---
+        // Функция очистки для самого последнего запуска эффекта (при размонтировании)
+        return () => {
+            if (highlightTimerRef.current) {
+                clearTimeout(highlightTimerRef.current);
+            }
+        };
+    }, [highlightedMessageId, messages]); // Добавляем messages обратно в зависимости
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
 
+    // ... (остальные useEffect и функции остаются без изменений)
     useEffect(() => {
         const loadInitialMessages = async () => {
             if (!internalConversation?._id) return;
