@@ -1,4 +1,4 @@
-// frontend/src/components/chat/MessageInput.jsx
+// frontend/src/components/chat/MessageInput.jsx --- ИСПРАВЛЕННЫЙ ФАЙЛ ---
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Smile, X, Paperclip, Check, Loader2, Music } from 'lucide-react';
@@ -7,8 +7,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import AttachTrackModal from '../music/AttachTrackModal';
 import AttachedTrack from '../music/AttachedTrack';
-// --- ИСПРАВЛЕНИЕ 1: Импортируем EmojiPickerPopover ---
 import EmojiPickerPopover from '../EmojiPickerPopover';
+import useMediaQuery from '../../hooks/useMediaQuery'; // 1. Импортируем хук
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -23,6 +23,9 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
     const smileButtonRef = useRef(null);
     const { ws } = useWebSocket();
     const typingTimeoutRef = useRef(null);
+    
+    // 2. Используем хук для определения мобильного устройства
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
     useEffect(() => {
         if (editingMessage) {
@@ -140,7 +143,6 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
                     setIsAttachTrackModalOpen(false);
                 }}
             />
-            {/* --- ИСПРАВЛЕНИЕ 2: Используем EmojiPickerPopover --- */}
             <EmojiPickerPopover
                 isOpen={isPickerVisible}
                 targetRef={smileButtonRef}
@@ -223,16 +225,18 @@ const MessageInput = ({ conversationId, recipientId, onMessageSent, replyingTo, 
                         disabled={isSending}
                     />
                     
-                    {/* --- ИСПРАВЛЕНИЕ 3: Добавляем e.preventDefault() --- */}
-                    <button
-                        ref={smileButtonRef}
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setPickerVisible(v => !v); }}
-                        disabled={isSending}
-                        className="p-2 rounded-full text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 disabled:opacity-50"
-                    >
-                        <Smile size={20} />
-                    </button>
+                    {/* 3. Оборачиваем кнопку в условный рендеринг */}
+                    {!isMobile && (
+                        <button
+                            ref={smileButtonRef}
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); setPickerVisible(v => !v); }}
+                            disabled={isSending}
+                            className="p-2 rounded-full text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 disabled:opacity-50"
+                        >
+                            <Smile size={20} />
+                        </button>
+                    )}
                     
                     <button
                         type="submit"

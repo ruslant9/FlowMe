@@ -941,7 +941,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                     disabled={!!editingCommentId || commentSelectionMode || isSendingComment}
                                                     autoComplete="off" 
                                                 />
-                                                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                                <div className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2">
                                                     <button 
                                                         ref={smileButtonRef} 
                                                         type="button" 
