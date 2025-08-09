@@ -24,7 +24,7 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
     };
 
     // --- НАЧАЛО ИСПРАВЛЕНИЯ: Возвращаем и используем JS-функцию для обрезки ---
-    const truncateTitle = (title, maxLength = 16) => {
+    const truncateTitle = (title, maxLength = 14) => {
         if (!title) return '';
         if (title.length <= maxLength) return title;
         return `${title.substring(0, maxLength)}...`;
