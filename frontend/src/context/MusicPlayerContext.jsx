@@ -105,21 +105,29 @@ export const MusicPlayerProvider = ({ children }) => {
             abortControllerRef.current.abort('New track selected');
         }
         abortControllerRef.current = new AbortController();
+        
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // Нормализуем объект трека, чтобы у него всегда была обложка на верхнем уровне
+        const processedTrack = {
+            ...trackData,
+            albumArtUrl: trackData.albumArtUrl || trackData.album?.coverArtUrl,
+        };
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-        setLoadingTrackId(trackData._id);
-        setCurrentTrack(trackData);
+        setLoadingTrackId(processedTrack._id);
+        setCurrentTrack(processedTrack); // Используем обработанный трек
         setIsPlaying(false);
         
         audioRef.current.src = '';
 
         try {
             const { startShuffled = false, startRepeat = false } = options;
-            logMusicAction(trackData, 'listen');
+            logMusicAction(processedTrack, 'listen'); // Используем обработанный трек
             
             const token = localStorage.getItem('token');
             const audio = audioRef.current;
             
-            const res = await axios.get(`${API_URL}/api/music/track/${trackData._id}/stream-url`, {
+            const res = await axios.get(`${API_URL}/api/music/track/${processedTrack._id}/stream-url`, {
                 headers: { Authorization: `Bearer ${token}` },
                 signal: abortControllerRef.current.signal
             });
@@ -133,13 +141,13 @@ export const MusicPlayerProvider = ({ children }) => {
             await audio.play();
             setIsPlaying(true);
             
-            axios.post(`${API_URL}/api/music/track/${trackData._id}/log-play`, {}, {
+            axios.post(`${API_URL}/api/music/track/${processedTrack._id}/log-play`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             }).catch(e => console.error("Не удалось залогировать прослушивание", e));
 
             const safePlaylistData = Array.isArray(playlistData) ? playlistData : [];
-            let finalPlaylist = safePlaylistData.length > 0 ? [...safePlaylistData] : [trackData];
-            let trackIndex = finalPlaylist.findIndex(t => t._id === trackData._id);
+            let finalPlaylist = safePlaylistData.length > 0 ? [...safePlaylistData] : [processedTrack];
+            let trackIndex = finalPlaylist.findIndex(t => t._id === processedTrack._id);
             if (trackIndex === -1) trackIndex = 0;
             
             if (startShuffled) {

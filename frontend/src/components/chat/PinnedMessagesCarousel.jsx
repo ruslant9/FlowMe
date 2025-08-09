@@ -1,4 +1,5 @@
 // frontend/src/components/chat/PinnedMessagesCarousel.jsx
+
 import React, { useState } from 'react';
 import { Pin, X, Image as ImageIcon, Music, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,16 +14,10 @@ const PinnedMessagesCarousel = ({ messages, onJumpToMessage, onUnpin }) => {
     const paginate = (newDirection) => {
         const newIndex = (page + newDirection + messages.length) % messages.length;
         setPage([newIndex, newDirection]);
-        
-        const newMessageId = messages[newIndex]?._id;
-        if (newMessageId && onJumpToMessage) {
-            onJumpToMessage(newMessageId);
-        }
     };
     
     const activeMessage = messages[page];
 
-    // --- НАЧАЛО ИЗМЕНЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -30,21 +25,32 @@ const PinnedMessagesCarousel = ({ messages, onJumpToMessage, onUnpin }) => {
             ''
         ).trim();
     };
-
+    
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const getMessagePreview = (message) => {
+        const truncate = (str, len = 20) => (str && str.length > len ? `${str.substring(0, len)}...` : str);
+
         if (message.imageUrl) {
             return (
                 <div className="flex items-center space-x-1.5 truncate">
                     <ImageIcon size={14} className="flex-shrink-0" />
-                    <span className="truncate">{message.text || 'Изображение'}</span>
+                    <span className="truncate">{truncate(message.text || 'Изображение')}</span>
                 </div>
             );
         }
-        if (message.text) return <p className="truncate">{message.text}</p>;
-        if (message.attachedTrack) return <div className="flex items-center"><Music size={14} className="mr-1.5"/>Трек: {cleanTitle(message.attachedTrack.title)}</div>;
+        if (message.text) return <p className="truncate">{truncate(message.text)}</p>;
+        if (message.attachedTrack) {
+            const fullTrackText = `Трек: ${cleanTitle(message.attachedTrack.title)}`;
+            return (
+                <div className="flex items-center truncate">
+                    <Music size={14} className="mr-1.5 flex-shrink-0"/>
+                    <span className="truncate">{truncate(fullTrackText)}</span>
+                </div>
+            );
+        }
         return <p>Вложение</p>;
     };
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     const variants = {

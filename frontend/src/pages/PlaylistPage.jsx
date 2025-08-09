@@ -226,7 +226,12 @@ const PlaylistPage = () => {
                 onClose={() => setAddToPlaylistModalOpen(false)}
                 trackToAdd={trackToAdd}
             />
-            <AddTracksToPlaylistModal isOpen={isAddTracksModalOpen} onClose={() => setAddTracksModalOpen(false)} onAddTracks={handleAddTracks} existingTrackIds={new Set(playlist.tracks.map(t=>t._id))} />
+            <AddTracksToPlaylistModal 
+    isOpen={isAddTracksModalOpen} 
+    onClose={() => setAddTracksModalOpen(false)} 
+    onAddTracks={handleAddTracks} 
+    existingTrackIds={new Set(playlist.tracks.map(t=>t._id))} 
+/>
 
             <main 
                 className="flex-1 overflow-y-auto"

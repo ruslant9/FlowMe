@@ -18,12 +18,12 @@ const CachedImage = ({ src, alt }) => {
     return <img src={finalSrc} alt={alt} className="w-full h-full rounded-md object-cover" />;
 };
 
+// --- НАЧАЛО ИЗМЕНЕНИЯ 1: Принимаем новый проп `existingTrackIds` ---
 const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackIds }) => {
     const [myMusic, setMyMusic] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTrackIds, setSelectedTrackIds] = useState([]);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
     const cleanTitle = (title) => {
         if (!title) return '';
         return title.replace(
@@ -45,7 +45,6 @@ const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackI
         }
         return '';
     };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const fetchMyMusic = useCallback(async () => {
         if (!isOpen) return;
@@ -53,13 +52,20 @@ const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackI
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/music/saved`, { headers: { Authorization: `Bearer ${token}` } });
+            
+            // --- НАЧАЛО ИЗМЕНЕНИЯ 2: Фильтруем полученный список ---
+            // Убираем треки, ID которых уже есть в плейлисте
             setMyMusic(res.data.filter(track => !existingTrackIds.has(track._id)));
+            // --- КОНЕЦ ИЗМЕНЕНИЯ 2 ---
+
         } catch (error) {
             toast.error("Не удалось загрузить вашу музыку.");
         } finally {
             setLoading(false);
         }
+    // --- НАЧАЛО ИЗМЕНЕНИЯ 3: Добавляем existingTrackIds в зависимости ---
     }, [isOpen, existingTrackIds]);
+    // --- КОНЕЦ ИЗМЕНЕНИЯ 3 ---
 
     useEffect(() => {
         fetchMyMusic();
@@ -114,7 +120,6 @@ const AddTracksToPlaylistModal = ({ isOpen, onClose, onAddTracks, existingTrackI
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-semibold truncate">{cleanTitle(track.title)}</p>
-                                        {/* --- ИСПОЛЬЗОВАНИЕ ИСПРАВЛЕННОЙ ФУНКЦИИ --- */}
                                         <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{formatArtistName(track.artist)}</p>
                                     </div>
                                 </div>

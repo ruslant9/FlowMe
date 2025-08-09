@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import RecommendationCard from '../components/music/RecommendationCard';
 import PageWrapper from '../components/PageWrapper';
+import AddToPlaylistModal from '../components/modals/AddToPlaylistModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -33,6 +34,9 @@ const AlbumPage = () => {
     const [recommendations, setRecommendations] = useState([]);
     const [loadingRecs, setLoadingRecs] = useState(false);
     const { playTrack, currentTrack, isPlaying, onToggleLike, myMusicTrackIds, loadingTrackId, togglePlayPause } = useMusicPlayer();
+    
+    const [isAddToPlaylistModalOpen, setIsAddToPlaylistModalOpen] = useState(false);
+    const [trackToAdd, setTrackToAdd] = useState(null);
     
     const [isScrolled, setIsScrolled] = useState(false);
     const mainRef = useRef(null);
@@ -91,6 +95,11 @@ const AlbumPage = () => {
         }
     };
 
+    const handleAddToPlaylist = (track) => {
+        setTrackToAdd(track);
+        setIsAddToPlaylistModalOpen(true);
+    };
+
     if (loading || !album) {
         return <div className="flex-1 p-8 flex items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-slate-400" /></div>;
     }
@@ -102,6 +111,11 @@ const AlbumPage = () => {
 
     return (
         <PageWrapper>
+            <AddToPlaylistModal
+                isOpen={isAddToPlaylistModalOpen}
+                onClose={() => setIsAddToPlaylistModalOpen(false)}
+                trackToAdd={trackToAdd}
+            />
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
                 <div 
                     className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[350px] flex flex-col justify-end transition-all duration-300"
@@ -110,7 +124,6 @@ const AlbumPage = () => {
                     <div 
                         className={`absolute inset-0 -z-10 bg-slate-900/50 backdrop-blur-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}
                     />
-                    {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: меняем top-10 на top-6 --- */}
                     <button 
                         onClick={() => navigate(-1)} 
                         className="absolute top-6 left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold"
@@ -181,6 +194,7 @@ const AlbumPage = () => {
                                 isSaved={myMusicTrackIds?.has(track._id)}
                                 onToggleSave={onToggleLike}
                                 accentColor={dominantColor}
+                                onAddToPlaylist={handleAddToPlaylist}
                             />
                         ))}
                     </div>
