@@ -21,9 +21,9 @@ import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
+import EmojiPickerPopover from '../EmojiPickerPopover';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import useMediaQuery from '../../hooks/useMediaQuery';
-import { useEmojiPicker } from '../../hooks/useEmojiPicker';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT_DESKTOP = 450;
@@ -83,6 +83,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const [commentText, setCommentText] = useState('');
     const currentUserId = currentUser?._id;
     const [replyingTo, setReplyingTo] = useState(null);
+    const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [commentSelectionMode, setCommentSelectionMode] = useState(false);
     const [selectedComments, setSelectedComments] = useState([]);
@@ -101,11 +102,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
     const previousPostIdRef = useRef(null);
     const isMobile = useMediaQuery('(max-width: 767px)');
     const navigate = useNavigate();
-    const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
-    
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Ref для отслеживания первой загрузки ---
-    const initialLoadComplete = useRef(false);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     
     const userVote = useMemo(() => {
         if (!currentUser || !activePost?.poll?.options) return null;
@@ -165,6 +161,24 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         fetchCommentingOptions();
     }, [currentUser, activePost]);
 
+    const handleEmojiSelect = (emojiObject) => {
+        const input = commentInputRef.current;
+        if (!input) return;
+
+        const { selectionStart, selectionEnd } = input;
+        const newText = commentText.slice(0, selectionStart) + emojiObject.emoji + commentText.slice(selectionEnd);
+        setCommentText(newText);
+
+        // Устанавливаем курсор и сразу убираем фокус, чтобы не вызывать клавиатуру
+        setTimeout(() => {
+            const newPosition = selectionStart + emojiObject.emoji.length;
+            input.selectionStart = newPosition;
+            input.selectionEnd = newPosition;
+            input.blur(); // <--- Ключевое исправление
+        }, 0);
+    };
+
+
     const sortLabels = {
         newest: 'Сначала новые',
         oldest: 'Сначала старые',
@@ -215,14 +229,10 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Переработанная логика загрузки ---
+
     const fetchPostData = useCallback(async (showLoader = true) => {
         if (currentIndex === null || !posts[currentIndex]) return;
-        
-        if (showLoader) {
-            setIsLoading(true);
-        }
-
+        if(showLoader) setIsLoading(true);
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(`${API_URL}/api/posts/${posts[currentIndex]._id}`, {
@@ -234,23 +244,9 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             toast.error("Не удалось загрузить данные поста.");
             onClose();
         } finally {
-            if (showLoader) {
-                setIsLoading(false);
-                initialLoadComplete.current = true;
-            }
+            if(showLoader) setIsLoading(false);
         }
     }, [currentIndex, posts, onClose]);
-    
-    const currentPostId = useMemo(() => posts?.[currentIndex]?._id, [posts, currentIndex]);
-
-    useEffect(() => {
-        if (currentPostId) {
-            // Показываем спиннер только если это первая загрузка, иначе грузим в фоне.
-            fetchPostData(!initialLoadComplete.current);
-        }
-    }, [currentPostId, fetchPostData]);
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
 
     useEffect(() => {
         const handlePostUpdateEvent = (event) => {
@@ -265,6 +261,8 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             window.removeEventListener('postUpdated', handlePostUpdateEvent);
         };
     }, [activePost, fetchPostData]);
+
+    useEffect(() => { fetchPostData(); }, [fetchPostData]);
 
     const handleVote = useCallback(async (optionId) => {
         const originalPoll = JSON.parse(JSON.stringify(activePost.poll));
@@ -333,7 +331,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
             
             setCommentText('');
             setReplyingTo(null);
-            hidePicker();
+            setIsPickerVisible(false);
         } catch (error) {
             toast.error('Не удалось добавить комментарий');
         } finally {
@@ -409,18 +407,6 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
         setIsEditingPostImage(false);
         fetchPostData(false);
     };
-
-    const handleEmojiButtonClick = (e) => {
-        e.preventDefault();
-        if (isPickerVisible) {
-            hidePicker();
-        } else {
-            showPicker(smileButtonRef, (emojiObject) => {
-                setCommentText(prev => prev + emojiObject.emoji);
-                commentInputRef.current?.focus();
-            });
-        }
-    };
     
     const hasImages = activePost && activePost.imageUrls && activePost.imageUrls.length > 0;
 
@@ -446,6 +432,12 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                             onClose={() => setIsEditingPostImage(false)}
                             onSave={handleImageUpdate} />
                     )}
+                    <EmojiPickerPopover
+                        isOpen={isPickerVisible}
+                        targetRef={smileButtonRef}
+                        onEmojiClick={handleEmojiSelect}
+                        onClose={() => setIsPickerVisible(false)}
+                    />
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ 
@@ -728,7 +720,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                   <button 
                                                       ref={smileButtonRef} 
                                                       type="button" 
-                                                      onClick={handleEmojiButtonClick}
+                                                      onClick={(e) => { e.preventDefault(); setIsPickerVisible(p => !p); }}
                                                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                                       disabled={!!editingCommentId}
                                                   >
