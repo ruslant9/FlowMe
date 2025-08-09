@@ -1,5 +1,3 @@
-// frontend/src/components/modals/EditProfileModal.jsx
-
 import React, { useState, Fragment, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Check, ChevronDown, ChevronLeft, ChevronRight, Loader2, Pencil } from 'lucide-react';
@@ -18,7 +16,6 @@ import '../../styles/datepicker-custom.css';
 registerLocale('ru', ru);
 const API_URL = import.meta.env.VITE_API_URL;
 
-// ... (CustomHeader component remains unchanged)
 const CustomHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => {
     const years = Array.from({ length: getYear(new Date()) - 1900 + 1 }, (_, i) => 1900 + i).reverse();
     const months = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
@@ -80,7 +77,6 @@ const EditField = ({ label, name, value, onChange }) => (
 );
 
 const EditProfileModal = ({ isOpen, onClose, user }) => {
-    // ... (state declarations remain the same)
     const [fullName, setFullName] = useState('');
     const [username, setUsername] = useState('');
     const [dob, setDob] = useState(null);
@@ -115,7 +111,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         }
     }, [editingField]);
 
-    // ... (fetch and other useEffect hooks remain the same)
     const fetchCountries = useCallback(async (initialCountryName) => {
         try {
             const token = localStorage.getItem('token');
@@ -185,7 +180,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
     }, [cityLoaderRef, hasMoreCities, loadingCities, cityPage, selectedCountry, citySearch, fetchCities]);
 
-    // ... (handleSave remains the same)
     const handleSave = async () => {
         setLoading(true);
         const toastId = toast.loading('Сохранение изменений...');
@@ -217,17 +211,14 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
 
     const handlePencilClick = (fieldName, ref) => {
     if (editingField === fieldName) {
-        // Сначала убираем фокус
         if (ref?.current) {
             ref.current.blur();
         }
-        // Немного отложим сброс состояния, чтобы blur успел отработать
         setTimeout(() => {
             setEditingField(null);
         }, 50);
     } else {
         setEditingField(fieldName);
-        // На десктопе сразу даём фокус
         if (!isMobile && ref?.current) {
             setTimeout(() => ref.current.focus(), 0);
         }
@@ -259,9 +250,6 @@ const EditProfileModal = ({ isOpen, onClose, user }) => {
                                         placeholderText="ДД.ММ.ГГГГ" 
                                         className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" 
                                         renderCustomHeader={CustomHeader}
-                                        showMonthDropdown
-                                        showYearDropdown
-                                        dropdownMode="select"
                                         portalId="modal-root"
                                         withPortal={isMobile}
                                     />
