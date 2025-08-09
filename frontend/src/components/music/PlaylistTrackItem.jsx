@@ -23,6 +23,14 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
         return title.replace(/\s*[\(\[](?:\s*(?:official\s*)?(?:video|music\s*video|lyric\s*video|audio|live|performance|visualizer|explicit|single|edit|remix|radio\s*edit|clean|dirty|HD|HQ|full|album\s*version|version|clip|demo|teaser|cover|karaoke|instrumental|extended|rework|reedit|re-cut|reissue|bonus\s*track|unplugged|mood\s*video|concert|show|feat\.?|ft\.?|featuring|\d{4}|(?:\d{2,3}\s?kbps))\s*)[^)\]]*[\)\]]\s*$/i, '').trim();
     };
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Возвращаем и используем JS-функцию для обрезки ---
+    const truncateTitle = (title, maxLength = 16) => {
+        if (!title) return '';
+        if (title.length <= maxLength) return title;
+        return `${title.substring(0, maxLength)}...`;
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     const renderArtistLinks = (artistData) => {
         if (!artistData) return 'Неизвестный исполнитель';
         const artists = Array.isArray(artistData) ? artistData : [artistData];
@@ -112,12 +120,12 @@ const PlaylistTrackItem = ({ track, index, onPlay, isCurrent, isPlaying, isSaved
                             </Tippy>
                         )}
                         <Link to={trackLink} onClick={(e) => e.stopPropagation()}>
-                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Используем CSS для обрезания и меняем размер текста --- */}
+                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Применяем JS-функцию и убираем CSS-класс --- */}
                             <p 
-                                className="font-semibold text-sm hover:underline truncate"
+                                className="font-semibold text-sm hover:underline"
                                 style={isCurrent ? { color: accentColor } : {}}
                             >
-                                {cleanedTitle}
+                                {truncateTitle(cleanedTitle)}
                             </p>
                             {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         </Link>

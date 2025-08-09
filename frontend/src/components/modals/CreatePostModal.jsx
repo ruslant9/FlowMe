@@ -196,34 +196,33 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     };
 
      const handleEmojiButtonClick = (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        // 1. Запоминаем позицию курсора ПЕРЕД тем, как открывать панель
-        const { selectionStart, selectionEnd } = textareaRef.current; 
+    // 1. Запоминаем позицию курсора ПЕРЕД тем, как поле ввода потеряет фокус.
+    const { selectionStart, selectionEnd } = textareaRef.current;
 
-        if (isPickerVisible) {
-            hidePicker();
-        } else {
-            showPicker(smileButtonRef, (emojiObject) => {
-                // 2. Используем сохраненную позицию для вставки эмодзи
-                const newText = 
-                    text.slice(0, selectionStart) + 
-                    emojiObject.emoji + 
-                    text.slice(selectionEnd);
-                
-                setText(newText);
-                
-                // 3. Возвращаем фокус и устанавливаем курсор после вставленного эмодзи
-                // Используем setTimeout, чтобы React успел обновить DOM
-                setTimeout(() => {
-                    const newPosition = selectionStart + emojiObject.emoji.length;
-                    textareaRef.current.focus(); // <-- Важно: возвращаем фокус
-                    textareaRef.current.selectionStart = newPosition;
-                    textareaRef.current.selectionEnd = newPosition;
-                }, 0);
-            });
-        }
-    };
+    if (isPickerVisible) {
+        hidePicker();
+    } else {
+        // 2. Передаем в колбэк функцию, которая будет использовать ЗАПОМНЕННУЮ позицию.
+        showPicker(smileButtonRef, (emojiObject) => {
+            const newText =
+                text.slice(0, selectionStart) +
+                emojiObject.emoji +
+                text.slice(selectionEnd);
+
+            setText(newText);
+
+            // 3. После обновления состояния React, возвращаем фокус и устанавливаем курсор
+            // в правильное место после вставленного смайлика.
+            setTimeout(() => {
+                const newPosition = selectionStart + emojiObject.emoji.length;
+                textareaRef.current.focus();
+                textareaRef.current.setSelectionRange(newPosition, newPosition);
+            }, 0);
+        });
+    }
+};
 
     return ReactDOM.createPortal(
         <AnimatePresence>
