@@ -307,8 +307,24 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
                                                 !isMobile && { icon: Smile, title: "Эмодзи", ref: smileButtonRef, onMouseDown: handleEmojiButtonClick },
                                             ].filter(Boolean).map((item, idx) => ( 
                                                  item.isDatePicker ?
-                                                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Календарь по центру на мобильных ---
-                                                    <DatePicker key={idx} selected={scheduledFor} onChange={setScheduledFor} showTimeSelect minDate={new Date()} minTime={getMinTime(scheduledFor)} maxTime={setHours(setMinutes(new Date(), 59), 23)} timeFormat="HH:mm" timeIntervals={15} dateFormat="d MMMM, yyyy HH:mm" locale={ru} isClearable portalId="modal-root" withPortal customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} />
+                                                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                                                    <DatePicker 
+                                                        key={idx} 
+                                                        selected={scheduledFor} 
+                                                        onChange={setScheduledFor} 
+                                                        showTimeSelect 
+                                                        minDate={new Date()} 
+                                                        minTime={getMinTime(scheduledFor)} 
+                                                        maxTime={setHours(setMinutes(new Date(), 59), 23)} 
+                                                        timeFormat="HH:mm" 
+                                                        timeIntervals={15} 
+                                                        dateFormat="d MMMM, yyyy HH:mm" 
+                                                        locale={ru} 
+                                                        isClearable 
+                                                        portalId="modal-root" 
+                                                        withPortal={isMobile} // <-- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
+                                                        customInput={<button type="button" className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${scheduledFor ? 'text-green-500 bg-green-100 dark:bg-green-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>} 
+                                                    />
                                                     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                                     :
                                                     <button key={idx} type="button" ref={item.ref} onMouseDown={item.onMouseDown} onClick={item.onClick} className={`p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.active ? 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={18} /></button>

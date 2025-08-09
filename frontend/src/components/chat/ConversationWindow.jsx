@@ -910,7 +910,9 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
         }
 
         if (!liveInterlocutor) return "Недоступно";
-        if (isBlockedByThem || isBlockingThem) return "Был(а) очень давно";
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        if (isBlockedByThem) return "Был(а) очень давно";
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         if (isInterlocutorTyping) return <span className="text-green-500 animate-pulse">Печатает...</span>;
         const privacySource = liveInterlocutor?.privacySettings;
         const privacySetting = privacySource?.viewOnlineStatus || 'everyone';
@@ -922,19 +924,21 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
             if (lastSeenTime) return formatLastSeen(lastSeenTime);
         }
         return "Недавно";
-    }, [liveInterlocutor, isBlockedByThem, isBlockingThem, isInterlocutorTyping, internalConversation, currentUser]);
+    }, [liveInterlocutor, isBlockedByThem, isInterlocutorTyping, internalConversation, currentUser]);
 
     const canShowOnlineIndicator = useCallback(() => {
         if (currentUser?.privacySettings?.viewOnlineStatus === 'private') {
             return false;
         }
 
-        if (!liveInterlocutor || isBlockedByThem || isBlockingThem || !liveInterlocutor.isOnline) return false;
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        if (!liveInterlocutor || isBlockedByThem || !liveInterlocutor.isOnline) return false;
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         const privacySource = liveInterlocutor.privacySettings;
         const privacySetting = privacySource?.viewOnlineStatus || 'everyone';
         const friendshipStatus = internalConversation?.friendshipStatus;
         return privacySetting === 'everyone' || (privacySetting === 'friends' && friendshipStatus === 'friend');
-    }, [liveInterlocutor, isBlockedByThem, isBlockingThem, internalConversation, currentUser]);
+    }, [liveInterlocutor, isBlockedByThem, internalConversation, currentUser]);
 
     const canShowAvatar = useMemo(() => {
         if (isBlockedByThem) return false;
@@ -1211,7 +1215,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                         </>
                     )}
                 </header>
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем полный список, а не отфильтрованный --- */}
                 <AnimatePresence>
                     {internalConversation?.pinnedMessages && internalConversation.pinnedMessages.length > 0 && (
                         <PinnedMessagesCarousel
@@ -1221,7 +1224,6 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                         />
                     )}
                 </AnimatePresence>
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                 {selectionMode && (<div className="p-3 border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800 flex items-center justify-between"><div className="flex items-center space-x-4"><button onClick={() => setSelectionMode(false)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><X /></button><span className="font-semibold">{selectedMessages.length} выбрано</span></div><div className="flex items-center space-x-2"><button onClick={() => handleDeleteMessages(selectedMessages)} disabled={selectedMessages.length === 0} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-red-500 disabled:opacity-50" title="Удалить"><Trash2 /></button><button onClick={() => setIsForwarding(true)} disabled={selectedMessages.length === 0} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-blue-500 disabled:opacity-50" title="Переслать"><ChevronsRight /></button></div></div>)}
                 {isSearching && (<div className="p-2 border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800 flex items-center justify-between gap-2"><input type="text" placeholder="Поиск по сообщениям..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="flex-grow bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" autoFocus/>{searchResults.length > 0 && (<div className="flex items-center text-sm text-slate-500"><span>{currentResultIndex + 1} из {searchResults.length}</span><button onClick={() => navigateSearchResults(-1)} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ChevronUp size={18}/></button><button onClick={() => navigateSearchResults(1)} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ChevronDown size={18}/></button></div>)}<button onClick={() => setIsSearching(false)} className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><XCircle size={20}/></button></div>)}
             </div>
