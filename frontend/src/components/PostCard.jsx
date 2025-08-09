@@ -666,7 +666,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                 </div>
 
                 <div className="p-4 md:p-6 pt-2">
-                    <div onClick={isScheduled ? undefined : handleOpenPostInModal} className={`${isScheduled ? '' : 'cursor-pointer'} mt-4`}>
+                    <div onClick={isScheduled ? undefined : handleOpenPostInModal} className={`${isScheduled ? '' : 'cursor-pointer'} mb-4`}>
                         {currentPost.text && <p className="mb-4 whitespace-pre-wrap break-words text-sm md:text-base">{currentPost.text}</p>}
                     
                         {currentPost.poll && <PollDisplay poll={currentPost.poll} onVote={handleVote} isScheduled={isScheduled} />}
@@ -745,7 +745,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                     </div>
                                 </div>
                                 <div className="flex items-center space-x-2 flex-shrink-0">
-                                    {commentSelectionMode ? (
+                                    {commentSelectionMode && !currentPost.commentsDisabled ? (
                                         <div className="flex items-center space-x-2">
                                             <button onClick={() => {setCommentSelectionMode(false); setSelectedComments([])}} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20">Отмена</button>
                                             <button onClick={handleDeleteSelectedComments} disabled={selectedComments.length === 0} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Удалить ({selectedComments.length})</button>
@@ -753,7 +753,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                     ) : (
                                         <>
                                             {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Скрытие кнопки сортировки --- */}
-                                            {!commentSelectionMode && (!currentPost.commentsDisabled && totalComments > 1) ? ( 
+                                            {(!commentSelectionMode && !currentPost.commentsDisabled && totalComments > 1) && (
                                             // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                                                 <div className="relative" ref={sortMenuRef}>
                                                     <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
@@ -771,7 +771,7 @@ const PostCard = ({ post, onPostDelete, onPostUpdate, currentUser, highlightComm
                                                         </div>
                                                     )}
                                                 </div>
-                                            ) : null}
+                                            )}
                                         </>
                                     )}
                                 </div>

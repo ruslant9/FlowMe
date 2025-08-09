@@ -278,11 +278,12 @@ export const MusicPlayerProvider = ({ children }) => {
 
     useEffect(() => {
         if (currentTrack && 'mediaSession' in navigator) {
+            const artworkSrc = currentTrack.albumArtUrl || currentTrack.album?.coverArtUrl;
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: cleanTitle(currentTrack.title),
                 artist: formatArtistNameString(currentTrack.artist),
                 album: currentTrack.album?.title || '',
-                artwork: [{ src: currentTrack.albumArtUrl, sizes: '512x512', type: 'image/png' }]
+                artwork: artworkSrc ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }] : []
             });
             navigator.mediaSession.setActionHandler('play', togglePlayPause);
             navigator.mediaSession.setActionHandler('pause', togglePlayPause);

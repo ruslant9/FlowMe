@@ -6,6 +6,7 @@ import { X, Search, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useCachedImage } from '../../hooks/useCachedImage'; // ИМПОРТ
+import ReactDOM from 'react-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -67,7 +68,7 @@ const AttachTrackModal = ({ isOpen, onClose, onSelectTrack }) => {
         formatArtistName(track.artist).toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    return (
+    return ReactDOM.createPortal(
         <AnimatePresence>
             {isOpen && (
                 <motion.div
@@ -125,7 +126,8 @@ const AttachTrackModal = ({ isOpen, onClose, onSelectTrack }) => {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.getElementById('modal-root')
     );
 };
 export default AttachTrackModal;

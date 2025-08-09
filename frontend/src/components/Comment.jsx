@@ -1,6 +1,6 @@
 // frontend/src/components/Comment.jsx
 
-import React, { useState, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Heart, Pencil, Trash2, CornerDownRight, MinusSquare, Smile, Check } from 'lucide-react';
 import Avatar from './Avatar';
@@ -10,13 +10,9 @@ import toast from 'react-hot-toast';
 import { useModal } from '../hooks/useModal';
 import LikesPopover from './LikesPopover';
 import { Link } from 'react-router-dom';
-import Tippy from '@tippyjs/react/headless';
 
 import Twemoji from './Twemoji';
-// --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Импортируем хук и удаляем Picker ---
-import { useEmojiPicker } from '../hooks/useEmojiPicker';
-// const Picker = React.lazy(() => import('emoji-picker-react')); // Больше не нужно
-// --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
+import { useEmojiPicker } from '../hooks/useEmojiPicker'; // ИМПОРТ
 const API_URL = import.meta.env.VITE_API_URL;
 
 const customRuLocale = {
@@ -50,9 +46,7 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
     const { showConfirmation } = useModal();
     const [childrenVisible, setChildrenVisible] = useState(true);
     const smileButtonRef = useRef(null);
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Используем глобальный хук ---
-    const { showPicker, hidePicker, isOpen: isPickerOpen } = useEmojiPicker();
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 2 ---
+    const { showPicker, hidePicker, isOpen: isPickerVisible } = useEmojiPicker();
 
     useEffect(() => {
         setLocalComment(comment);
@@ -89,18 +83,14 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
         return null;
     };
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Обновляем логику открытия пикера ---
-    const handleEmojiButtonClick = (e) => {
-        e.preventDefault();
-        if (isPickerOpen) {
-            hidePicker();
-        } else {
-            showPicker(smileButtonRef, (emojiObject) => {
-                setEditedText(prev => prev + emojiObject.emoji);
-            });
-        }
-    };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ 3 ---
+     const handleEmojiButtonClick = (e) => {
+         e.preventDefault();
+         if (isPickerVisible) {
+             hidePicker();
+         } else {
+             showPicker(smileButtonRef, (emojiObject) => setEditedText(prev => prev + emojiObject.emoji));
+         }
+     };
     
     const handleUpdate = async () => {
         if (editedText.trim() === localComment.text || !editedText.trim()) {
@@ -223,19 +213,18 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                             <button onClick={handleUpdate} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md">Сохранить</button>
                                             <button onClick={() => setEditingCommentId(null)} className="text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-md">Отмена</button>
                                         </div>
-                                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4: Обновляем кнопку эмодзи --- */}
-                                        <button ref={smileButtonRef} type="button" onClick={handleEmojiButtonClick} className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"><Smile size={18} /></button>
-                                        {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
+                                        <button ref={smileButtonRef} onClick={handleEmojiButtonClick} className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"><Smile size={18} /></button>
                                     </div>
-                                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 5: Удаляем прямое отображение пикера --- */}
-                                    {/* Picker теперь рендерится через провайдер */}
-                                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 5 --- */}
                                 </div>
                             ) : (
                                 <>
                                     <div className="flex justify-between items-center">
                                         <div className="text-sm flex items-center space-x-2 min-w-0">
-                                            <Link to={authorLink} className="font-bold hover:underline truncate">{authorName}</Link>
+                                            {/* --- ИСПРАВЛЕНИЕ: Блокируем ссылку в режиме выбора --- */}
+                                            <Link 
+                                                to={authorLink} 
+                                                className={`font-bold truncate ${selectionMode ? 'pointer-events-none' : 'hover:underline'}`}
+                                            >{authorName}</Link>
                                             {getAuthorBadge()}
                                             <span className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
                                                 <span className="hidden md:inline">{formatDistanceToNow(new Date(localComment.createdAt), { addSuffix: true, locale: customRuLocale })}</span>
@@ -251,10 +240,16 @@ const Comment = ({ comment, currentUserId, currentUser, postOwnerId, postCommuni
                                     <p className="text-sm break-words mt-1">{renderCommentText()}</p>
                                     <div className="flex items-center justify-between mt-2">
                                         <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
-                                           <button onClick={() => onReply({ id: localComment._id, username: authorName })} disabled={isEditingAny || selectionMode} className="font-semibold hover:text-slate-800 dark:hover:text-white transition-colors disabled:text-slate-400/50 disabled:cursor-not-allowed">Ответить</button>
+                                           {/* --- ИСПРАВЛЕНИЕ: Блокируем кнопку "Ответить" в режиме выбора --- */}
+                                           <button onClick={() => onReply({ id: localComment._id, username: authorName })} disabled={isEditingAny || selectionMode} className="font-semibold hover:text-slate-800 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Ответить</button>
                                            <LikesPopover likers={localComment.likes || []} postOwnerId={postOwnerId}>
                                                 <span>
-                                                    <button onClick={handleLike} className="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                                    {/* --- ИСПРАВЛЕНИЕ: Блокируем лайк в режиме выбора --- */}
+                                                    <button 
+                                                        onClick={handleLike} 
+                                                        disabled={selectionMode}
+                                                        className="flex items-center space-x-1 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
                                                         <Heart size={14} fill={isLikedByMe ? '#ef4444' : 'none'} stroke={isLikedByMe ? '#ef4444' : 'currentColor'} />
                                                         <span>{localComment.likes?.length || 0}</span>
                                                     </button>

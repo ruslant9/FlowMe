@@ -557,14 +557,14 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                     <div className="flex items-center space-x-1"><MessageCircle/><span>{activePost.comments.length}</span></div>
                                                 </div>
 
-                                                {commentSelectionMode ? (
+                                                {commentSelectionMode && !activePost.commentsDisabled ? (
                                                     <div className="flex items-center space-x-2">
                                                         <button onClick={() => {setCommentSelectionMode(false); setSelectedComments([])}} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20">Отмена</button>
                                                         <button onClick={handleDeleteSelectedComments} disabled={selectedComments.length === 0} className="inline-flex items-center justify-center whitespace-nowrap text-xs font-semibold px-2 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Удалить ({selectedComments.length})</button>
                                                     </div>
                                                 ) : null}
 
-                                                {activePost.comments.length > 1 && (
+                                                {(!commentSelectionMode && activePost.comments.length > 1) && (
                                                     <div className="relative" ref={sortMenuRef}>
                                                         <button onClick={() => setShowSortMenu(v => !v)} className="inline-flex items-center justify-center whitespace-nowrap space-x-1 text-xs font-semibold px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50" disabled={!!editingCommentId}>
                                                             <span>{sortLabels[sortOrder]}</span>

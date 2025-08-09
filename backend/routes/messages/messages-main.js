@@ -116,12 +116,25 @@ router.post('/', authMiddleware, uploadMessageImage.single('image'), async (req,
             const populatedSenderMessage = await Message.findById(savedMessage._id)
                 .populate('sender', 'username fullName avatar')
                 .populate({ path: 'replyTo', populate: { path: 'sender', select: 'username fullName premium premiumCustomization' } })
-                .populate('attachedTrack');
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                .populate({
+                    path: 'attachedTrack',
+                    populate: {
+                        path: 'album',
+                        select: 'coverArtUrl'
+                    }
+                });
                 
             const populatedRecipientMessage = await Message.findById(recipientMessage._id)
                 .populate('sender', 'username fullName avatar')
                 .populate({ path: 'replyTo', populate: { path: 'sender', select: 'username fullName premium premiumCustomization' } })
-                .populate('attachedTrack');
+                .populate({
+                    path: 'attachedTrack',
+                    populate: {
+                        path: 'album',
+                        select: 'coverArtUrl'
+                    }
+                });
             
             const payloadForSender = populatedSenderMessage.toObject();
             payloadForSender.conversationParticipants = conversation.participants;
