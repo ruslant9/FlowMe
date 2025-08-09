@@ -1220,7 +1220,7 @@ const ConversationWindow = ({ conversation, onDeselectConversation, onDeleteRequ
                                                         animate={{ opacity: 1, scale: 1 }}
                                                         exit={{ opacity: 0, scale: 0.8 }}
                                                         onClick={scrollToBottom}
-                                                        className="absolute bottom-4 right-4 z-10 w-10 h-10 bg-slate-800/80 backdrop-blur-sm text-white rounded-full flex items-center justify-center shadow-lg hover:bg-slate-700 transition-colors"
+                                                        className="absolute bottom-4 right-4 z-10 w-10 h-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm text-slate-700 dark:text-slate-200 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                                                         title="Вниз"
                                                     >
                                                         <ChevronDown size={24} />

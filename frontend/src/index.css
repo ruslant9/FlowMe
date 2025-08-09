@@ -230,7 +230,7 @@ html.dark .tippy-arrow {
     flex-wrap: wrap;
     gap: 0.25rem;
     padding: 0;
-    font-size: 1.75rem; /* Уменьшаем размер до более адекватного */
+    font-size: 1.25rem;
     line-height: 1;
 }
 /* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */
