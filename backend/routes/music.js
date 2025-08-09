@@ -147,25 +147,67 @@ router.post('/toggle-save', authMiddleware, async (req, res) => {
 });
 // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-
+// ЗАМЕНИТЕ ЭТОТ МАРШРУТ
 router.get('/saved', authMiddleware, async (req, res) => {
     try {
-        const savedTracks = await Track.find({ user: req.user.userId, type: 'saved' })
-            .sort({ savedAt: -1 })
-            .populate('artist', 'name')
-            .populate('album', 'title coverArtUrl')
-            .select('-__v') 
-            .lean();
+        const userId = new mongoose.Types.ObjectId(req.user.userId);
 
-        const processedTracks = savedTracks.map(track => {
-            if (track.album && track.album.coverArtUrl && !track.albumArtUrl) {
-                return { ...track, albumArtUrl: track.album.coverArtUrl };
+        // Используем агрегацию для производительности
+        const savedTracks = await Track.aggregate([
+            // 1. Находим все треки пользователя с типом 'saved'
+            { $match: { user: userId, type: 'saved' } },
+            // 2. Сортируем по дате добавления
+            { $sort: { savedAt: -1 } },
+            // 3. "Присоединяем" (lookup) данные из коллекции artists
+            {
+                $lookup: {
+                    from: 'artists',
+                    localField: 'artist',
+                    foreignField: '_id',
+                    as: 'artistDetails'
+                }
+            },
+            // 4. "Присоединяем" (lookup) данные из коллекции albums
+            {
+                $lookup: {
+                    from: 'albums',
+                    localField: 'album',
+                    foreignField: '_id',
+                    as: 'albumDetails'
+                }
+            },
+            // 5. Разворачиваем массив albumDetails (так как альбом один)
+            {
+                $unwind: {
+                    path: '$albumDetails',
+                    preserveNullAndEmptyArrays: true // Оставляем треки, у которых нет альбома (синглы)
+                }
+            },
+            // 6. Проектируем финальный вид документа
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    artist: '$artistDetails', // Используем присоединенные данные
+                    album: '$albumDetails',
+                    albumArtUrl: {
+                        // Логика для обложки: если есть своя, используем ее, иначе берем из альбома
+                        $ifNull: ['$albumArtUrl', '$albumDetails.coverArtUrl']
+                    },
+                    durationMs: 1,
+                    isExplicit: 1,
+                    sourceId: 1, // Важно для определения статуса "лайка" на фронте
+                    savedAt: 1,
+                    type: 1
+                }
             }
-            return track;
-        });
+        ]);
 
-        res.status(200).json(processedTracks);
+        // Теперь populate не нужен, так как мы уже получили все данные
+        res.status(200).json(savedTracks);
+
     } catch (error) {
+        console.error("Ошибка при получении сохраненных треков:", error);
         res.status(500).json({ message: 'Ошибка сервера при получении треков.' });
     }
 });

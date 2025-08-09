@@ -19,7 +19,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const TabButton = ({ active, onClick, children, count, icon: Icon }) => (
     <button
         onClick={onClick}
-        className={`flex-shrink-0 flex items-center space-x-2 px-4 py-3 text-sm font-semibold transition-colors border-b-2 ${
+        className={`flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 text-xs sm:px-4 sm:py-3 sm:text-sm font-semibold transition-colors border-b-2 ${
             active 
             ? 'border-blue-500 text-blue-500' 
             : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
@@ -293,12 +293,14 @@ const NotificationsPage = () => {
                         ))}
                     </div>
 
-                    <div className="md:hidden mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                        <ResponsiveNav 
-                            items={subTabs}
-                            visibleCount={4}
-                            activeKey={activeFilter}
-                        />
+                    <div className="md:hidden mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto no-scrollbar">
+                        <div className="flex items-center space-x-2">
+                            {subTabs.map(item => (
+                                <TabButton key={item.key} active={activeFilter === item.key} onClick={item.onClick} icon={item.icon}>
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                        </div>
                     </div>
                     
                     {loading ? (

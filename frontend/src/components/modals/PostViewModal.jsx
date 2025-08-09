@@ -34,7 +34,6 @@ const COMMENT_PAGE_LIMIT = 5;
 
 const CachedMotionImage = ({ src, ...props }) => {
     const { finalSrc, loading } = useCachedImage(src);
-
     if (loading) {
         return (
             <motion.div {...props} className="absolute w-full h-full flex items-center justify-center bg-black">
@@ -42,7 +41,6 @@ const CachedMotionImage = ({ src, ...props }) => {
             </motion.div>
         );
     }
-
     return <motion.img src={finalSrc} {...props} />;
 };
 
@@ -428,14 +426,20 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         onClick={(e) => e.stopPropagation()}
                         style={isMobile ? { maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' } : {}}
-                        className="overflow-hidden w-full max-w-7xl flex flex-col md:flex-row bg-white dark:bg-slate-900 md:rounded-3xl relative text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]"
+                        // --- НАЧАЛО ИСПРАВЛЕНИЯ 1: Динамические классы для макета ---
+                        className={`overflow-hidden w-full flex flex-col md:rounded-3xl relative bg-white dark:bg-slate-900 text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]
+                            ${hasImages ? 'md:flex-row max-w-7xl' : 'max-w-2xl'}
+                        `}
+                        // --- КОНЕЦ ИСПРАВЛЕНИЯ 1 ---
                     >
                         {isLoading && !activePost ? (
                             <div className="w-full flex items-center justify-center h-full"><Loader2 className="animate-spin"/></div>
                         ) : activePost ? (
                             <>
-                                {/* --- Контейнер с информацией и комментариями (левая часть на десктопе) --- */}
-                                <div className="flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full md:w-2/5 flex-1 min-h-0 order-last md:order-first">
+                                {/* --- Контейнер с информацией и комментариями --- */}
+                                <div className={`flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full flex-1 min-h-0 order-last md:order-first
+                                    ${hasImages ? 'md:w-2/5' : 'w-full'}
+                                `}>
                                     <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                                         <Link to={activePost.community ? `/communities/${activePost.community._id}` : `/profile/${activePost.user._id}`} onClick={onClose} className="flex items-center space-x-3 group flex-1 min-w-0">
                                             {(() => {
@@ -505,22 +509,35 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                         </div>
                                     </div>
                                     
-                                    {/* Контент для мобильной версии (текст + картинка) */}
-                                    <div className="md:hidden flex-shrink-0">
-                                        <div className="p-4">
-                                            {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
-                                            {activePost.attachedTrack && 
-                                                <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>
-                                            }
-                                            {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
-                                        </div>
-                                    </div>
-                                    {hasImages && (
-                                        <div className="md:hidden w-full flex-shrink-0 bg-black flex items-center justify-center relative max-h-[50vh]">
-                                            <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="w-full h-full object-contain" />
-                                        </div>
-                                    )}
                                     <div className="flex-1 overflow-y-auto min-h-0">
+                                        <div className="p-4 hidden md:block">
+                                            {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 2: Отображение контента поста для десктопа без картинки --- */}
+                                            {!hasImages && (
+                                                <>
+                                                    {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
+                                                    {activePost.attachedTrack && 
+                                                        <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>
+                                                    }
+                                                    {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
+                                                </>
+                                            )}
+                                            {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 2 --- */}
+                                        </div>
+
+                                        <div className="md:hidden flex-shrink-0">
+                                            <div className="p-4">
+                                                {activePost.text && <p className="text-sm break-words whitespace-pre-wrap">{activePost.text}</p>}
+                                                {activePost.attachedTrack && 
+                                                    <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>
+                                                }
+                                                {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
+                                            </div>
+                                        </div>
+                                        {hasImages && (
+                                            <div className="md:hidden w-full flex-shrink-0 bg-black flex items-center justify-center relative max-h-[50vh]">
+                                                <CachedImage src={getImageUrl(activePost.imageUrls[0])} alt="Post" className="w-full h-full object-contain" />
+                                            </div>
+                                        )}
                                         <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-4 border-b border-t border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-4">
@@ -594,7 +611,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                           {replyingTo && (
                                               <div className="flex justify-between items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 mb-2 rounded-lg text-sm">
                                                   <span className="text-slate-500 dark:text-slate-400">Ответ пользователю <span className="font-bold text-slate-800 dark:text-white">{replyingTo.username}</span></span>
-                                                  <button onClick={()=>{setReplyingTo(null); setNewCommentText('')}} className="p-1 hover:text-slate-900"><X size={16} /></button>
+                                                  <button onClick={()=>{setReplyingTo(null); setCommentText('')}} className="p-1 hover:text-slate-900"><X size={16} /></button>
                                               </div>
                                           )}
 
@@ -682,7 +699,7 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                                   <button 
                                                       ref={smileButtonRef} 
                                                       type="button" 
-                                                      onClick={(e) => { e.preventDefault(); showPicker(smileButtonRef, (emojiObject) => setCommentText(prev => prev + emojiObject.emoji)); }}
+                                                      onClick={(e) => { e.preventDefault(); setIsPickerVisible(p => !p); }}
                                                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                                       disabled={!!editingCommentId}
                                                   >
@@ -706,24 +723,20 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                 </div>
                                 
                                 {/* --- Контейнер с картинкой (правая часть на десктопе) --- */}
-                                 <div className="hidden md:flex w-3/5 flex-shrink-0 bg-black items-center justify-center relative">
-                                     {posts.length > 1 && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
-                                     {hasImages ? (
-                                         <AnimatePresence initial={false}>
-                                             <CachedMotionImage
-                                                 key={currentIndex}
-                                                 src={getImageUrl(activePost.imageUrls[0])}
-                                                 className="absolute w-full h-full object-contain"
-                                             />
-                                         </AnimatePresence>
-                                     ) : (
-                                         <div className="flex flex-col items-center p-8 space-y-4 max-h-full overflow-y-auto">
-                                             {activePost.text && <p className="text-lg text-white break-words whitespace-pre-wrap">{activePost.text}</p>}
-                                             {activePost.attachedTrack && <div className="mt-4"><AttachedTrack track={{...activePost.attachedTrack, albumArtUrl: activePost.attachedTrack.albumArtUrl || activePost.attachedTrack.album?.coverArtUrl}} /></div>}
-                                             {activePost.poll && <div className="mt-4"><PollDisplay poll={activePost.poll} onVote={handleVote} /></div>}
-                                         </div>
-                                     )}
-                                 </div>
+                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3: Делаем контейнер квадратным и показываем только при наличии картинок --- */}
+                                {hasImages && (
+                                    <div className="hidden md:flex w-3/5 flex-shrink-0 bg-black items-center justify-center relative aspect-square">
+                                        {posts.length > 1 && <div className="absolute top-4 left-4 text-white/70 bg-black/30 px-3 py-1 rounded-full text-sm z-[101]">{currentIndex + 1} / {posts.length}</div>}
+                                        <AnimatePresence initial={false}>
+                                            <CachedMotionImage
+                                                key={currentIndex}
+                                                src={getImageUrl(activePost.imageUrls[0])}
+                                                className="absolute w-full h-full object-contain"
+                                            />
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                             </>
                         ) : (
                             <div className="w-full flex items-center justify-center">Не удалось загрузить пост.</div>
