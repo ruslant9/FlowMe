@@ -4,10 +4,14 @@ import React, { createContext, useState, useCallback, useRef, useEffect, Suspens
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import useMediaQuery from '../hooks/useMediaQuery'; // --- ИМПОРТ ХУКА ---
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const Picker = React.lazy(() => import('emoji-picker-react'));
-const EMOJI_PICKER_HEIGHT_MOBILE = 350; // --- КОНСТАНТА ДЛЯ ВЫСОТЫ ПАНЕЛИ ---
+
+// --- НАЧАЛО ИЗМЕНЕНИЯ: Увеличиваем высоту панели на мобильных устройствах ---
+// Было 350, стало 450. Это обеспечит примерно 5-6 строк смайликов.
+const EMOJI_PICKER_HEIGHT_MOBILE = 450;
+// --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 export const EmojiPickerContext = createContext(null);
 
@@ -18,7 +22,7 @@ export const EmojiPickerProvider = ({ children }) => {
         onEmojiClickCallback: null,
     });
     const pickerRef = useRef(null);
-    const isMobile = useMediaQuery('(max-width: 767px)'); // --- ИСПОЛЬЗОВАНИЕ ХУКА ---
+    const isMobile = useMediaQuery('(max-width: 767px)');
 
     const showPicker = useCallback((targetRef, onEmojiClickCallback) => {
         if (!targetRef.current) return;
@@ -62,7 +66,6 @@ export const EmojiPickerProvider = ({ children }) => {
         isOpen: pickerState.isOpen,
     };
     
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Условные стили и анимации ---
     const pickerStyle = isMobile ? {
         position: 'fixed',
         bottom: 0,
@@ -79,7 +82,6 @@ export const EmojiPickerProvider = ({ children }) => {
     const initialAnimation = isMobile ? { y: "100%" } : { opacity: 0, scale: 0.9 };
     const animateAnimation = isMobile ? { y: 0 } : { opacity: 1, scale: 1 };
     const exitAnimation = isMobile ? { y: "100%" } : { opacity: 0, scale: 0.9 };
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
 
     return (
@@ -97,7 +99,6 @@ export const EmojiPickerProvider = ({ children }) => {
                             style={pickerStyle}
                         >
                             <Suspense fallback={<div className="w-full h-[350px] bg-slate-200 dark:bg-slate-700 rounded-t-2xl md:rounded-lg flex items-center justify-center"><Loader2 className="animate-spin"/></div>}>
-                                {/* --- ИЗМЕНЕНИЕ: Добавляем обертку для мобильных стилей --- */}
                                 <div className={isMobile ? "bg-slate-100 dark:bg-slate-800 rounded-t-2xl overflow-hidden" : ""}>
                                     <Picker 
                                         onEmojiClick={pickerState.onEmojiClickCallback}
