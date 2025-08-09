@@ -9,6 +9,7 @@ import { useMusicPlayer } from '../context/MusicPlayerContext';
 import { useUser } from '../hooks/useUser';
 import Avatar from '../components/Avatar';
 import PlaylistTrackItem from '../components/music/PlaylistTrackItem';
+import AddToPlaylistModal from '../components/modals/AddToPlaylistModal';
 import EditPlaylistModal from '../components/modals/EditPlaylistModal';
 import AddTracksToPlaylistModal from '../components/modals/AddTracksToPlaylistModal';
 import { useModal } from '../hooks/useModal';
@@ -16,7 +17,7 @@ import toast from 'react-hot-toast';
 import ColorThief from 'colorthief';
 import { useCachedImage } from '../hooks/useCachedImage';
 import PageWrapper from '../components/PageWrapper';
-import { Menu, Transition } from '@headlessui/react'; // --- НОВЫЙ ИМПОРТ ---
+import { Menu, Transition } from '@headlessui/react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -40,6 +41,8 @@ const PlaylistPage = () => {
 
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [isAddTracksModalOpen, setAddTracksModalOpen] = useState(false);
+    const [isAddToPlaylistModalOpen, setAddToPlaylistModalOpen] = useState(false);
+    const [trackToAdd, setTrackToAdd] = useState(null);
 
     const imageRef = useRef(null);
     const [accentColors, setAccentColors] = useState(['#1f2937', '#111827']);
@@ -100,6 +103,11 @@ const PlaylistPage = () => {
         playTrack(track, playlist.tracks, {
             playlistId: playlist._id
         });
+    };
+
+    const handleAddToPlaylist = (track) => {
+        setTrackToAdd(track);
+        setAddToPlaylistModalOpen(true);
     };
 
     const handleAddTracks = async (trackIds) => {
@@ -213,6 +221,11 @@ const PlaylistPage = () => {
     return (
         <PageWrapper>
             <EditPlaylistModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} playlist={playlist} onPlaylistUpdated={handlePlaylistUpdated} />
+            <AddToPlaylistModal 
+                isOpen={isAddToPlaylistModalOpen}
+                onClose={() => setAddToPlaylistModalOpen(false)}
+                trackToAdd={trackToAdd}
+            />
             <AddTracksToPlaylistModal isOpen={isAddTracksModalOpen} onClose={() => setAddTracksModalOpen(false)} onAddTracks={handleAddTracks} existingTrackIds={new Set(playlist.tracks.map(t=>t._id))} />
 
             <main 
@@ -226,11 +239,9 @@ const PlaylistPage = () => {
                     }}
                 >
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-lg"></div>
-                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 3 --- */}
                 <button onClick={() => navigate(-1)} className="absolute top-4 left-4 md:left-6 flex items-center space-x-2 text-sm z-10 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg hover:scale-105 hover:bg-white transition-all font-semibold text-slate-800">
                     <ArrowLeft size={16}/> <span>Назад</span>
                 </button>
-                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 3 --- */}
                     <div className="relative flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6 text-white">
                         <div className={`w-48 h-48 md:w-56 md:h-56 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 shadow-2xl ${getCoverGridClass()}`}>
                              {renderPlaylistCover()}
@@ -261,7 +272,6 @@ const PlaylistPage = () => {
                         {isOwner && (
                             <>
                                 <button onClick={() => setAddTracksModalOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Добавить треки"><PlusCircle /></button>
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ 4 --- */}
                                 <div className="md:hidden">
                                     <Menu as="div" className="relative">
                                         <Menu.Button className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">
@@ -276,22 +286,22 @@ const PlaylistPage = () => {
                                             leaveFrom="transform opacity-100 scale-100"
                                             leaveTo="transform opacity-0 scale-95"
                                         >
-                                            <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl ios-glass-popover p-1 z-20"> {/* <-- ИЗМЕНЕНИЕ 1: w-48 заменен на w-56 */}
-    <Menu.Item>
-        {({ active }) => (
-            <button onClick={() => setEditModalOpen(true)} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs whitespace-nowrap ${active ? 'bg-slate-200 dark:bg-slate-700' : ''}`}> {/* <-- ИЗМЕНЕНИЕ 2: добавлен whitespace-nowrap */}
-                <Edit className="mr-2 h-4 w-4" /> Редактировать плейлист
-            </button>
-        )}
-    </Menu.Item>
-    <Menu.Item>
-        {({ active }) => (
-            <button onClick={handleDeletePlaylist} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs whitespace-nowrap text-red-500 ${active ? 'bg-red-500/10' : ''}`}> {/* <-- ИЗМЕНЕНИЕ 3: добавлен whitespace-nowrap для консистентности */}
-                <Trash2 className="mr-2 h-4 w-4" /> Удалить плейлист
-            </button>
-        )}
-    </Menu.Item>
-</Menu.Items>
+                                            <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl ios-glass-popover p-1 z-20">
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <button onClick={() => setEditModalOpen(true)} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs whitespace-nowrap ${active ? 'bg-slate-200 dark:bg-slate-700' : ''}`}>
+                                                            <Edit className="mr-2 h-4 w-4" /> Редактировать плейлист
+                                                        </button>
+                                                    )}
+                                                </Menu.Item>
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <button onClick={handleDeletePlaylist} className={`group flex w-full items-center rounded-md px-2 py-1.5 text-xs whitespace-nowrap text-red-500 ${active ? 'bg-red-500/10' : ''}`}>
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Удалить плейлист
+                                                        </button>
+                                                    )}
+                                                </Menu.Item>
+                                            </Menu.Items>
                                         </Transition>
                                     </Menu>
                                 </div>
@@ -299,7 +309,6 @@ const PlaylistPage = () => {
                                     <button onClick={() => setEditModalOpen(true)} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Редактировать"><Edit /></button>
                                     <button onClick={handleDeletePlaylist} className="p-3 bg-slate-200 dark:bg-white/10 rounded-full text-slate-600 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 transition-colors" title="Удалить плейлист"><Trash2 /></button>
                                 </div>
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ 4 --- */}
                             </>
                         )}
                     </div>
@@ -321,6 +330,7 @@ const PlaylistPage = () => {
                                 isSaved={myMusicTrackIds?.has(track.sourceId || track._id)}
                                 onToggleSave={onToggleLike}
                                 onRemoveFromPlaylist={isOwner ? handleRemoveTrack : null}
+                                onAddToPlaylist={handleAddToPlaylist}
                                 accentColor={accentColors[0]}
                             />
                         ))}

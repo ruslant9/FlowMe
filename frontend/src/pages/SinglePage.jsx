@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import RecommendationCard from '../components/music/RecommendationCard';
 import PageWrapper from '../components/PageWrapper';
+import AddToPlaylistModal from '../components/modals/AddToPlaylistModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -48,6 +49,8 @@ const SinglePage = () => {
     
     const [isScrolled, setIsScrolled] = useState(false);
     const mainRef = useRef(null);
+    const [isAddToPlaylistModalOpen, setAddToPlaylistModalOpen] = useState(false);
+    const [trackToAdd, setTrackToAdd] = useState(null);
 
     const fetchTrack = useCallback(async () => {
         setLoading(true);
@@ -103,6 +106,11 @@ const SinglePage = () => {
         }
     };
 
+    const handleAddToPlaylist = (track) => {
+        setTrackToAdd(track);
+        setAddToPlaylistModalOpen(true);
+    };
+
     if (loading || !track || !primaryArtist) {
         return <div className="flex-1 p-8 flex items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-slate-400" /></div>;
     }
@@ -111,6 +119,11 @@ const SinglePage = () => {
 
     return (
         <PageWrapper>
+            <AddToPlaylistModal
+                isOpen={isAddToPlaylistModalOpen}
+                onClose={() => setAddToPlaylistModalOpen(false)}
+                trackToAdd={trackToAdd}
+            />
             <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900">
                 <div 
                     className="sticky top-0 z-20 p-6 md:p-8 pt-20 text-white min-h-[350px] flex flex-col justify-end transition-all duration-300"
@@ -134,10 +147,8 @@ const SinglePage = () => {
                         </div>
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
                             <span className="text-sm font-bold opacity-80" style={{ color: textColor }}>Сингл</span>
-                            {/* --- НАЧАЛО ИЗМЕНЕНИЯ 2 --- */}
                             <h1 className="text-5xl md:text-7xl font-extrabold break-words mt-1" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', color: textColor }}>{track.title}</h1>
                             <div className="flex items-center space-x-2 mt-4 text-base flex-wrap justify-center md:justify-start" style={{ color: textColor, opacity: 0.9 }}>
-                            {/* --- КОНЕЦ ИЗМЕНЕНИЯ 2 --- */}
                                 <Link to={`/artist/${primaryArtist._id}`} className="hover:underline mb-1 md:mb-0">
                                     <div className="flex items-center space-x-2">
                                         <Avatar size="sm" username={primaryArtist.name} avatarUrl={primaryArtist.avatarUrl} />
@@ -145,7 +156,6 @@ const SinglePage = () => {
                                     </div>
                                 </Link>
                                 <span className="opacity-80">• {track.releaseDate ? format(new Date(track.releaseDate), 'LLLL yyyy', { locale: ru }) : ''} • 1 трек, {totalMinutes} мин.</span>
-                                {/* --- НАЧАЛО ИЗМЕНЕНИЯ 1 --- */}
                                 {track.playCount > 0 && (
                                     <span className="opacity-80 flex items-center space-x-1">
                                         <span>•</span>
@@ -153,7 +163,6 @@ const SinglePage = () => {
                                         <span>{track.playCount.toLocaleString('ru-RU')}</span>
                                     </span>
                                 )}
-                                {/* --- КОНЕЦ ИЗМЕНЕНИЯ 1 --- */}
                             </div>
                         </div>
                     </div>
@@ -190,6 +199,7 @@ const SinglePage = () => {
                             isSaved={myMusicTrackIds?.has(track._id)}
                             onToggleSave={onToggleLike}
                             accentColor={dominantColor}
+                            onAddToPlaylist={handleAddToPlaylist}
                         />
                     </div>
                     {(loadingRecs || recommendations.length > 0) && (
