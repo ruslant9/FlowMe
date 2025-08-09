@@ -92,7 +92,7 @@ export const MusicPlayerProvider = ({ children }) => {
 
     useEffect(() => {
         if (currentTrack) {
-            setIsLiked(myMusicTrackIds.has(currentTrack._id));
+            setIsLiked(myMusicTrackIds.has(currentTrack.sourceId || currentTrack._id));
         } else {
             setIsLiked(false);
         }
@@ -364,20 +364,17 @@ export const MusicPlayerProvider = ({ children }) => {
     const onToggleLike = useCallback(async (trackData) => {
         if (!trackData) return;
         
-        const libraryTrackId = trackData._id;
+        const libraryTrackId = trackData.sourceId || trackData._id;
         if (!libraryTrackId) return;
 
         const wasLiked = myMusicTrackIds.has(libraryTrackId);
         
         const newSet = new Set(myMusicTrackIds);
-        if (wasLiked) {
-            newSet.delete(libraryTrackId);
-        } else {
-            newSet.add(libraryTrackId);
-        }
+        if (wasLiked) newSet.delete(libraryTrackId);
+        else newSet.add(libraryTrackId);
         setMyMusicTrackIds(newSet);
         
-        if (currentTrack?._id === trackData._id) {
+        if (currentTrack && (currentTrack.sourceId || currentTrack._id) === libraryTrackId) {
             setIsLiked(!wasLiked);
         }
 
