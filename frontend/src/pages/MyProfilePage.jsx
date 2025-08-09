@@ -134,6 +134,18 @@ const MyProfilePage = () => {
         }
     }, [user?._id, fetchPostsAndStats]);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Слушаем событие обновления музыки ---
+    useEffect(() => {
+        const handleMusicUpdate = () => {
+            fetchPostsAndStats(false); // Перезагружаем данные без индикатора загрузки
+        };
+        window.addEventListener('myMusicUpdated', handleMusicUpdate);
+        return () => {
+            window.removeEventListener('myMusicUpdated', handleMusicUpdate);
+        };
+    }, [fetchPostsAndStats]);
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
     useEffect(() => {
         if (isEditProfileModalOpen) {
             document.body.classList.add('modal-open');
@@ -361,7 +373,6 @@ const MyProfilePage = () => {
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Моя музыка</h3>
                                     <Link to="/music" state={{ defaultTab: 'my-music' }} className="text-sm font-semibold text-blue-500 hover:underline">Все ({musicTracks.length})</Link>
                                 </div>
-                                {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Передаем все необходимые пропсы в TrackList --- */}
                                 {loadingPostsAndStats ? <div className="flex justify-center py-4"><Loader2 className="animate-spin text-slate-400"/></div> : 
                                  musicTracks.length > 0 ? 
                                     <TrackList 
@@ -380,7 +391,6 @@ const MyProfilePage = () => {
                                         onPlayPauseToggle={togglePlayPause}
                                     /> 
                                     : <p className="text-slate-500 dark:text-slate-400 text-sm">Добавьте любимые треки в свою коллекцию.</p>}
-                                {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                             </div>
                         </div>
 

@@ -15,15 +15,15 @@ import Tippy from '@tippyjs/react/headless';
 import LikesPopover from '../LikesPopover';
 import ImageEditorModal from './ImageEditorModal';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../../hooks/useUser';
 import Comment from '../Comment';
 import { Listbox, Transition } from '@headlessui/react';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 import AttachedTrack from '../music/AttachedTrack';
 import PollDisplay from '../PollDisplay';
-import { useEmojiPicker } from '../../hooks/useEmojiPicker';
 import { useCachedImage } from '../../hooks/useCachedImage';
 import useMediaQuery from '../../hooks/useMediaQuery';
+import { useEmojiPicker } from '../../hooks/useEmojiPicker';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT_DESKTOP = 450;

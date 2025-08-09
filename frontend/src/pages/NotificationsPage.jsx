@@ -234,14 +234,12 @@ const NotificationsPage = () => {
         return tabs;
     }, [activeTab]);
     
-    // --- НАЧАЛО ИЗМЕНЕНИЯ: Убираем кнопку очистки из `navItems` ---
     const navItems = useMemo(() => {
         return [
             { key: 'personal', label: 'Личные', icon: User, onClick: () => setActiveTab('personal'), count: notificationsData.personal.unreadCount },
             { key: 'community', label: 'Сообщества', icon: Users, onClick: () => setActiveTab('community'), count: notificationsData.community.unreadCount }
         ];
     }, [notificationsData]);
-    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
     return (
         <PageWrapper>
@@ -254,7 +252,6 @@ const NotificationsPage = () => {
                     />
                 )}
                 <div className="w-full max-w-4xl mx-auto">
-                     {/* --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем кнопку "Очистить все" сюда --- */}
                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <div className="flex items-center space-x-3">
                             <h1 className="text-3xl font-bold">Уведомления</h1>
@@ -269,7 +266,6 @@ const NotificationsPage = () => {
                             </button>
                         )}
                     </div>
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
                     <div className="hidden md:flex border-b border-slate-300 dark:border-slate-700 mb-6 -mx-4 px-4 overflow-x-auto">
                         {navItems.map(item => (
                             <TabButton key={item.key} active={activeTab === item.key} onClick={item.onClick} icon={item.icon} count={item.count}>
@@ -293,7 +289,9 @@ const NotificationsPage = () => {
                         ))}
                     </div>
 
-                    <div className="md:hidden mb-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                    {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Удалены лишние стили из div-обертки --- */}
+                    <div className="md:hidden mb-4">
+                    {/* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */}
                         <ResponsiveNav 
                             items={subTabs}
                             visibleCount={4}

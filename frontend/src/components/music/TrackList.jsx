@@ -8,7 +8,8 @@ const TrackList = ({
     onToggleSave, myMusicTrackIds, progress, duration, onSeek, 
     loadingTrackId, buffered, onPlayPauseToggle, 
     showDeleteButtons = false, onDeleteFromHistory,
-    showRemoveButtons = false, onRemoveFromPlaylist
+    showRemoveButtons = false, onRemoveFromPlaylist,
+    onAddToPlaylist // --- НАЧАЛО ИСПРАВЛЕНИЯ: Принимаем onAddToPlaylist ---
 }) => {
     const currentPlayingTrackId = currentTrack?._id;
     return (
@@ -26,6 +27,7 @@ const TrackList = ({
                             onToggleSave={onToggleSave}
                             isSaved={isSaved} 
                             onRemoveFromPlaylist={showRemoveButtons ? onRemoveFromPlaylist : null}
+                            onAddToPlaylist={onAddToPlaylist} // --- КОНЕЦ ИСПРАВЛЕНИЯ: Передаем onAddToPlaylist дальше ---
                         />
                     </React.Fragment>
                 );
