@@ -451,13 +451,9 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                         style={isMobile ? { maxHeight: currentTrack ? 'calc(100vh - 100px)' : '100vh' } : {}}
                         className={`overflow-hidden w-full flex flex-col md:rounded-3xl relative bg-white dark:bg-slate-900 text-slate-900 dark:text-white h-full md:h-auto md:max-h-[90vh]
                             ${hasImages ? 'md:flex-row max-w-7xl' : 'max-w-2xl'}
-                        `}
-                    >
-                        {isLoading ? (
-                            <div className="w-full h-full flex items-center justify-center absolute inset-0 bg-white dark:bg-slate-900 z-50">
-                                <Loader2 className="animate-spin text-slate-400" size={48} />
-                            </div>
-                        ) : activePost ? (
+                        `}>
+                        {/* --- НАЧАЛО ИСПРАВЛЕНИЯ: Убираем полноэкранный спиннер при смене поста --- */}
+                        {activePost ? (
                             <>
                                 {/* --- Контейнер с информацией и комментариями (левая часть на десктопе) --- */}
                                 <div className={`flex flex-col relative z-20 bg-white dark:bg-slate-900 w-full flex-1 min-h-0 order-last md:order-first
@@ -757,8 +753,8 @@ const PostViewModal = ({ posts, startIndex, onClose, onDeletePost, onUpdatePost,
                                 )}
                             </>
                         ) : (
-                            <div className="w-full flex items-center justify-center p-8 text-slate-500 dark:text-slate-400">
-                                Не удалось загрузить пост.
+                            <div className="w-full h-full flex items-center justify-center absolute inset-0 bg-white dark:bg-slate-900 z-50">
+                                <Loader2 className="animate-spin text-slate-400" size={48} />
                             </div>
                         )}
                     </motion.div>
