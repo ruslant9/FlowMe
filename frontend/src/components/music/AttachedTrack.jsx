@@ -55,9 +55,7 @@ const AttachedTrack = ({ track }) => {
     const trackDurationInSeconds = track.durationMs ? track.durationMs / 1000 : 0;
 
     return (
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Устанавливаем фиксированную ширину вместо w-full ---
         <div className="flex flex-col space-y-2 w-64 md:w-72">
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             <div className="flex items-start space-x-3">
                 <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
                     {track.albumArtUrl ? <CachedImage src={track.albumArtUrl} alt={track.title} /> : <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center"><Music size={24} className="text-slate-400"/></div>}
@@ -75,7 +73,7 @@ const AttachedTrack = ({ track }) => {
                     {formatTime(isCurrent ? progress : 0)}
                 </span>
                 <div className="relative flex-grow flex items-center">
-                    <div className="absolute h-[4px] w-full bg-slate-200 dark:bg-white/10 rounded-full"></div>
+                    <div className="absolute h-[4px] w-full bg-slate-200 dark:bg-slate-700 rounded-full"></div>
                     {isCurrent && (
                         <div className="absolute h-[4px] bg-slate-300 dark:bg-slate-600 rounded-full" style={{ width: `${buffered * 100}%`}}/>
                     )}

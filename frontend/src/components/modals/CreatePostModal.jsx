@@ -24,12 +24,12 @@ registerLocale('ru', ru);
 const API_URL = import.meta.env.VITE_API_URL;
 const EMOJI_PICKER_HEIGHT_MOBILE = 350;
 
+// ... (вспомогательные компоненты CachedImage и ToggleSwitch остаются без изменений) ...
 const CachedImage = ({ src }) => {
     const { finalSrc, loading } = useCachedImage(src);
     if (loading) return <div className="w-full h-full object-cover rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse"></div>;
     return <img src={finalSrc} alt="preview" className="w-full h-full object-cover rounded-md" />;
 };
-
 const ToggleSwitch = ({ checked, onChange, label }) => (
     <label className="flex items-center space-x-2 cursor-pointer text-sm">
         <div className="relative">
@@ -64,14 +64,45 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
     const [pollExpiresAt, setPollExpiresAt] = useState(null);
     const [scheduledFor, setScheduledFor] = useState(null);
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Переработанный обработчик для смайликов ---
+    const handleEmojiButtonClick = (e) => {
+        // 1. Предотвращаем потерю фокуса с поля ввода
+        e.preventDefault();
+
+        // 2. Запоминаем текущую позицию курсора
+        const { selectionStart, selectionEnd } = textareaRef.current;
+
+        if (isPickerVisible) {
+            hidePicker();
+        } else {
+            showPicker(smileButtonRef, (emojiObject) => {
+                // 3. Вставляем эмодзи в сохраненную позицию
+                const newText =
+                    text.slice(0, selectionStart) +
+                    emojiObject.emoji +
+                    text.slice(selectionEnd);
+                
+                setText(newText);
+
+                // 4. После обновления состояния React, возвращаем фокус
+                //    и устанавливаем курсор после вставленного эмодзи
+                setTimeout(() => {
+                    const newPosition = selectionStart + emojiObject.emoji.length;
+                    textareaRef.current.focus();
+                    textareaRef.current.setSelectionRange(newPosition, newPosition);
+                }, 0);
+            });
+        }
+    };
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+    
+    // ... (остальные функции остаются без изменений: getMinTime, resetForm, fetchMyCommunities, и т.д.) ...
     const getMinTime = (date) => {
         if (!date || !isToday(date)) return setHours(setMinutes(new Date(), 0), 0);
         return new Date();
     };
-
     const imagesForCleanup = useRef(images);
     useEffect(() => { imagesForCleanup.current = images; }, [images]);
-
     const resetForm = useCallback(() => {
         setText('');
         imagesForCleanup.current.forEach(img => URL.revokeObjectURL(img.preview));
@@ -85,7 +116,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         setPollExpiresAt(null);
         setScheduledFor(null);
     }, []);
-
     const fetchMyCommunities = useCallback(async (preselectedCommunityId) => {
         if (!currentUser) return;
         setFetchingCommunities(true);
@@ -123,9 +153,7 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
             setFetchingCommunities(false);
         }
     }, [currentUser]);
-
     useEffect(() => { if (isOpen) { resetForm(); fetchMyCommunities(communityId); } }, [isOpen, communityId, fetchMyCommunities, resetForm]);
-
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
         if (images.length + files.length > 5) {
@@ -134,16 +162,13 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         }
         setImages(prev => [...prev, ...files.map(file => ({ file, preview: URL.createObjectURL(file) }))]);
     };
-    
     const removeImage = (indexToRemove) => {
         setImages(prev => {
             URL.revokeObjectURL(prev[indexToRemove].preview);
             return prev.filter((_, index) => index !== indexToRemove);
         });
     };
-
     const handleEditImage = (index) => setEditingImage({ index, file: images[index].file });
-
     const handleEditComplete = async (editedBlob) => {
         const index = editingImage.index;
         const newFile = new File([editedBlob], images[index].file.name, { type: editedBlob.type || 'image/jpeg' });
@@ -155,7 +180,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         });
         setEditingImage(null);
     };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         const isPollValid = showPollCreator && pollData.question.trim() && pollData.options.filter(opt => opt.trim()).length >= 2;
@@ -185,7 +209,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
             setLoading(false);
         }
     };
-    
     const handlePollChange = (index, value) => setPollData(prev => ({ ...prev, options: [...prev.options.slice(0, index), value, ...prev.options.slice(index + 1)] }));
     const addPollOption = () => { if (pollData.options.length < 10) setPollData(prev => ({ ...prev, options: [...prev.options, ''] })); };
     const removePollOption = (index) => { if (pollData.options.length > 2) setPollData(prev => ({ ...prev, options: prev.options.filter((_, i) => i !== index) })); };
@@ -193,28 +216,6 @@ const CreatePostModal = ({ isOpen, onClose, communityId }) => {
         setText(e.target.value);
         e.target.style.height = 'auto';
         e.target.style.height = `${e.target.scrollHeight}px`;
-    };
-    
-    const handleEmojiButtonClick = (e) => {
-        e.preventDefault();
-        const { selectionStart, selectionEnd } = textareaRef.current;
-        if (isPickerVisible) {
-            hidePicker();
-        } else {
-            showPicker(smileButtonRef, (emojiObject) => {
-                const newText =
-                    text.slice(0, selectionStart) +
-                    emojiObject.emoji +
-                    text.slice(selectionEnd);
-                
-                setText(newText);
-                setTimeout(() => {
-                    const newPosition = selectionStart + emojiObject.emoji.length;
-                    textareaRef.current.focus();
-                    textareaRef.current.setSelectionRange(newPosition, newPosition);
-                }, 0);
-            });
-        }
     };
 
     return ReactDOM.createPortal(
